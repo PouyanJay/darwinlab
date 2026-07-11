@@ -32,9 +32,10 @@
 	const badge = $derived(String(index).padStart(2, '0'));
 	const meta = $derived(describeWorld(config));
 
-	// Training is over once the world hits the bench-wide max generation; from then on it is a
-	// real-world run, and the tile says so rather than leaving the reader to infer it.
-	const trained = $derived(bench.maxGenerations > 0 && entry.stats.gen >= bench.maxGenerations);
+	// The ENGINE decides when a world is deployed; the tile does not re-derive it. Two copies of that
+	// rule would eventually disagree, and the "· trained" pill would say one thing while the
+	// real-world run row said another.
+	const trained = $derived(entry.stats.deployed);
 </script>
 
 <section class="tile" aria-label="world {index}: {config.name}">

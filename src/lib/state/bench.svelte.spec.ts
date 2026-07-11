@@ -1,7 +1,7 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { flushSync } from 'svelte';
 import { bench } from './bench.svelte';
-import { DEFAULT_WORLDS, WORLD_LIMITS, ACCENTS } from '../engine';
+import { DEFAULT_WORLDS, WORLD_LIMITS, MAX_GENERATIONS, ACCENTS, seededRng } from '../engine';
 
 /**
  * Runs in the browser project (runes need the Svelte compiler). `bench` is a module-level
@@ -679,5 +679,149 @@ describe('bench store — the selected fish’s mind', () => {
 
 		expect(bench.mind.lived).toBeGreaterThan(first); // it has been living
 		expect(bench.mind.lived).toBe(world.selFish!.fitness);
+	});
+});
+
+describe('bench store — train → deploy', () => {
+	/**
+	 * A small, brutal world so a deployment plays out in a few thousand frames — and SEEDED, because
+	 * these tests care about when a population dies, and a run that differs every time is a run whose
+	 * failures cannot be reproduced.
+	 */
+	const initDeployable = (maxGenerations: number) =>
+		bench.init({
+			configs: [{ ...structuredClone(DEFAULT_WORLDS[2]), prey: 8, preds: 2, bw: 400, bh: 260 }],
+			maxGenerations,
+			rng: seededRng(11)
+		});
+
+	/** Run the bench until `done`, with a budget so a stall fails loudly instead of hanging. */
+	const runUntil = (done: () => boolean, budget = 60_000) => {
+		let steps = 0;
+		while (!done() && steps++ < budget) frame(1 / 60);
+		expect(steps).toBeLessThan(budget);
+	};
+
+	it('keeps evolving while the limit is 0 — the bench never deploys on its own', () => {
+		initDeployable(0);
+		const { world, stats } = bench.worlds[0];
+
+		runUntil(() => world.gen >= 3);
+
+		expect(stats.deployed).toBe(false);
+		expect(world.maxGen).toBe(0);
+	});
+
+	it('deploys when a world reaches the limit, and STOPS evolving there', () => {
+		initDeployable(2);
+		const { world, stats } = bench.worlds[0];
+
+		runUntil(() => stats.deployed);
+
+		expect(world.gen).toBe(2);
+		frame(1 / 60, 1200); // 20 sim-seconds: two more generations, if it were still evolving
+		expect(world.gen).toBe(2); // it is not
+	});
+
+	it('THE POINT: a deployed population only ever goes DOWN — nothing respawns', () => {
+		initDeployable(1);
+		const { stats } = bench.worlds[0];
+		runUntil(() => stats.deployed);
+
+		let previous = stats.alive;
+		for (let i = 0; i < 6000 && stats.alive > 0; i++) {
+			frame(1 / 60);
+			expect(stats.alive).toBeLessThanOrEqual(previous); // never once climbs back
+			previous = stats.alive;
+		}
+
+		expect(stats.alive).toBe(0); // in the end, the real world takes all of them
+	});
+
+	it('LATCHES the half-life — it is a moment, not a running commentary', () => {
+		initDeployable(1);
+		const { world, stats } = bench.worlds[0];
+		runUntil(() => stats.deployed);
+		const deployed = world.deployStartN;
+
+		runUntil(() => stats.alive <= deployed / 2);
+		frame(); // the engine latches it on the step AFTER the population crosses the halfway mark
+		const halfLife = stats.halfLife;
+		expect(halfLife).not.toBeNull();
+		expect(halfLife!).toBeGreaterThan(0);
+
+		// Keep going. The population stays below half all the way down, so a half-life that did NOT
+		// latch would keep being overwritten and end up equal to the extinction time — and every
+		// assertion below would still hold. (They did. That is what this test used to be.)
+		runUntil(() => stats.alive === 0);
+		frame();
+
+		expect(stats.halfLife).toBe(halfLife); // it has not moved since the moment it was reached
+		expect(stats.extinctT).not.toBeNull();
+		expect(stats.extinctT!).toBeGreaterThan(halfLife!); // and the end came strictly later
+		expect(world.decay.length).toBeGreaterThan(0); // the red curve has something to draw
+	});
+
+	it('lowering the limit below a world deploys it on the spot', () => {
+		initDeployable(0);
+		const { world, stats } = bench.worlds[0];
+		runUntil(() => world.gen >= 2);
+		expect(stats.deployed).toBe(false);
+
+		bench.setMaxGenerations(1); // the world is already past this
+
+		frame();
+		expect(stats.deployed).toBe(true);
+	});
+
+	it('raising the limit puts a deployed world back to evolving — a limit is not a one-way door', () => {
+		initDeployable(1);
+		const { stats } = bench.worlds[0];
+		runUntil(() => stats.deployed);
+
+		bench.setMaxGenerations(20);
+		frame();
+
+		expect(stats.deployed).toBe(false);
+	});
+
+	it('resetting a deployed world returns it to evolving, and takes the old run with it', () => {
+		initDeployable(1);
+		const { id, world, stats } = bench.worlds[0];
+		runUntil(() => stats.deployed);
+
+		// Let the run actually HAPPEN first. Resetting the instant a world deploys clears a decay
+		// curve that was never drawn and a half-life that was never reached — the assertions below
+		// would then hold no matter what reset did. (They did. That is what this test used to do.)
+		runUntil(() => stats.halfLife !== null);
+		expect(world.decay.length).toBeGreaterThan(0);
+
+		bench.resetWorld(id);
+		// Pause before projecting: the tick that refreshes the stats also STEPS the world, and a shark
+		// taking a fish in that frame would leave the population at 19 through no fault of the reset.
+		bench.togglePlay();
+		frame();
+
+		expect(stats.deployed).toBe(false);
+		expect(stats.gen).toBe(0);
+		expect(stats.alive).toBe(world.cfg.prey); // a full generation is back in the water
+		// and the dead population's run goes with it — otherwise the tile would show "wiped out · 37s"
+		// and a red death curve for a world that is now at generation 0, evolving
+		expect(world.decay).toEqual([]);
+		expect(stats.halfLife).toBeNull();
+		expect(stats.extinctT).toBeNull();
+	});
+
+	it('clamps the limit to what the lab offers — and the worlds hear the clamped value', () => {
+		initDeployable(10);
+		const { world } = bench.worlds[0];
+
+		bench.setMaxGenerations(9999);
+		expect(bench.maxGenerations).toBe(MAX_GENERATIONS.max);
+		expect(world.maxGen).toBe(MAX_GENERATIONS.max); // the engine is the one that acts on it
+
+		bench.setMaxGenerations(-5);
+		expect(bench.maxGenerations).toBe(MAX_GENERATIONS.min);
+		expect(world.maxGen).toBe(MAX_GENERATIONS.min);
 	});
 });

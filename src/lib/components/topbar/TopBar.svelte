@@ -12,6 +12,7 @@
 	import Chip from '../common/Chip.svelte';
 	import Segmented from '../common/Segmented.svelte';
 	import LogoMark from './LogoMark.svelte';
+	import LabSettings from './LabSettings.svelte';
 	import { bench, theme, type Speed } from '$lib/state';
 
 	interface Props {
@@ -116,6 +117,8 @@
 	<Button aria-label="switch theme" onclick={() => theme.toggle()}>
 		<span aria-hidden="true">{theme.name === 'light' ? '◐' : '◑'}</span>
 	</Button>
+
+	<LabSettings />
 
 	{#if onplaystory || onaddworld}
 		<span class="divider" aria-hidden="true"></span>
