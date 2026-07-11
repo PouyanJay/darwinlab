@@ -1,8 +1,13 @@
 /**
  * Canvas palettes. Ported verbatim from engine2.js `THEMES`.
  *
- * IMPORTANT: these are a SEPARATE copy of the design tokens used by the CSS
- * (`src/lib/styles/tokens.css`). The two must stay in sync — see CLAUDE.md conventions.
+ * ⚠️ MIRROR: a canvas cannot read CSS custom properties, so these are a SECOND copy of the colour
+ * tokens declared in `src/lib/styles/tokens.css` — the DOM reads them from there, the tank reads
+ * them from here. Change a colour in one file and you must change it in the other, or the tank
+ * will paint in a palette the page around it no longer uses (CLAUDE.md conventions).
+ *
+ * The mapping is not one-to-one: these are the *scene* colours (fish, shark, rays, dust), of which
+ * only `ink` / `inkSoft` / `gold` / the accent+danger pair correspond directly to a CSS token.
  */
 
 export type ThemeName = 'light' | 'dark';
