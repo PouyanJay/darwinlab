@@ -15,8 +15,13 @@ import { TAU } from './math';
 /** A source of uniform random numbers in [0, 1), like `Math.random`. */
 export type Rng = () => number;
 
-/** Production default — non-deterministic, matches the reference engine. */
-export const defaultRng: Rng = Math.random;
+/**
+ * Production default — non-deterministic, matches the reference engine.
+ * Deliberately late-binding (`() => Math.random()`, not `Math.random`) so a test can swap
+ * `Math.random` for a seeded stream and drive BOTH this engine and the vendored reference
+ * off the same draws — that is what makes the bit-exact fidelity test possible.
+ */
+export const defaultRng: Rng = () => Math.random();
 
 /**
  * Deterministic PRNG (mulberry32). Tiny, fast, well-distributed — good enough for a
