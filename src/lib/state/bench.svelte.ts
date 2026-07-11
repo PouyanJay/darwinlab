@@ -37,15 +37,7 @@ import {
 	WORLD_LIMITS,
 	MAX_GENERATIONS
 } from '../engine';
-import type {
-	World,
-	WorldConfig,
-	Senses,
-	Fish,
-	Predator,
-	SenseSnapshot,
-	NumericCondition
-} from '../engine';
+import type { World, WorldConfig, Senses, Fish, Predator, NumericCondition } from '../engine';
 import type { Rng } from '../engine';
 import type { Picked } from '../render';
 import { subSteps, turboSlice } from '../sim/loop';
@@ -514,9 +506,7 @@ class BenchStore {
 
 	#wrap(world: World): WorldEntry {
 		world.maxGen = this.#maxGenerations;
-		const config = new WorldConfigView();
-		config.syncFrom(world.cfg);
-		return { id: this.#id(), world, stats: new WorldStats(), config };
+		return makeEntry(this.#id(), world);
 	}
 
 	/** Re-project a world's cfg after the store has written to it. Every cfg write ends here. */
