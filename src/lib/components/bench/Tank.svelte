@@ -16,6 +16,8 @@
 		entry: WorldEntry;
 		/** 'performance' scales god-rays/particulate down so many tanks stay smooth. */
 		detail?: 'cinematic' | 'performance';
+		/** Big/cinematic rendering — richer light and detail. One tank on screen can afford it. */
+		big?: boolean;
 		/**
 		 * What the click landed on — `null` for empty water, which is a real answer: clicking the
 		 * background is how you put a creature down again.
@@ -23,7 +25,7 @@
 		onselect?: (picked: Picked | null) => void;
 	}
 
-	let { entry, detail = 'performance', onselect }: Props = $props();
+	let { entry, detail = 'performance', big = false, onselect }: Props = $props();
 
 	let cursor = $state('default');
 
@@ -31,6 +33,7 @@
 		drawWorld(entry.world, ctx, width, height, {
 			theme: theme.name,
 			detail,
+			big,
 			reducedMotion: prefersReducedMotion()
 		});
 	}

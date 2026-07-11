@@ -14,8 +14,9 @@
 	import WorldTile from '$lib/components/bench/WorldTile.svelte';
 	import ConditionsModal from '$lib/components/conditions/ConditionsModal.svelte';
 	import BrainInspector from '$lib/components/inspector/BrainInspector.svelte';
+	import StoryMode from '$lib/components/story/StoryMode.svelte';
 	import FooterPill from '$lib/components/common/FooterPill.svelte';
-	import { bench } from '$lib/state';
+	import { bench, story } from '$lib/state';
 	import { DEFAULT_WORLDS, newWorldConfig, MAX_GENERATIONS_DEFAULT } from '$lib/engine';
 
 	const PREWARM_GENERATIONS = 15;
@@ -63,6 +64,7 @@
 
 	function onkeydown(event: KeyboardEvent) {
 		if (event.key !== ' ') return;
+		if (story.active) return; // the film has its own transport, and it owns the keyboard
 		const target = event.target as HTMLElement | null;
 		if (target?.closest(SPACE_IS_SPOKEN_FOR)) return;
 		event.preventDefault();
@@ -73,8 +75,10 @@
 <svelte:head><title>Darwin Lab</title></svelte:head>
 <svelte:window {onkeydown} />
 
-<div class="app">
-	<TopBar onaddworld={addWorld} />
+<!-- inert while a film is playing: the bench is behind a full-screen takeover, and a keyboard user
+     must not be able to Tab onto controls they cannot see and remove a world mid-presentation. -->
+<div class="app" inert={story.active}>
+	<TopBar onaddworld={addWorld} onplaystory={() => bench.playStory()} />
 	<TurboPill />
 
 	<div class="banner">
@@ -99,6 +103,10 @@
 
 	<FooterPill />
 </div>
+
+<!-- OUTSIDE the app, deliberately: the app above is `inert` while a film plays, and a takeover that
+     lived inside the thing it suppresses would suppress itself. -->
+<StoryMode />
 
 <style>
 	.app {

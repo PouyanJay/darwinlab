@@ -6,9 +6,11 @@
   role="status" so the progress is announced, not just drawn.
 -->
 <script lang="ts">
-	import { bench } from '$lib/state';
+	import { bench, story } from '$lib/state';
 
-	const target = $derived(bench.turboTarget);
+	// Hidden during a story: training cannot be under way then (playStory refuses to start one), and
+	// the film owns the screen regardless.
+	const target = $derived(story.active ? null : bench.turboTarget);
 </script>
 
 {#if target !== null}
