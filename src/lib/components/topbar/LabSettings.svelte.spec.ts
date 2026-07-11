@@ -8,7 +8,7 @@ import { DEFAULT_WORLDS, MAX_GENERATIONS } from '$lib/engine';
 afterEach(() => bench.destroy());
 
 /** Open the popover the way a user does — its contents do not exist in the DOM until it is shown. */
-const open = async (maxGenerations = MAX_GENERATIONS.default) => {
+const open = async (maxGenerations: number = MAX_GENERATIONS.default) => {
 	bench.init({ configs: [structuredClone(DEFAULT_WORLDS[2])], maxGenerations });
 	bench.togglePlay();
 	render(LabSettings);
