@@ -7,13 +7,8 @@
 -->
 <script lang="ts">
 	import Segmented from '../common/Segmented.svelte';
-	import { bench, story, type Speed } from '$lib/state';
-
-	const SPEEDS: { value: Speed; label: string }[] = [
-		{ value: 0.5, label: '½×' },
-		{ value: 1, label: '1×' },
-		{ value: 2, label: '2×' }
-	];
+	import TransportIcon from '../common/TransportIcon.svelte';
+	import { bench, story, SPEEDS } from '$lib/state';
 
 	const accent = $derived(story.source?.config.accent ?? '#4f56d3');
 
@@ -42,16 +37,7 @@
 			aria-label={bench.running ? 'pause story' : 'play story'}
 			onclick={() => bench.togglePlay()}
 		>
-			{#if bench.running}
-				<svg width="13" height="14" viewBox="0 0 10 12" aria-hidden="true">
-					<rect x="0" y="0" width="3.4" height="12" rx="1" fill="currentColor" />
-					<rect x="6.6" y="0" width="3.4" height="12" rx="1" fill="currentColor" />
-				</svg>
-			{:else}
-				<svg width="13" height="14" viewBox="0 0 10 12" aria-hidden="true">
-					<polygon points="0,0 10,6 0,12" fill="currentColor" />
-				</svg>
-			{/if}
+			<TransportIcon playing={bench.running} size={13} />
 		</button>
 
 		<button
@@ -113,10 +99,10 @@
 		width: 38px;
 		height: 38px;
 		padding: 0;
-		border: 1px solid rgba(255, 255, 255, 0.14);
+		border: 1px solid var(--story-line);
 		border-radius: 50%;
-		background: rgba(255, 255, 255, 0.06);
-		color: #f2f4fa;
+		background: var(--story-surface);
+		color: var(--story-ink);
 		font-size: 17px;
 		font-weight: var(--fw-semibold);
 		cursor: pointer;
@@ -124,7 +110,7 @@
 	}
 
 	.round:not(:disabled):hover {
-		background: rgba(255, 255, 255, 0.12);
+		background: var(--story-surface-hover);
 	}
 
 	.round:disabled {
@@ -145,11 +131,11 @@
 
 	/* The story runs on a dark stage, so the speed control's track has to come with it. */
 	.speed :global(.segmented) {
-		background: rgba(255, 255, 255, 0.08);
+		background: var(--story-line-soft);
 	}
 
 	.speed :global(button) {
-		color: rgba(242, 244, 250, 0.55);
+		color: var(--story-ink2);
 	}
 
 	.speed :global(.checked) {
@@ -169,7 +155,7 @@
 		padding: 0;
 		border: none;
 		border-radius: 3px;
-		background: rgba(255, 255, 255, 0.12);
+		background: var(--story-surface-hover);
 		cursor: pointer;
 		overflow: hidden;
 	}

@@ -9,7 +9,7 @@ import { expect, test, type Page } from '@playwright/test';
  * can stop the film, click one, and read its mind.
  */
 
-const story = (page: Page) => page.getByRole('region', { name: 'story mode' });
+const story = (page: Page) => page.getByRole('dialog', { name: 'story mode' });
 const caption = (page: Page) => story(page).locator('h1');
 const counter = (page: Page) => story(page).getByText(/scene \d+ of \d+/i);
 
@@ -39,13 +39,16 @@ test('the rail tags the sense each scene ADDS — the reason the scenes are in t
 	page
 }) => {
 	const rail = story(page).getByText('Brain inputs this world').locator('..');
+	// `exact` matters: each row also carries a screen-reader line ("wired in, new this scene") that
+	// contains the word, and an unscoped match would count it too.
+	const tags = rail.getByText('new', { exact: true });
 
-	await expect(rail.getByText('new')).toHaveCount(0); // scene 1 adds nothing; it IS the nothing
+	await expect(tags).toHaveCount(0); // scene 1 adds nothing; it IS the nothing
 
 	await page.getByRole('button', { name: 'scene 3' }).click();
 	await expect(caption(page)).toHaveText('Direction');
 	// exactly one sense is new here, and it is the one the whole product is about
-	await expect(rail.getByText('new')).toHaveCount(1);
+	await expect(tags).toHaveCount(1);
 	await expect(rail.getByText('Direction').locator('..')).toContainText('new');
 });
 
@@ -77,6 +80,21 @@ test('THE TOUR: it auto-advances through every scene and ends PAUSED on the last
 	await expect(counter(page)).toContainText('scene 5 of 5');
 });
 
+test('the arrows belong to the speed control while it has focus — the film must not jump', async ({
+	page
+}) => {
+	// A presenter changing pace with the arrow keys must not have the scene skip out from under
+	// them. The radio group owns its arrows; the film only takes them when nothing else wants them.
+	const speed = story(page).getByRole('radio', { name: '1×' });
+	await speed.click();
+	await expect(caption(page)).toHaveText('Blind drift');
+
+	await page.keyboard.press('ArrowRight');
+
+	await expect(story(page).getByRole('radio', { name: '2×' })).toBeChecked(); // the speed moved…
+	await expect(caption(page)).toHaveText('Blind drift'); // …and the film did not
+});
+
 test('the keyboard is the transport: arrows move, Space holds, Esc leaves', async ({ page }) => {
 	await page.keyboard.press('ArrowRight');
 	await expect(caption(page)).toHaveText('Distance');
@@ -104,18 +122,40 @@ test('the takeover TAKES focus — or Space would re-cut the film under the pres
 		page.evaluate(() => document.activeElement?.getAttribute('aria-label') ?? '');
 	expect(await focused()).toBe('story mode');
 
-	await page.getByRole('button', { name: 'next scene' }).click();
-	await expect(caption(page)).toHaveText('Distance');
-	await page.locator('section[aria-label="story mode"]').press(' ');
-
-	await expect(caption(page)).toHaveText('Distance'); // still on the scene it was on…
-	await expect(story(page).getByRole('button', { name: 'play story' })).toBeVisible(); // …and held
+	// NOT locator.press(): that FOCUSES its target before pressing, which would hand the film the
+	// focus the test is trying to prove it already has. Press the key at the page.
+	await page.keyboard.press(' ');
+	await expect(story(page).getByRole('button', { name: 'play story' })).toBeVisible(); // held
 
 	// and leaving hands focus back to where it came from
 	await page.keyboard.press('Escape');
 	await expect(story(page)).toBeHidden();
 	expect(await focused()).toBe('');
 	await expect(page.getByRole('button', { name: 'Play story' })).toBeFocused();
+});
+
+test('the bench behind the film is INERT — Tab cannot reach a control nobody can see', async ({
+	page
+}) => {
+	/*
+	 * Without this, a keyboard user tabbing during a film walks straight into the bench hidden behind
+	 * it — and Enter on an invisible "remove world" button removes a world, mid-presentation, with no
+	 * way to see it happen.
+	 */
+	const reachable: string[] = [];
+	for (let i = 0; i < 25; i++) {
+		await page.keyboard.press('Tab');
+		reachable.push(
+			await page.evaluate(() => {
+				const el = document.activeElement as HTMLElement | null;
+				if (!el || el === document.body) return 'body';
+				return el.closest('[aria-label="story mode"]') ? 'film' : 'BENCH';
+			})
+		);
+	}
+
+	expect(reachable, 'focus escaped the film into the bench behind it').not.toContain('BENCH');
+	expect(reachable, 'nothing in the film is tabbable at all').toContain('film');
 });
 
 test('a segment is a jump: the progress bar is the table of contents', async ({ page }) => {

@@ -41,21 +41,31 @@
 
 	/**
 	 * The keyboard IS the transport for anyone presenting this: Esc to get out, arrows to move
-	 * through the scenes, Space to hold on one. It stands down for a focused control, so Space on
-	 * the play button still means "press this button" (Phase 3's lesson).
+	 * through the scenes, Space to hold on one.
+	 *
+	 * But a shortcut must never take a key out of the hands of the control the user is actually on —
+	 * that was Phase 3's lesson, and it applies twice here, differently for each key:
+	 *
+	 *   Space   belongs to any focused BUTTON (it presses it) and to a radio (it picks it).
+	 *   Arrows  belong to the speed control — a radio group navigates with them. They do NOT belong
+	 *           to a button, so ‹ / › still move the film when the focus is sitting on one.
+	 *
+	 * Without the arrow guard, pressing → to go from 1× to 2× would ALSO skip the scene: the
+	 * presenter changes pace and the film jumps out from under them.
 	 */
 	function onkeydown(event: KeyboardEvent) {
 		if (!story.active) return;
 		const target = event.target as HTMLElement | null;
-		const onControl = target?.closest('button, input, [role="radio"]');
+		const takesArrows = target?.closest('[role="radio"], input, select, textarea');
+		const takesSpace = target?.closest('button, a, [role="radio"], input, select, textarea');
 
 		if (event.key === 'Escape') {
 			bench.exitStory();
-		} else if (event.key === 'ArrowRight') {
+		} else if (event.key === 'ArrowRight' && !takesArrows) {
 			story.next();
-		} else if (event.key === 'ArrowLeft') {
+		} else if (event.key === 'ArrowLeft' && !takesArrows) {
 			story.previous();
-		} else if (event.key === ' ' && !onControl) {
+		} else if (event.key === ' ' && !takesSpace) {
 			event.preventDefault();
 			bench.togglePlay();
 		} else {
@@ -68,9 +78,11 @@
 <svelte:window {onkeydown} />
 
 {#if story.active && story.entry && source}
-	<section
+	<div
 		bind:this={stage}
 		class="story"
+		role="dialog"
+		aria-modal="true"
 		aria-label="story mode"
 		tabindex="-1"
 		style:--scene-accent={accent}
@@ -112,10 +124,29 @@
 
 			<StoryTransport />
 		</footer>
-	</section>
+	</div>
 {/if}
 
 <style>
+	/*
+	 * The stage's own palette.
+	 *
+	 * Story mode is a FIXED dark stage — it does not follow the app's light/dark theme, because a
+	 * film is a film whichever way the room's lights are set. That is why these are not the usual
+	 * tokens. But they are still tokens: four components draw on this stage, and the same six
+	 * literals hand-copied between them is exactly the drift tokens.css exists to prevent. They
+	 * cascade, so the children just say var(--story-ink).
+	 */
+	.story {
+		--story-ink: #f2f4fa;
+		--story-ink2: rgba(242, 244, 250, 0.55);
+		--story-ink3: rgba(242, 244, 250, 0.42);
+		--story-line: rgba(255, 255, 255, 0.14);
+		--story-line-soft: rgba(255, 255, 255, 0.08);
+		--story-surface: rgba(255, 255, 255, 0.06);
+		--story-surface-hover: rgba(255, 255, 255, 0.12);
+	}
+
 	.story:focus {
 		outline: none; /* it is a screen, not a control — the film arriving is the signal */
 	}
@@ -126,7 +157,7 @@
 		z-index: var(--z-story);
 		display: flex;
 		flex-direction: column;
-		color: #f2f4fa;
+		color: var(--story-ink);
 	}
 
 	header {
@@ -138,24 +169,24 @@
 
 	.exit {
 		padding: var(--sp-3) 14px;
-		border: 1px solid rgba(255, 255, 255, 0.14);
+		border: 1px solid var(--story-line);
 		border-radius: var(--radius-control);
-		background: rgba(255, 255, 255, 0.06);
-		color: #f2f4fa;
+		background: var(--story-surface);
+		color: var(--story-ink);
 		font-size: var(--fs-body);
 		font-weight: var(--fw-semibold);
 		cursor: pointer;
 	}
 
 	.exit:hover {
-		background: rgba(255, 255, 255, 0.12);
+		background: var(--story-surface-hover);
 	}
 
 	/* The honesty line travels with the film. A presentation is exactly when it matters most. */
 	.disclaimer {
 		font-size: var(--fs-xs);
 		font-weight: var(--fw-medium);
-		color: rgba(242, 244, 250, 0.35);
+		color: var(--story-ink3);
 	}
 
 	.counter {
@@ -164,7 +195,7 @@
 		font-weight: var(--fw-semibold);
 		letter-spacing: 0.09em;
 		text-transform: uppercase;
-		color: rgba(242, 244, 250, 0.5);
+		color: var(--story-ink2);
 	}
 
 	.stage {
@@ -220,6 +251,6 @@
 		font-size: 14px;
 		line-height: 1.5;
 		text-wrap: pretty;
-		color: rgba(242, 244, 250, 0.66);
+		color: var(--story-ink2);
 	}
 </style>

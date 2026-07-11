@@ -333,10 +333,6 @@ class BenchStore {
 
 	clearSelection(): void {
 		this.#deselectEverywhere();
-		if (story.entry) {
-			story.entry.world.selFish = null;
-			story.entry.world.sense = null;
-		}
 		this.selection = null;
 	}
 
@@ -348,9 +344,10 @@ class BenchStore {
 	 * way to their target. Let the training land first.
 	 */
 	playStory(): boolean {
-		if (this.playback.training || !this.worlds.length) return false;
+		// story.start() refuses an empty bench, so ask IT first: clearing the selection before knowing
+		// whether the film can roll would drop the inspector for nothing.
+		if (this.playback.training || !story.start(this.worlds)) return false;
 		this.clearSelection();
-		if (!story.start(this.worlds)) return false;
 		this.playback.play();
 		return true;
 	}
@@ -412,16 +409,24 @@ class BenchStore {
 		if (this.playback.running) {
 			const { steps, dt } = subSteps(elapsed, this.playback.speed);
 			for (let i = 0; i < steps; i++) stepWorld(entry.world, dt);
-			// The scene's clock runs on SIM time, so ½×/2× slow down and speed up the film itself —
-			// the scene lasts as long as it takes the fish to live 18 seconds, not 18 of ours.
-			if (story.advance(elapsed * this.playback.speed)) {
-				if (story.isLastScene) this.playback.pause();
-				else story.next();
-			}
+			this.#advanceScene(elapsed);
 		}
 
 		entry.world.championFish = bestAliveFish(entry.world);
 		entry.stats.syncFrom(entry.world);
+	}
+
+	/**
+	 * Run the scene's clock and hand over when it is spent.
+	 *
+	 * The clock runs on SIM time, so ½× and 2× slow down and speed up the film itself: a scene lasts
+	 * as long as it takes the fish to live 18 seconds, not 18 of ours. The last scene does not hand
+	 * over — it stops, holding its final image.
+	 */
+	#advanceScene(elapsed: number): void {
+		if (!story.advance(elapsed * this.playback.speed)) return;
+		if (story.isLastScene) this.playback.pause();
+		else story.next();
 	}
 
 	#tickBench(elapsed: number): void {
@@ -456,9 +461,10 @@ class BenchStore {
 		this.#syncMind(world); // the panel opens populated, even when the sim is paused
 	}
 
-	/** There is one inspector, so at most one world may hold a selected fish. */
+	/** There is one inspector, so at most one world may hold a selected fish — the scene included. */
 	#deselectEverywhere(): void {
-		for (const world of this.#rawWorlds) {
+		const worlds = story.entry ? [...this.#rawWorlds, story.entry.world] : this.#rawWorlds;
+		for (const world of worlds) {
 			world.selFish = null;
 			world.sense = null;
 		}

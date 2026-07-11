@@ -63,7 +63,7 @@
 		margin: 0;
 		font-size: var(--fs-label);
 		letter-spacing: 0.1em;
-		color: rgba(242, 244, 250, 0.45);
+		color: var(--story-ink3);
 	}
 
 	.count {
@@ -78,13 +78,13 @@
 		font-size: 50px;
 		font-weight: var(--fw-semibold);
 		line-height: 1;
-		color: #fff;
+		color: var(--story-ink);
 	}
 
 	.count span {
 		font-size: var(--fs-body);
 		font-weight: var(--fw-medium);
-		color: rgba(242, 244, 250, 0.45);
+		color: var(--story-ink3);
 	}
 
 	.curve-head {
@@ -96,7 +96,7 @@
 	.curve-head b {
 		font-size: var(--fs-body);
 		font-weight: var(--fw-semibold);
-		color: #fff;
+		color: var(--story-ink);
 	}
 
 	.curve {
@@ -108,6 +108,6 @@
 		margin: 0;
 		font-size: var(--fs-sm);
 		line-height: 1.5;
-		color: rgba(242, 244, 250, 0.42);
+		color: var(--story-ink3);
 	}
 </style>

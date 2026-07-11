@@ -13,7 +13,8 @@
 	import Segmented from '../common/Segmented.svelte';
 	import LogoMark from './LogoMark.svelte';
 	import LabSettings from './LabSettings.svelte';
-	import { bench, theme, type Speed } from '$lib/state';
+	import TransportIcon from '../common/TransportIcon.svelte';
+	import { bench, theme, SPEEDS } from '$lib/state';
 
 	interface Props {
 		/** Wired in Phase 8. Until story mode exists, the button simply isn't there. */
@@ -25,12 +26,6 @@
 
 	/** How far a "Train" burst fast-forwards when no max generation is set. */
 	const TRAIN_BURST = 25;
-
-	const SPEEDS: { value: Speed; label: string }[] = [
-		{ value: 0.5, label: '½×' },
-		{ value: 1, label: '1×' },
-		{ value: 2, label: '2×' }
-	];
 
 	/**
 	 * Publish the bar's REAL height as `--topbar-height`.
@@ -88,18 +83,8 @@
 	     sighted user reads ("Pause") with a different one AT hears, which is exactly the mismatch
 	     WCAG's "label in name" is about. Only the glyph-only buttons below get one. -->
 	<Button variant="primary" style="min-width: 94px" onclick={() => bench.togglePlay()}>
-		{#if bench.running}
-			<svg width="10" height="11" viewBox="0 0 10 12" aria-hidden="true">
-				<rect x="0" y="0" width="3.4" height="12" rx="1" fill="currentColor" />
-				<rect x="6.6" y="0" width="3.4" height="12" rx="1" fill="currentColor" />
-			</svg>
-			<span>Pause</span>
-		{:else}
-			<svg width="10" height="11" viewBox="0 0 10 12" aria-hidden="true">
-				<polygon points="0,0 10,6 0,12" fill="currentColor" />
-			</svg>
-			<span>Evolve</span>
-		{/if}
+		<TransportIcon playing={bench.running} />
+		<span>{bench.running ? 'Pause' : 'Evolve'}</span>
 	</Button>
 
 	<Segmented
@@ -126,9 +111,7 @@
 
 	{#if onplaystory}
 		<Button variant="accent" disabled={training} onclick={onplaystory}>
-			<svg width="9" height="10" viewBox="0 0 10 12" aria-hidden="true">
-				<polygon points="0,0 10,6 0,12" fill="currentColor" />
-			</svg>
+			<TransportIcon playing={false} size={9} />
 			<span>Play story</span>
 		</Button>
 	{/if}

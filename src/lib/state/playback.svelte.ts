@@ -7,6 +7,14 @@ import { createSimLoop, type SimLoop } from '../sim/loop';
 
 export type Speed = 0.5 | 1 | 2;
 
+/** The speeds the app offers, as the controls that offer them present them. One list, two consumers:
+ *  the bench's top bar and the story's transport. */
+export const SPEEDS: { value: Speed; label: string }[] = [
+	{ value: 0.5, label: '½×' },
+	{ value: 1, label: '1×' },
+	{ value: 2, label: '2×' }
+];
+
 export class Playback {
 	running = $state(true);
 	speed = $state<Speed>(1);

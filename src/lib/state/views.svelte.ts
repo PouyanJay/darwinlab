@@ -135,15 +135,6 @@ export class WorldConfigView {
 
 export interface WorldEntry {
 	readonly id: string;
-	/** The raw engine world — deliberately NOT reactive (see file header). */
-	readonly world: World;
-	readonly stats: WorldStats;
-	/** Reactive view of `world.cfg` — what components bind to. */
-	readonly config: WorldConfigView;
-}
-
-export interface WorldEntry {
-	readonly id: string;
 	/** The raw engine world — deliberately NOT reactive (see above). */
 	readonly world: World;
 	readonly stats: WorldStats;

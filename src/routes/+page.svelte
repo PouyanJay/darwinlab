@@ -75,7 +75,9 @@
 <svelte:head><title>Darwin Lab</title></svelte:head>
 <svelte:window {onkeydown} />
 
-<div class="app">
+<!-- inert while a film is playing: the bench is behind a full-screen takeover, and a keyboard user
+     must not be able to Tab onto controls they cannot see and remove a world mid-presentation. -->
+<div class="app" inert={story.active}>
 	<TopBar onaddworld={addWorld} onplaystory={() => bench.playStory()} />
 	<TurboPill />
 
@@ -99,10 +101,12 @@
 		<BrainInspector selection={bench.selection} entry={inspecting} />
 	{/if}
 
-	<StoryMode />
-
 	<FooterPill />
 </div>
+
+<!-- OUTSIDE the app, deliberately: the app above is `inert` while a film plays, and a takeover that
+     lived inside the thing it suppresses would suppress itself. -->
+<StoryMode />
 
 <style>
 	.app {

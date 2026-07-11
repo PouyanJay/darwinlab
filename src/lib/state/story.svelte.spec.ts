@@ -119,7 +119,9 @@ describe('story — the film runs itself', () => {
 		bench.setSpeed(2);
 		frame(1 / 60, 60); // one real second
 
-		expect(story.elapsed).toBeCloseTo(2, 1); // two seconds of story
+		// Tight on purpose: 60 fixed ticks of 1/60 × 2 is deterministic to a rounding error, so any
+		// slack here is slack a mis-applied multiplier could hide inside.
+		expect(story.elapsed).toBeCloseTo(2, 5);
 	});
 
 	it('does not advance the scene while paused', () => {
