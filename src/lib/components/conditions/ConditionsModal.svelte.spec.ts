@@ -7,9 +7,18 @@ import { DEFAULT_WORLDS, ACCENTS } from '$lib/engine';
 
 afterEach(() => bench.destroy());
 
-/** The dialog edits a REAL world through the store — that wiring is most of what it is. */
+/**
+ * The dialog edits a REAL world through the store — that wiring is most of what it is.
+ *
+ * PAUSED, though. `init` starts the genuine sim loop, and a running world has two sharks eating
+ * fish in the background: `fish.length` would then be a moving target, and `fish[0]` could be
+ * swallowed mid-test. Assertions about what the DIALOG did would fail for reasons that have nothing
+ * to do with the dialog. Pausing freezes the world so the only thing that can change it is the edit
+ * under test.
+ */
 const open = (onclose = vi.fn()) => {
 	bench.init({ configs: [structuredClone(DEFAULT_WORLDS[2])] }); // "Direction"
+	bench.togglePlay();
 	const entry = bench.worlds[0];
 	render(ConditionsModal, { entry, onclose });
 	return { entry, world: entry.world, onclose };

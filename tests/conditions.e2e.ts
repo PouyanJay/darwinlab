@@ -130,7 +130,7 @@ test('it is a real modal: Esc closes it, and it traps focus while open', async (
 });
 
 test('closing and reopening shows the world as it now is, not as it was', async ({ page }) => {
-	await page.getByRole('button', { name: 'more prey' }).click();
+	await dialog(page).getByRole('button', { name: 'more prey' }).click();
 	await dialog(page).getByRole('button', { name: 'close' }).click();
 	await expect(dialog(page)).toBeHidden();
 
