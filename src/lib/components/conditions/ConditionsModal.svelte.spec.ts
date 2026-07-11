@@ -57,10 +57,11 @@ describe('ConditionsModal', () => {
 		expect(world.cfg.senses.dir).toBe(false);
 	});
 
-	it('the accent swatches are radios, so the row is reachable without a mouse', async () => {
+	it('the accent swatches are radios named by colour, so the row is usable without eyes or a mouse', async () => {
 		const { world } = open();
 
-		const violet = page.getByRole('radio', { name: ACCENTS[5] });
+		// "violet", not "#8a5ad8" — a screen reader spells a hex out digit by digit
+		const violet = page.getByRole('radio', { name: 'violet' });
 		await violet.click();
 
 		expect(world.cfg.accent).toBe(ACCENTS[5]);

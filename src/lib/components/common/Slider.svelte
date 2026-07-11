@@ -69,7 +69,7 @@
 	</span>
 	<input
 		type="range"
-		class={tone}
+		class:danger={tone === 'danger'}
 		style:--progress="{progress}%"
 		{min}
 		{max}

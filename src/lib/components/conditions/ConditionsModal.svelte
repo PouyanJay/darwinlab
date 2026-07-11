@@ -16,7 +16,7 @@
 	import { SENSES } from '../senses';
 	import { bench } from '$lib/state';
 	import type { WorldEntry } from '$lib/state';
-	import { ACCENTS, WORLD_LIMITS } from '$lib/engine';
+	import { ACCENTS, ACCENT_NAMES, WORLD_LIMITS } from '$lib/engine';
 
 	interface Props {
 		entry: WorldEntry;
@@ -41,113 +41,111 @@
 	accent={config.accent}
 	{onclose}
 >
-	{#snippet children()}
-		<label class="field">
-			<span class="field-label">World name</span>
-			<input
-				type="text"
-				value={config.name}
-				oninput={(event) => bench.renameWorld(id, event.currentTarget.value)}
-			/>
-		</label>
+	<label class="field">
+		<span class="field-label">World name</span>
+		<input
+			type="text"
+			value={config.name}
+			oninput={(event) => bench.renameWorld(id, event.currentTarget.value)}
+		/>
+	</label>
 
-		<label class="field">
-			<span class="field-label">Story caption</span>
-			<textarea
-				rows="2"
-				placeholder="the narration shown when this world is on screen in story mode"
-				value={config.caption}
-				oninput={(event) => bench.setCaption(id, event.currentTarget.value)}></textarea>
-		</label>
+	<label class="field">
+		<span class="field-label">Story caption</span>
+		<textarea
+			rows="2"
+			placeholder="the narration shown when this world is on screen in story mode"
+			value={config.caption}
+			oninput={(event) => bench.setCaption(id, event.currentTarget.value)}></textarea>
+	</label>
 
-		<div class="pair">
-			<Stepper
-				label="Prey"
-				value={config.prey}
-				{...WORLD_LIMITS.prey}
-				onchange={(value) => bench.setCondition(id, 'prey', value)}
-			/>
-			<Stepper
-				label="Predators"
-				value={config.preds}
-				{...WORLD_LIMITS.preds}
-				onchange={(value) => bench.setCondition(id, 'preds', value)}
-			/>
-		</div>
+	<div class="pair">
+		<Stepper
+			label="Prey"
+			value={config.prey}
+			{...WORLD_LIMITS.prey}
+			onchange={(value) => bench.setCondition(id, 'prey', value)}
+		/>
+		<Stepper
+			label="Predators"
+			value={config.preds}
+			{...WORLD_LIMITS.preds}
+			onchange={(value) => bench.setCondition(id, 'preds', value)}
+		/>
+	</div>
 
-		<div class="sliders">
-			<Slider
-				label="Container width"
-				value={config.bw}
-				{...WORLD_LIMITS.bw}
-				format={px}
-				onchange={(value) => bench.setCondition(id, 'bw', value)}
-			/>
-			<Slider
-				label="Container height"
-				value={config.bh}
-				{...WORLD_LIMITS.bh}
-				format={px}
-				onchange={(value) => bench.setCondition(id, 'bh', value)}
-			/>
-			<Slider
-				label="Predator speed"
-				value={config.predSpeed}
-				{...WORLD_LIMITS.predSpeed}
-				format={times}
-				tone="danger"
-				onchange={(value) => bench.setCondition(id, 'predSpeed', value)}
-			/>
-			<Slider
-				label="Prey vision range"
-				value={config.vision}
-				{...WORLD_LIMITS.vision}
-				format={px}
-				onchange={(value) => bench.setCondition(id, 'vision', value)}
-			/>
-			<Slider
-				label="Mutation rate"
-				hint="(genetic drift per birth)"
-				value={config.mutation}
-				{...WORLD_LIMITS.mutation}
-				format={rate}
-				onchange={(value) => bench.setCondition(id, 'mutation', value)}
-			/>
-		</div>
+	<div class="sliders">
+		<Slider
+			label="Container width"
+			value={config.bw}
+			{...WORLD_LIMITS.bw}
+			format={px}
+			onchange={(value) => bench.setCondition(id, 'bw', value)}
+		/>
+		<Slider
+			label="Container height"
+			value={config.bh}
+			{...WORLD_LIMITS.bh}
+			format={px}
+			onchange={(value) => bench.setCondition(id, 'bh', value)}
+		/>
+		<Slider
+			label="Predator speed"
+			value={config.predSpeed}
+			{...WORLD_LIMITS.predSpeed}
+			format={times}
+			tone="danger"
+			onchange={(value) => bench.setCondition(id, 'predSpeed', value)}
+		/>
+		<Slider
+			label="Prey vision range"
+			value={config.vision}
+			{...WORLD_LIMITS.vision}
+			format={px}
+			onchange={(value) => bench.setCondition(id, 'vision', value)}
+		/>
+		<Slider
+			label="Mutation rate"
+			hint="(genetic drift per birth)"
+			value={config.mutation}
+			{...WORLD_LIMITS.mutation}
+			format={rate}
+			onchange={(value) => bench.setCondition(id, 'mutation', value)}
+		/>
+	</div>
 
-		<fieldset class="senses">
-			<legend class="field-label">Senses — the brain's input neurons</legend>
-			{#each SENSES as sense (sense.key)}
-				<label class="sense">
-					<input
-						type="checkbox"
-						checked={config.senses[sense.key]}
-						onchange={(event) => bench.setSense(id, sense.key, event.currentTarget.checked)}
-					/>
-					<span>
-						<b>{sense.name}</b>
-						<span class="description">{sense.description}</span>
-					</span>
-				</label>
-			{/each}
-		</fieldset>
+	<fieldset class="senses">
+		<legend class="field-label">Senses — the brain's input neurons</legend>
+		{#each SENSES as sense (sense.key)}
+			<label class="sense">
+				<input
+					type="checkbox"
+					checked={config.senses[sense.key]}
+					onchange={(event) => bench.setSense(id, sense.key, event.currentTarget.checked)}
+				/>
+				<span>
+					<b>{sense.name}</b>
+					<span class="description">{sense.description}</span>
+				</span>
+			</label>
+		{/each}
+	</fieldset>
 
-		<fieldset class="accents">
-			<legend class="field-label">Accent</legend>
-			{#each ACCENTS as accent (accent)}
-				<label class="swatch" style:--swatch={accent}>
-					<input
-						type="radio"
-						name="accent-{id}"
-						value={accent}
-						checked={config.accent === accent}
-						onchange={() => bench.setAccent(id, accent)}
-					/>
-					<span class="visually-hidden">{accent}</span>
-				</label>
-			{/each}
-		</fieldset>
-	{/snippet}
+	<fieldset class="accents">
+		<legend class="field-label">Accent</legend>
+		{#each ACCENTS as accent (accent)}
+			<label class="swatch" style:--swatch={accent}>
+				<input
+					type="radio"
+					name="accent-{id}"
+					value={accent}
+					checked={config.accent === accent}
+					onchange={() => bench.setAccent(id, accent)}
+				/>
+				<span class="visually-hidden">{ACCENT_NAMES[accent]}</span>
+			</label>
+		{/each}
+	</fieldset>
 </Modal>
 
 <style>
@@ -284,6 +282,6 @@
 
 	.swatch:has(input:focus-visible) {
 		outline: var(--focus-ring);
-		outline-offset: 3px;
+		outline-offset: var(--focus-offset);
 	}
 </style>

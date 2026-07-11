@@ -126,3 +126,18 @@ export const WORLD_LIMITS = {
 
 /** The numeric conditions a user may edit — the keys of WORLD_LIMITS. */
 export type NumericCondition = keyof typeof WORLD_LIMITS;
+
+/**
+ * What each accent is called, for anyone who cannot see it.
+ *
+ * The swatch row in the Conditions dialog is a set of coloured circles; without this its accessible
+ * name would be the raw hex, which a screen reader spells out as "hash four eff five six dee three".
+ */
+export const ACCENT_NAMES: Record<string, string> = {
+	'#64748b': 'slate',
+	'#4f56d3': 'indigo',
+	'#0e9488': 'teal',
+	'#d88a2c': 'amber',
+	'#e8604c': 'coral',
+	'#8a5ad8': 'violet'
+};
