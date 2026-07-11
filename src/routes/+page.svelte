@@ -1,23 +1,26 @@
 <!--
-  Phase 2 proof page — the walking skeleton for the bench.
+  The bench page — the app's only screen.
 
-  Proves the whole path works end-to-end: engine → visibility-safe loop → runes store →
-  DPR-aware canvas → pixels, with live controls. It is deliberately unstyled scaffolding;
-  Phase 3 replaces it with the real design system and Phase 4 with the true bench grid.
+  Phase 3 builds the SHELL around the bench: top bar, field note, turbo pill, footer. What sits in
+  the middle is still the Phase 2 proof — the prewarmed world in a plain tile — because the real
+  world tile (header, sense pills, curves, conditions, decay) is Phase 4's job. When that lands it
+  replaces `<section class="tile">` and nothing else on this page has to move.
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import TopBar from '$lib/components/topbar/TopBar.svelte';
+	import TurboPill from '$lib/components/topbar/TurboPill.svelte';
+	import FieldNote from '$lib/components/bench/FieldNote.svelte';
 	import Tank from '$lib/components/bench/Tank.svelte';
-	import { bench, theme, type Speed } from '$lib/state';
-	import { DEFAULT_WORLDS } from '$lib/engine';
+	import Chip from '$lib/components/common/Chip.svelte';
+	import FooterPill from '$lib/components/common/FooterPill.svelte';
+	import { bench } from '$lib/state';
+	import { DEFAULT_WORLDS, newWorldConfig } from '$lib/engine';
 
 	const PREWARM_GENERATIONS = 15;
-	const SPEEDS: Speed[] = [0.5, 1, 2];
-	const speedLabel = (s: Speed) => (s === 0.5 ? '½×' : `${s}×`);
 
 	onMount(() => {
-		theme.init();
-		// Phase 2 proves one world end-to-end; the full 5-world bench grid is Phase 4.
+		// Phase 2 proved one world end-to-end; the five-world default bench is Phase 4.
 		bench.init({
 			configs: [DEFAULT_WORLDS[2]], // "Direction" — the sense that actually pays
 			prewarmGenerations: PREWARM_GENERATIONS
@@ -25,224 +28,138 @@
 		return () => bench.destroy();
 	});
 
-	const entry = $derived(bench.worlds[0]);
+	function addWorld() {
+		bench.addWorld(newWorldConfig(`World ${bench.worlds.length + 1}`, bench.nextAccent()));
+	}
+
+	/** Space plays/pauses — but not while someone is typing into a field. */
+	function onkeydown(event: KeyboardEvent) {
+		const target = event.target as HTMLElement | null;
+		if (target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) return;
+		if (event.key !== ' ') return;
+		event.preventDefault();
+		bench.togglePlay();
+	}
 </script>
 
 <svelte:head><title>Darwin Lab</title></svelte:head>
+<svelte:window {onkeydown} />
 
-<!-- Space toggles play/pause, unless the user is typing. -->
-<svelte:window
-	onkeydown={(e) => {
-		const el = e.target as HTMLElement | null;
-		if (el && ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName)) return;
-		if (e.key === ' ') {
-			e.preventDefault();
-			bench.togglePlay();
-		}
-	}}
-/>
+<div class="app">
+	<TopBar onaddworld={addWorld} />
+	<TurboPill />
 
-<main>
-	<header>
-		<h1>Darwin Lab</h1>
-		<span class="chip">Phase 2 · sim runtime</span>
+	<div class="banner">
+		<FieldNote />
+	</div>
 
-		<div class="spacer"></div>
+	<main>
+		{#each bench.worlds as entry (entry.id)}
+			<section class="tile">
+				<header>
+					<b class="name">{entry.world.cfg.name}</b>
+					<Chip tabular>Gen {entry.stats.gen}</Chip>
+					<div class="spacer"></div>
+					<span class="stat">
+						<span class="eyebrow">alive</span>
+						<span class="value">
+							<b class="tabular" data-testid="alive">{entry.stats.alive}</b>
+							<b class="eaten tabular" data-testid="eaten">−{entry.stats.eaten}</b>
+						</span>
+					</span>
+					<span class="stat">
+						<span class="eyebrow">survival</span>
+						<span class="value">
+							<b class="tabular" data-testid="survival">{entry.stats.survivalPct}%</b>
+						</span>
+					</span>
+				</header>
 
-		<span class="readout tabular">
-			<b data-testid="generations">{bench.generationsEvolved}</b> generations evolved
-		</span>
+				<div class="tank">
+					<Tank {entry} />
+				</div>
+			</section>
+		{/each}
+	</main>
 
-		<button class="primary" onclick={() => bench.togglePlay()}>
-			{bench.running ? 'Pause' : 'Evolve'}
-		</button>
-
-		<div class="segmented" role="group" aria-label="simulation speed">
-			{#each SPEEDS as s (s)}
-				<button
-					class:selected={bench.speed === s}
-					aria-pressed={bench.speed === s}
-					onclick={() => bench.setSpeed(s)}
-				>
-					{speedLabel(s)}
-				</button>
-			{/each}
-		</div>
-
-		<button onclick={() => bench.trainTo(bench.generationsEvolved + 25)}>⏩ Train +25 gens</button>
-		<button onclick={() => theme.toggle()} aria-label="switch theme">
-			{theme.name === 'light' ? '◐' : '◑'}
-		</button>
-	</header>
-
-	{#if bench.turboTarget !== null}
-		<p class="turbo" role="status" data-testid="turbo">
-			training to generation {bench.turboTarget}…
-		</p>
-	{/if}
-
-	{#if entry}
-		<section class="tile">
-			<div class="tile-head">
-				<b>{entry.world.cfg.name}</b>
-				<span class="chip tabular">Gen {entry.stats.gen}</span>
-				<div class="spacer"></div>
-				<span class="stat tabular">
-					<span class="muted">alive</span>
-					<b data-testid="alive">{entry.stats.alive}</b>
-					<b class="eaten" data-testid="eaten">−{entry.stats.eaten}</b>
-				</span>
-				<span class="stat tabular">
-					<span class="muted">survival</span>
-					<b data-testid="survival">{entry.stats.survivalPct}%</b>
-				</span>
-			</div>
-
-			<div class="tank">
-				<Tank {entry} />
-			</div>
-		</section>
-	{/if}
-
-	<p class="footnote">real neuroevolution · a teaching caricature, not biology</p>
-</main>
+	<FooterPill />
+</div>
 
 <style>
-	main {
+	.app {
+		display: flex;
+		flex-direction: column;
 		min-height: 100vh;
-		padding: 16px 20px 40px;
+	}
+
+	.banner {
+		margin: var(--sp-6) var(--sp-8) 0;
+	}
+
+	main {
+		flex: 1;
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+		gap: var(--sp-7);
+		align-content: start;
+		padding: var(--sp-7) var(--sp-8) 78px; /* the footer pill sits in that bottom margin */
+	}
+
+	.tile {
+		display: flex;
+		flex-direction: column;
+		border: 1px solid var(--line);
+		border-radius: var(--radius-card);
+		background: var(--panel);
+		box-shadow: var(--shadow);
+		overflow: hidden;
+		animation: fade-up var(--dur-slow) var(--ease) both;
+		transition: transform var(--dur) var(--ease);
+	}
+
+	.tile:hover {
+		transform: translateY(-2px);
 	}
 
 	header {
 		display: flex;
 		align-items: center;
-		gap: 10px;
-		flex-wrap: wrap;
-		padding-bottom: 14px;
-		border-bottom: 1px solid var(--line);
+		gap: 9px;
+		padding: var(--sp-4) var(--sp-5) 7px;
 	}
 
-	h1 {
-		margin: 0;
-		font-size: 18px;
-		letter-spacing: -0.01em;
+	.name {
+		font-family: var(--font-display);
+		font-size: var(--fs-name);
+		font-weight: var(--fw-semibold);
 	}
 
 	.spacer {
 		flex: 1;
 	}
 
-	.chip,
-	.readout {
-		font-size: 11.5px;
-		color: var(--ink2);
-		background: var(--chip);
-		padding: 4px 8px;
-		border-radius: 20px;
-	}
-
-	.readout b {
-		color: var(--ink);
-	}
-
-	button {
-		font: inherit;
-		font-size: 12.5px;
-		font-weight: 600;
-		padding: 7px 12px;
-		border: 1px solid var(--line);
-		border-radius: 10px;
-		background: var(--panel);
-		color: var(--ink);
-		cursor: pointer;
-	}
-
-	button:hover {
-		background: var(--chip);
-	}
-
-	button:focus-visible {
-		outline: 2px solid var(--accent);
-		outline-offset: 2px;
-	}
-
-	button.primary {
-		background: var(--btn);
-		color: var(--btnink);
-		border-color: transparent;
-		min-width: 88px;
-	}
-
-	.segmented {
-		display: flex;
-		gap: 2px;
-		padding: 3px;
-		background: var(--chip);
-		border-radius: 10px;
-	}
-
-	.segmented button {
-		border: none;
-		background: transparent;
-		padding: 4px 10px;
-	}
-
-	.segmented button.selected {
-		background: var(--panel);
-		box-shadow: var(--shadow);
-	}
-
-	.turbo {
-		margin: 12px 0 0;
-		font-size: 12px;
-		color: var(--ink2);
-	}
-
-	.tile {
-		margin-top: 16px;
-		background: var(--panel);
-		border: 1px solid var(--line);
-		border-radius: 20px;
-		box-shadow: var(--shadow);
-		overflow: hidden;
-		max-width: 760px;
-	}
-
-	.tile-head {
-		display: flex;
-		align-items: center;
-		gap: 10px;
-		padding: 12px 15px;
-	}
-
 	.stat {
-		display: inline-flex;
+		display: flex;
+		flex-direction: column;
+		gap: 1px;
+	}
+
+	.value {
+		display: flex;
 		align-items: baseline;
 		gap: 5px;
-		font-size: 13px;
-	}
-
-	.muted {
-		font-size: 9.5px;
-		letter-spacing: 0.05em;
-		text-transform: uppercase;
-		color: var(--ink3);
+		font-size: var(--fs-stat);
+		font-weight: var(--fw-semibold);
 	}
 
 	.eaten {
+		font-size: var(--fs-sm);
 		color: var(--danger);
-		font-size: 11px;
 	}
 
 	/* The tank owns its own height; the canvas fills it. */
 	.tank {
-		height: 340px;
+		height: 300px;
 		margin: 0 9px 12px;
-	}
-
-	.footnote {
-		margin-top: 24px;
-		font-size: 10.5px;
-		color: var(--ink3);
 	}
 </style>

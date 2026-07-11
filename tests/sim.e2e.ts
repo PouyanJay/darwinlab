@@ -102,9 +102,10 @@ test('pause really stops the simulation, and evolve resumes it', async ({ page }
 });
 
 test('the speed control is wired and keeps the sim running', async ({ page }) => {
-	// the exact ½/1/2× sub-step maths is pinned in loop.spec.ts; here we prove the wiring
-	await page.getByRole('button', { name: '2×' }).click();
-	await expect(page.getByRole('button', { name: '2×' })).toHaveAttribute('aria-pressed', 'true');
+	// the exact ½/1/2× sub-step maths is pinned in loop.spec.ts; here we prove the wiring.
+	// The control is a radio group (exactly one speed is always chosen) — see Segmented.svelte.
+	await page.getByRole('radio', { name: '2×' }).click();
+	await expect(page.getByRole('radio', { name: '2×' })).toHaveAttribute('aria-checked', 'true');
 
 	const before = await fingerprint(page);
 	await expect.poll(() => fingerprint(page), { timeout: 5000 }).not.toBe(before);
