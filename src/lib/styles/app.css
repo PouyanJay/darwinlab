@@ -1,0 +1,6 @@
+/*
+ * Global app styles — resets, base typography, font-face wiring.
+ * Imported once from src/routes/+layout.svelte.
+ *
+ * TODO(styling): reset + Inter/Bricolage setup during the UI build.
+ */

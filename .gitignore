@@ -141,3 +141,21 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# Claude Code
+.claude/
+CLAUDE.md
+
+# macOS
+.DS_Store
+
+# SvelteKit / adapter-static
+/build
+/.svelte-kit
+.vercel
+.netlify
+.wrangler
+
+# Playwright
+test-results
+playwright-report

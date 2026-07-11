@@ -1,0 +1,12 @@
+/*
+ * Design tokens — the two themes as CSS custom properties (README §6).
+ *
+ * Light ("sunlit water") is default; dark ("dark-magenta" / V4) overrides on
+ * :root[data-theme='dark']. The canvas palettes in `$lib/render/theme.ts` are a
+ * SEPARATE copy and must stay in sync with the values here.
+ *
+ * Fonts: Bricolage Grotesque (display) + Inter (UI). Numeric stats: tabular-nums.
+ *
+ * TODO(styling): fill in --bgfx/panel/ink/accent/danger/gold/etc. from README §6
+ * when we build the UI. Kept empty here to respect the tooling-only scope.
+ */
