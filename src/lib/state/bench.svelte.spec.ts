@@ -419,6 +419,25 @@ describe('bench store — selection', () => {
 		expect(world.selFish).toBeNull();
 	});
 
+	it('lets go of a fish the moment a shark eats it — the inspector cannot outlive its subject', () => {
+		// A cramped tank with three sharks: this fish is going to be caught, and when it is, the panel
+		// showing its "live" mind has nothing left to show.
+		bench.init({
+			configs: [{ ...structuredClone(DEFAULT_WORLDS[0]), prey: 4, preds: 3, bw: 300, bh: 200 }]
+		});
+		const { id, world } = bench.worlds[0];
+		const victim = world.fish[0];
+		bench.select(id, { type: 'fish', obj: victim });
+
+		let steps = 0;
+		while (world.fish.includes(victim) && steps++ < 20_000) frame(1 / 60);
+		expect(world.fish).not.toContain(victim); // it really got eaten
+		frame();
+
+		expect(bench.selection).toBeNull();
+		expect(world.selFish).toBeNull();
+	});
+
 	it('lets go of a selection whose world is removed', () => {
 		init(2);
 		const [first] = bench.worlds;
