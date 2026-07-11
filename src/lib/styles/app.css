@@ -1,6 +1,30 @@
 /*
- * Global app styles — resets, base typography, font-face wiring.
- * Imported once from src/routes/+layout.svelte.
- *
- * TODO(styling): reset + Inter/Bricolage setup during the UI build.
+ * Global app styles — reset + base typography.
+ * Phase 3 owns the full type scale and the Bricolage/Inter font loading.
  */
+
+* {
+	box-sizing: border-box;
+}
+
+body {
+	margin: 0;
+	background: var(--bgfx);
+	color: var(--ink);
+	font-family: Inter, system-ui, sans-serif;
+	-webkit-font-smoothing: antialiased;
+}
+
+/* Numeric stats never jitter as digits change. */
+.tabular {
+	font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation: none !important;
+		transition: none !important;
+	}
+}
