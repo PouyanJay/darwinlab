@@ -17,21 +17,23 @@
 	import { MAX_GENERATIONS } from '$lib/engine';
 
 	const limit = $derived(bench.maxGenerations);
-	const label = $derived(limit === 0 ? 'never' : `gen ${limit}`);
+
+	/** "never" is not a smaller number than 5 — it is a different answer, and it reads like one. */
+	const describe = (generation: number) => (generation === 0 ? 'never' : `gen ${generation}`);
 </script>
 
 <Button popovertarget="lab-settings" aria-label="lab settings" title="lab settings">
 	<span aria-hidden="true">⚙</span>
 </Button>
 
-<div popover id="lab-settings" class="panel">
-	<h2>Lab settings</h2>
+<div popover id="lab-settings" class="panel" aria-labelledby="lab-settings-title">
+	<h2 id="lab-settings-title">Lab settings</h2>
 
 	<Slider
 		label="Deploy at"
 		value={limit}
 		{...MAX_GENERATIONS}
-		format={() => label}
+		format={describe}
 		onchange={(value) => bench.setMaxGenerations(value)}
 	/>
 
