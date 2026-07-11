@@ -92,6 +92,32 @@ test('the keyboard is the transport: arrows move, Space holds, Esc leaves', asyn
 	await expect(page.locator('section[aria-label^="world"]')).toHaveCount(5); // back on the bench
 });
 
+test('the takeover TAKES focus — or Space would re-cut the film under the presenter', async ({
+	page
+}) => {
+	/*
+	 * The bug this guards was worse than "the key does nothing". Focus stayed on the "Play story"
+	 * button in the top bar, now hidden behind a full-screen film — so Space pressed THAT button
+	 * again and restarted the story from scene one, mid-presentation.
+	 */
+	const focused = () =>
+		page.evaluate(() => document.activeElement?.getAttribute('aria-label') ?? '');
+	expect(await focused()).toBe('story mode');
+
+	await page.getByRole('button', { name: 'next scene' }).click();
+	await expect(caption(page)).toHaveText('Distance');
+	await page.locator('section[aria-label="story mode"]').press(' ');
+
+	await expect(caption(page)).toHaveText('Distance'); // still on the scene it was on…
+	await expect(story(page).getByRole('button', { name: 'play story' })).toBeVisible(); // …and held
+
+	// and leaving hands focus back to where it came from
+	await page.keyboard.press('Escape');
+	await expect(story(page)).toBeHidden();
+	expect(await focused()).toBe('');
+	await expect(page.getByRole('button', { name: 'Play story' })).toBeFocused();
+});
+
 test('a segment is a jump: the progress bar is the table of contents', async ({ page }) => {
 	await page.getByRole('button', { name: 'scene 5' }).click();
 

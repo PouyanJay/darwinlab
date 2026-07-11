@@ -133,6 +133,36 @@ describe('story — the film runs itself', () => {
 	});
 });
 
+describe('story — it will not roll over a moving bench', () => {
+	it('refuses to start while the bench is TRAINING, rather than stranding the turbo', () => {
+		// A story does not advance the bench, so a turbo burst caught mid-flight would simply hang:
+		// the pill spinning behind the film, the worlds frozen part way to their target.
+		bench.init({ configs: DEFAULT_WORLDS.slice(0, 2), prewarmGenerations: 5, rng: seededRng(3) });
+		expect(bench.turboTarget).not.toBeNull();
+
+		const started = bench.playStory();
+
+		expect(started).toBe(false);
+		expect(story.active).toBe(false);
+	});
+
+	it('rolls once the training has landed', () => {
+		bench.init({ configs: DEFAULT_WORLDS.slice(0, 2), prewarmGenerations: 2, rng: seededRng(3) });
+		for (let i = 0; i < 2000 && bench.turboTarget !== null; i++) frame();
+		expect(bench.turboTarget).toBeNull();
+
+		expect(bench.playStory()).toBe(true);
+		expect(story.active).toBe(true);
+	});
+
+	it('has nothing to tell a story about when the bench is empty', () => {
+		bench.init({ configs: [] });
+
+		expect(bench.playStory()).toBe(false);
+		expect(story.active).toBe(false);
+	});
+});
+
 describe('story — the transport', () => {
 	it('jumps, and clamps to the film it actually has', () => {
 		openBench(3);
