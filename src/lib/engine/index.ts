@@ -18,3 +18,4 @@ export * from './types';
 export * from './network';
 export * from './genetics';
 export * from './sensing';
+export * from './world';
