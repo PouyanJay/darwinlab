@@ -23,6 +23,12 @@ body {
 	-moz-osx-font-smoothing: grayscale;
 }
 
+/* A modal dialog makes the page behind it inert, so it must not scroll behind it either. Scoped to
+   [open] so it can never leave the page stuck once the dialog closes. */
+body:has(dialog[open]) {
+	overflow: hidden;
+}
+
 /* Form controls don't inherit type by default — make them behave like everything else. */
 button,
 input,
