@@ -12,6 +12,7 @@
 	import TurboPill from '$lib/components/topbar/TurboPill.svelte';
 	import FieldNote from '$lib/components/bench/FieldNote.svelte';
 	import WorldTile from '$lib/components/bench/WorldTile.svelte';
+	import ConditionsModal from '$lib/components/conditions/ConditionsModal.svelte';
 	import FooterPill from '$lib/components/common/FooterPill.svelte';
 	import { bench } from '$lib/state';
 	import { DEFAULT_WORLDS, newWorldConfig } from '$lib/engine';
@@ -34,6 +35,12 @@
 	function addWorld() {
 		bench.addWorld(newWorldConfig(nextWorldName(), bench.nextAccent()));
 	}
+
+	// One dialog, for whichever world asked for it. It resolves to `undefined` the instant that world
+	// is removed, so the dialog cannot outlive the thing it edits.
+	const editing = $derived(
+		bench.conditionsWorldId ? bench.find(bench.conditionsWorldId) : undefined
+	);
 
 	/**
 	 * Space plays/pauses — but ONLY when it isn't already the focused control's key.
@@ -73,6 +80,10 @@
 
 		<button class="ghost" onclick={addWorld}>+ Add world</button>
 	</main>
+
+	{#if editing}
+		<ConditionsModal entry={editing} onclose={() => bench.closeConditions()} />
+	{/if}
 
 	<FooterPill />
 </div>
