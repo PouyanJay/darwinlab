@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { DEFAULT_WORLDS, ACCENTS } from './defaults';
+import { DEFAULT_WORLDS, ACCENTS, newWorldConfig } from './defaults';
 
 describe('DEFAULT_WORLDS (the sense ladder)', () => {
 	it('has five worlds that add one sense at a time', () => {
@@ -52,5 +52,25 @@ describe('ACCENTS', () => {
 	it('is six hex colours', () => {
 		expect(ACCENTS).toHaveLength(6);
 		expect(ACCENTS.every((c) => /^#[0-9a-f]{6}$/i.test(c))).toBe(true);
+	});
+});
+
+describe('newWorldConfig', () => {
+	it('starts a hand-added world with every sense on and the standard tank', () => {
+		const world = newWorldConfig('World 6', '#8a5ad8');
+
+		expect(world.name).toBe('World 6');
+		expect(world.accent).toBe('#8a5ad8');
+		expect(world.senses).toEqual({ dist: true, dir: true, closing: true, walls: true });
+		expect(world).toMatchObject({ prey: 20, preds: 2, bw: 640, bh: 400, predSpeed: 1 });
+	});
+
+	it('hands every world its own senses object, so toggling one cannot ablate another', () => {
+		const first = newWorldConfig('a', ACCENTS[0]);
+		const second = newWorldConfig('b', ACCENTS[1]);
+
+		first.senses.dir = false;
+
+		expect(second.senses.dir).toBe(true);
 	});
 });

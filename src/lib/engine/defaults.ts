@@ -82,3 +82,24 @@ export const DEFAULT_WORLDS: WorldConfig[] = [
 			'All four senses switched on. Compare it to Direction: barely different. More sensors are not more intelligence — the world has to make each one earn its keep, and here most do not.'
 	}
 ];
+
+/**
+ * The world a fresh "+ Add world" starts from: the standard tank, every sense switched on, and no
+ * story caption yet. Ported from the reference's `addWorld`. It is a factory, not a constant, so
+ * two new worlds can never end up sharing one `senses` object.
+ */
+export function newWorldConfig(name: string, accent: string): WorldConfig {
+	return {
+		name,
+		accent,
+		prey: 20,
+		preds: 2,
+		bw: 640,
+		bh: 400,
+		predSpeed: 1,
+		vision: 200,
+		mutation: 0.06,
+		senses: { dist: true, dir: true, closing: true, walls: true },
+		caption: ''
+	};
+}

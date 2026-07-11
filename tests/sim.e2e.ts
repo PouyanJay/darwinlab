@@ -102,9 +102,10 @@ test('pause really stops the simulation, and evolve resumes it', async ({ page }
 });
 
 test('the speed control is wired and keeps the sim running', async ({ page }) => {
-	// the exact ½/1/2× sub-step maths is pinned in loop.spec.ts; here we prove the wiring
-	await page.getByRole('button', { name: '2×' }).click();
-	await expect(page.getByRole('button', { name: '2×' })).toHaveAttribute('aria-pressed', 'true');
+	// the exact ½/1/2× sub-step maths is pinned in loop.spec.ts; here we prove the wiring.
+	// The control is a radio group (exactly one speed is always chosen) — see Segmented.svelte.
+	await page.getByRole('radio', { name: '2×' }).click();
+	await expect(page.getByRole('radio', { name: '2×' })).toHaveAttribute('aria-checked', 'true');
 
 	const before = await fingerprint(page);
 	await expect.poll(() => fingerprint(page), { timeout: 5000 }).not.toBe(before);
@@ -117,6 +118,27 @@ test('train fast-forwards generations', async ({ page }) => {
 	await expect(page.getByTestId('turbo')).toBeVisible();
 	await expect(page.getByTestId('turbo')).toBeHidden({ timeout: 60_000 });
 	expect(await generations(page)).toBeGreaterThanOrEqual(before + 25);
+});
+
+test('Space plays/pauses the bench — but never out from under a focused control', async ({
+	page
+}) => {
+	// On the bare page, Space is the play/pause shortcut.
+	await page.locator('body').click();
+	await expect(page.getByRole('button', { name: 'Pause' })).toBeVisible();
+	await page.keyboard.press(' ');
+	await expect(page.getByRole('button', { name: 'Evolve' })).toBeVisible();
+	await page.keyboard.press(' ');
+	await expect(page.getByRole('button', { name: 'Pause' })).toBeVisible();
+
+	// But Space is ALSO how a focused button is pressed. The shortcut used to preventDefault it
+	// regardless of focus, so Space on the theme toggle paused the sim instead of switching theme —
+	// a keyboard user could not operate the top bar at all. Verified to fail before the fix.
+	await page.getByRole('button', { name: 'switch theme' }).focus();
+	await page.keyboard.press(' ');
+
+	await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark'); // the button won
+	await expect(page.getByRole('button', { name: 'Pause' })).toBeVisible(); // the sim kept running
 });
 
 test('the population is being hunted', async ({ page }) => {

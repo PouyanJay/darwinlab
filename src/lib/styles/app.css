@@ -1,30 +1,141 @@
 /*
- * Global app styles — reset + base typography.
- * Phase 3 owns the full type scale and the Bricolage/Inter font loading.
+ * Global styles: reset, base typography, shared keyframes, and the handful of utilities that would
+ * otherwise be copy-pasted into every component.
+ *
+ * Anything reusable that is NOT a value belongs here; the values themselves live in `tokens.css`.
+ * Component-specific styling stays scoped inside its component.
  */
 
-* {
+*,
+*::before,
+*::after {
 	box-sizing: border-box;
 }
 
 body {
 	margin: 0;
 	background: var(--bgfx);
+	background-attachment: fixed; /* the radial glows are lighting on the page, not on the scroll */
 	color: var(--ink);
-	font-family: Inter, system-ui, sans-serif;
+	font-family: var(--font-ui);
+	font-size: var(--fs-body);
 	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
 }
 
-/* Numeric stats never jitter as digits change. */
+/* A modal dialog makes the page behind it inert, so it must not scroll behind it either. Scoped to
+   [open] so it can never leave the page stuck once the dialog closes. */
+body:has(dialog[open]) {
+	overflow: hidden;
+}
+
+/* Form controls don't inherit type by default — make them behave like everything else. */
+button,
+input,
+textarea,
+select {
+	font: inherit;
+	color: inherit;
+}
+
+/*
+ * One focus style for the whole app. `:focus-visible` (not `:focus`) so a mouse click doesn't
+ * leave a ring behind, while every keyboard path stays visible — the Phase 3 gate.
+ */
+:focus-visible {
+	outline: var(--focus-ring);
+	outline-offset: var(--focus-offset);
+}
+
+/* ---- utilities ------------------------------------------------------------------------------ */
+
+/* Numbers that change in place must not jitter as digit widths change. */
 .tabular {
 	font-variant-numeric: tabular-nums;
 }
 
+/* The small uppercase caption above a stat ("alive", "survival / generation"). */
+.eyebrow {
+	font-size: var(--fs-eyebrow);
+	font-weight: var(--fw-medium);
+	letter-spacing: var(--tracking-wide);
+	text-transform: uppercase;
+	color: var(--ink3);
+}
+
+/* The same idea one notch louder: the caption on an editable field (Slider, Stepper, and every
+   field the Conditions modal will add). Shared so a third control can't invent a fourth variant. */
+.field-label {
+	font-size: var(--fs-label);
+	font-weight: var(--fw-semibold);
+	letter-spacing: var(--tracking-eyebrow);
+	text-transform: uppercase;
+	color: var(--ink3);
+}
+
+/* Visible to screen readers, invisible on screen. */
+.visually-hidden {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	padding: 0;
+	border: 0;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+}
+
+/* ---- shared motion -------------------------------------------------------------------------- */
+
+@keyframes fade-up {
+	from {
+		transform: translateY(10px);
+		opacity: 0;
+	}
+	to {
+		transform: none;
+		opacity: 1;
+	}
+}
+
+@keyframes slide-in-right {
+	from {
+		transform: translateX(26px);
+		opacity: 0;
+	}
+	to {
+		transform: none;
+		opacity: 1;
+	}
+}
+
+@keyframes pulse {
+	0%,
+	100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.35;
+	}
+}
+
+@keyframes spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+/*
+ * Honour the OS preference. The canvas can't use a media query, so it reads the same signal as a
+ * value through `state/motion.svelte.ts` — the two must agree.
+ */
 @media (prefers-reduced-motion: reduce) {
 	*,
 	*::before,
 	*::after {
 		animation: none !important;
 		transition: none !important;
+		scroll-behavior: auto !important;
 	}
 }
