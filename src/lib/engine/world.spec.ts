@@ -162,15 +162,19 @@ describe('pointer cleanup when a tracked fish is eaten', () => {
 	});
 
 	it('clears them at a generation turnover too — the whole generation is gone, not just one fish', () => {
-		const w = makeWorld(cfg({ prey: 6, bw: 400, bh: 300 }), undefined, seededRng(7));
+		// NO predators, deliberately. With sharks in the tank the watched fish tends to be eaten
+		// before its generation ends, and the catch path would clear the pointer — the test would
+		// then pass without ever exercising the turnover it claims to be about.
+		const w = makeWorld(cfg({ prey: 6, preds: 0, bw: 400, bh: 300 }), undefined, seededRng(7));
 		const watched = w.fish[0];
 		w.selFish = watched;
 		w.hover = watched;
 
 		while (w.gen < 1) stepWorld(w, dt); // let the generation end and the offspring spawn
 
-		// The old pointer would otherwise survive as a ghost: the UI would go on drawing a fish that
-		// is not in the water, frozen where it died, with a "live" brain that no longer runs.
+		expect(w.eaten).toBe(0); // nothing was eaten: the turnover is the ONLY thing under test
+		// Without this cleanup the pointer survives as a ghost, and the UI goes on drawing a fish that
+		// is not in the water — frozen where it was, with a "live" brain that no longer runs.
 		expect(w.fish).not.toContain(watched);
 		expect(w.selFish).toBeNull();
 		expect(w.hover).toBeNull();
