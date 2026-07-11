@@ -27,6 +27,17 @@ export interface ThemePalette {
 	sel: string;
 	selGlow: string;
 	threat: string;
+	/**
+	 * The brain viz ONLY: excitatory (+) and inhibitory (−) weights.
+	 *
+	 * They cannot just be `accent` and `threat`, because in dark those are the SAME magenta — the
+	 * reference passes the theme accent in and its dark-mode brain draws both signs identically,
+	 * with a legend underneath insisting they differ. In the one panel where the colour IS the
+	 * information, the two signs get colours of their own. Mirrored in tokens.css as --excite /
+	 * --inhibit for the legend that sits under the canvas.
+	 */
+	excite: string;
+	inhibit: string;
 	gold: string;
 	ink: string;
 	inkSoft: string;
@@ -49,6 +60,8 @@ export const THEMES: Record<ThemeName, ThemePalette> = {
 		sel: '#4f56d3',
 		selGlow: '79,86,211',
 		threat: '#e8604c',
+		excite: '#4f56d3',
+		inhibit: '#e8604c',
 		gold: '#d8a13a',
 		ink: '#1d2230',
 		inkSoft: 'rgba(29,34,48,.55)',
@@ -69,6 +82,10 @@ export const THEMES: Record<ThemeName, ThemePalette> = {
 		sel: '#ff2d9c',
 		selGlow: '255,45,156',
 		threat: '#ff2d9c',
+		// cyan, not magenta: in dark the accent and the danger colour are the same, so an inhibitory
+		// edge and an excitatory one would be indistinguishable.
+		excite: '#38d0f5',
+		inhibit: '#ff2d9c',
 		gold: '#ffd166',
 		ink: '#f5f5fa',
 		inkSoft: 'rgba(245,245,250,.6)',

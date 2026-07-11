@@ -619,3 +619,46 @@ describe('bench store — conditions', () => {
 		expect(world.fish[0]).toBe(fish); // nothing was respawned over a colour change
 	});
 });
+
+describe('bench store — the selected fish’s mind', () => {
+	it('publishes what the fish senses the moment it is selected, even paused', () => {
+		init(1);
+		bench.togglePlay(); // paused: no tick will come to fill this in for us
+		const { id, world } = bench.worlds[0];
+
+		bench.select(id, { type: 'fish', obj: world.fish[0] });
+
+		// the panel opens populated — the numbers are the engine's, not zeros waiting for a frame
+		expect(bench.mind.lived).toBe(world.fish[0].fitness);
+		expect(bench.mind.wallAhead).toBe(world.sense!.wallFront);
+	});
+
+	it('is the ENGINE’s numbers, not the UI’s — it never computes a sense of its own', () => {
+		init(1);
+		bench.togglePlay();
+		const { id, world } = bench.worlds[0];
+		bench.select(id, { type: 'fish', obj: world.fish[0] });
+
+		// forge the engine's snapshot: whatever is in world.sense is what the panel must show
+		world.sense = { ...world.sense!, d: 123.5, dirDeg: -47, closing: -8.25, inVis: true, nd: 0.75 };
+		frame();
+
+		expect(bench.mind.distance).toBe(123.5);
+		expect(bench.mind.directionDeg).toBe(-47);
+		expect(bench.mind.closing).toBe(-8.25);
+		expect(bench.mind.inVision).toBe(true);
+		expect(bench.mind.distanceInput).toBe(0.75);
+	});
+
+	it('keeps up with the fish it is following as the world runs', () => {
+		init(1);
+		const { id, world } = bench.worlds[0];
+		bench.selectChampion(id);
+		const first = bench.mind.lived;
+
+		frame(1 / 60, 30);
+
+		expect(bench.mind.lived).toBeGreaterThan(first); // it has been living
+		expect(bench.mind.lived).toBe(world.selFish!.fitness);
+	});
+});

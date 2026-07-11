@@ -3,7 +3,8 @@
  * Faithful port of engine2.js `drawBrain`.
  *
  * Renders the selected fish's actual genome as an 8→6→2 node graph:
- *   edge colour = sign (accent = excitatory +, danger = inhibitory −)
+ *   edge colour = sign (excite = +, inhibit = −) — see ThemePalette for why these are their
+ *     own colours rather than the theme's accent/danger pair
  *   edge thickness = |weight|
  *   travelling pulse brightness = live signal (|weight × activation|)
  * A sense that is off dims its input node and feeds 0, so no signal flows from it.
@@ -31,8 +32,6 @@ export interface DrawBrainOpts {
 	/** World clock, drives the travelling signal pulses. */
 	t: number;
 	theme: ThemeName;
-	/** The world's accent colour, used for excitatory (+) edges. */
-	accent: string;
 	reducedMotion?: boolean;
 }
 
@@ -40,10 +39,11 @@ export function drawBrain(
 	ctx: CanvasRenderingContext2D,
 	W: number,
 	H: number,
-	{ senses: S, sense, t, theme, accent, reducedMotion = false }: DrawBrainOpts
+	{ senses: S, sense, t, theme, reducedMotion = false }: DrawBrainOpts
 ): void {
 	const th = THEMES[theme];
-	const danger = th.threat;
+	const accent = th.excite;
+	const danger = th.inhibit;
 	const rm = reducedMotion;
 	ctx.clearRect(0, 0, W, H);
 

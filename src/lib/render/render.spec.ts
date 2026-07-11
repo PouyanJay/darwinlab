@@ -69,14 +69,12 @@ describe('drawBrain', () => {
 		const w = world();
 		w.selFish = w.fish[0];
 		stepWorld(w, 1 / 60);
-		const accent = w.cfg.accent;
 		expect(() =>
 			drawBrain(mockCtx(), 300, 224, {
 				senses: w.cfg.senses,
 				sense: w.sense,
 				t: w.t,
-				theme: 'light',
-				accent
+				theme: 'light'
 			})
 		).not.toThrow();
 		expect(() =>
@@ -85,10 +83,18 @@ describe('drawBrain', () => {
 				sense: null,
 				t: 0,
 				theme: 'dark',
-				accent,
 				reducedMotion: true
 			})
 		).not.toThrow();
+	});
+
+	it('gives the two signs colours that differ in BOTH themes', () => {
+		// The whole panel argues "blue excites, red inhibits". If the two ever resolve to the same
+		// colour — as they do if you reach for accent/danger in dark, where both are magenta — the
+		// legend is lying and the picture means nothing.
+		for (const theme of ['light', 'dark'] as const) {
+			expect(THEMES[theme].excite).not.toBe(THEMES[theme].inhibit);
+		}
 	});
 });
 
