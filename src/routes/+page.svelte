@@ -13,6 +13,7 @@
 	import FieldNote from '$lib/components/bench/FieldNote.svelte';
 	import WorldTile from '$lib/components/bench/WorldTile.svelte';
 	import ConditionsModal from '$lib/components/conditions/ConditionsModal.svelte';
+	import BrainInspector from '$lib/components/inspector/BrainInspector.svelte';
 	import FooterPill from '$lib/components/common/FooterPill.svelte';
 	import { bench } from '$lib/state';
 	import { DEFAULT_WORLDS, newWorldConfig } from '$lib/engine';
@@ -41,6 +42,9 @@
 	const editing = $derived(
 		bench.conditionsWorldId ? bench.find(bench.conditionsWorldId) : undefined
 	);
+
+	// Likewise the inspector: one selection across the bench, and it goes when its world does.
+	const inspecting = $derived(bench.selection ? bench.find(bench.selection.worldId) : undefined);
 
 	/**
 	 * Space plays/pauses — but ONLY when it isn't already the focused control's key.
@@ -83,6 +87,10 @@
 
 	{#if editing}
 		<ConditionsModal entry={editing} onclose={() => bench.closeConditions()} />
+	{/if}
+
+	{#if bench.selection && inspecting}
+		<BrainInspector selection={bench.selection} entry={inspecting} />
 	{/if}
 
 	<FooterPill />
