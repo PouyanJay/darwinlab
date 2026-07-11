@@ -32,7 +32,8 @@
 	--fs-md: 11.5px; /* small buttons, segmented control */
 	--fs-body: 12.5px; /* buttons, banner copy */
 	--fs-stat: 15px; /* alive / lived numbers */
-	--fs-title: 16.5px; /* drawer + tile titles (display face) */
+	--fs-name: 15.5px; /* editable world name (display face) */
+	--fs-title: 16.5px; /* drawer + modal titles (display face) */
 	--fs-wordmark: 17.5px;
 
 	--tracking-tight: -0.01em; /* display face at wordmark size */
