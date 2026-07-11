@@ -13,8 +13,14 @@
  * A `World` is mutated ~60×/s and holds every fish, trail point and 68-weight genome. Wrapping
  * it in `$state` would deep-proxy all of that and fire reactivity on every mutation, which is
  * catastrophic at frame rate. So worlds live in `$state.raw` (reassigned on add/remove, never
- * proxied), the canvas paints straight from the raw objects, and the UI binds instead to a tiny
- * reactive `WorldStats` snapshot refreshed once per frame.
+ * proxied), the canvas paints straight from the raw objects, and the UI binds instead to two
+ * small reactive projections of each world:
+ *
+ *   WorldStats       what the world is DOING — alive, eaten, gen, survival. Refreshed each frame.
+ *   WorldConfigView  what the world IS — name, senses, tank, accent. Refreshed when the store
+ *                    writes to `cfg`, which is the only way `cfg` ever changes.
+ *
+ * Both are projections; `world` remains the single source of truth for both.
  */
 
 import {
@@ -65,11 +71,54 @@ export class WorldStats {
 	}
 }
 
+/**
+ * Reactive mirror of a world's `cfg` — the half of the world the UI both READS and WRITES.
+ *
+ * The world itself is raw and unreactive on purpose (see the file header), which is right for the
+ * 20 fish being mutated 60×/s, but wrong for the config: a tile has to re-render the moment you
+ * rename it or cut one of its senses. Rather than proxy the whole hot world for the sake of twelve
+ * fields, the config is mirrored here.
+ *
+ * `cfg` stays the single source of truth — this is only ever projected FROM it, and only the store
+ * writes to `cfg`, so the two cannot drift.
+ */
+export class WorldConfigView {
+	name = $state('');
+	accent = $state('');
+	prey = $state(0);
+	preds = $state(0);
+	bw = $state(0);
+	bh = $state(0);
+	predSpeed = $state(1);
+	vision = $state(0);
+	mutation = $state(0);
+	caption = $state('');
+	senses = $state<Senses>({ dist: false, dir: false, closing: false, walls: false });
+
+	syncFrom(cfg: WorldConfig): void {
+		this.name = cfg.name;
+		this.accent = cfg.accent;
+		this.prey = cfg.prey;
+		this.preds = cfg.preds;
+		this.bw = cfg.bw;
+		this.bh = cfg.bh;
+		this.predSpeed = cfg.predSpeed;
+		this.vision = cfg.vision;
+		this.mutation = cfg.mutation;
+		this.caption = cfg.caption;
+		// A fresh object, not a mutation: `senses` is $state.raw-ish in spirit — replaced wholesale,
+		// so one assignment wakes every reader exactly once.
+		this.senses = { ...cfg.senses };
+	}
+}
+
 export interface WorldEntry {
 	readonly id: string;
 	/** The raw engine world — deliberately NOT reactive (see file header). */
 	readonly world: World;
 	readonly stats: WorldStats;
+	/** Reactive view of `world.cfg` — what components bind to. */
+	readonly config: WorldConfigView;
 }
 
 /**
@@ -219,9 +268,19 @@ class BenchStore {
 		engineResetWorld(this.entry(id).world);
 	}
 
+	/**
+	 * Rename a world. A name is a label, not a condition — nothing about the simulation changes, so
+	 * this deliberately does NOT go through applyCfg.
+	 */
+	renameWorld(id: string, name: string): void {
+		this.entry(id).world.cfg.name = name;
+		this.#publishConfig(id);
+	}
+
 	/** Apply live config edits without wiping learning. */
 	applyConfig(id: string): void {
 		engineApplyCfg(this.entry(id).world);
+		this.#publishConfig(id);
 	}
 
 	/** Toggle one sense — a true live ablation (the input neuron then receives 0). */
@@ -229,6 +288,7 @@ class BenchStore {
 		const { world } = this.entry(id);
 		world.cfg.senses[sense] = !world.cfg.senses[sense];
 		engineApplyCfg(world);
+		this.#publishConfig(id);
 	}
 
 	/** Highlight a creature under the pointer. Components must not touch `world.hover` directly. */
@@ -366,7 +426,15 @@ class BenchStore {
 
 	#wrap(world: World): WorldEntry {
 		world.maxGen = this.#maxGenerations;
-		return { id: this.#id(), world, stats: new WorldStats() };
+		const config = new WorldConfigView();
+		config.syncFrom(world.cfg);
+		return { id: this.#id(), world, stats: new WorldStats(), config };
+	}
+
+	/** Re-project a world's cfg after the store has written to it. Every cfg write ends here. */
+	#publishConfig(id: string): void {
+		const entry = this.entry(id);
+		entry.config.syncFrom(entry.world.cfg);
 	}
 
 	#create(cfg: WorldConfig): WorldEntry {
