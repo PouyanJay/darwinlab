@@ -1,7 +1,7 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { flushSync } from 'svelte';
 import { bench } from './bench.svelte';
-import { DEFAULT_WORLDS } from '../engine';
+import { DEFAULT_WORLDS, WORLD_LIMITS, ACCENTS } from '../engine';
 
 /**
  * Runs in the browser project (runes need the Svelte compiler). `bench` is a module-level
@@ -499,5 +499,123 @@ describe('bench store — maxGenerations', () => {
 		// never gain its "· trained" suffix and the top bar would keep offering "Train +25 gens".
 		expect(seen).toEqual([0, 40]);
 		expect(bench.worlds[0].world.maxGen).toBe(40); // and it reached the engine
+	});
+});
+
+describe('bench store — conditions', () => {
+	it('opens and closes the dialog for one world at a time', () => {
+		init(2);
+		const [first, second] = bench.worlds;
+
+		bench.openConditions(first.id);
+		expect(bench.conditionsWorldId).toBe(first.id);
+
+		bench.openConditions(second.id);
+		expect(bench.conditionsWorldId).toBe(second.id);
+
+		bench.closeConditions();
+		expect(bench.conditionsWorldId).toBeNull();
+	});
+
+	it('closes the dialog if the world it is editing is removed', () => {
+		init(1);
+		const { id } = bench.worlds[0];
+		bench.openConditions(id);
+
+		bench.removeWorld(id);
+
+		expect(bench.conditionsWorldId).toBeNull();
+	});
+
+	it('THE POINT: an edit changes the world without wiping what it has learned', () => {
+		init(1, 3); // prewarm, so there is real learning to lose
+		for (let i = 0; i < 600 && bench.turboTarget !== null; i++) frame();
+		const { id, world, config } = bench.worlds[0];
+		const generation = world.gen;
+		const curve = [...world.curve];
+		const champion = world.champion;
+		expect(generation).toBeGreaterThan(0);
+
+		bench.setCondition(id, 'prey', 40);
+
+		expect(world.cfg.prey).toBe(40);
+		expect(config.prey).toBe(40); // and the tile sees it
+		expect(world.gen).toBe(generation); // still the same generation…
+		expect(world.curve).toEqual(curve); // …with its learning curve intact…
+		expect(world.champion).toBe(champion); // …and its best brain still on record
+	});
+
+	it('seeds the fish an edit adds from the champion, rather than dropping in random brains', () => {
+		init(1, 2);
+		for (let i = 0; i < 600 && bench.turboTarget !== null; i++) frame();
+		const { id, world } = bench.worlds[0];
+		const before = world.fish.length;
+
+		bench.setCondition(id, 'prey', world.cfg.prey + 10);
+
+		expect(world.fish.length).toBeGreaterThan(before);
+		expect(world.champion).not.toBeNull();
+		const newcomer = world.fish[world.fish.length - 1];
+		expect([...newcomer.genome]).toEqual([...world.champion!.genome]); // an evolved brain, not noise
+	});
+
+	it('clamps to the range the experiment allows — the engine does not validate', () => {
+		init(1);
+		const { id, world } = bench.worlds[0];
+
+		bench.setCondition(id, 'prey', 500);
+		expect(world.cfg.prey).toBe(WORLD_LIMITS.prey.max);
+
+		bench.setCondition(id, 'bw', 10); // a tank 10px wide is not an experiment, it is a crash
+		expect(world.cfg.bw).toBe(WORLD_LIMITS.bw.min);
+
+		bench.setCondition(id, 'preds', -3);
+		expect(world.cfg.preds).toBe(WORLD_LIMITS.preds.min);
+	});
+
+	it('re-clamps the fish into a container that just shrank', () => {
+		init(1);
+		const { id, world } = bench.worlds[0];
+		world.fish[0].x = 1200; // out beyond the new wall
+
+		bench.setCondition(id, 'bw', 400);
+
+		for (const fish of world.fish) expect(fish.x).toBeLessThanOrEqual(400);
+	});
+
+	it('adds and removes predators to match the count asked for', () => {
+		init(1);
+		const { id, world } = bench.worlds[0];
+
+		bench.setCondition(id, 'preds', 5);
+		expect(world.preds).toHaveLength(5);
+
+		bench.setCondition(id, 'preds', 0); // a world with no threat at all is a legal experiment
+		expect(world.preds).toHaveLength(0);
+	});
+
+	it('sets a sense explicitly, not just by flipping it', () => {
+		init(1);
+		const { id, world, config } = bench.worlds[0];
+
+		bench.setSense(id, 'walls', true);
+		expect(world.cfg.senses.walls).toBe(true);
+		expect(config.senses.walls).toBe(true);
+
+		bench.setSense(id, 'walls', true); // idempotent: setting it again does not toggle it off
+		expect(world.cfg.senses.walls).toBe(true);
+	});
+
+	it('records the accent and the story caption without touching the simulation', () => {
+		init(1);
+		const { id, world, config } = bench.worlds[0];
+		const fish = world.fish[0];
+
+		bench.setAccent(id, ACCENTS[5]);
+		bench.setCaption(id, 'the one that learned to turn away');
+
+		expect(config.accent).toBe(ACCENTS[5]);
+		expect(config.caption).toBe('the one that learned to turn away');
+		expect(world.fish[0]).toBe(fish); // nothing was respawned over a colour change
 	});
 });

@@ -103,3 +103,26 @@ export function newWorldConfig(name: string, accent: string): WorldConfig {
 		caption: ''
 	};
 }
+
+/**
+ * The range each condition may be set to — the bounds of the experiment.
+ *
+ * These come from the product (the reference's Conditions dialog), not from the tuning constants:
+ * they say what a user is allowed to ask for, not what the science is calibrated to. They live here
+ * so the sliders that offer a range and the store that clamps to it cannot drift apart.
+ *
+ * `step` is the increment the UI moves in — ±2 prey at a time (a population of odd size breeds
+ * awkwardly), ±1 predator, and fine enough steps on the continuous knobs to feel analogue.
+ */
+export const WORLD_LIMITS = {
+	prey: { min: 2, max: 80, step: 2 },
+	preds: { min: 0, max: 6, step: 1 },
+	bw: { min: 320, max: 1300, step: 10 },
+	bh: { min: 220, max: 860, step: 10 },
+	predSpeed: { min: 0.6, max: 1.8, step: 0.05 },
+	vision: { min: 120, max: 280, step: 5 },
+	mutation: { min: 0, max: 0.2, step: 0.005 }
+} as const satisfies Record<string, { min: number; max: number; step: number }>;
+
+/** The numeric conditions a user may edit — the keys of WORLD_LIMITS. */
+export type NumericCondition = keyof typeof WORLD_LIMITS;
