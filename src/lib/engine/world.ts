@@ -191,15 +191,12 @@ function evolve(w: World): void {
 	spawnGeneration(w, next);
 }
 
-/** Advance one tick. The core loop — see engine2.js §3.2–3.4 for the design rationale. */
-export function stepWorld(w: World, dt: number): void {
-	const c = w.cfg;
-	const trained = !!w.maxGen && w.gen >= w.maxGen; // deployed: no more evolving, no resets
-	w.t += dt;
-	w.genT += dt;
-
-	// deploy transition: when training ends, start the count fresh and let the trained
-	// population play out under permanent elimination (no resets, no respawns)
+/**
+ * Deploy lifecycle: latch the transition when training ends, then track elapsed time, sample
+ * the decay curve, and capture half-life / extinction. NO respawns here — the population only
+ * goes down (CLAUDE.md gotcha).
+ */
+function updateDeployment(w: World, dt: number, trained: boolean): void {
 	if (trained && !w._deployed) {
 		w._deployed = true;
 		w.eaten = 0;
@@ -222,42 +219,57 @@ export function stepWorld(w: World, dt: number): void {
 		if (w.halfLife === null && w.fish.length <= w.deployStartN / 2) w.halfLife = w.deployT;
 		if (w.fish.length === 0 && w.extinctT === null) w.extinctT = w.deployT;
 	}
+}
 
-	// predator persistence: the longer without a kill, the faster the sharks get and the
-	// wider their catch radius, so no stalemate lasts forever
-	const frust = 1 + Math.min(0.85, w.sinceKill * 0.04);
-	const catchR = 14 + Math.min(20, Math.max(0, w.sinceKill - 8) * 2.2);
-	w.sinceKill += dt;
-
-	// assign each shark a DISTINCT target (greedy nearest-unclaimed) so they spread out
-	const claimed = new Set<Fish>();
-	for (const p of w.preds) {
-		let best: Fish | null = null;
-		let bd = 1e9;
-		for (const f of w.fish) {
-			if (claimed.has(f)) continue;
-			const d = Math.hypot(f.x - p.x, f.y - p.y);
-			if (d < bd) {
-				bd = d;
-				best = f;
-			}
+/** Nearest fish to `p`, skipping any already claimed. Iteration order is preserved so ties break identically. */
+function nearestFish(
+	fish: Fish[],
+	p: Predator,
+	skip: Set<Fish> | null
+): { best: Fish | null; bd: number } {
+	let best: Fish | null = null;
+	let bd = 1e9;
+	for (const f of fish) {
+		if (skip?.has(f)) continue;
+		const d = Math.hypot(f.x - p.x, f.y - p.y);
+		if (d < bd) {
+			bd = d;
+			best = f;
 		}
+	}
+	return { best, bd };
+}
+
+/**
+ * Scratch set reused across ticks to avoid a per-frame allocation in the hot loop.
+ * Safe because `stepWorld` is synchronous and non-reentrant; it is cleared on every use and
+ * never observed outside `assignPredatorTargets`.
+ */
+const claimedScratch = new Set<Fish>();
+
+/**
+ * Give each shark a DISTINCT target (greedy nearest-unclaimed) so they spread across the
+ * population instead of dogpiling one fish. If everything is claimed, fall back to the
+ * nearest overall.
+ */
+function assignPredatorTargets(w: World): void {
+	const claimed = claimedScratch;
+	claimed.clear();
+	for (const p of w.preds) {
+		let { best, bd } = nearestFish(w.fish, p, claimed);
 		if (!best) {
-			for (const f of w.fish) {
-				const d = Math.hypot(f.x - p.x, f.y - p.y);
-				if (d < bd) {
-					bd = d;
-					best = f;
-				}
-			}
+			({ best, bd } = nearestFish(w.fish, p, null));
 		} else {
 			claimed.add(best);
 		}
 		p._tgt = best;
 		p._td = bd;
 	}
+}
 
-	// predators
+/** Predator physics: the cruise → aim → lunge state machine, interception, and eating. */
+function updatePredators(w: World, dt: number, frust: number, catchR: number): void {
+	const c = w.cfg;
 	for (const p of w.preds) {
 		p.cool = Math.max(0, p.cool - dt);
 		p.lunge = Math.max(0, p.lunge - dt);
@@ -361,8 +373,11 @@ export function stepWorld(w: World, dt: number): void {
 			}
 		}
 	}
+}
 
-	// prey — controlled by their brains
+/** Prey physics: each fish's own brain drives turn + thrust; plus separation and wall instinct. */
+function updatePrey(w: World, dt: number): void {
+	const c = w.cfg;
 	for (const f of w.fish) {
 		const { x } = senseInputs(w, f);
 		const out = forward(f.genome, x);
@@ -421,32 +436,64 @@ export function stepWorld(w: World, dt: number): void {
 			f.trailT = 0.06;
 		}
 	}
+}
 
-	// selected fish snapshot for the inspector
-	if (w.selFish) {
-		const f = w.selFish;
-		const si = senseInputs(w, f);
-		const out = forward(f.genome, si.x);
-		w.sense = {
-			x: si.x,
-			h: out.h,
-			genome: f.genome,
-			d: si.dist,
-			dirDeg: si.dirDeg,
-			closing: si.closing,
-			wallFront: si.wallFront,
-			inVis: si.inVis,
-			nd: si.x[1],
-			nc: si.x[4],
-			nw: Math.max(si.x[5], si.x[6], si.x[7]),
-			turn: out.turn,
-			thrust: out.thrust,
-			fitness: f.fitness
-		};
-	}
+/** Live snapshot of the selected fish's mind, rebuilt each tick for the Brain Inspector. */
+function updateSenseSnapshot(w: World): void {
+	if (!w.selFish) return;
+	const f = w.selFish;
+	const si = senseInputs(w, f);
+	const out = forward(f.genome, si.x);
+	w.sense = {
+		x: si.x,
+		h: out.h,
+		genome: f.genome,
+		d: si.dist,
+		dirDeg: si.dirDeg,
+		closing: si.closing,
+		wallFront: si.wallFront,
+		inVis: si.inVis,
+		nd: si.x[1],
+		nc: si.x[4],
+		nw: Math.max(si.x[5], si.x[6], si.x[7]),
+		turn: out.turn,
+		thrust: out.thrust,
+		fitness: f.fitness
+	};
+}
 
+/** Age the catch bursts and drop the expired ones. */
+function ageBursts(w: World, dt: number): void {
 	for (const b of w.bursts) b.a += dt;
 	w.bursts = w.bursts.filter((b) => b.a < 0.65);
+}
+
+/**
+ * Advance one tick — the core loop.
+ *
+ * The phases below run in EXACTLY this order; the order is load-bearing (predators act on the
+ * fish's previous positions, then the fish react to the predators' new ones), and reordering
+ * would change the science. Verified bit-for-bit against the reference by
+ * `src/lib/harness/fidelity.spec.ts`.
+ */
+export function stepWorld(w: World, dt: number): void {
+	const trained = !!w.maxGen && w.gen >= w.maxGen; // deployed: no more evolving, no resets
+	w.t += dt;
+	w.genT += dt;
+
+	updateDeployment(w, dt, trained);
+
+	// predator persistence: the longer without a kill, the faster the sharks get and the
+	// wider their catch radius, so no stalemate lasts forever
+	const frust = 1 + Math.min(0.85, w.sinceKill * 0.04);
+	const catchR = 14 + Math.min(20, Math.max(0, w.sinceKill - 8) * 2.2);
+	w.sinceKill += dt;
+
+	assignPredatorTargets(w);
+	updatePredators(w, dt, frust, catchR);
+	updatePrey(w, dt);
+	updateSenseSnapshot(w);
+	ageBursts(w, dt);
 
 	// generation boundary
 	if (w.genT >= GEN_DURATION || w.fish.length === 0) {

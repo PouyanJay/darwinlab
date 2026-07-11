@@ -69,7 +69,11 @@ export function breed(
 	for (let i = 0; i < elite && i < ranked.length && next.length < cfg.prey; i++) {
 		next.push(cloneGenome(ranked[i].genome));
 	}
-	const half = Math.max(2, Math.floor(ranked.length / 2));
+	// The reference floors the tournament window at 2, which would index past the end of a
+	// 1-entry roster (`ranked[1]` → undefined → TypeError). Clamp to the roster length: for
+	// any valid population (prey ≥ 2, per the spec) this is identical to the reference, so
+	// the bit-exact fidelity gate is unaffected — it only makes the degenerate case survive.
+	const half = Math.min(ranked.length, Math.max(2, Math.floor(ranked.length / 2)));
 	const pick = () => ranked[Math.floor(Math.pow(rng(), TOURNAMENT_BIAS) * half)];
 	while (next.length < cfg.prey) {
 		const child = crossover(pick().genome, pick().genome, rng);

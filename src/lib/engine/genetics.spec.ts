@@ -2,22 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { cloneGenome, crossover, mutate, breed } from './genetics';
 import { makeGenome, GLEN } from './network';
 import { seededRng } from './rng';
-import type { WorldConfig, Champion, Genome } from './types';
-
-const cfg = (over: Partial<WorldConfig> = {}): WorldConfig => ({
-	name: 'w',
-	accent: '#000',
-	prey: 20,
-	preds: 2,
-	bw: 640,
-	bh: 400,
-	predSpeed: 1,
-	vision: 200,
-	mutation: 0.06,
-	senses: { dist: true, dir: true, closing: false, walls: false },
-	caption: '',
-	...over
-});
+import type { Champion, Genome } from './types';
+import { testCfg as cfg } from './testkit';
 
 describe('cloneGenome', () => {
 	it('returns an independent equal copy', () => {
@@ -99,5 +85,13 @@ describe('breed', () => {
 		const a = breed(roster, cfg(), null, seededRng(5)).map((g) => [...g]);
 		const b = breed(roster, cfg(), null, seededRng(5)).map((g) => [...g]);
 		expect(a).toEqual(b);
+	});
+
+	it('survives a degenerate single-member roster instead of indexing past the end', () => {
+		// The reference floors the tournament window at 2, which would read ranked[1] === undefined
+		// and throw. Valid populations are prey >= 2, but the engine must not crash below that.
+		const roster = [{ genome: makeGenome(seededRng(1)) }];
+		expect(() => breed(roster, cfg({ prey: 1 }), null, seededRng(2))).not.toThrow();
+		expect(breed(roster, cfg({ prey: 1 }), null, seededRng(2))).toHaveLength(1);
 	});
 });

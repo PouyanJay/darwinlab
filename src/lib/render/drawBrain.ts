@@ -23,16 +23,24 @@ import {
 import type { Senses, SenseSnapshot } from '../engine';
 import { THEMES, type ThemeName } from './theme';
 
+export interface DrawBrainOpts {
+	/** Which senses are enabled — an off sense dims its input node and feeds 0. */
+	senses: Senses;
+	/** Live snapshot of the selected fish's mind; null renders the resting net. */
+	sense: SenseSnapshot | null;
+	/** World clock, drives the travelling signal pulses. */
+	t: number;
+	theme: ThemeName;
+	/** The world's accent colour, used for excitatory (+) edges. */
+	accent: string;
+	reducedMotion?: boolean;
+}
+
 export function drawBrain(
 	ctx: CanvasRenderingContext2D,
 	W: number,
 	H: number,
-	S: Senses,
-	sense: SenseSnapshot | null,
-	t: number,
-	theme: ThemeName,
-	accent: string,
-	reducedMotion = false
+	{ senses: S, sense, t, theme, accent, reducedMotion = false }: DrawBrainOpts
 ): void {
 	const th = THEMES[theme];
 	const danger = th.threat;

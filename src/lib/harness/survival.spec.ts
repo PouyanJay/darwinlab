@@ -9,15 +9,22 @@
  * re-measure (`npm run bench:survival`), do not adjust the bands to fit.
  */
 
-import { describe, it, expect } from 'vitest';
-import { sweep } from './survival';
+import { describe, it, expect, beforeAll } from 'vitest';
+import { sweep, type SweepStat } from './survival';
 import { DEFAULT_WORLDS } from '../engine';
 
 const SEEDS = Array.from({ length: 8 }, (_, i) => i + 1);
 const GENERATIONS = 30;
 
-const stats = sweep(DEFAULT_WORLDS, SEEDS, GENERATIONS, 10);
-const by = Object.fromEntries(stats.map((s) => [s.name, s.meanPct]));
+// Run the sweep in a hook, not at module scope: a throw here must surface as a failing test,
+// not an opaque collection error, and it must not run when filtering to an unrelated test.
+let stats: SweepStat[];
+let by: Record<string, number>;
+
+beforeAll(() => {
+	stats = sweep(DEFAULT_WORLDS, SEEDS, GENERATIONS, 10);
+	by = Object.fromEntries(stats.map((s) => [s.name, s.meanPct]));
+});
 
 describe('converged survival (the honest finding)', () => {
 	it('lands every world in a flat ~20–50% band — there is no dramatic sense ladder', () => {

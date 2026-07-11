@@ -71,10 +71,23 @@ describe('drawBrain', () => {
 		stepWorld(w, 1 / 60);
 		const accent = w.cfg.accent;
 		expect(() =>
-			drawBrain(mockCtx(), 300, 224, w.cfg.senses, w.sense, w.t, 'light', accent)
+			drawBrain(mockCtx(), 300, 224, {
+				senses: w.cfg.senses,
+				sense: w.sense,
+				t: w.t,
+				theme: 'light',
+				accent
+			})
 		).not.toThrow();
 		expect(() =>
-			drawBrain(mockCtx(), 300, 224, w.cfg.senses, null, 0, 'dark', accent, true)
+			drawBrain(mockCtx(), 300, 224, {
+				senses: w.cfg.senses,
+				sense: null,
+				t: 0,
+				theme: 'dark',
+				accent,
+				reducedMotion: true
+			})
 		).not.toThrow();
 	});
 });

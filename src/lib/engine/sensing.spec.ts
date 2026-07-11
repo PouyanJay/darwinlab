@@ -1,50 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { senseInputs } from './sensing';
-import { makeGenome } from './network';
-import { seededRng } from './rng';
-import type { World, Fish, Predator, WorldConfig, Senses } from './types';
-
-const allSenses: Senses = { dist: true, dir: true, closing: true, walls: true };
-
-function cfg(over: Partial<WorldConfig> = {}): WorldConfig {
-	return {
-		name: 'w',
-		accent: '#000',
-		prey: 20,
-		preds: 2,
-		bw: 640,
-		bh: 400,
-		predSpeed: 1,
-		vision: 200,
-		mutation: 0.06,
-		senses: { ...allSenses },
-		caption: '',
-		...over
-	};
-}
-
-function pred(x: number, y: number, vx = 0, vy = 0): Predator {
-	return { x, y, vx, vy, heading: 0, lunge: 0, cool: 0, aim: 0, trail: [], trailT: 0 };
-}
-
-function fish(over: Partial<Fish> = {}): Fish {
-	return {
-		x: 0,
-		y: 0,
-		vx: 0,
-		vy: 0,
-		heading: 0,
-		trail: [],
-		phase: 0,
-		size: 1,
-		genome: makeGenome(seededRng(1)),
-		fitness: 0,
-		turn: 0,
-		thrust: 0,
-		trailT: 0,
-		...over
-	};
-}
+import type { World, Predator, WorldConfig } from './types';
+import {
+	testCfg as cfg,
+	testPred as pred,
+	testFish as fish,
+	ALL_SENSES as allSenses
+} from './testkit';
 
 function world(preds: Predator[], over: Partial<WorldConfig> = {}): Pick<World, 'cfg' | 'preds'> {
 	return { cfg: cfg(over), preds };

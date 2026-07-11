@@ -10,24 +10,8 @@ import {
 } from './world';
 import { GLEN } from './network';
 import { seededRng } from './rng';
-import type { WorldConfig, World } from './types';
-
-function cfg(over: Partial<WorldConfig> = {}): WorldConfig {
-	return {
-		name: 'w',
-		accent: '#000',
-		prey: 20,
-		preds: 2,
-		bw: 640,
-		bh: 400,
-		predSpeed: 1,
-		vision: 200,
-		mutation: 0.06,
-		senses: { dist: true, dir: true, closing: false, walls: false },
-		caption: '',
-		...over
-	};
-}
+import type { World } from './types';
+import { testCfg as cfg } from './testkit';
 
 const dt = 1 / 60;
 
@@ -135,20 +119,46 @@ describe('deployment (post-training)', () => {
 		expect(w._deployed).toBe(true);
 		const genAtDeploy = w.gen;
 
-		// extinctT latches at the START of the tick after fish hits 0, so step until it's set
+		// extinctT latches at the START of the tick after fish hits 0, so step until it's set.
+		// Record the first violation rather than asserting inside the loop (up to 40k steps).
 		let prev = w.fish.length;
 		let steps = 0;
+		let firstRespawnAtStep = -1;
 		while (w.extinctT === null && steps < 40000) {
 			stepWorld(w, dt);
-			expect(w.fish.length).toBeLessThanOrEqual(prev); // monotonic — no respawn
+			if (w.fish.length > prev && firstRespawnAtStep < 0) firstRespawnAtStep = steps;
 			prev = w.fish.length;
 			steps++;
 		}
+
+		expect(firstRespawnAtStep).toBe(-1); // population never grew — no respawn in deployed mode
 		expect(w.fish).toHaveLength(0);
 		expect(w.extinctT).not.toBeNull();
 		expect(w.halfLife).not.toBeNull();
 		expect(w.gen).toBe(genAtDeploy); // no evolving in deployed mode
 		expect(w.decay.length).toBeGreaterThan(0);
+	});
+});
+
+describe('pointer cleanup when a tracked fish is eaten', () => {
+	it('clears selFish, hover and championFish so no pointer dangles', () => {
+		const w = makeWorld(cfg({ prey: 4, bw: 300, bh: 200 }), undefined, seededRng(21));
+		const victim = w.fish[0];
+		w.selFish = victim;
+		w.hover = victim;
+		w.championFish = victim;
+
+		// run until that specific fish is eaten
+		let steps = 0;
+		while (w.fish.includes(victim) && steps < 20000) {
+			stepWorld(w, dt);
+			steps++;
+		}
+
+		expect(w.fish).not.toContain(victim); // it really got eaten
+		expect(w.selFish).toBeNull();
+		expect(w.hover).toBeNull();
+		expect(w.championFish).toBeNull();
 	});
 });
 
@@ -166,6 +176,21 @@ describe('applyCfg', () => {
 		applyCfg(w);
 		expect(w.fish.length).toBeLessThanOrEqual(12);
 		expect(w.roster.length).toBeLessThanOrEqual(12);
+	});
+
+	it('seeds fish added by a live prey increase from the champion genome (not fresh random)', () => {
+		const w = makeWorld(cfg({ prey: 6 }), undefined, seededRng(4));
+		stepUntilGen(w, 3); // evolve far enough to have a champion
+		expect(w.champion).not.toBeNull();
+		const championGenome = [...w.champion!.genome];
+		const before = w.fish.length;
+
+		w.cfg.prey = 10;
+		applyCfg(w);
+
+		expect(w.fish.length).toBeGreaterThan(before);
+		const added = w.fish[w.fish.length - 1];
+		expect([...added.genome]).toEqual(championGenome); // inherits the best brain, not a random one
 	});
 });
 

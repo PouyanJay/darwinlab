@@ -30,6 +30,13 @@ export function runWorld(cfg: WorldConfig, seed: number, generations: number, ta
 		stepWorld(w, DT);
 		steps++;
 	}
+	// Never return a silently truncated measurement — the science gate trusts these numbers.
+	if (w.gen < generations) {
+		throw new Error(
+			`runWorld("${cfg.name}", seed=${seed}) hit the ${maxSteps}-step safety valve at generation ` +
+				`${w.gen}/${generations}. The survival number would be measured from an incomplete run.`
+		);
+	}
 	const k = Math.min(tail, w.curve.length);
 	const survival = k ? w.curve.slice(-k).reduce((a, b) => a + b, 0) / k : 0;
 	return { survival, finalGen: w.gen, curve: w.curve.slice() };

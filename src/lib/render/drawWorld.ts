@@ -28,15 +28,21 @@ function roundRect(
 	ctx.closePath();
 }
 
+/** Per-frame render state for one creature — bundled so the painters don't take flag arguments. */
+interface CreatureState {
+	/** World clock, drives the tail-flick / sway animation. */
+	t: number;
+	selected: boolean;
+	hovered: boolean;
+	champion: boolean;
+	reducedMotion: boolean;
+}
+
 function drawFish(
 	ctx: CanvasRenderingContext2D,
 	f: Fish,
 	th: ThemePalette,
-	t: number,
-	sel: boolean,
-	hov: boolean,
-	champ: boolean,
-	rm: boolean
+	{ t, selected: sel, hovered: hov, champion: champ, reducedMotion: rm }: CreatureState
 ): void {
 	if (f.trail.length > 1) {
 		ctx.strokeStyle = 'rgba(' + th.fishTrail + ',.2)';
@@ -143,9 +149,7 @@ function drawShark(
 	ctx: CanvasRenderingContext2D,
 	p: Predator,
 	th: ThemePalette,
-	t: number,
-	hov: boolean,
-	rm: boolean
+	{ t, hovered: hov, reducedMotion: rm }: Pick<CreatureState, 't' | 'hovered' | 'reducedMotion'>
 ): void {
 	if (p.trail.length > 1) {
 		ctx.strokeStyle = 'rgba(' + th.burst + ',' + (p.lunge > 0 ? 0.4 : 0.18) + ')';
@@ -479,9 +483,18 @@ export function drawWorld(
 	}
 
 	if (w.selFish) drawPerception(w, ctx, th, rm);
-	for (const p of w.preds) drawShark(ctx, p, th, w.t, p === w.hover, rm);
-	for (const f of w.fish)
-		drawFish(ctx, f, th, w.t, f === w.selFish, f === w.hover, f === w.championFish, rm);
+	for (const p of w.preds) {
+		drawShark(ctx, p, th, { t: w.t, hovered: p === w.hover, reducedMotion: rm });
+	}
+	for (const f of w.fish) {
+		drawFish(ctx, f, th, {
+			t: w.t,
+			selected: f === w.selFish,
+			hovered: f === w.hover,
+			champion: f === w.championFish,
+			reducedMotion: rm
+		});
+	}
 
 	// catch bursts
 	for (const b of w.bursts) {
