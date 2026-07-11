@@ -53,8 +53,13 @@ export function createSimLoop(options: SimLoopOptions): SimLoop {
 	const tick = () => {
 		if (!running) return;
 		const ts = now();
-		// `|| 0` guards the first frame and any NaN from an exotic clock
-		const elapsed = Math.min(maxFrameSeconds, (ts - last) / 1000 || 0);
+		// Clamp BOTH ends. The upper bound stops a long stall (background tab, breakpoint) from
+		// delivering one enormous dt that would tunnel agents through walls. The lower bound stops
+		// a backwards clock from feeding a NEGATIVE dt into stepWorld, which would run the physics
+		// in reverse (fitness would decrement, predator persistence would walk backwards).
+		// `|| 0` guards the first frame and any NaN from an exotic clock.
+		const seconds = (ts - last) / 1000 || 0;
+		const elapsed = Math.min(maxFrameSeconds, Math.max(0, seconds));
 		last = ts;
 		onFrame(elapsed);
 		if (running) timer = setTimeout(tick, intervalMs);
@@ -92,6 +97,12 @@ export function subSteps(elapsed: number, speed: number): { steps: number; dt: n
 	return { steps, dt: (elapsed * speed) / steps };
 }
 
+export interface TurboSliceOptions {
+	budgetMs?: number;
+	/** Injectable clock — tests supply a deterministic one. */
+	now?: () => number;
+}
+
 /**
  * Fast-forward worlds toward `targetGen` inside a time budget, so training many generations
  * never blocks the main thread for more than a frame. Call once per frame until it returns true.
@@ -101,9 +112,9 @@ export function subSteps(elapsed: number, speed: number): { steps: number; dt: n
 export function turboSlice(
 	worlds: readonly World[],
 	targetGen: number,
-	budgetMs: number = TURBO_SLICE_MS,
-	now: () => number = () => performance.now()
+	options: TurboSliceOptions = {}
 ): boolean {
+	const { budgetMs = TURBO_SLICE_MS, now = () => performance.now() } = options;
 	const started = now();
 	for (;;) {
 		let allDone = true;

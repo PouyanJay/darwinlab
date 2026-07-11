@@ -6,9 +6,8 @@
       beyond which the cost outweighs the sharpness), and re-sized via ResizeObserver so the
       tank stays crisp across window resizes and monitor changes. The context is pre-scaled, so
       `paint` always draws in CSS pixels and never has to think about DPR.
-   2. Driving — pass `register` (e.g. `bench.registerPainter`) and the sim loop repaints this
-      canvas every frame. Omit it and the canvas only repaints on resize, which is what the
-      static charts want.
+   2. Driving — pass `register` (e.g. `bench.painters.add`) and the sim loop repaints this canvas
+      every frame. Omit it and the canvas only repaints on resize, which is what static charts want.
 
   Painting is invoked directly, NOT through reactivity: the world data it reads is deliberately
   unreactive (see state/bench.svelte.ts) because proxying it at frame rate would be ruinous.
@@ -32,46 +31,43 @@
 
 	let { paint, register, onpick, onhover, onleave, label, cursor = 'default' }: Props = $props();
 
-	function host(node: HTMLCanvasElement) {
-		const ctx = node.getContext('2d');
-		if (!ctx) return;
+	const deviceScale = () => Math.min(MAX_DPR, window.devicePixelRatio || 1);
 
-		let cssWidth = 0;
-		let cssHeight = 0;
+	/** Size the bitmap to the element's CSS box × DPR. Returns the CSS size we should paint in. */
+	function sizeToDevice(canvas: HTMLCanvasElement): { width: number; height: number } {
+		const width = canvas.clientWidth;
+		const height = canvas.clientHeight;
+		if (!width || !height) return { width: 0, height: 0 }; // not laid out yet
 
-		const dpr = () => Math.min(MAX_DPR, window.devicePixelRatio || 1);
+		const scale = deviceScale();
+		const bitmapWidth = Math.round(width * scale);
+		const bitmapHeight = Math.round(height * scale);
+		// only assign when it actually changes — writing width/height clears the canvas
+		if (canvas.width !== bitmapWidth || canvas.height !== bitmapHeight) {
+			canvas.width = bitmapWidth;
+			canvas.height = bitmapHeight;
+		}
+		return { width, height };
+	}
 
-		const resize = () => {
-			const w = node.clientWidth;
-			const h = node.clientHeight;
-			if (!w || !h) return;
-			const bitmapW = Math.round(w * dpr());
-			const bitmapH = Math.round(h * dpr());
-			// only touch width/height when they actually change — assigning clears the canvas
-			if (node.width !== bitmapW || node.height !== bitmapH) {
-				node.width = bitmapW;
-				node.height = bitmapH;
-			}
-			cssWidth = w;
-			cssHeight = h;
-		};
+	function host(canvas: HTMLCanvasElement) {
+		const ctx = canvas.getContext('2d');
+		if (!ctx) {
+			console.error(`Canvas: no 2D context available for "${label}" — nothing will render.`);
+			return;
+		}
 
 		const render = () => {
-			if (!cssWidth || !cssHeight) resize();
-			if (!cssWidth || !cssHeight) return; // still not laid out
-			const s = dpr();
-			ctx.setTransform(s, 0, 0, s, 0, 0);
-			paint(ctx, cssWidth, cssHeight);
+			const { width, height } = sizeToDevice(canvas);
+			if (!width || !height) return;
+			const scale = deviceScale();
+			ctx.setTransform(scale, 0, 0, scale, 0, 0); // paint in CSS pixels
+			paint(ctx, width, height);
 		};
 
-		resize();
 		render();
-
-		const observer = new ResizeObserver(() => {
-			resize();
-			render();
-		});
-		observer.observe(node);
+		const observer = new ResizeObserver(render);
+		observer.observe(canvas);
 		const unregister = register?.(render);
 
 		return () => {

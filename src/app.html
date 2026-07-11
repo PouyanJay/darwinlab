@@ -4,6 +4,28 @@
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<meta name="text-scale" content="scale" />
+		<!--
+			Resolve the theme BEFORE the first paint. The app is client-rendered, so if we waited for
+			onMount to stamp data-theme, a dark-theme user would see a full-brightness flash of the
+			light palette on every load. This must stay in <head>, ahead of any styles.
+			Kept in sync with state/theme.svelte.ts (same storage key, same fallback).
+		-->
+		<script>
+			(() => {
+				try {
+					const saved = localStorage.getItem('darwinlab:theme');
+					const theme =
+						saved === 'light' || saved === 'dark'
+							? saved
+							: matchMedia('(prefers-color-scheme: dark)').matches
+								? 'dark'
+								: 'light';
+					document.documentElement.dataset.theme = theme;
+				} catch {
+					document.documentElement.dataset.theme = 'light';
+				}
+			})();
+		</script>
 		%sveltekit.head%
 	</head>
 	<body data-sveltekit-preload-data="hover">

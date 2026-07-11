@@ -102,6 +102,12 @@ describe('subSteps', () => {
 describe('turboSlice', () => {
 	const world = (): World => makeWorld(DEFAULT_WORLDS[2], undefined, seededRng(5));
 
+	/** Deterministic clock: each read advances 1ms, so a slice yields after ~budgetMs reads. */
+	function tickingClock() {
+		let t = 0;
+		return () => (t += 1);
+	}
+
 	it('reports done immediately when there is nothing to train', () => {
 		expect(turboSlice([], 10)).toBe(true);
 	});
@@ -110,8 +116,9 @@ describe('turboSlice', () => {
 		const w = world();
 		let done = false;
 		let slices = 0;
-		while (!done && slices < 500) {
-			done = turboSlice([w], 5, 15);
+		// deterministic clock → no dependency on how fast this machine happens to be
+		while (!done && slices < 5000) {
+			done = turboSlice([w], 5, { budgetMs: 15, now: tickingClock() });
 			slices++;
 		}
 		expect(done).toBe(true);
@@ -123,7 +130,7 @@ describe('turboSlice', () => {
 		// a clock that jumps past the budget on the first check → must yield after one pass
 		let calls = 0;
 		const now = () => (calls++ === 0 ? 0 : 999);
-		const done = turboSlice([w], 1000, 15, now);
+		const done = turboSlice([w], 1000, { budgetMs: 15, now });
 
 		expect(done).toBe(false); // yielded, did not run to gen 1000
 		expect(w.gen).toBeLessThan(1000);
@@ -131,9 +138,52 @@ describe('turboSlice', () => {
 
 	it('steps on the fixed turbo timestep', () => {
 		const w = world();
-		turboSlice([w], 1, 15);
-		// genT advances in TURBO_DT increments, so it is always a multiple of the timestep
+		// generous budget on a deterministic clock so one slice reaches gen 1
+		turboSlice([w], 1, { budgetMs: 100_000, now: tickingClock() });
 		expect(TURBO_DT).toBeCloseTo(1 / 60, 9);
 		expect(w.gen).toBeGreaterThanOrEqual(1);
+	});
+});
+
+describe('createSimLoop — visibility safety (CLAUDE.md gotcha #1)', () => {
+	afterEach(() => vi.restoreAllMocks());
+
+	it('never schedules through requestAnimationFrame (it is suspended in background tabs)', async () => {
+		// rAF does not exist in node, so install a spy for it — if the loop ever reaches for it,
+		// we see the call. (The e2e suite proves the same thing in a real browser by making rAF a
+		// black hole and checking the sim still runs.)
+		const raf = vi.fn(() => 0);
+		const original = Reflect.get(globalThis, 'requestAnimationFrame');
+		Reflect.set(globalThis, 'requestAnimationFrame', raf);
+
+		const onFrame = vi.fn();
+		const loop = createSimLoop({ onFrame });
+		loop.start();
+		await new Promise((r) => setTimeout(r, 60)); // real timers: let a few frames land
+		loop.stop();
+
+		Reflect.set(globalThis, 'requestAnimationFrame', original);
+
+		expect(onFrame.mock.calls.length).toBeGreaterThan(0); // it really ran...
+		expect(raf).not.toHaveBeenCalled(); // ...and never touched rAF
+	});
+});
+
+describe('createSimLoop — clock safety', () => {
+	beforeEach(() => vi.useFakeTimers());
+	afterEach(() => vi.useRealTimers());
+
+	it('never emits a negative dt if the clock runs backwards', () => {
+		let t = 1000;
+		const seen: number[] = [];
+		const loop = createSimLoop({ onFrame: (e) => seen.push(e), now: () => t });
+
+		loop.start();
+		t = 0; // clock jumps backwards — must not produce a negative dt (physics would reverse)
+		vi.advanceTimersByTime(16);
+		loop.stop();
+
+		expect(seen[0]).toBe(0);
+		expect(seen.every((e) => e >= 0)).toBe(true);
 	});
 });

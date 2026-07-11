@@ -2,7 +2,8 @@
   One world's tank: the canvas the simulation is drawn into, with creature picking.
 
   Reads the RAW engine world (not a reactive proxy — see state/bench.svelte.ts) and hands it
-  straight to the renderer each frame, driven by the sim loop.
+  straight to the renderer each frame, driven by the sim loop. All sim mutation (hover) goes
+  through the bench store, never directly into the world.
 -->
 <script lang="ts">
 	import Canvas from '../common/Canvas.svelte';
@@ -20,16 +21,19 @@
 
 	let { entry, detail = 'performance', onselect }: Props = $props();
 
-	const reducedMotion = prefersReducedMotion();
 	let cursor = $state('default');
 
 	function paint(ctx: CanvasRenderingContext2D, width: number, height: number) {
 		drawWorld(entry.world, ctx, width, height, {
 			theme: theme.name,
 			detail,
-			reducedMotion
+			reducedMotion: prefersReducedMotion()
 		});
 	}
+
+	// Stable identity: Canvas's attachment re-runs if this changes, which would churn the
+	// ResizeObserver and re-register the painter on every re-render.
+	const register = (render: () => void) => bench.painters.add(render);
 
 	function pick(x: number, y: number) {
 		const hit = pickCreature(entry.world, x, y);
@@ -38,12 +42,12 @@
 
 	function hover(x: number, y: number) {
 		const hit = pickCreature(entry.world, x, y);
-		entry.world.hover = hit ? hit.obj : null;
+		bench.setHover(entry.id, hit ? hit.obj : null);
 		cursor = hit ? 'pointer' : 'default';
 	}
 
 	function leave() {
-		entry.world.hover = null;
+		bench.setHover(entry.id, null);
 		cursor = 'default';
 	}
 </script>
@@ -51,7 +55,7 @@
 <Canvas
 	{paint}
 	{cursor}
-	register={(render) => bench.registerPainter(render)}
+	{register}
 	onpick={pick}
 	onhover={hover}
 	onleave={leave}

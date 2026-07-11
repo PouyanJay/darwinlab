@@ -34,7 +34,7 @@
 <svelte:window
 	onkeydown={(e) => {
 		const el = e.target as HTMLElement | null;
-		if (el && /INPUT|TEXTAREA|SELECT/.test(el.tagName)) return;
+		if (el && ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName)) return;
 		if (e.key === ' ') {
 			e.preventDefault();
 			bench.togglePlay();
@@ -50,7 +50,7 @@
 		<div class="spacer"></div>
 
 		<span class="readout tabular">
-			<b>{bench.generationsEvolved}</b> generations evolved
+			<b data-testid="generations">{bench.generationsEvolved}</b> generations evolved
 		</span>
 
 		<button class="primary" onclick={() => bench.togglePlay()}>
@@ -76,7 +76,9 @@
 	</header>
 
 	{#if bench.turboTarget !== null}
-		<p class="turbo" role="status">training to generation {bench.turboTarget}…</p>
+		<p class="turbo" role="status" data-testid="turbo">
+			training to generation {bench.turboTarget}…
+		</p>
 	{/if}
 
 	{#if entry}
@@ -87,12 +89,12 @@
 				<div class="spacer"></div>
 				<span class="stat tabular">
 					<span class="muted">alive</span>
-					<b>{entry.stats.alive}</b>
-					<b class="eaten">−{entry.stats.eaten}</b>
+					<b data-testid="alive">{entry.stats.alive}</b>
+					<b class="eaten" data-testid="eaten">−{entry.stats.eaten}</b>
 				</span>
 				<span class="stat tabular">
 					<span class="muted">survival</span>
-					<b>{entry.stats.survivalPct}%</b>
+					<b data-testid="survival">{entry.stats.survivalPct}%</b>
 				</span>
 			</div>
 
