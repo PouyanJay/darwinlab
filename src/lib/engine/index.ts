@@ -16,3 +16,4 @@ export * from './rng';
 export * from './constants';
 export * from './types';
 export * from './network';
+export * from './genetics';
