@@ -28,15 +28,33 @@
 		return () => bench.destroy();
 	});
 
-	function addWorld() {
-		bench.addWorld(newWorldConfig(`World ${bench.worlds.length + 1}`, bench.nextAccent()));
+	/** The lowest "World N" nobody is using — so removing a world can't make two share a name. */
+	function nextWorldName(): string {
+		const taken = new Set(bench.worlds.map((entry) => entry.world.cfg.name));
+		let n = bench.worlds.length + 1;
+		while (taken.has(`World ${n}`)) n++;
+		return `World ${n}`;
 	}
 
-	/** Space plays/pauses — but not while someone is typing into a field. */
+	function addWorld() {
+		bench.addWorld(newWorldConfig(nextWorldName(), bench.nextAccent()));
+	}
+
+	/**
+	 * Space plays/pauses — but ONLY when it isn't already the focused control's key.
+	 *
+	 * Space is how a focused button is pressed and how a radio is chosen. Calling preventDefault on
+	 * it while a control has focus cancels that activation, so Space on the theme toggle used to
+	 * pause the sim instead of switching the theme. The shortcut therefore stands down for anything
+	 * focusable that Space already means something to, and only claims the key on the bare page.
+	 */
+	const SPACE_IS_SPOKEN_FOR =
+		'button, input, textarea, select, a, [role="radio"], [contenteditable]';
+
 	function onkeydown(event: KeyboardEvent) {
-		const target = event.target as HTMLElement | null;
-		if (target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) return;
 		if (event.key !== ' ') return;
+		const target = event.target as HTMLElement | null;
+		if (target?.closest(SPACE_IS_SPOKEN_FOR)) return;
 		event.preventDefault();
 		bench.togglePlay();
 	}

@@ -29,19 +29,41 @@
 
 	let dialog = $state<HTMLDialogElement>();
 
-	// Drive the native element from the `open` prop. The guards matter: showModal() on an already
-	// open dialog throws, and close() on a closed one would fire a spurious close event.
+	/**
+	 * Set when WE close the dialog because the owner set `open` to false.
+	 *
+	 * <dialog>.close() fires the same `close` event Esc does, and the event alone cannot tell them
+	 * apart. Without this, an owner-driven close would bounce back out as an `onclose` the owner
+	 * never asked for — and an owner that toggles rather than clears would reopen the dialog it just
+	 * closed. `onclose` has to mean "the user dismissed this", nothing else.
+	 *
+	 * The flag is cleared by the handler rather than after close(), because the close event is
+	 * QUEUED, not fired synchronously: clearing it on the next line would be too early to be seen.
+	 */
+	let closingFromProp = false;
+
+	// showModal() on an already-open dialog throws, hence the guard on each branch.
 	$effect(() => {
 		if (!dialog) return;
-		if (open && !dialog.open) dialog.showModal();
-		else if (!open && dialog.open) dialog.close();
+		if (open && !dialog.open) {
+			dialog.showModal();
+		} else if (!open && dialog.open) {
+			closingFromProp = true;
+			dialog.close();
+		}
 	});
 </script>
 
 <dialog
 	bind:this={dialog}
 	aria-label={title}
-	{onclose}
+	onclose={() => {
+		if (closingFromProp) {
+			closingFromProp = false;
+			return; // the owner already knows it closed us; telling it again is noise at best
+		}
+		onclose();
+	}}
 	onclick={(event) => {
 		if (event.target === dialog) onclose(); // the click landed on the backdrop, not the panel
 	}}
@@ -97,7 +119,7 @@
 		background: var(--panel);
 		color: var(--ink);
 		box-shadow: var(--shadow-modal);
-		animation: fade-up 0.25s var(--ease) both;
+		animation: fade-up var(--dur-enter) var(--ease) both;
 	}
 
 	header {
@@ -117,7 +139,7 @@
 		flex: 1;
 		margin: 0;
 		font-family: var(--font-display);
-		font-size: 18px;
+		font-size: var(--fs-title);
 		font-weight: var(--fw-semibold);
 	}
 

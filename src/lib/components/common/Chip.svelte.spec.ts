@@ -6,10 +6,13 @@ import { text } from './testkit';
 describe('Chip', () => {
 	it('is inert: it carries a label, never an interaction', () => {
 		const { container } = render(Chip, { children: text('live evolution'), variant: 'tag' });
-		const chip = container.querySelector('span')!;
+		const chip = container.firstElementChild!;
 
 		expect(chip.textContent).toContain('live evolution');
-		expect(chip.tabIndex).toBe(-1); // not in the tab order — a clickable chip is a Button
+		// It renders as a bare <span> with no interactive role: a chip you can click is a Button, and
+		// this fails the moment someone reaches for a <button> or a role here instead.
+		expect(chip.tagName).toBe('SPAN');
+		expect(chip.hasAttribute('role')).toBe(false);
 	});
 
 	it('takes a per-world accent, so each tile can tint its own badge', () => {

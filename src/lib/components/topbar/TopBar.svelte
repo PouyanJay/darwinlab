@@ -31,6 +31,27 @@
 		{ value: 2, label: '2×' }
 	];
 
+	/**
+	 * Publish the bar's REAL height as `--topbar-height`.
+	 *
+	 * The drawer and the turbo pill have to sit clear of the bar, and the bar's height isn't a
+	 * constant they can assume: it grows when the controls wrap on a narrow screen. Measuring it and
+	 * letting them anchor off the result is the only version of this that cannot go stale.
+	 */
+	function publishHeight(bar: HTMLElement) {
+		const root = document.documentElement;
+		const write = () => root.style.setProperty('--topbar-height', `${bar.offsetHeight}px`);
+
+		write();
+		const observer = new ResizeObserver(write);
+		observer.observe(bar);
+
+		return () => {
+			observer.disconnect();
+			root.style.removeProperty('--topbar-height'); // back to the token's fallback
+		};
+	}
+
 	const training = $derived(bench.turboTarget !== null);
 	const trainTarget = $derived(bench.maxGenerations || bench.generationsEvolved + TRAIN_BURST);
 	const trainLabel = $derived(
@@ -38,7 +59,7 @@
 	);
 </script>
 
-<header>
+<header {@attach publishHeight}>
 	<div class="brand">
 		<LogoMark />
 		<span class="wordmark">Darwin Lab</span>

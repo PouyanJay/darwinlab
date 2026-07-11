@@ -61,6 +61,17 @@ describe('Modal', () => {
 		expect(onclose).toHaveBeenCalledTimes(1);
 	});
 
+	it('does not report a close the owner performed itself', async () => {
+		// close() fires the same native `close` event Esc does. If that came back out as an onclose,
+		// an owner that toggles (open = !open) would reopen the dialog it had just closed.
+		const { onclose, rerender } = await conditions(true);
+
+		await rerender({ open: false });
+		await settle();
+
+		expect(onclose).not.toHaveBeenCalled();
+	});
+
 	it('gives focus back to whatever opened it', async () => {
 		const opener = document.createElement('button');
 		document.body.append(opener);

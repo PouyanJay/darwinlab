@@ -97,6 +97,6 @@
 	.checked {
 		background: var(--panel);
 		color: var(--ink);
-		box-shadow: 0 1px 4px rgba(20, 24, 40, 0.18);
+		box-shadow: var(--shadow-segment);
 	}
 </style>

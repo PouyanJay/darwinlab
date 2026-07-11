@@ -64,4 +64,25 @@ describe('Slider', () => {
 		await rerender({ value: 130 }); // the store said 130, not 200 — the slider must obey
 		expect(slider.value).toBe('130');
 	});
+
+	it('snaps back when the owner REJECTS the drag rather than accepting it', async () => {
+		// The hard case: the owner keeps its old value, so the `value` prop comes back unchanged and
+		// nothing re-renders. Without an explicit re-assert, the thumb would sit at the number the
+		// user dragged to while the world is still on the old one.
+		const onchange = vi.fn(); // an owner that listens and does nothing
+		render(Slider, {
+			label: 'Container width',
+			value: 640,
+			min: 320,
+			max: 1300,
+			step: 10,
+			onchange
+		});
+
+		const slider = page.getByRole('slider').element() as HTMLInputElement;
+		slider.value = '1300';
+		slider.dispatchEvent(new Event('input', { bubbles: true }));
+
+		await vi.waitFor(() => expect(slider.value).toBe('640'));
+	});
 });

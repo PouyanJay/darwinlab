@@ -66,8 +66,18 @@
 	/* ---- motion ----------------------------------------------------------------------------- */
 	--dur-fast: 0.15s;
 	--dur: 0.22s;
+	--dur-enter: 0.28s; /* an overlay arriving: modal, drawer */
 	--dur-slow: 0.35s;
 	--ease: ease;
+
+	/* ---- layout ----------------------------------------------------------------------------- */
+	/*
+	 * The top bar's real, rendered height — measured and written here by TopBar itself, because it
+	 * depends on content and wraps to two rows on narrow screens. Anything that has to sit clear of
+	 * the bar (the drawer, the turbo pill) anchors off this instead of guessing a constant that goes
+	 * stale the moment the bar changes height. The value below is only the pre-measurement fallback.
+	 */
+	--topbar-height: 62px;
 
 	/* ---- layering --------------------------------------------------------------------------- */
 	--z-topbar: 30;
@@ -94,10 +104,15 @@
 	--gold: #d8a13a;
 	--btn: #1d2230;
 	--btnink: #fdfdf9;
+	/* The ink that sits ON the accent. Paired with --accent for the same reason --btnink is paired
+	   with --btn: retuning one without the other is how contrast quietly breaks. */
+	--accentink: #ffffff;
 
 	/* ---- elevation & effects ----------------------------------------------------------------- */
 	--shadow: 0 1px 2px rgba(25, 30, 50, 0.05), 0 14px 40px -14px rgba(25, 30, 50, 0.14);
 	--shadow-pill: 0 4px 16px -6px rgba(20, 25, 45, 0.25);
+	/* The lift under the chosen segment of a segmented control. */
+	--shadow-segment: 0 1px 4px rgba(20, 24, 40, 0.18);
 	--shadow-drawer: 0 24px 60px -18px rgba(10, 14, 30, 0.35);
 	--shadow-modal: 0 30px 80px -20px rgba(10, 14, 30, 0.45);
 	--shadow-turbo: 0 12px 30px -8px rgba(10, 14, 30, 0.5);
@@ -130,9 +145,13 @@
 	--gold: #ffd166;
 	--btn: #f5f5fa;
 	--btnink: #0a0a0e;
+	--accentink: #ffffff;
 
+	/* Every shadow is re-tuned for dark: a navy-tinted light-theme shadow reads as grey haze on a
+	   near-black panel, not as depth. */
 	--shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 14px 40px -14px rgba(0, 0, 0, 0.6);
 	--shadow-pill: 0 4px 16px -6px rgba(0, 0, 0, 0.5);
+	--shadow-segment: 0 1px 4px rgba(0, 0, 0, 0.55);
 	--shadow-drawer: 0 24px 60px -18px rgba(0, 0, 0, 0.6);
 	--shadow-modal: 0 30px 80px -20px rgba(0, 0, 0, 0.7);
 	--shadow-turbo: 0 12px 30px -8px rgba(0, 0, 0, 0.6);

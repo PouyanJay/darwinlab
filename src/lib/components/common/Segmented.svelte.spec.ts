@@ -54,13 +54,23 @@ describe('Segmented', () => {
 		expect(onchange).toHaveBeenLastCalledWith(0.5);
 	});
 
-	it('wraps around at the ends rather than dead-ending', async () => {
+	it('wraps around off the front of the group', async () => {
 		const onchange = mount(0.5);
 		(page.getByRole('radio', { name: '½×' }).element() as HTMLButtonElement).focus();
 
 		await userEvent.keyboard('{ArrowLeft}');
 
 		expect(onchange).toHaveBeenLastCalledWith(2);
+	});
+
+	it('wraps around off the back of the group', async () => {
+		// The other half of the same modulo — symmetric code, so it gets a symmetric test.
+		const onchange = mount(2);
+		(page.getByRole('radio', { name: '2×' }).element() as HTMLButtonElement).focus();
+
+		await userEvent.keyboard('{ArrowRight}');
+
+		expect(onchange).toHaveBeenLastCalledWith(0.5);
 	});
 
 	it('holds a single tab stop: Tab lands on the chosen segment, not on all three', () => {

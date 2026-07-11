@@ -45,7 +45,6 @@ select {
 :focus-visible {
 	outline: var(--focus-ring);
 	outline-offset: var(--focus-offset);
-	border-radius: var(--radius-xs);
 }
 
 /* ---- utilities ------------------------------------------------------------------------------ */
@@ -55,11 +54,21 @@ select {
 	font-variant-numeric: tabular-nums;
 }
 
-/* The small uppercase caption above a stat or field ("alive", "survival / generation"). */
+/* The small uppercase caption above a stat ("alive", "survival / generation"). */
 .eyebrow {
 	font-size: var(--fs-eyebrow);
 	font-weight: var(--fw-medium);
 	letter-spacing: var(--tracking-wide);
+	text-transform: uppercase;
+	color: var(--ink3);
+}
+
+/* The same idea one notch louder: the caption on an editable field (Slider, Stepper, and every
+   field the Conditions modal will add). Shared so a third control can't invent a fourth variant. */
+.field-label {
+	font-size: var(--fs-label);
+	font-weight: var(--fw-semibold);
+	letter-spacing: var(--tracking-eyebrow);
 	text-transform: uppercase;
 	color: var(--ink3);
 }

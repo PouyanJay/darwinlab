@@ -23,7 +23,7 @@
 <style>
 	.turbo {
 		position: fixed;
-		top: 64px;
+		top: calc(var(--topbar-height) + var(--sp-1));
 		left: 50%;
 		transform: translateX(-50%);
 		z-index: var(--z-turbo);
@@ -32,7 +32,7 @@
 		gap: var(--sp-3);
 		margin: 0;
 		padding: 9px var(--sp-6);
-		border-radius: 24px;
+		border-radius: var(--radius-pill);
 		background: var(--btn);
 		color: var(--btnink);
 		box-shadow: var(--shadow-turbo);

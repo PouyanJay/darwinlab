@@ -11,6 +11,8 @@
   thing the eye sees.
 -->
 <script lang="ts">
+	import { tick } from 'svelte';
+
 	interface Props {
 		label: string;
 		value: number;
@@ -39,11 +41,26 @@
 	}: Props = $props();
 
 	const display = $derived(format(value));
+
+	/**
+	 * Report the drag, then make the thumb agree with whatever the owner decided.
+	 *
+	 * Svelte only rewrites the DOM when `value` actually changes, so if the owner clamps or ignores
+	 * what we reported, the prop comes back identical and the thumb would silently stay where the
+	 * user dragged it — showing a number the world does not have. Re-asserting after `tick()` (once
+	 * the owner's update, if any, has landed) keeps the control honest in both cases.
+	 */
+	async function drag(event: Event & { currentTarget: HTMLInputElement }) {
+		const input = event.currentTarget;
+		onchange(input.valueAsNumber);
+		await tick();
+		if (input.valueAsNumber !== value) input.valueAsNumber = value;
+	}
 </script>
 
 <label class="field">
 	<span class="head">
-		<span class="label">
+		<span class="field-label">
 			{label}{#if hint}<span class="hint">{hint}</span>{/if}
 		</span>
 		<span class="value tabular">{display}</span>
@@ -56,7 +73,7 @@
 		{step}
 		{value}
 		aria-valuetext={display}
-		oninput={(event) => onchange(event.currentTarget.valueAsNumber)}
+		oninput={drag}
 	/>
 </label>
 
@@ -70,14 +87,6 @@
 		align-items: baseline;
 		justify-content: space-between;
 		gap: var(--sp-3);
-	}
-
-	.label {
-		font-size: var(--fs-label);
-		font-weight: var(--fw-semibold);
-		letter-spacing: var(--tracking-eyebrow);
-		text-transform: uppercase;
-		color: var(--ink3);
 	}
 
 	/* The hint is prose inside a shouted label, so it drops the caps and the tracking. */

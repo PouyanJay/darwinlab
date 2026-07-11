@@ -86,7 +86,7 @@
 <style>
 	.drawer {
 		position: fixed;
-		top: 74px;
+		top: calc(var(--topbar-height) + var(--sp-5));
 		right: var(--sp-6);
 		bottom: var(--sp-6);
 		z-index: var(--z-drawer);
@@ -97,9 +97,9 @@
 		border: 1px solid var(--line);
 		border-radius: var(--radius-card);
 		background: var(--glass);
-		backdrop-filter: blur(16px);
+		backdrop-filter: blur(var(--blur-glass));
 		box-shadow: var(--shadow-drawer);
-		animation: slide-in-right 0.28s var(--ease) both;
+		animation: slide-in-right var(--dur-enter) var(--ease) both;
 	}
 
 	/* The drawer takes focus on open; a ring around the whole panel would be noise, and the

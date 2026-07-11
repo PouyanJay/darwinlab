@@ -120,6 +120,27 @@ test('train fast-forwards generations', async ({ page }) => {
 	expect(await generations(page)).toBeGreaterThanOrEqual(before + 25);
 });
 
+test('Space plays/pauses the bench — but never out from under a focused control', async ({
+	page
+}) => {
+	// On the bare page, Space is the play/pause shortcut.
+	await page.locator('body').click();
+	await expect(page.getByRole('button', { name: 'Pause' })).toBeVisible();
+	await page.keyboard.press(' ');
+	await expect(page.getByRole('button', { name: 'Evolve' })).toBeVisible();
+	await page.keyboard.press(' ');
+	await expect(page.getByRole('button', { name: 'Pause' })).toBeVisible();
+
+	// But Space is ALSO how a focused button is pressed. The shortcut used to preventDefault it
+	// regardless of focus, so Space on the theme toggle paused the sim instead of switching theme —
+	// a keyboard user could not operate the top bar at all. Verified to fail before the fix.
+	await page.getByRole('button', { name: 'switch theme' }).focus();
+	await page.keyboard.press(' ');
+
+	await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark'); // the button won
+	await expect(page.getByRole('button', { name: 'Pause' })).toBeVisible(); // the sim kept running
+});
+
 test('the population is being hunted', async ({ page }) => {
 	// NOT `> 0`: with no maxGenerations the world never deploys, so a generation can legitimately
 	// be wiped out at the instant we sample. Assert the real invariant instead.

@@ -24,14 +24,16 @@
 	// Unique per instance, so two steppers on the same screen can't collide on an id.
 	const id = $props.id();
 	const noun = $derived(label.toLowerCase());
-	const canDecrement = $derived(value - step >= min);
-	const canIncrement = $derived(value + step <= max);
+	// Gate on the BOUND, not on the step: a value that doesn't sit on the step grid (79, with step 2
+	// and max 80) must still be able to reach its bound — nudge() clamps it there.
+	const canDecrement = $derived(value > min);
+	const canIncrement = $derived(value < max);
 
 	const nudge = (delta: number) => onchange(Math.min(max, Math.max(min, value + delta)));
 </script>
 
 <div class="field">
-	<span class="label" {id}>{label}</span>
+	<span class="field-label" {id}>{label}</span>
 	<div class="row" role="group" aria-labelledby={id}>
 		<button
 			type="button"
@@ -54,13 +56,8 @@
 </div>
 
 <style>
-	.label {
-		display: block;
-		font-size: var(--fs-label);
-		font-weight: var(--fw-semibold);
-		letter-spacing: var(--tracking-eyebrow);
-		text-transform: uppercase;
-		color: var(--ink3);
+	.field-label {
+		display: block; /* the label owns its own line above the −/value/+ row */
 	}
 
 	.row {
