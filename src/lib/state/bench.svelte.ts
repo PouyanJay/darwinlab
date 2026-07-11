@@ -19,8 +19,10 @@
  *   WorldStats       what the world is DOING — alive, eaten, gen, survival. Refreshed each frame.
  *   WorldConfigView  what the world IS — name, senses, tank, accent. Refreshed when the store
  *                    writes to `cfg`, which is the only way `cfg` ever changes.
+ *   MindView         what the SELECTED FISH is thinking — its senses and motor outputs, refreshed
+ *                    each frame. One of these, because there is one inspector.
  *
- * Both are projections; `world` remains the single source of truth for both.
+ * All three are projections; `world` remains the single source of truth for every one of them.
  */
 
 import {
@@ -34,7 +36,15 @@ import {
 	ACCENTS,
 	WORLD_LIMITS
 } from '../engine';
-import type { World, WorldConfig, Senses, Fish, Predator, NumericCondition } from '../engine';
+import type {
+	World,
+	WorldConfig,
+	Senses,
+	Fish,
+	Predator,
+	SenseSnapshot,
+	NumericCondition
+} from '../engine';
 import type { Picked } from '../render';
 import { subSteps, turboSlice } from '../sim/loop';
 import { Playback, type Speed } from './playback.svelte';
@@ -69,6 +79,50 @@ export class WorldStats {
 		this.deployT = world.deployT;
 		this.halfLife = world.halfLife;
 		this.extinctT = world.extinctT;
+	}
+}
+
+/**
+ * What the selected fish is thinking, right now — the numbers the Brain Inspector reads.
+ *
+ * A projection of `world.sense`, which the ENGINE fills in each step (`updateSenseSnapshot`). The
+ * UI never computes a sense itself: the bars, the brain canvas and the tank's perception overlay
+ * are all reading the same numbers the fish's own network was fed, which is the only way the panel
+ * can honestly claim to show what the fish senses rather than what we think it should.
+ */
+export class MindView {
+	/** Seconds this fish has survived — its fitness, live. */
+	lived = $state(0);
+	/** Raw distance to the nearest predator, in px. Infinity when there is no predator at all. */
+	distance = $state(Infinity);
+	/** Bearing to the threat, in degrees. */
+	directionDeg = $state(0);
+	/** Closing speed: positive = it is gaining on you, negative = it is falling away. */
+	closing = $state(0);
+	/** Distance to the wall ahead, in px. */
+	wallAhead = $state(0);
+	/** Is the predator inside this fish's vision range at all? */
+	inVision = $state(false);
+	/** The normalised input values (0–1) the network was actually fed — what the bars fill to. */
+	distanceInput = $state(0);
+	closingInput = $state(0);
+	wallInput = $state(0);
+	/** The motor outputs the brain produced: turn is −1…1 (left…right), thrust 0…1. */
+	turn = $state(0);
+	thrust = $state(0);
+
+	syncFrom(sense: SenseSnapshot): void {
+		this.lived = sense.fitness;
+		this.distance = sense.d;
+		this.directionDeg = sense.dirDeg;
+		this.closing = sense.closing;
+		this.wallAhead = sense.wallFront;
+		this.inVision = sense.inVis;
+		this.distanceInput = sense.nd;
+		this.closingInput = sense.nc;
+		this.wallInput = sense.nw;
+		this.turn = sense.turn;
+		this.thrust = sense.thrust;
 	}
 }
 
@@ -162,6 +216,8 @@ class BenchStore {
 	selection = $state.raw<Selection | null>(null);
 	/** The world whose Conditions dialog is open, or null. One dialog, like one inspector. */
 	conditionsWorldId = $state<string | null>(null);
+	/** What the selected fish is thinking, refreshed every frame while a fish is selected. */
+	readonly mind = new MindView();
 
 	readonly playback = new Playback();
 	readonly painters = new PainterRegistry();
@@ -426,6 +482,7 @@ class BenchStore {
 		}
 		this.generationsEvolved = highest;
 		this.#reconcileSelection();
+		this.#publishMind();
 
 		this.painters.paintAll();
 	}
@@ -438,6 +495,7 @@ class BenchStore {
 		world.selFish = fish;
 		updateSenseSnapshot(world);
 		this.selection = { worldId: id, type: 'fish', followsChampion };
+		this.#syncMind(world); // the panel opens populated, even when the sim is paused
 	}
 
 	/** There is one inspector, so at most one world may hold a selected fish. */
@@ -470,6 +528,18 @@ class BenchStore {
 		const heir = selection.followsChampion ? bestAliveFish(entry.world) : null;
 		if (heir) this.#watch(selection.worldId, heir, true);
 		else this.selection = null;
+	}
+
+	/** Republish the selected fish's mind. The engine filled it in during the step; we only read. */
+	#publishMind(): void {
+		const selection = this.selection;
+		if (!selection || selection.type !== 'fish') return;
+		const world = this.find(selection.worldId)?.world;
+		if (world) this.#syncMind(world);
+	}
+
+	#syncMind(world: World): void {
+		if (world.sense) this.mind.syncFrom(world.sense);
 	}
 
 	#id(): string {

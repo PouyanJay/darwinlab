@@ -31,6 +31,7 @@
 	--fs-sm: 11px;
 	--fs-md: 11.5px; /* small buttons, segmented control */
 	--fs-body: 12.5px; /* buttons, banner copy */
+	--fs-quote: 13.5px; /* the claim on the ablation card (display face) */
 	--fs-stat: 15px; /* alive / lived numbers */
 	--fs-name: 15.5px; /* editable world name (display face) */
 	--fs-title: 16.5px; /* drawer + modal titles (display face) */
@@ -102,6 +103,10 @@
 	--accent: #4f56d3;
 	--danger: #e8604c;
 	--gold: #d8a13a;
+	/* The brain viz only — see ThemePalette in render/theme.ts for why the two signs need colours
+	   of their own rather than reusing accent/danger. */
+	--excite: #4f56d3;
+	--inhibit: #e8604c;
 	--btn: #1d2230;
 	--btnink: #fdfdf9;
 	/* The ink that sits ON the accent. Paired with --accent for the same reason --btnink is paired
@@ -143,6 +148,9 @@
 	--accent: #ff2d9c;
 	--danger: #ff2d9c;
 	--gold: #ffd166;
+	/* cyan: in dark, accent and danger are the same magenta, so + and − would look identical */
+	--excite: #38d0f5;
+	--inhibit: #ff2d9c;
 	--btn: #f5f5fa;
 	--btnink: #0a0a0e;
 	--accentink: #ffffff;

@@ -1,0 +1,110 @@
+<!--
+  The brain — 8 → 6 → 2, drawn from this fish's actual 68 evolved weights.
+
+  Not a diagram of a neural network: THIS network. Edge colour is the weight's sign, thickness is
+  its magnitude, and the pulses travelling along it are the live signal, |weight × activation|, this
+  frame. A sense that has been cut dims its input node and sends nothing, which is what makes the
+  ablation visible rather than merely asserted.
+
+  It paints from the RAW world, like the tank does — the genome is 68 floats and the signal changes
+  every frame; there is nothing here for reactivity to do.
+-->
+<script lang="ts">
+	import Canvas from '../common/Canvas.svelte';
+	import { drawBrain } from '$lib/render';
+	import { bench, theme, prefersReducedMotion } from '$lib/state';
+	import type { WorldEntry } from '$lib/state';
+	import { GLEN } from '$lib/engine';
+
+	interface Props {
+		entry: WorldEntry;
+	}
+
+	let { entry }: Props = $props();
+
+	const register = (render: () => void) => bench.painters.add(render);
+
+	function paint(ctx: CanvasRenderingContext2D, width: number, height: number) {
+		drawBrain(ctx, width, height, {
+			senses: entry.world.cfg.senses,
+			sense: entry.world.sense,
+			t: entry.world.t,
+			theme: theme.name,
+			reducedMotion: prefersReducedMotion()
+		});
+	}
+</script>
+
+<div class="head">
+	<span class="field-label">The brain — real evolved weights</span>
+	<span class="genes tabular">{GLEN} genes</span>
+</div>
+
+<div class="net">
+	<Canvas
+		{paint}
+		{register}
+		label="The fish's brain: 8 inputs to 6 hidden neurons to 2 outputs, drawn from its {GLEN}
+		evolved weights. Edges that excite (+) and edges that inhibit (−) are drawn in different
+		colours; the thicker the edge, the stronger the weight."
+	/>
+</div>
+
+<div class="legend">
+	<span><span class="swatch excite"></span>excite (+)</span>
+	<span><span class="swatch inhibit"></span>inhibit (−)</span>
+	<span>thickness = weight</span>
+</div>
+
+<style>
+	.head {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+	}
+
+	.genes {
+		font-size: var(--fs-eyebrow);
+		font-weight: var(--fw-medium);
+		color: var(--ink3);
+	}
+
+	.net {
+		height: 224px;
+		margin-top: var(--sp-3);
+		border: 1px solid var(--line);
+		border-radius: 12px;
+		background: var(--panel2);
+		overflow: hidden;
+	}
+
+	.legend {
+		display: flex;
+		gap: 12px;
+		margin-top: var(--sp-2);
+		font-size: var(--fs-label);
+		font-weight: var(--fw-medium);
+		color: var(--ink3);
+	}
+
+	.legend span {
+		display: flex;
+		align-items: center;
+		gap: var(--sp-1);
+	}
+
+	.swatch {
+		width: 14px;
+		height: 2px;
+		border-radius: 2px;
+	}
+
+	/* The same two colours the canvas paints with — see ThemePalette for why they are their own. */
+	.excite {
+		background: var(--excite);
+	}
+
+	.inhibit {
+		background: var(--inhibit);
+	}
+</style>

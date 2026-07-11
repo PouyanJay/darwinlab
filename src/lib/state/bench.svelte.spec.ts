@@ -419,6 +419,25 @@ describe('bench store — selection', () => {
 		expect(world.selFish).toBeNull();
 	});
 
+	it('lets go of a fish the moment a shark eats it — the inspector cannot outlive its subject', () => {
+		// A cramped tank with three sharks: this fish is going to be caught, and when it is, the panel
+		// showing its "live" mind has nothing left to show.
+		bench.init({
+			configs: [{ ...structuredClone(DEFAULT_WORLDS[0]), prey: 4, preds: 3, bw: 300, bh: 200 }]
+		});
+		const { id, world } = bench.worlds[0];
+		const victim = world.fish[0];
+		bench.select(id, { type: 'fish', obj: victim });
+
+		let steps = 0;
+		while (world.fish.includes(victim) && steps++ < 20_000) frame(1 / 60);
+		expect(world.fish).not.toContain(victim); // it really got eaten
+		frame();
+
+		expect(bench.selection).toBeNull();
+		expect(world.selFish).toBeNull();
+	});
+
 	it('lets go of a selection whose world is removed', () => {
 		init(2);
 		const [first] = bench.worlds;
@@ -617,5 +636,48 @@ describe('bench store — conditions', () => {
 		expect(config.accent).toBe(ACCENTS[5]);
 		expect(config.caption).toBe('the one that learned to turn away');
 		expect(world.fish[0]).toBe(fish); // nothing was respawned over a colour change
+	});
+});
+
+describe('bench store — the selected fish’s mind', () => {
+	it('publishes what the fish senses the moment it is selected, even paused', () => {
+		init(1);
+		bench.togglePlay(); // paused: no tick will come to fill this in for us
+		const { id, world } = bench.worlds[0];
+
+		bench.select(id, { type: 'fish', obj: world.fish[0] });
+
+		// the panel opens populated — the numbers are the engine's, not zeros waiting for a frame
+		expect(bench.mind.lived).toBe(world.fish[0].fitness);
+		expect(bench.mind.wallAhead).toBe(world.sense!.wallFront);
+	});
+
+	it('is the ENGINE’s numbers, not the UI’s — it never computes a sense of its own', () => {
+		init(1);
+		bench.togglePlay();
+		const { id, world } = bench.worlds[0];
+		bench.select(id, { type: 'fish', obj: world.fish[0] });
+
+		// forge the engine's snapshot: whatever is in world.sense is what the panel must show
+		world.sense = { ...world.sense!, d: 123.5, dirDeg: -47, closing: -8.25, inVis: true, nd: 0.75 };
+		frame();
+
+		expect(bench.mind.distance).toBe(123.5);
+		expect(bench.mind.directionDeg).toBe(-47);
+		expect(bench.mind.closing).toBe(-8.25);
+		expect(bench.mind.inVision).toBe(true);
+		expect(bench.mind.distanceInput).toBe(0.75);
+	});
+
+	it('keeps up with the fish it is following as the world runs', () => {
+		init(1);
+		const { id, world } = bench.worlds[0];
+		bench.selectChampion(id);
+		const first = bench.mind.lived;
+
+		frame(1 / 60, 30);
+
+		expect(bench.mind.lived).toBeGreaterThan(first); // it has been living
+		expect(bench.mind.lived).toBe(world.selFish!.fitness);
 	});
 });
