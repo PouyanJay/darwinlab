@@ -720,7 +720,7 @@ describe('bench store — train → deploy', () => {
 
 	it('THE POINT: a deployed population only ever goes DOWN — nothing respawns', () => {
 		initDeployable(1);
-		const { world, stats } = bench.worlds[0];
+		const { stats } = bench.worlds[0];
 		runUntil(() => stats.deployed);
 
 		let previous = stats.alive;
