@@ -141,3 +141,12 @@ export const ACCENT_NAMES: Record<string, string> = {
 	'#e8604c': 'coral',
 	'#8a5ad8': 'violet'
 };
+
+/**
+ * How long training lasts before a world is deployed — the bench-wide "max generations".
+ *
+ * Deployment is the product's second act: evolution stops, and the population you bred has to
+ * survive on its own with no more generations to save it. `0` means never deploy — the bench just
+ * keeps evolving, which is the right setting while you are still experimenting.
+ */
+export const MAX_GENERATIONS = { min: 0, max: 150, step: 5, default: 150 } as const;

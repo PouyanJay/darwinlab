@@ -34,7 +34,8 @@ import {
 	bestAliveFish,
 	cloneGenome,
 	ACCENTS,
-	WORLD_LIMITS
+	WORLD_LIMITS,
+	MAX_GENERATIONS
 } from '../engine';
 import type {
 	World,
@@ -283,9 +284,17 @@ class BenchStore {
 		if (gen > this.generationsEvolved) this.playback.requestTraining(gen);
 	}
 
+	/**
+	 * How many generations a world trains for before it deploys. 0 = never.
+	 *
+	 * Lowering it below where a world already is deploys that world on the spot; raising it puts the
+	 * world back to evolving, which is the honest thing to do — the run is over, and what is left of
+	 * the population breeds on. Reaching a limit is not a one-way door, it is just a limit.
+	 */
 	setMaxGenerations(gen: number): void {
-		this.#maxGenerations = gen;
-		for (const world of this.#rawWorlds) world.maxGen = gen;
+		const { min, max } = MAX_GENERATIONS;
+		this.#maxGenerations = Math.min(max, Math.max(min, Math.round(gen)));
+		for (const world of this.#rawWorlds) world.maxGen = this.#maxGenerations;
 	}
 
 	// ---- world CRUD (all sim mutation funnels through engine fns) ----

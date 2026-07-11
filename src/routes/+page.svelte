@@ -16,12 +16,16 @@
 	import BrainInspector from '$lib/components/inspector/BrainInspector.svelte';
 	import FooterPill from '$lib/components/common/FooterPill.svelte';
 	import { bench } from '$lib/state';
-	import { DEFAULT_WORLDS, newWorldConfig } from '$lib/engine';
+	import { DEFAULT_WORLDS, newWorldConfig, MAX_GENERATIONS } from '$lib/engine';
 
 	const PREWARM_GENERATIONS = 15;
 
 	onMount(() => {
-		bench.init({ configs: DEFAULT_WORLDS, prewarmGenerations: PREWARM_GENERATIONS });
+		bench.init({
+			configs: DEFAULT_WORLDS,
+			prewarmGenerations: PREWARM_GENERATIONS,
+			maxGenerations: MAX_GENERATIONS.default
+		});
 		return () => bench.destroy();
 	});
 
