@@ -21,9 +21,13 @@ import { expect, test, type Page } from '@playwright/test';
  * repaints the same frame — which is what makes this a real test of pause, too.
  */
 
-/** Sparse hash of the tank's pixels — changes iff the scene moved. */
+/**
+ * Sparse hash of the FIRST tank's pixels — changes iff the scene moved. The bench now holds many
+ * canvases (five tanks, plus a curve and a decay sparkline each), so every locator here is scoped
+ * to one tile rather than matching them all.
+ */
 function fingerprint(page: Page): Promise<number> {
-	return page.locator('canvas').evaluate((el: HTMLCanvasElement) => {
+	return tank(page).evaluate((el: HTMLCanvasElement) => {
 		const ctx = el.getContext('2d')!;
 		const { data } = ctx.getImageData(0, 0, el.width, el.height);
 		let h = 0;
@@ -32,8 +36,10 @@ function fingerprint(page: Page): Promise<number> {
 	});
 }
 
+/** The first world's tank — `role="img"` is the tank; the sparklines are canvases too. */
+const tank = (page: Page) => page.getByRole('img', { name: /tank/i }).first();
 const generations = (page: Page) => page.getByTestId('generations').innerText().then(Number);
-const alive = (page: Page) => page.getByTestId('alive').innerText().then(Number);
+const alive = (page: Page) => page.getByTestId('alive').first().innerText().then(Number);
 
 test.beforeEach(async ({ page }) => {
 	await page.goto('/');
@@ -42,11 +48,11 @@ test.beforeEach(async ({ page }) => {
 
 test('prewarms the world so the bench opens already competent', async ({ page }) => {
 	expect(await generations(page)).toBeGreaterThanOrEqual(15);
-	await expect(page.getByRole('img', { name: /tank/i })).toBeVisible();
+	await expect(tank(page)).toBeVisible();
 });
 
 test('paints the tank (the canvas is not blank)', async ({ page }) => {
-	const nonBlank = await page.locator('canvas').evaluate((el: HTMLCanvasElement) => {
+	const nonBlank = await tank(page).evaluate((el: HTMLCanvasElement) => {
 		const ctx = el.getContext('2d')!;
 		const { data } = ctx.getImageData(0, 0, el.width, el.height);
 		for (let i = 3; i < data.length; i += 4) if (data[i] !== 0) return true;
@@ -147,12 +153,12 @@ test('the population is being hunted', async ({ page }) => {
 	const count = await alive(page);
 	expect(count).toBeGreaterThanOrEqual(0);
 	expect(count).toBeLessThanOrEqual(20);
-	expect(await page.getByTestId('eaten').innerText()).toMatch(/^−\d+$/);
+	expect(await page.getByTestId('eaten').first().innerText()).toMatch(/^−\d+$/);
 });
 
 test('the canvas backing store is DPR-scaled and stays crisp when resized', async ({ page }) => {
 	const ratio = () =>
-		page.locator('canvas').evaluate((el: HTMLCanvasElement) => ({
+		tank(page).evaluate((el: HTMLCanvasElement) => ({
 			bitmap: el.width,
 			css: el.clientWidth,
 			dpr: Math.min(2, window.devicePixelRatio || 1)

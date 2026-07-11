@@ -15,6 +15,17 @@ describe('Chip', () => {
 		expect(chip.hasAttribute('role')).toBe(false);
 	});
 
+	it("composes a caller's class with its own instead of being overwritten by it", () => {
+		// The world tile's index badge does exactly this. A spread wins over an earlier attribute, so
+		// before the fix `class="badge"` REPLACED the chip's styling and the badge lost its shape.
+		const { container } = render(Chip, { children: text('01'), variant: 'tag', class: 'badge' });
+		const chip = container.firstElementChild!;
+
+		expect(chip.classList.contains('badge')).toBe(true);
+		expect(chip.classList.contains('chip')).toBe(true);
+		expect(chip.classList.contains('tag')).toBe(true);
+	});
+
 	it('takes a per-world accent, so each tile can tint its own badge', () => {
 		const { container } = render(Chip, {
 			children: text('01'),

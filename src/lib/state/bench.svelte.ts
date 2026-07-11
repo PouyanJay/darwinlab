@@ -13,8 +13,14 @@
  * A `World` is mutated ~60×/s and holds every fish, trail point and 68-weight genome. Wrapping
  * it in `$state` would deep-proxy all of that and fire reactivity on every mutation, which is
  * catastrophic at frame rate. So worlds live in `$state.raw` (reassigned on add/remove, never
- * proxied), the canvas paints straight from the raw objects, and the UI binds instead to a tiny
- * reactive `WorldStats` snapshot refreshed once per frame.
+ * proxied), the canvas paints straight from the raw objects, and the UI binds instead to two
+ * small reactive projections of each world:
+ *
+ *   WorldStats       what the world is DOING — alive, eaten, gen, survival. Refreshed each frame.
+ *   WorldConfigView  what the world IS — name, senses, tank, accent. Refreshed when the store
+ *                    writes to `cfg`, which is the only way `cfg` ever changes.
+ *
+ * Both are projections; `world` remains the single source of truth for both.
  */
 
 import {
@@ -22,11 +28,13 @@ import {
 	stepWorld,
 	resetWorld as engineResetWorld,
 	applyCfg as engineApplyCfg,
+	updateSenseSnapshot,
 	bestAliveFish,
 	cloneGenome,
 	ACCENTS
 } from '../engine';
 import type { World, WorldConfig, Senses, Fish, Predator } from '../engine';
+import type { Picked } from '../render';
 import { subSteps, turboSlice } from '../sim/loop';
 import { Playback, type Speed } from './playback.svelte';
 import { PainterRegistry } from './painters';
@@ -63,11 +71,71 @@ export class WorldStats {
 	}
 }
 
+/**
+ * Reactive mirror of a world's `cfg` — the half of the world the UI both READS and WRITES.
+ *
+ * The world itself is raw and unreactive on purpose (see the file header), which is right for the
+ * 20 fish being mutated 60×/s, but wrong for the config: a tile has to re-render the moment you
+ * rename it or cut one of its senses. Rather than proxy the whole hot world for the sake of twelve
+ * fields, the config is mirrored here.
+ *
+ * `cfg` stays the single source of truth — this is only ever projected FROM it, and only the store
+ * writes to `cfg`, so the two cannot drift.
+ */
+export class WorldConfigView {
+	name = $state('');
+	accent = $state('');
+	prey = $state(0);
+	preds = $state(0);
+	bw = $state(0);
+	bh = $state(0);
+	predSpeed = $state(1);
+	vision = $state(0);
+	mutation = $state(0);
+	caption = $state('');
+	senses = $state<Senses>({ dist: false, dir: false, closing: false, walls: false });
+
+	syncFrom(cfg: WorldConfig): void {
+		this.name = cfg.name;
+		this.accent = cfg.accent;
+		this.prey = cfg.prey;
+		this.preds = cfg.preds;
+		this.bw = cfg.bw;
+		this.bh = cfg.bh;
+		this.predSpeed = cfg.predSpeed;
+		this.vision = cfg.vision;
+		this.mutation = cfg.mutation;
+		this.caption = cfg.caption;
+		// A fresh object, not a mutation: `senses` is $state.raw-ish in spirit — replaced wholesale,
+		// so one assignment wakes every reader exactly once.
+		this.senses = { ...cfg.senses };
+	}
+}
+
 export interface WorldEntry {
 	readonly id: string;
 	/** The raw engine world — deliberately NOT reactive (see file header). */
 	readonly world: World;
 	readonly stats: WorldStats;
+	/** Reactive view of `world.cfg` — what components bind to. */
+	readonly config: WorldConfigView;
+}
+
+/**
+ * What the Brain Inspector is looking at. One selection across the whole bench: clicking into a
+ * second world drops the first, because there is one inspector.
+ */
+export interface Selection {
+	readonly worldId: string;
+	readonly type: 'fish' | 'pred';
+	/**
+	 * True when the user asked for "the best brain alive" (the ★ Champion button) rather than one
+	 * particular fish. That distinction is what a generation turnover hangs on: a champion selection
+	 * re-resolves to the new generation's best fish — that lineage is exactly what the product is
+	 * about — while a hand-picked fish is simply gone, and the inspector closes rather than quietly
+	 * swapping in a different creature and letting you believe it is still yours.
+	 */
+	readonly followsChampion: boolean;
 }
 
 export interface BenchInit {
@@ -89,11 +157,18 @@ class BenchStore {
 	worlds = $state.raw<WorldEntry[]>([]);
 	/** Highest generation reached across the bench (the top-bar readout). */
 	generationsEvolved = $state(0);
+	/** What the inspector is showing — one across the bench. `$state.raw`: replaced, never mutated. */
+	selection = $state.raw<Selection | null>(null);
 
 	readonly playback = new Playback();
 	readonly painters = new PainterRegistry();
 
-	#maxGenerations = 0;
+	/**
+	 * $state, not a plain field: the tile's "· trained" suffix and the top bar's Train label are
+	 * derived from it, and a getter over a non-reactive field never wakes a reader. Invisible while
+	 * it is always 0 — and quietly broken the moment Phase 7 starts driving it.
+	 */
+	#maxGenerations = $state(0);
 	#nextId = 0;
 	#accentCursor = 0;
 	/** Cached raw worlds for the turbo path, so training allocates nothing per frame. */
@@ -127,6 +202,7 @@ class BenchStore {
 		this.worlds = [];
 		this.#rawWorlds = [];
 		this.generationsEvolved = 0;
+		this.selection = null;
 		this.#maxGenerations = 0;
 		this.#nextId = 0;
 		this.#accentCursor = 0;
@@ -163,7 +239,7 @@ class BenchStore {
 		const source = assertEntry(this.worlds[index], id);
 
 		const cfg = structuredClone(source.world.cfg);
-		cfg.name += ' copy';
+		cfg.name = this.#uniqueName(`${cfg.name} copy`);
 		// carry the evolved brains across so the copy starts where the original is
 		const genomes = source.world.roster.map((fish) => cloneGenome(fish.genome));
 		const world = makeWorld(cfg, genomes);
@@ -183,6 +259,9 @@ class BenchStore {
 
 	removeWorld(id: string): void {
 		this.#setWorlds(this.worlds.filter((entry) => entry.id !== id));
+		// A selection pointing INTO the world that just went away has to go with it, now — not on the
+		// next frame, or a component could render one frame against a world the bench no longer has.
+		if (this.selection?.worldId === id) this.selection = null;
 	}
 
 	/** Restart evolution from random brains. */
@@ -190,9 +269,19 @@ class BenchStore {
 		engineResetWorld(this.entry(id).world);
 	}
 
+	/**
+	 * Rename a world. A name is a label, not a condition — nothing about the simulation changes, so
+	 * this deliberately does NOT go through applyCfg.
+	 */
+	renameWorld(id: string, name: string): void {
+		this.entry(id).world.cfg.name = name;
+		this.#publishConfig(id);
+	}
+
 	/** Apply live config edits without wiping learning. */
 	applyConfig(id: string): void {
 		engineApplyCfg(this.entry(id).world);
+		this.#publishConfig(id);
 	}
 
 	/** Toggle one sense — a true live ablation (the input neuron then receives 0). */
@@ -200,11 +289,48 @@ class BenchStore {
 		const { world } = this.entry(id);
 		world.cfg.senses[sense] = !world.cfg.senses[sense];
 		engineApplyCfg(world);
+		this.#publishConfig(id);
 	}
 
-	/** Highlight a creature under the pointer. Components must not touch `world.hover` directly. */
+	/**
+	 * Highlight a creature under the pointer. Components must not touch `world.hover` directly.
+	 *
+	 * Unlike every other method here this one does NOT assert the world exists: a pointer event can
+	 * land just after its tile was removed, and hover is best-effort state about a cursor, not a
+	 * claim about the bench. Throwing out of a mousemove listener would be the wrong answer.
+	 */
 	setHover(id: string, target: Fish | Predator | null): void {
-		this.entry(id).world.hover = target;
+		const entry = this.find(id);
+		if (entry) entry.world.hover = target;
+	}
+
+	// ---- selection (one inspector, so one selection across the bench) ----
+
+	/** Select what the pointer landed on — a fish, the shark, or (on empty water) nothing. */
+	select(id: string, picked: Picked | null): void {
+		this.#deselectEverywhere();
+		if (!picked) {
+			this.selection = null;
+			return;
+		}
+		if (picked.type === 'pred') {
+			this.selection = { worldId: id, type: 'pred', followsChampion: false };
+			return;
+		}
+		this.#watch(id, picked.obj, false);
+	}
+
+	/** "★ Champion" — watch the best brain currently alive, and keep watching it as it evolves. */
+	selectChampion(id: string): void {
+		const best = bestAliveFish(this.entry(id).world);
+		if (!best) return; // nothing alive to watch — leave the current selection alone
+		this.#deselectEverywhere();
+		this.#watch(id, best, true);
+	}
+
+	clearSelection(): void {
+		this.#deselectEverywhere();
+		this.selection = null;
 	}
 
 	/** Look up a world, throwing on an unknown id (a miss is always a caller bug). */
@@ -247,19 +373,77 @@ class BenchStore {
 			if (entry.world.gen > highest) highest = entry.world.gen;
 		}
 		this.generationsEvolved = highest;
+		this.#reconcileSelection();
 
 		this.painters.paintAll();
 	}
 
 	// ---- internals ----
 
+	/** Point a world at the fish to inspect, and fill in its mind now (it may be paused). */
+	#watch(id: string, fish: Fish, followsChampion: boolean): void {
+		const { world } = this.entry(id);
+		world.selFish = fish;
+		updateSenseSnapshot(world);
+		this.selection = { worldId: id, type: 'fish', followsChampion };
+	}
+
+	/** There is one inspector, so at most one world may hold a selected fish. */
+	#deselectEverywhere(): void {
+		for (const world of this.#rawWorlds) {
+			world.selFish = null;
+			world.sense = null;
+		}
+	}
+
+	/**
+	 * Keep the selection honest once the world has moved on.
+	 *
+	 * The engine drops `selFish` the moment that fish stops existing — eaten, or replaced when its
+	 * generation ended. So a null pointer here means the creature the user was watching is gone, and
+	 * we either follow the champion lineage into the new generation or admit the selection is over.
+	 * Nothing is ever left pointing at a fish that isn't swimming.
+	 */
+	#reconcileSelection(): void {
+		const selection = this.selection;
+		if (!selection || selection.type !== 'fish') return;
+
+		const entry = this.find(selection.worldId);
+		if (!entry) {
+			this.selection = null; // its world was removed out from under it
+			return;
+		}
+		if (entry.world.selFish) return; // still swimming
+
+		const heir = selection.followsChampion ? bestAliveFish(entry.world) : null;
+		if (heir) this.#watch(selection.worldId, heir, true);
+		else this.selection = null;
+	}
+
 	#id(): string {
 		return `w${++this.#nextId}`;
 	}
 
+	/** A name no live world is using — two tiles reading "Direction copy" are simply ambiguous. */
+	#uniqueName(wanted: string): string {
+		const taken = new Set(this.worlds.map((entry) => entry.world.cfg.name));
+		if (!taken.has(wanted)) return wanted;
+		let n = 2;
+		while (taken.has(`${wanted} ${n}`)) n++;
+		return `${wanted} ${n}`;
+	}
+
 	#wrap(world: World): WorldEntry {
 		world.maxGen = this.#maxGenerations;
-		return { id: this.#id(), world, stats: new WorldStats() };
+		const config = new WorldConfigView();
+		config.syncFrom(world.cfg);
+		return { id: this.#id(), world, stats: new WorldStats(), config };
+	}
+
+	/** Re-project a world's cfg after the store has written to it. Every cfg write ends here. */
+	#publishConfig(id: string): void {
+		const entry = this.entry(id);
+		entry.config.syncFrom(entry.world.cfg);
 	}
 
 	#create(cfg: WorldConfig): WorldEntry {

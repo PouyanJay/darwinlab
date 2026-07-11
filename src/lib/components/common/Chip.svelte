@@ -23,10 +23,20 @@
 		tabular?: boolean;
 	}
 
-	let { children, variant = 'pill', tone = 'neutral', tabular = false, ...rest }: Props = $props();
+	// `class` is pulled out rather than left in the spread: spread wins over an earlier attribute, so
+	// a caller passing class="badge" would otherwise REPLACE the chip's own styling instead of
+	// adding to it. Merged into the list, it composes the way a caller expects.
+	let {
+		children,
+		variant = 'pill',
+		tone = 'neutral',
+		tabular = false,
+		class: extra,
+		...rest
+	}: Props = $props();
 </script>
 
-<span class={['chip', variant, tone, tabular && 'tabular']} {...rest}>
+<span class={['chip', variant, tone, tabular && 'tabular', extra]} {...rest}>
 	{@render children()}
 </span>
 

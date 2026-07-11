@@ -8,15 +8,19 @@
 <script lang="ts">
 	import Canvas from '../common/Canvas.svelte';
 	import { drawWorld, pickCreature } from '$lib/render';
+	import type { Picked } from '$lib/render';
 	import { bench, theme, prefersReducedMotion } from '$lib/state';
 	import type { WorldEntry } from '$lib/state';
-	import type { Fish, Predator } from '$lib/engine';
 
 	interface Props {
 		entry: WorldEntry;
 		/** 'performance' scales god-rays/particulate down so many tanks stay smooth. */
 		detail?: 'cinematic' | 'performance';
-		onselect?: (picked: { type: 'fish'; obj: Fish } | { type: 'pred'; obj: Predator }) => void;
+		/**
+		 * What the click landed on — `null` for empty water, which is a real answer: clicking the
+		 * background is how you put a creature down again.
+		 */
+		onselect?: (picked: Picked | null) => void;
 	}
 
 	let { entry, detail = 'performance', onselect }: Props = $props();
@@ -36,8 +40,7 @@
 	const register = (render: () => void) => bench.painters.add(render);
 
 	function pick(x: number, y: number) {
-		const hit = pickCreature(entry.world, x, y);
-		if (hit) onselect?.(hit);
+		onselect?.(pickCreature(entry.world, x, y));
 	}
 
 	function hover(x: number, y: number) {
@@ -59,6 +62,6 @@
 	onpick={pick}
 	onhover={hover}
 	onleave={leave}
-	label="{entry.world.cfg.name} tank — {entry.stats.alive} prey alive, generation {entry.stats
+	label="{entry.config.name} tank — {entry.stats.alive} prey alive, generation {entry.stats
 		.gen}. Click a creature to inspect its brain."
 />
