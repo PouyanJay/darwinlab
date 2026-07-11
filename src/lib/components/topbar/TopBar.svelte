@@ -125,7 +125,7 @@
 	{/if}
 
 	{#if onplaystory}
-		<Button variant="accent" onclick={onplaystory}>
+		<Button variant="accent" disabled={training} onclick={onplaystory}>
 			<svg width="9" height="10" viewBox="0 0 10 12" aria-hidden="true">
 				<polygon points="0,0 10,6 0,12" fill="currentColor" />
 			</svg>

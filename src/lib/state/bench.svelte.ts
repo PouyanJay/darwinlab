@@ -340,10 +340,19 @@ class BenchStore {
 		this.selection = null;
 	}
 
-	/** Roll the film. The bench stops where it is and waits. */
-	playStory(): void {
+	/**
+	 * Roll the film. The bench stops where it is and waits.
+	 *
+	 * Not while it is TRAINING, though: a story does not advance the bench, so a turbo burst caught
+	 * mid-flight would simply hang there — the pill spinning behind the film, the worlds frozen part
+	 * way to their target. Let the training land first.
+	 */
+	playStory(): boolean {
+		if (this.playback.training || !this.worlds.length) return false;
 		this.clearSelection();
-		if (story.start(this.worlds)) this.playback.play();
+		if (!story.start(this.worlds)) return false;
+		this.playback.play();
+		return true;
 	}
 
 	/** Back to the bench, exactly as it was left. */

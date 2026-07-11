@@ -4,6 +4,7 @@
  */
 export * from './views.svelte';
 export * from './bench.svelte';
+export * from './story.svelte';
 export * from './playback.svelte';
 export * from './painters';
 export * from './theme.svelte';

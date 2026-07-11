@@ -14,8 +14,9 @@
 	import WorldTile from '$lib/components/bench/WorldTile.svelte';
 	import ConditionsModal from '$lib/components/conditions/ConditionsModal.svelte';
 	import BrainInspector from '$lib/components/inspector/BrainInspector.svelte';
+	import StoryMode from '$lib/components/story/StoryMode.svelte';
 	import FooterPill from '$lib/components/common/FooterPill.svelte';
-	import { bench } from '$lib/state';
+	import { bench, story } from '$lib/state';
 	import { DEFAULT_WORLDS, newWorldConfig, MAX_GENERATIONS_DEFAULT } from '$lib/engine';
 
 	const PREWARM_GENERATIONS = 15;
@@ -63,6 +64,7 @@
 
 	function onkeydown(event: KeyboardEvent) {
 		if (event.key !== ' ') return;
+		if (story.active) return; // the film has its own transport, and it owns the keyboard
 		const target = event.target as HTMLElement | null;
 		if (target?.closest(SPACE_IS_SPOKEN_FOR)) return;
 		event.preventDefault();
@@ -74,7 +76,7 @@
 <svelte:window {onkeydown} />
 
 <div class="app">
-	<TopBar onaddworld={addWorld} />
+	<TopBar onaddworld={addWorld} onplaystory={() => bench.playStory()} />
 	<TurboPill />
 
 	<div class="banner">
@@ -96,6 +98,8 @@
 	{#if bench.selection && inspecting}
 		<BrainInspector selection={bench.selection} entry={inspecting} />
 	{/if}
+
+	<StoryMode />
 
 	<FooterPill />
 </div>

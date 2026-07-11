@@ -3,7 +3,15 @@
   it is still a caricature. It stays visible on purpose — the honesty is part of the product, not a
   footnote to be scrolled past.
 -->
-<p class="pill">real neuroevolution · a teaching caricature, not biology</p>
+<script lang="ts">
+	import { story } from '$lib/state';
+</script>
+
+<!-- Hidden under a story, which carries the same line in its own header — the film is a takeover,
+     and the pill would otherwise sit on top of the scene's progress bar. -->
+{#if !story.active}
+	<p class="pill">real neuroevolution · a teaching caricature, not biology</p>
+{/if}
 
 <style>
 	.pill {
