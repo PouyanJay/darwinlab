@@ -5,19 +5,64 @@ import type { World } from '../engine';
 
 /** A no-op 2D context — enough to prove the painters run end-to-end without touching a DOM. */
 function mockCtx(): CanvasRenderingContext2D {
+	return recordingCtx().ctx;
+}
+
+/**
+ * The same context, but it remembers what the painter actually painted — and, crucially, WHAT SHAPE.
+ *
+ * A Proxy that swallows writes is fine for "does this painter run", but it cannot see what the
+ * painter DECIDED, and for the brain the colour IS the decision: which edges excite and which
+ * inhibit. Recording only the colours is not enough either — the NODES are stroked in those same two
+ * colours (by the sign of their activation), so a drawBrain that ignored the weights' signs
+ * completely would still emit some of each colour and sail through. Both of my earlier versions of
+ * this test did exactly that.
+ *
+ * So the recorder tracks the current path's shape: a stroked line is an edge, a stroked arc is a
+ * node. The edges are what the legend is making a claim about.
+ */
+function recordingCtx(): { ctx: CanvasRenderingContext2D; edges: string[] } {
 	const gradient = { addColorStop: () => {} };
-	return new Proxy(
+	const edges: string[] = [];
+	const state: Record<string, unknown> = {};
+	let shape: 'line' | 'arc' | 'none' = 'none';
+
+	const ctx = new Proxy(
 		{},
 		{
 			get(_t, prop) {
 				if (prop === 'createLinearGradient' || prop === 'createRadialGradient')
 					return () => gradient;
 				if (prop === 'measureText') return () => ({ width: 20 });
+				if (prop === 'beginPath')
+					return () => {
+						shape = 'none';
+					};
+				if (prop === 'moveTo' || prop === 'lineTo')
+					return () => {
+						if (shape === 'none') shape = 'line';
+					};
+				if (prop === 'arc')
+					return () => {
+						shape = 'arc';
+					};
+				if (prop === 'stroke')
+					return () => {
+						if (shape === 'line' && typeof state.strokeStyle === 'string') {
+							edges.push(state.strokeStyle);
+						}
+					};
+				if (typeof prop === 'string' && prop in state) return state[prop];
 				return () => {};
 			},
-			set: () => true
+			set(_t, prop, value) {
+				state[prop as string] = value;
+				return true;
+			}
 		}
 	) as unknown as CanvasRenderingContext2D;
+
+	return { ctx, edges };
 }
 
 const world = (): World => makeWorld(DEFAULT_WORLDS[4], undefined, seededRng(3));
@@ -88,11 +133,38 @@ describe('drawBrain', () => {
 		).not.toThrow();
 	});
 
-	it('gives the two signs colours that differ in BOTH themes', () => {
-		// The whole panel argues "blue excites, red inhibits". If the two ever resolve to the same
-		// colour — as they do if you reach for accent/danger in dark, where both are magenta — the
-		// legend is lying and the picture means nothing.
+	it('paints by the SIGN of the weight — a brain of inhibitors does not look like a brain of exciters', () => {
+		/*
+		 * Paint two brains — one whose every weight is positive, one whose every weight is negative —
+		 * and check the EDGE colours actually swap. Nothing but reading the sign can do that.
+		 *
+		 * (Asserting that both colours merely appear is not enough, and neither is counting every
+		 * stroke: the nodes are stroked in the same two colours by the sign of their activation, so a
+		 * drawBrain that ignored the weights entirely still emitted some of each. Two earlier versions
+		 * of this test passed against exactly that sabotage.)
+		 */
 		for (const theme of ['light', 'dark'] as const) {
+			const paintWith = (weight: number) => {
+				const w = world();
+				w.selFish = w.fish[0];
+				w.selFish.genome.fill(weight);
+				stepWorld(w, 1 / 60);
+
+				const { ctx, edges } = recordingCtx();
+				drawBrain(ctx, 300, 224, { senses: w.cfg.senses, sense: w.sense, t: w.t, theme });
+				return {
+					excite: edges.filter((colour) => colour === THEMES[theme].excite).length,
+					inhibit: edges.filter((colour) => colour === THEMES[theme].inhibit).length
+				};
+			};
+
+			const positive = paintWith(0.9);
+			const negative = paintWith(-0.9);
+
+			expect(positive.excite).toBeGreaterThan(negative.excite);
+			expect(negative.inhibit).toBeGreaterThan(positive.inhibit);
+			// and the two signs must be distinguishable at all — in dark, accent and danger are the
+			// same magenta, which is why the brain has colours of its own
 			expect(THEMES[theme].excite).not.toBe(THEMES[theme].inhibit);
 		}
 	});

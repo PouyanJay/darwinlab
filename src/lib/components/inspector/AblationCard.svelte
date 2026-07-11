@@ -51,7 +51,7 @@
 	.claim {
 		margin: var(--sp-2) 0 0;
 		font-family: var(--font-display);
-		font-size: 13.5px;
+		font-size: var(--fs-quote);
 		font-weight: var(--fw-semibold);
 	}
 

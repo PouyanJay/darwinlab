@@ -26,9 +26,8 @@ function show(sense: Partial<SenseSnapshot>, senses = DEFAULT_WORLDS[4].senses) 
 	return entry;
 }
 
-/** The value a given bar is reading out. */
-const reads = (label: string) =>
-	page.getByText(label).element().parentElement!.querySelector('b')!.textContent;
+/** What a given bar is reading out. Found by its accessible name, not by walking the DOM. */
+const reads = (label: string) => page.getByRole('status', { name: label }).element().textContent;
 
 describe('SenseBars — the three different ways a sense can be quiet', () => {
 	it('reads the raw quantity when the predator is in range', () => {
@@ -74,9 +73,11 @@ describe('SenseBars — the three different ways a sense can be quiet', () => {
 			{ dist: true, dir: true, closing: false, walls: false }
 		);
 
-		const closing = page.getByText('closing speed').element().closest('div')!.parentElement!;
-		const fill = closing.querySelector('.fill') as HTMLElement;
-		expect(fill.style.width).toBe('0%'); // the neuron receives 0 — so does the bar
+		// The world is full of closing threat (nc = 0.9) — but this brain has no neuron to receive it,
+		// so the bar it feeds must be empty, not merely dimmed.
+		const bars = page.getByRole('status', { name: 'closing speed' }).element().closest('.bar')!;
+		const fill = bars.querySelector('.fill') as HTMLElement;
+		expect(fill.style.width).toBe('0%');
 		expect(entry.world.cfg.senses.closing).toBe(false);
 	});
 });

@@ -5,6 +5,7 @@
   turning left, right means right. Thrust only ever goes one way, so it fills from the left.
 -->
 <script lang="ts">
+	import Meter from '../common/Meter.svelte';
 	import { bench } from '$lib/state';
 
 	const mind = $derived(bench.mind);
@@ -16,29 +17,25 @@
 	const turnLabel = $derived(
 		`${turn > DEADZONE ? 'right ' : turn < -DEADZONE ? 'left ' : ''}${Math.abs(turn).toFixed(2)}`
 	);
-	// The bar occupies half the track per side: full lock is 50%, from the centre outwards.
-	const turnOffset = $derived(turn >= 0 ? 50 : 50 + turn * 50);
-	const turnWidth = $derived(Math.abs(turn) * 50);
 </script>
 
 <div class="output">
 	<div class="head">
-		<span>turn</span>
-		<b class="tabular">{turnLabel}</b>
+		<span id="motor-turn">turn</span>
+		<b class="tabular" role="status" aria-labelledby="motor-turn">{turnLabel}</b>
 	</div>
-	<div class="track">
-		<span class="centre" aria-hidden="true"></span>
-		<div class="fill" style:left="{turnOffset}%" style:width="{turnWidth}%"></div>
+	<div class="meter">
+		<Meter value={turn} origin="centre" />
 	</div>
 </div>
 
 <div class="output">
 	<div class="head">
-		<span>thrust</span>
-		<b class="tabular">{mind.thrust.toFixed(2)}</b>
+		<span id="motor-thrust">thrust</span>
+		<b class="tabular" role="status" aria-labelledby="motor-thrust">{mind.thrust.toFixed(2)}</b>
 	</div>
-	<div class="track">
-		<div class="fill" style:width="{Math.min(100, Math.max(0, mind.thrust * 100))}%"></div>
+	<div class="meter">
+		<Meter value={mind.thrust} />
 	</div>
 </div>
 
@@ -59,28 +56,7 @@
 		color: var(--ink);
 	}
 
-	.track {
-		position: relative;
-		height: 5px;
+	.meter {
 		margin-top: var(--sp-1);
-		border-radius: 3px;
-		background: var(--chip);
-	}
-
-	/* The zero tick — without it, "turning slightly left" and "going straight" look the same. */
-	.centre {
-		position: absolute;
-		left: 50%;
-		top: -2px;
-		width: 1px;
-		height: 9px;
-		background: var(--ink3);
-	}
-
-	.fill {
-		position: absolute;
-		height: 100%;
-		border-radius: 3px;
-		background: var(--accent);
 	}
 </style>

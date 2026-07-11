@@ -495,7 +495,7 @@ class BenchStore {
 		world.selFish = fish;
 		updateSenseSnapshot(world);
 		this.selection = { worldId: id, type: 'fish', followsChampion };
-		if (world.sense) this.mind.syncFrom(world.sense); // the panel opens populated, even paused
+		this.#syncMind(world); // the panel opens populated, even when the sim is paused
 	}
 
 	/** There is one inspector, so at most one world may hold a selected fish. */
@@ -534,8 +534,12 @@ class BenchStore {
 	#publishMind(): void {
 		const selection = this.selection;
 		if (!selection || selection.type !== 'fish') return;
-		const sense = this.find(selection.worldId)?.world.sense;
-		if (sense) this.mind.syncFrom(sense);
+		const world = this.find(selection.worldId)?.world;
+		if (world) this.#syncMind(world);
+	}
+
+	#syncMind(world: World): void {
+		if (world.sense) this.mind.syncFrom(world.sense);
 	}
 
 	#id(): string {

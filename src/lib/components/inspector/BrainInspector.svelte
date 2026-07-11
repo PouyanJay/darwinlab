@@ -43,16 +43,16 @@
 	{#if fish}
 		<div class="stats">
 			<div class="stat">
-				<span class="eyebrow">lived</span>
-				<b class="tabular">{bench.mind.lived.toFixed(1)}s</b>
+				<span class="eyebrow" id="stat-lived">lived</span>
+				<b class="tabular" aria-labelledby="stat-lived">{bench.mind.lived.toFixed(1)}s</b>
 			</div>
 			<div class="stat">
-				<span class="eyebrow">generation</span>
-				<b class="tabular">{entry.stats.gen}</b>
+				<span class="eyebrow" id="stat-generation">generation</span>
+				<b class="tabular" aria-labelledby="stat-generation">{entry.stats.gen}</b>
 			</div>
 			<div class="stat">
-				<span class="eyebrow">champion</span>
-				<b class="tabular gold">{champion}</b>
+				<span class="eyebrow" id="stat-champion">champion</span>
+				<b class="tabular gold" aria-labelledby="stat-champion">{champion}</b>
 			</div>
 		</div>
 

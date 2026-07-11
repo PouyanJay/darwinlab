@@ -45,7 +45,8 @@
 		{paint}
 		{register}
 		label="The fish's brain: 8 inputs to 6 hidden neurons to 2 outputs, drawn from its {GLEN}
-		evolved weights. Blue edges excite, red edges inhibit; thickness is the weight's strength."
+		evolved weights. Edges that excite (+) and edges that inhibit (−) are drawn in different
+		colours; the thicker the edge, the stronger the weight."
 	/>
 </div>
 

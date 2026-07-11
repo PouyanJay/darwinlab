@@ -15,6 +15,7 @@
   A cut sense is dimmed rather than hidden: its absence is the experiment.
 -->
 <script lang="ts">
+	import Meter from '../common/Meter.svelte';
 	import { bench } from '$lib/state';
 	import type { WorldEntry } from '$lib/state';
 
@@ -81,15 +82,13 @@
 	{#each bars as bar (bar.key)}
 		<div class="bar" class:cut={!bar.on}>
 			<div class="head">
-				<span>{bar.label}</span>
-				<b class="tabular">{bar.value}</b>
+				<span id="sense-{bar.key}">{bar.label}</span>
+				<!-- The reading is labelled by its row, so it can be found by name rather than by walking
+				     the DOM — and so a screen reader hears "predator distance: 164 px". -->
+				<b class="tabular" role="status" aria-labelledby="sense-{bar.key}">{bar.value}</b>
 			</div>
-			<div class="track">
-				<div
-					class="fill"
-					class:danger={bar.tone === 'danger'}
-					style:width="{Math.min(100, Math.max(0, bar.fill * 100))}%"
-				></div>
+			<div class="meter">
+				<Meter value={bar.fill} tone={bar.tone === 'danger' ? 'danger' : 'accent'} />
 			</div>
 		</div>
 	{/each}
@@ -119,21 +118,7 @@
 		color: var(--ink);
 	}
 
-	.track {
-		height: 5px;
+	.meter {
 		margin-top: var(--sp-1);
-		border-radius: 3px;
-		background: var(--chip);
-		overflow: hidden;
-	}
-
-	.fill {
-		height: 100%;
-		border-radius: 3px;
-		background: var(--accent);
-	}
-
-	.danger {
-		background: var(--danger);
 	}
 </style>

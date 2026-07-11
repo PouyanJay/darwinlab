@@ -31,6 +31,7 @@
 	--fs-sm: 11px;
 	--fs-md: 11.5px; /* small buttons, segmented control */
 	--fs-body: 12.5px; /* buttons, banner copy */
+	--fs-quote: 13.5px; /* the claim on the ablation card (display face) */
 	--fs-stat: 15px; /* alive / lived numbers */
 	--fs-name: 15.5px; /* editable world name (display face) */
 	--fs-title: 16.5px; /* drawer + modal titles (display face) */

@@ -47,9 +47,7 @@ test('the panel is alive: the numbers move because the fish is thinking', async 
 
 	const lived = () =>
 		inspector(page)
-			.getByText('lived')
-			.locator('..')
-			.locator('b')
+			.getByLabel('lived')
 			.innerText()
 			.then((text) => Number(text.replace('s', '')));
 
@@ -78,9 +76,7 @@ test('ABLATION: cutting the closing-speed neuron really changes the brain', asyn
 	await expect.poll(() => brainprint(page), { timeout: 5000 }).not.toBe(wired);
 	// the CLOSING bar now says the neuron is gone, not that the threat is (walls is already off in
 	// this world, so an unscoped "off" would match either bar and prove nothing)
-	await expect(inspector(page).getByText('closing speed').locator('..').locator('b')).toHaveText(
-		'off'
-	);
+	await expect(inspector(page).getByRole('status', { name: 'closing speed' })).toHaveText('off');
 	// and it is the same live ablation the tile performs: the tile's pill agrees
 	await expect(tile(page, 3).getByRole('button', { name: 'close', exact: true })).toHaveAttribute(
 		'aria-pressed',
@@ -96,12 +92,20 @@ test('ABLATION: cutting the closing-speed neuron really changes the brain', asyn
 });
 
 test('the ladder reads the senses the world actually gives the brain', async ({ page }) => {
-	await tile(page, 0).getByRole('button', { name: '★ Champion' }).click(); // "Blind drift": no senses
-	await expect(inspector(page)).toContainText('rung 0 · reflex');
+	// every rung the default bench can reach — a ladder that only ever gets checked at two of its
+	// rungs is a ladder whose middle can quietly break
+	const rungs = [
+		[0, 'rung 0 · reflex'], // Blind drift: no predator input at all
+		[1, 'rung 1 · tuned reflex'], // Distance: one channel
+		[2, 'rung 2 · sensor integration'], // Direction: two channels to combine
+		[3, 'rung 3 · prediction'] // Anticipation: closing speed carries the future
+	] as const;
 
-	await page.keyboard.press('Escape');
-	await tile(page, 2).getByRole('button', { name: '★ Champion' }).click(); // "Direction": dist + dir
-	await expect(inspector(page)).toContainText('rung 2 · sensor integration');
+	for (const [index, reads] of rungs) {
+		await tile(page, index).getByRole('button', { name: '★ Champion' }).click();
+		await expect(inspector(page)).toContainText(reads);
+		await page.keyboard.press('Escape');
+	}
 });
 
 test('clicking the shark says there is no brain, by design', async ({ page }) => {

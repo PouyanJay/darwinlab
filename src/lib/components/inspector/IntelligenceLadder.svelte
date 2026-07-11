@@ -8,6 +8,7 @@
   an explicit survival goal — unlike the thing it is a caricature of.
 -->
 <script lang="ts">
+	import { RUNGS, rungFor } from './ladder';
 	import type { WorldEntry } from '$lib/state';
 
 	interface Props {
@@ -16,20 +17,7 @@
 
 	let { entry }: Props = $props();
 
-	const RUNGS = [
-		'reflex',
-		'tuned reflex',
-		'sensor integration',
-		'prediction',
-		'memory',
-		'within-life learning',
-		'collective'
-	];
-
-	const senses = $derived(entry.config.senses);
-	const rung = $derived(
-		senses.closing ? 3 : senses.dist && senses.dir ? 2 : senses.dist ? 1 : 0 // no input at all: reflex
-	);
+	const rung = $derived(rungFor(entry.config.senses));
 </script>
 
 <div class="field-label">Intelligence ladder</div>
