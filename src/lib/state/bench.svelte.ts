@@ -22,11 +22,13 @@ import {
 	stepWorld,
 	resetWorld as engineResetWorld,
 	applyCfg as engineApplyCfg,
+	updateSenseSnapshot,
 	bestAliveFish,
 	cloneGenome,
 	ACCENTS
 } from '../engine';
 import type { World, WorldConfig, Senses, Fish, Predator } from '../engine';
+import type { Picked } from '../render';
 import { subSteps, turboSlice } from '../sim/loop';
 import { Playback, type Speed } from './playback.svelte';
 import { PainterRegistry } from './painters';
@@ -70,6 +72,23 @@ export interface WorldEntry {
 	readonly stats: WorldStats;
 }
 
+/**
+ * What the Brain Inspector is looking at. One selection across the whole bench: clicking into a
+ * second world drops the first, because there is one inspector.
+ */
+export interface Selection {
+	readonly worldId: string;
+	readonly type: 'fish' | 'pred';
+	/**
+	 * True when the user asked for "the best brain alive" (the ★ Champion button) rather than one
+	 * particular fish. That distinction is what a generation turnover hangs on: a champion selection
+	 * re-resolves to the new generation's best fish — that lineage is exactly what the product is
+	 * about — while a hand-picked fish is simply gone, and the inspector closes rather than quietly
+	 * swapping in a different creature and letting you believe it is still yours.
+	 */
+	readonly followsChampion: boolean;
+}
+
 export interface BenchInit {
 	configs: WorldConfig[];
 	/** Evolve this many generations before the first paint so the bench opens competent. */
@@ -89,6 +108,10 @@ class BenchStore {
 	worlds = $state.raw<WorldEntry[]>([]);
 	/** Highest generation reached across the bench (the top-bar readout). */
 	generationsEvolved = $state(0);
+	/** What the inspector is showing — one across the bench. `$state.raw`: replaced, never mutated. */
+	selection = $state.raw<Selection | null>(null);
+	/** The world whose Conditions dialog is open (Phase 5), or null. */
+	conditionsWorldId = $state<string | null>(null);
 
 	readonly playback = new Playback();
 	readonly painters = new PainterRegistry();
@@ -127,6 +150,8 @@ class BenchStore {
 		this.worlds = [];
 		this.#rawWorlds = [];
 		this.generationsEvolved = 0;
+		this.selection = null;
+		this.conditionsWorldId = null;
 		this.#maxGenerations = 0;
 		this.#nextId = 0;
 		this.#accentCursor = 0;
@@ -183,6 +208,10 @@ class BenchStore {
 
 	removeWorld(id: string): void {
 		this.#setWorlds(this.worlds.filter((entry) => entry.id !== id));
+		// Anything pointing INTO the world that just went away has to go with it, now — not on the
+		// next frame, or a component could render one frame against a world the bench no longer has.
+		if (this.selection?.worldId === id) this.selection = null;
+		if (this.conditionsWorldId === id) this.conditionsWorldId = null;
 	}
 
 	/** Restart evolution from random brains. */
@@ -205,6 +234,43 @@ class BenchStore {
 	/** Highlight a creature under the pointer. Components must not touch `world.hover` directly. */
 	setHover(id: string, target: Fish | Predator | null): void {
 		this.entry(id).world.hover = target;
+	}
+
+	// ---- selection (one inspector, so one selection across the bench) ----
+
+	/** Select what the pointer landed on — a fish, the shark, or (on empty water) nothing. */
+	select(id: string, picked: Picked | null): void {
+		this.#deselectEverywhere();
+		if (!picked) {
+			this.selection = null;
+			return;
+		}
+		if (picked.type === 'pred') {
+			this.selection = { worldId: id, type: 'pred', followsChampion: false };
+			return;
+		}
+		this.#watch(id, picked.obj, false);
+	}
+
+	/** "★ Champion" — watch the best brain currently alive, and keep watching it as it evolves. */
+	selectChampion(id: string): void {
+		const best = bestAliveFish(this.entry(id).world);
+		if (!best) return; // nothing alive to watch — leave the current selection alone
+		this.#deselectEverywhere();
+		this.#watch(id, best, true);
+	}
+
+	clearSelection(): void {
+		this.#deselectEverywhere();
+		this.selection = null;
+	}
+
+	openConditions(id: string): void {
+		this.conditionsWorldId = this.entry(id).id;
+	}
+
+	closeConditions(): void {
+		this.conditionsWorldId = null;
 	}
 
 	/** Look up a world, throwing on an unknown id (a miss is always a caller bug). */
@@ -247,11 +313,52 @@ class BenchStore {
 			if (entry.world.gen > highest) highest = entry.world.gen;
 		}
 		this.generationsEvolved = highest;
+		this.#reconcileSelection();
 
 		this.painters.paintAll();
 	}
 
 	// ---- internals ----
+
+	/** Point a world at the fish to inspect, and fill in its mind now (it may be paused). */
+	#watch(id: string, fish: Fish, followsChampion: boolean): void {
+		const { world } = this.entry(id);
+		world.selFish = fish;
+		updateSenseSnapshot(world);
+		this.selection = { worldId: id, type: 'fish', followsChampion };
+	}
+
+	/** There is one inspector, so at most one world may hold a selected fish. */
+	#deselectEverywhere(): void {
+		for (const world of this.#rawWorlds) {
+			world.selFish = null;
+			world.sense = null;
+		}
+	}
+
+	/**
+	 * Keep the selection honest once the world has moved on.
+	 *
+	 * The engine drops `selFish` the moment that fish stops existing — eaten, or replaced when its
+	 * generation ended. So a null pointer here means the creature the user was watching is gone, and
+	 * we either follow the champion lineage into the new generation or admit the selection is over.
+	 * Nothing is ever left pointing at a fish that isn't swimming.
+	 */
+	#reconcileSelection(): void {
+		const selection = this.selection;
+		if (!selection || selection.type !== 'fish') return;
+
+		const entry = this.find(selection.worldId);
+		if (!entry) {
+			this.selection = null; // its world was removed out from under it
+			return;
+		}
+		if (entry.world.selFish) return; // still swimming
+
+		const heir = selection.followsChampion ? bestAliveFish(entry.world) : null;
+		if (heir) this.#watch(selection.worldId, heir, true);
+		else this.selection = null;
+	}
 
 	#id(): string {
 		return `w${++this.#nextId}`;

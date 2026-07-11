@@ -160,6 +160,22 @@ describe('pointer cleanup when a tracked fish is eaten', () => {
 		expect(w.hover).toBeNull();
 		expect(w.championFish).toBeNull();
 	});
+
+	it('clears them at a generation turnover too — the whole generation is gone, not just one fish', () => {
+		const w = makeWorld(cfg({ prey: 6, bw: 400, bh: 300 }), undefined, seededRng(7));
+		const watched = w.fish[0];
+		w.selFish = watched;
+		w.hover = watched;
+
+		while (w.gen < 1) stepWorld(w, dt); // let the generation end and the offspring spawn
+
+		// The old pointer would otherwise survive as a ghost: the UI would go on drawing a fish that
+		// is not in the water, frozen where it died, with a "live" brain that no longer runs.
+		expect(w.fish).not.toContain(watched);
+		expect(w.selFish).toBeNull();
+		expect(w.hover).toBeNull();
+		expect(w.sense).toBeNull();
+	});
 });
 
 describe('applyCfg', () => {

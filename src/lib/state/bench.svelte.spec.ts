@@ -275,3 +275,132 @@ describe('bench store — painters', () => {
 		expect(paint).not.toHaveBeenCalled();
 	});
 });
+
+describe('bench store — selection', () => {
+	/** Fast-forward one world to the moment just after its generation turns over. */
+	const runToNextGeneration = (id: string) => {
+		const { world } = bench.entry(id);
+		const target = world.gen + 1;
+		while (world.gen < target) frame(1 / 60);
+	};
+
+	it('inspects the fish that was clicked, and fills in its mind straight away', () => {
+		init(1);
+		const { id, world } = bench.worlds[0];
+
+		bench.select(id, { type: 'fish', obj: world.fish[3] });
+
+		expect(bench.selection).toEqual({ worldId: id, type: 'fish', followsChampion: false });
+		expect(world.selFish).toBe(world.fish[3]);
+		// populated NOW, not on the next tick — the sim may well be paused
+		expect(world.sense).not.toBeNull();
+	});
+
+	it('holds one selection across the whole bench, because there is one inspector', () => {
+		init(2);
+		const [first, second] = bench.worlds;
+
+		bench.select(first.id, { type: 'fish', obj: first.world.fish[0] });
+		bench.select(second.id, { type: 'fish', obj: second.world.fish[0] });
+
+		expect(bench.selection?.worldId).toBe(second.id);
+		expect(first.world.selFish).toBeNull(); // the first world let go
+		expect(first.world.sense).toBeNull();
+	});
+
+	it('selects the shark without pointing a fish inspector at it', () => {
+		init(1);
+		const { id, world } = bench.worlds[0];
+
+		bench.select(id, { type: 'pred', obj: world.preds[0] });
+
+		expect(bench.selection).toEqual({ worldId: id, type: 'pred', followsChampion: false });
+		expect(world.selFish).toBeNull();
+	});
+
+	it('clicking empty water clears the selection', () => {
+		init(1);
+		const { id, world } = bench.worlds[0];
+		bench.select(id, { type: 'fish', obj: world.fish[0] });
+
+		bench.select(id, null);
+
+		expect(bench.selection).toBeNull();
+		expect(world.selFish).toBeNull();
+	});
+
+	it('a champion selection follows the lineage across a generation turnover', () => {
+		init(1);
+		const { id, world } = bench.worlds[0];
+
+		bench.selectChampion(id);
+		expect(bench.selection?.followsChampion).toBe(true);
+		const watched = world.selFish;
+
+		runToNextGeneration(id);
+
+		// a NEW fish — the old one no longer exists — but the inspector is still on the best brain
+		expect(bench.selection).toEqual({ worldId: id, type: 'fish', followsChampion: true });
+		expect(world.selFish).not.toBe(watched);
+		expect(world.fish).toContain(world.selFish); // and it is genuinely swimming
+	});
+
+	it('a hand-picked fish is let go when its generation ends, not silently swapped', () => {
+		init(1);
+		const { id, world } = bench.worlds[0];
+		bench.select(id, { type: 'fish', obj: world.fish[0] });
+
+		runToNextGeneration(id);
+
+		// the fish the user chose is gone; presenting a different one as "theirs" would be a lie
+		expect(bench.selection).toBeNull();
+		expect(world.selFish).toBeNull();
+	});
+
+	it('lets go of a selection whose world is removed', () => {
+		init(2);
+		const [first] = bench.worlds;
+		bench.select(first.id, { type: 'fish', obj: first.world.fish[0] });
+
+		bench.removeWorld(first.id);
+
+		expect(bench.selection).toBeNull();
+	});
+
+	it('never points at a fish that is not in the water', () => {
+		init(1);
+		const { id, world } = bench.worlds[0];
+		bench.selectChampion(id);
+
+		bench.resetWorld(id); // restart from random brains — every fish is replaced
+		frame();
+
+		expect(world.selFish === null || world.fish.includes(world.selFish)).toBe(true);
+	});
+});
+
+describe('bench store — conditions', () => {
+	it('opens and closes the conditions dialog for one world at a time', () => {
+		init(2);
+		const [first, second] = bench.worlds;
+
+		bench.openConditions(first.id);
+		expect(bench.conditionsWorldId).toBe(first.id);
+
+		bench.openConditions(second.id);
+		expect(bench.conditionsWorldId).toBe(second.id);
+
+		bench.closeConditions();
+		expect(bench.conditionsWorldId).toBeNull();
+	});
+
+	it('closes the dialog if the world it is editing is removed', () => {
+		init(1);
+		const { id } = bench.worlds[0];
+		bench.openConditions(id);
+
+		bench.removeWorld(id);
+
+		expect(bench.conditionsWorldId).toBeNull();
+	});
+});

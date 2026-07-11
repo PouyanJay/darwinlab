@@ -119,6 +119,14 @@ function spawnGeneration(w: World, genomes?: Genome[]): void {
 	w.eaten = 0;
 	w.genT = 0;
 	w.bursts = [];
+	// Every fish that could have been selected or hovered is about to be replaced by its offspring.
+	// Leaving the pointers behind would keep a whole generation alive in memory and — worse — would
+	// let the UI go on presenting a fish that no longer exists as if it were still swimming: its
+	// position frozen, its "live" brain no longer running. The engine already does this when a fish
+	// is eaten (see the catch path); a generation ending is the same death, in bulk.
+	w.selFish = null;
+	w.sense = null;
+	w.hover = null;
 	for (let i = 0; i < c.prey; i++) {
 		const g = genomes && genomes[i] ? cloneGenome(genomes[i]) : makeGenome(w.rng);
 		const f = makeFish(c, g, w.rng);
@@ -438,8 +446,15 @@ function updatePrey(w: World, dt: number): void {
 	}
 }
 
-/** Live snapshot of the selected fish's mind, rebuilt each tick for the Brain Inspector. */
-function updateSenseSnapshot(w: World): void {
+/**
+ * Live snapshot of the selected fish's mind, rebuilt each tick for the Brain Inspector.
+ *
+ * Exported because selecting a fish has to fill this in immediately: the inspector must open
+ * populated even when the simulation is PAUSED, and the next tick may never come. (The reference
+ * got there by stepping the world 0.0001s on every click — a real, if tiny, nudge to the physics
+ * for a UI concern. Reading the mind is not a reason to move the world.)
+ */
+export function updateSenseSnapshot(w: World): void {
 	if (!w.selFish) return;
 	const f = w.selFish;
 	const si = senseInputs(w, f);
