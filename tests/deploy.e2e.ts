@@ -50,23 +50,41 @@ test('THE SECOND ACT: train to the horizon, and the population has to survive on
 	// the real-world run is now reporting: seconds elapsed and how many are left
 	await expect.poll(() => deployment(page, 2), { timeout: 20_000 }).toMatch(/^\d+s · \d+ left$/);
 
-	// AND IT ONLY GOES DOWN. A respawn slipping into deployed mode is the one bug that would turn
-	// this whole act into a lie — you would be watching a population that cannot actually die.
+	/*
+	 * AND IT ONLY GOES DOWN. A respawn slipping into deployed mode is the one bug that would turn this
+	 * whole act into a lie — you would be watching a population that cannot actually die.
+	 *
+	 * Watched by an observer inside the page rather than by polling from out here: sampling every
+	 * 500ms would let a population climb back and be eaten down again between two looks, and the test
+	 * would never know. The observer sees every single update the app makes to that number.
+	 */
+	await tile(page, 2)
+		.getByTestId('alive')
+		.evaluate((el: HTMLElement) => {
+			const seen: number[] = [Number(el.textContent)];
+			(window as unknown as { aliveSeen: number[] }).aliveSeen = seen;
+			new MutationObserver(() => seen.push(Number(el.textContent))).observe(el, {
+				childList: true,
+				characterData: true,
+				subtree: true
+			});
+		});
+
 	await page.getByRole('radio', { name: '2×' }).click();
-	let previous = await alive(page, 2);
-	for (let i = 0; i < 40 && previous > 0; i++) {
-		const now = await alive(page, 2);
-		expect(now, 'a deployed population climbed back — something respawned').toBeLessThanOrEqual(
-			previous
-		);
-		previous = now;
-		await page.waitForTimeout(500);
-	}
 
 	// it ends the only way it can
 	await expect.poll(() => alive(page, 2), { timeout: 120_000 }).toBe(0);
 	await expect.poll(() => deployment(page, 2)).toMatch(/^wiped out · \d+s$/);
 	await expect(tile(page, 2).getByTestId('eaten')).toHaveText('−20'); // every last one of them
+
+	const seen = await page.evaluate(() => (window as unknown as { aliveSeen: number[] }).aliveSeen);
+	expect(seen.length, 'the observer saw nothing at all').toBeGreaterThan(5);
+	for (let i = 1; i < seen.length; i++) {
+		expect(
+			seen[i],
+			`a deployed population climbed back: ${seen.slice(0, i + 1).join(' → ')}`
+		).toBeLessThanOrEqual(seen[i - 1]);
+	}
 });
 
 test('the generation stops climbing once a world is deployed', async ({ page }) => {
@@ -75,9 +93,14 @@ test('the generation stops climbing once a world is deployed', async ({ page }) 
 	await expect(page.getByTestId('turbo')).toBeHidden({ timeout: 120_000 });
 	await expect(tile(page, 2).getByTestId('gen')).toHaveText('Gen 20 · trained');
 
-	// 10 sim-seconds is a generation; at 2× a few of them would pass. None do.
+	// Wait on the SIMULATION, not on the clock: the real-world run reports its own elapsed seconds, so
+	// let it get past 15 of them — a generation and a half, had this world still been evolving.
 	await page.getByRole('radio', { name: '2×' }).click();
-	await page.waitForTimeout(6000);
+	await expect
+		.poll(async () => Number((await deployment(page, 2)).match(/(\d+)s/)?.[1] ?? 0), {
+			timeout: 60_000
+		})
+		.toBeGreaterThan(15);
 
 	await expect(tile(page, 2).getByTestId('gen')).toHaveText('Gen 20 · trained');
 });

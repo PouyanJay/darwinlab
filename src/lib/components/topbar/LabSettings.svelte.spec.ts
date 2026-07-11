@@ -3,12 +3,12 @@ import { render } from 'vitest-browser-svelte';
 import { page } from 'vitest/browser';
 import LabSettings from './LabSettings.svelte';
 import { bench } from '$lib/state';
-import { DEFAULT_WORLDS, MAX_GENERATIONS } from '$lib/engine';
+import { DEFAULT_WORLDS, MAX_GENERATIONS_DEFAULT } from '$lib/engine';
 
 afterEach(() => bench.destroy());
 
 /** Open the popover the way a user does — its contents do not exist in the DOM until it is shown. */
-const open = async (maxGenerations: number = MAX_GENERATIONS.default) => {
+const open = async (maxGenerations: number = MAX_GENERATIONS_DEFAULT) => {
 	bench.init({ configs: [structuredClone(DEFAULT_WORLDS[2])], maxGenerations });
 	bench.togglePlay();
 	render(LabSettings);

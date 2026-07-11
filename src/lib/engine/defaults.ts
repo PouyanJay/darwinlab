@@ -149,4 +149,12 @@ export const ACCENT_NAMES: Record<string, string> = {
  * survive on its own with no more generations to save it. `0` means never deploy — the bench just
  * keeps evolving, which is the right setting while you are still experimenting.
  */
-export const MAX_GENERATIONS = { min: 0, max: 150, step: 5, default: 150 } as const;
+export const MAX_GENERATIONS = { min: 0, max: 150, step: 5 } as const satisfies {
+	min: number;
+	max: number;
+	step: number;
+};
+
+/** What the bench opens with. Separate from the range above so it can be spread into a Slider,
+ * whose props are exactly {min, max, step} — a fourth field would ride along unused. */
+export const MAX_GENERATIONS_DEFAULT = 150;

@@ -2,10 +2,9 @@
   Lab settings — the knobs that belong to the bench rather than to any one world.
 
   Only one so far, and it is the one that decides whether the product has a second act: how many
-  generations a world trains for before it is DEPLOYED. Deployment is not a pause. Evolution stops,
-  the resets stop, and the population you spent those generations breeding has to survive on its own
-  with nothing coming to save it. The panel says so, because "max generations" on its own sounds
-  like a slider about performance.
+  generations a world trains for before it is DEPLOYED (see MAX_GENERATIONS in engine/defaults.ts).
+  The panel spells out what that means in its own copy, because "max generations" on its own reads
+  like a slider about performance rather than the moment evolution stops for good.
 
   It uses the native popover: light-dismiss and Esc come free, and it lives in the top layer without
   a z-index argument with the drawer.
@@ -52,8 +51,8 @@
 <style>
 	.panel {
 		position: fixed;
-		inset: auto var(--sp-8) auto auto;
 		top: calc(var(--topbar-height) + var(--sp-2));
+		right: var(--sp-8);
 		width: 300px;
 		padding: var(--sp-6);
 		border: 1px solid var(--line);

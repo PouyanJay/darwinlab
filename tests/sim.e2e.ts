@@ -118,6 +118,12 @@ test('the speed control is wired and keeps the sim running', async ({ page }) =>
 });
 
 test('train fast-forwards generations', async ({ page }) => {
+	// With a training horizon set (the bench opens at 150) the button trains TO it; the +25 burst is
+	// what it offers when deployment is switched off. This test is about the burst, so switch it off.
+	await page.getByRole('button', { name: 'lab settings' }).click();
+	await page.getByRole('slider', { name: /deploy at/i }).fill('0');
+	await page.keyboard.press('Escape');
+
 	const before = await generations(page);
 	await page.getByRole('button', { name: /Train \+25 gens/ }).click();
 

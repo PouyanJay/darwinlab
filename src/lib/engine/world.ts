@@ -146,6 +146,17 @@ export function resetWorld(w: World): void {
 	w.selFish = null;
 	w.sense = null;
 	w.hover = null;
+	// The last real-world run belonged to the population that just got wiped, and that population no
+	// longer exists. Leaving its decay curve and its half-life behind would put "wiped out · 37s" and
+	// a red death curve on a world that is now at generation 0 and evolving — a reading from a run
+	// that is not this one. (The reference leaves them; it is the same lie there.)
+	w._deployed = false;
+	w.deployT = 0;
+	w.decay = [];
+	w.decayT = 0;
+	w.halfLife = null;
+	w.extinctT = null;
+	w.deployStartN = 0;
 	spawnGeneration(w);
 }
 

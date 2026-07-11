@@ -46,6 +46,7 @@ import type {
 	SenseSnapshot,
 	NumericCondition
 } from '../engine';
+import type { Rng } from '../engine';
 import type { Picked } from '../render';
 import { subSteps, turboSlice } from '../sim/loop';
 import { Playback, type Speed } from './playback.svelte';
@@ -196,10 +197,21 @@ export interface Selection {
 
 export interface BenchInit {
 	configs: WorldConfig[];
+	/**
+	 * The random source every world draws from. Left out, each world gets `Math.random`, which is
+	 * what the app wants; a test that cares WHEN a population dies passes a seeded one and gets the
+	 * same run every time.
+	 */
+	rng?: Rng;
 	/** Evolve this many generations before the first paint so the bench opens competent. */
 	prewarmGenerations?: number;
 	/** Once a world reaches this generation it deploys (stops evolving). 0 = never. */
 	maxGenerations?: number;
+}
+
+/** Hold a value inside the range the lab offers. The engine does not validate; the store must. */
+function clamp(value: number, { min, max }: { min: number; max: number }): number {
+	return Math.min(max, Math.max(min, value));
 }
 
 /** Thrown when a caller passes an id the bench doesn't know — always a caller bug, never data. */
@@ -233,6 +245,8 @@ class BenchStore {
 	#accentCursor = 0;
 	/** Cached raw worlds for the turbo path, so training allocates nothing per frame. */
 	#rawWorlds: World[] = [];
+	/** Undefined = each world uses the engine's default (Math.random). Tests pass a seeded one. */
+	#rng: Rng | undefined;
 
 	// read-only projections of playback, so the UI binds to one object
 	get running(): boolean {
@@ -248,8 +262,9 @@ class BenchStore {
 		return this.#maxGenerations;
 	}
 
-	init({ configs, prewarmGenerations = 0, maxGenerations = 0 }: BenchInit): void {
-		this.#maxGenerations = maxGenerations;
+	init({ configs, prewarmGenerations = 0, maxGenerations = 0, rng }: BenchInit): void {
+		this.setMaxGenerations(maxGenerations); // the same door every other caller uses, clamp and all
+		this.#rng = rng;
 		this.#setWorlds(configs.map((cfg) => this.#create(structuredClone(cfg))));
 		if (prewarmGenerations > 0) this.playback.requestTraining(prewarmGenerations);
 		this.playback.start((elapsed) => this.tick(elapsed));
@@ -264,6 +279,7 @@ class BenchStore {
 		this.generationsEvolved = 0;
 		this.selection = null;
 		this.conditionsWorldId = null;
+		this.#rng = undefined;
 		this.#maxGenerations = 0;
 		this.#nextId = 0;
 		this.#accentCursor = 0;
@@ -292,8 +308,7 @@ class BenchStore {
 	 * the population breeds on. Reaching a limit is not a one-way door, it is just a limit.
 	 */
 	setMaxGenerations(gen: number): void {
-		const { min, max } = MAX_GENERATIONS;
-		this.#maxGenerations = Math.min(max, Math.max(min, Math.round(gen)));
+		this.#maxGenerations = clamp(Math.round(gen), MAX_GENERATIONS);
 		for (const world of this.#rawWorlds) world.maxGen = this.#maxGenerations;
 	}
 
@@ -367,9 +382,8 @@ class BenchStore {
 	 * container 40px wide or a population of -3 is not an experiment, it is a crash.
 	 */
 	setCondition(id: string, key: NumericCondition, value: number): void {
-		const { min, max } = WORLD_LIMITS[key];
 		const { world } = this.entry(id);
-		world.cfg[key] = Math.min(max, Math.max(min, value));
+		world.cfg[key] = clamp(value, WORLD_LIMITS[key]);
 		engineApplyCfg(world);
 		this.#publishConfig(id);
 	}
@@ -578,7 +592,7 @@ class BenchStore {
 	}
 
 	#create(cfg: WorldConfig): WorldEntry {
-		return this.#wrap(makeWorld(cfg));
+		return this.#wrap(makeWorld(cfg, undefined, this.#rng));
 	}
 
 	/** Single place the world list changes, so the raw-world cache can never drift out of sync. */
