@@ -34,6 +34,29 @@ export default defineConfig(
 		}
 	},
 	{
+		// Engine purity (CLAUDE.md / ARCHITECTURE.md): the science layer must stay
+		// framework- and DOM-free so it can run headlessly and stay portable. Forbid
+		// importing Svelte / SvelteKit runtime modules from engine, render, and harness.
+		files: ['src/lib/engine/**', 'src/lib/render/**', 'src/lib/harness/**'],
+		rules: {
+			'no-restricted-imports': [
+				'error',
+				{
+					paths: [
+						{ name: 'svelte', message: 'Engine/render/harness must stay framework-agnostic.' },
+						{ name: 'svelte/store', message: 'Engine/render/harness must stay framework-agnostic.' }
+					],
+					patterns: [
+						{
+							group: ['svelte/*', '@sveltejs/*', '$app/*', '$env/*', '$lib/state/*'],
+							message: 'Engine/render/harness must stay framework-agnostic (no Svelte/Kit/state).'
+						}
+					]
+				}
+			]
+		}
+	},
+	{
 		// Override or add rule settings here, such as:
 		// 'svelte/button-has-type': 'error'
 		rules: {}
