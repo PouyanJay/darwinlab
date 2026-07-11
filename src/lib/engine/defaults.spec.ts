@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { DEFAULT_WORLDS, ACCENTS, newWorldConfig } from './defaults';
+import { DEFAULT_WORLDS, ACCENTS, ACCENT_NAMES, newWorldConfig } from './defaults';
 
 describe('DEFAULT_WORLDS (the sense ladder)', () => {
 	it('has five worlds that add one sense at a time', () => {
@@ -72,5 +72,13 @@ describe('newWorldConfig', () => {
 		first.senses.dir = false;
 
 		expect(second.senses.dir).toBe(true);
+	});
+});
+
+describe('ACCENT_NAMES', () => {
+	it('names every accent, so no swatch is left announcing itself as a hex code', () => {
+		for (const accent of ACCENTS) {
+			expect(ACCENT_NAMES[accent]).toBeTruthy();
+		}
 	});
 });

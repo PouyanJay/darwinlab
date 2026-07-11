@@ -9,6 +9,7 @@
 -->
 <script lang="ts">
 	import Canvas from '../common/Canvas.svelte';
+	import Button from '../common/Button.svelte';
 	import { drawCurve, drawDecay } from '$lib/render';
 	import { bench, theme } from '$lib/state';
 	import type { WorldEntry } from '$lib/state';
@@ -68,6 +69,8 @@
 			/>
 		</div>
 	</div>
+
+	<Button size="sm" onclick={() => bench.openConditions(entry.id)}>Conditions</Button>
 </div>
 
 <div class="row deploy">

@@ -41,6 +41,8 @@
 	}: Props = $props();
 
 	const display = $derived(format(value));
+	/** How far along the track the thumb sits — the track paints its own fill from this. */
+	const progress = $derived(((value - min) / (max - min)) * 100);
 
 	/**
 	 * Report the drag, then make the thumb agree with whatever the owner decided.
@@ -67,7 +69,8 @@
 	</span>
 	<input
 		type="range"
-		class={tone}
+		class:danger={tone === 'danger'}
+		style:--progress="{progress}%"
 		{min}
 		{max}
 		{step}
@@ -102,17 +105,68 @@
 		color: var(--ink);
 	}
 
+	/*
+	 * The track is painted by hand rather than left to `accent-color`.
+	 *
+	 * `accent-color` colours the FILLED part and lets the browser derive the rest — and Chrome
+	 * derives that from the accent's contrast, so a warm red (the predator-speed slider) came out
+	 * with a near-black empty track while the blue ones stayed light grey. Two sliders side by side
+	 * in the same dialog, built the same way, looking nothing alike. Painting the fill from the
+	 * value gives one appearance across both tones and both themes.
+	 */
 	input {
+		--slider-tone: var(--accent);
 		width: 100%;
+		height: 18px; /* the hit area — bigger than the 6px it draws, so it is easy to grab */
 		margin-top: var(--sp-1);
+		appearance: none;
+		background: transparent;
 		cursor: pointer;
 	}
 
-	.accent {
-		accent-color: var(--accent);
+	.danger {
+		--slider-tone: var(--danger);
 	}
 
-	.danger {
-		accent-color: var(--danger);
+	/* WebKit and Firefox will not accept these in one selector list: an unknown pseudo-element
+	   invalidates the whole rule, so the track and the thumb are each declared twice. */
+	input::-webkit-slider-runnable-track {
+		height: 6px;
+		border-radius: var(--radius-pill);
+		background: linear-gradient(
+			to right,
+			var(--slider-tone) var(--progress),
+			var(--chip) var(--progress)
+		);
+	}
+
+	input::-moz-range-track {
+		height: 6px;
+		border-radius: var(--radius-pill);
+		background: linear-gradient(
+			to right,
+			var(--slider-tone) var(--progress),
+			var(--chip) var(--progress)
+		);
+	}
+
+	input::-webkit-slider-thumb {
+		appearance: none;
+		width: 14px;
+		height: 14px;
+		margin-top: -4px; /* centre the thumb on the 6px track */
+		border: 2px solid var(--panel);
+		border-radius: 50%;
+		background: var(--slider-tone);
+		box-shadow: var(--shadow-segment);
+	}
+
+	input::-moz-range-thumb {
+		width: 14px;
+		height: 14px;
+		border: 2px solid var(--panel);
+		border-radius: 50%;
+		background: var(--slider-tone);
+		box-shadow: var(--shadow-segment);
 	}
 </style>

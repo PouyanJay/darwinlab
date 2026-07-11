@@ -31,9 +31,10 @@ import {
 	updateSenseSnapshot,
 	bestAliveFish,
 	cloneGenome,
-	ACCENTS
+	ACCENTS,
+	WORLD_LIMITS
 } from '../engine';
-import type { World, WorldConfig, Senses, Fish, Predator } from '../engine';
+import type { World, WorldConfig, Senses, Fish, Predator, NumericCondition } from '../engine';
 import type { Picked } from '../render';
 import { subSteps, turboSlice } from '../sim/loop';
 import { Playback, type Speed } from './playback.svelte';
@@ -159,6 +160,8 @@ class BenchStore {
 	generationsEvolved = $state(0);
 	/** What the inspector is showing — one across the bench. `$state.raw`: replaced, never mutated. */
 	selection = $state.raw<Selection | null>(null);
+	/** The world whose Conditions dialog is open, or null. One dialog, like one inspector. */
+	conditionsWorldId = $state<string | null>(null);
 
 	readonly playback = new Playback();
 	readonly painters = new PainterRegistry();
@@ -203,6 +206,7 @@ class BenchStore {
 		this.#rawWorlds = [];
 		this.generationsEvolved = 0;
 		this.selection = null;
+		this.conditionsWorldId = null;
 		this.#maxGenerations = 0;
 		this.#nextId = 0;
 		this.#accentCursor = 0;
@@ -259,9 +263,10 @@ class BenchStore {
 
 	removeWorld(id: string): void {
 		this.#setWorlds(this.worlds.filter((entry) => entry.id !== id));
-		// A selection pointing INTO the world that just went away has to go with it, now — not on the
+		// Anything pointing INTO the world that just went away has to go with it, now — not on the
 		// next frame, or a component could render one frame against a world the bench no longer has.
 		if (this.selection?.worldId === id) this.selection = null;
+		if (this.conditionsWorldId === id) this.conditionsWorldId = null;
 	}
 
 	/** Restart evolution from random brains. */
@@ -284,12 +289,59 @@ class BenchStore {
 		this.#publishConfig(id);
 	}
 
-	/** Toggle one sense — a true live ablation (the input neuron then receives 0). */
-	toggleSense(id: string, sense: keyof Senses): void {
+	/**
+	 * Change one condition of the experiment, live.
+	 *
+	 * This is the whole point of the Conditions dialog and it is worth being precise about: the world
+	 * KEEPS EVOLVING. Its generation, its learning curve and its champion all survive. Widening the
+	 * tank re-clamps the fish into it; adding prey seeds the newcomers from the champion's genome
+	 * rather than dropping in random brains; removing prey takes them out of the roster too. That is
+	 * `applyCfg`'s job, and it is why every edit here ends in it.
+	 *
+	 * The value is clamped to WORLD_LIMITS on the way in — the engine does not validate, and a
+	 * container 40px wide or a population of -3 is not an experiment, it is a crash.
+	 */
+	setCondition(id: string, key: NumericCondition, value: number): void {
+		const { min, max } = WORLD_LIMITS[key];
 		const { world } = this.entry(id);
-		world.cfg.senses[sense] = !world.cfg.senses[sense];
+		world.cfg[key] = Math.min(max, Math.max(min, value));
 		engineApplyCfg(world);
 		this.#publishConfig(id);
+	}
+
+	/** The world's colour. A label, like the name — nothing about the simulation changes. */
+	setAccent(id: string, accent: string): void {
+		this.entry(id).world.cfg.accent = accent;
+		this.#publishConfig(id);
+	}
+
+	/** The line of narration story mode reads out when this world is on screen. Also just a label. */
+	setCaption(id: string, caption: string): void {
+		this.entry(id).world.cfg.caption = caption;
+		this.#publishConfig(id);
+	}
+
+	/** Toggle one sense — a true live ablation (the input neuron then receives 0). */
+	toggleSense(id: string, sense: keyof Senses): void {
+		this.setSense(id, sense, !this.entry(id).world.cfg.senses[sense]);
+	}
+
+	/** Wire a sense in or cut it. Cutting it feeds that input neuron 0 for every brain in the world. */
+	setSense(id: string, sense: keyof Senses, on: boolean): void {
+		const { world } = this.entry(id);
+		world.cfg.senses[sense] = on;
+		engineApplyCfg(world);
+		this.#publishConfig(id);
+	}
+
+	// ---- the conditions dialog ----
+
+	openConditions(id: string): void {
+		this.conditionsWorldId = this.entry(id).id;
+	}
+
+	closeConditions(): void {
+		this.conditionsWorldId = null;
 	}
 
 	/**
