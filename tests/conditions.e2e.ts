@@ -38,13 +38,62 @@ test('THE POINT: an edit changes the world and the world keeps what it learned',
 	const before = await tile(page, 2).getByTestId('gen').innerText();
 	expect(before).toBe('Gen 15');
 
-	await page.getByRole('button', { name: 'more predators' }).click();
-	await page.getByRole('button', { name: 'more prey' }).click();
+	await dialog(page).getByRole('button', { name: 'more predators' }).click();
+	await dialog(page).getByRole('button', { name: 'more prey' }).click();
 
 	// the tile answers immediately…
 	await expect.poll(() => meta(page, 2)).toContain('22 prey · 3 sharks');
 	// …and it is still fifteen generations of evolution deep, not back at zero
 	await expect(tile(page, 2).getByTestId('gen')).toHaveText('Gen 15');
+
+	// …and the ENGINE really grew the population, not just the chip that describes it: the sharks
+	// keep eating, so `alive` alone says little — but alive + eaten is the generation's roster, and
+	// it must now be the 22 fish that were asked for.
+	await expect
+		.poll(async () => {
+			const alive = Number(await tile(page, 2).getByTestId('alive').innerText());
+			const eaten = Number((await tile(page, 2).getByTestId('eaten').innerText()).slice(1));
+			return alive + eaten;
+		})
+		.toBe(22);
+});
+
+test('the edit reaches the SIMULATION, not just the tile that describes it', async ({ page }) => {
+	/*
+	 * The tile's chips are rendered from the store's reactive mirror of cfg, so they would happily
+	 * report "900×400" even if the edit never reached the engine. The TANK is different: it is
+	 * painted straight from the raw world, and the tank's aspect ratio is the container's. So resize
+	 * the container, with the sim PAUSED so nothing else can move the pixels, and watch the water
+	 * itself change shape.
+	 */
+	// Pause BEFORE reopening the dialog: a modal makes the page behind it inert, so the top bar's
+	// Pause button is genuinely unclickable while it is open — which is the modal doing its job.
+	await page.keyboard.press('Escape');
+	await expect(dialog(page)).toBeHidden();
+	await page.getByRole('button', { name: 'Pause' }).click();
+	await tile(page, 2).getByRole('button', { name: 'Conditions' }).click();
+	await expect(dialog(page)).toBeVisible();
+
+	const tank = tile(page, 2).getByRole('img', { name: /tank/i });
+	const fingerprint = () =>
+		tank.evaluate((el: HTMLCanvasElement) => {
+			const { data } = el.getContext('2d')!.getImageData(0, 0, el.width, el.height);
+			let h = 0;
+			for (let i = 0; i < data.length; i += 997) h = (h * 31 + data[i]) | 0;
+			return h;
+		});
+
+	await expect
+		.poll(async () => {
+			const [a, b] = [await fingerprint(), await fingerprint()];
+			return a === b;
+		})
+		.toBe(true); // frozen
+	const frozen = await fingerprint();
+
+	await slider(page, /container height/i).fill('820');
+
+	await expect.poll(fingerprint, { timeout: 5000 }).not.toBe(frozen);
 });
 
 test('every field writes through: sliders, senses, name, accent', async ({ page }) => {
@@ -63,7 +112,9 @@ test('every field writes through: sliders, senses, name, accent', async ({ page 
 	await expect(tile(page, 2)).toHaveAttribute('aria-label', 'world 3: Direction (control)');
 
 	await slider(page, /container width/i).fill('900');
-	await expect.poll(() => meta(page, 2)).toContain('900×400'); // the tank really resized
+	// NB: this proves the chip was told, not that the tank was resized — the chip renders from the
+	// store's mirror of cfg. The test above is the one that proves the water itself changed shape.
+	await expect.poll(() => meta(page, 2)).toContain('900×400');
 });
 
 test('it is a real modal: Esc closes it, and it traps focus while open', async ({ page }) => {
