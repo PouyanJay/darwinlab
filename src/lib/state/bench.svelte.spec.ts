@@ -1,4 +1,5 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
+import { flushSync } from 'svelte';
 import { bench } from './bench.svelte';
 import { DEFAULT_WORLDS } from '../engine';
 
@@ -159,6 +160,25 @@ describe('bench store — stats projection', () => {
 		expect(stats.survivalPct).toBe(42);
 		expect(bench.generationsEvolved).toBe(4);
 	});
+
+	it('projects the deployment half too — the tile reads its whole real-world run from here', () => {
+		init(1);
+		bench.togglePlay(); // pause: project only, do not step
+		const { world, stats } = bench.worlds[0];
+
+		world._deployed = true;
+		world.deployT = 31.5;
+		world.halfLife = 12.4;
+		world.extinctT = 47.8;
+		world.champion = { genome: world.fish[0].genome, fitness: 9.25, gen: 3 };
+		frame();
+
+		expect(stats.deployed).toBe(true);
+		expect(stats.deployT).toBe(31.5);
+		expect(stats.halfLife).toBe(12.4);
+		expect(stats.extinctT).toBe(47.8);
+		expect(stats.championFitness).toBe(9.25);
+	});
 });
 
 describe('bench store — world CRUD', () => {
@@ -277,11 +297,32 @@ describe('bench store — painters', () => {
 });
 
 describe('bench store — selection', () => {
-	/** Fast-forward one world to the moment just after its generation turns over. */
+	/**
+	 * A world with no predators, so nothing can be eaten.
+	 *
+	 * The generation-turnover tests need the watched fish to survive UP TO the turnover, or they
+	 * quietly exercise the eaten path instead — and the default first world, "Blind drift", is
+	 * exactly the one whose population really does get wiped out. Removing the sharks makes the
+	 * turnover the only thing that can end a fish's life, which is what these tests are about.
+	 * (The wipe-out case gets a test of its own below.)
+	 */
+	const initSafeWorld = () =>
+		bench.init({ configs: [{ ...structuredClone(DEFAULT_WORLDS[2]), preds: 0 }] });
+
+	/**
+	 * Fast-forward one world to the moment just after its generation turns over.
+	 *
+	 * Budgeted: if a regression ever stalls the generation boundary, this fails with a clear message
+	 * instead of hanging the whole suite.
+	 */
 	const runToNextGeneration = (id: string) => {
 		const { world } = bench.entry(id);
 		const target = world.gen + 1;
-		while (world.gen < target) frame(1 / 60);
+		let steps = 0;
+		while (world.gen < target) {
+			frame(1 / 60);
+			if (++steps > 20_000) throw new Error('the generation never turned over');
+		}
 	};
 
 	it('inspects the fish that was clicked, and fills in its mind straight away', () => {
@@ -330,7 +371,7 @@ describe('bench store — selection', () => {
 	});
 
 	it('a champion selection follows the lineage across a generation turnover', () => {
-		init(1);
+		initSafeWorld();
 		const { id, world } = bench.worlds[0];
 
 		bench.selectChampion(id);
@@ -339,6 +380,7 @@ describe('bench store — selection', () => {
 
 		runToNextGeneration(id);
 
+		expect(world.eaten).toBe(0); // the turnover, NOT a shark, is what ended the watched fish
 		// a NEW fish — the old one no longer exists — but the inspector is still on the best brain
 		expect(bench.selection).toEqual({ worldId: id, type: 'fish', followsChampion: true });
 		expect(world.selFish).not.toBe(watched);
@@ -346,13 +388,33 @@ describe('bench store — selection', () => {
 	});
 
 	it('a hand-picked fish is let go when its generation ends, not silently swapped', () => {
-		init(1);
+		initSafeWorld();
 		const { id, world } = bench.worlds[0];
 		bench.select(id, { type: 'fish', obj: world.fish[0] });
 
 		runToNextGeneration(id);
 
+		expect(world.eaten).toBe(0); // again: the turnover is the only thing under test here
 		// the fish the user chose is gone; presenting a different one as "theirs" would be a lie
+		expect(bench.selection).toBeNull();
+		expect(world.selFish).toBeNull();
+	});
+
+	it('ends a champion selection when the population is wiped out — nothing is alive to be best', () => {
+		initSafeWorld();
+		bench.togglePlay(); // pause: this test is about the store's reading of the world, not physics
+		const { id, world } = bench.worlds[0];
+		bench.selectChampion(id);
+
+		// The wipe-out, exactly as the engine leaves it: no fish, and no pointer to one. (Waiting for
+		// the sharks to do this for real would spin forever — the engine RESPAWNS the population at
+		// every generation boundary, so "nothing alive" is never a state the sim settles into.)
+		world.fish = [];
+		world.selFish = null;
+		frame();
+
+		// "The best brain alive" is not a thing that exists here, so the inspector closes rather than
+		// re-attaching to a fish from a generation that has already been bred and replaced.
 		expect(bench.selection).toBeNull();
 		expect(world.selFish).toBeNull();
 	});
@@ -379,28 +441,63 @@ describe('bench store — selection', () => {
 	});
 });
 
-describe('bench store — conditions', () => {
-	it('opens and closes the conditions dialog for one world at a time', () => {
+describe('bench store — surviving a world being removed', () => {
+	it('a hover that lands after its world is gone is ignored, not thrown', () => {
 		init(2);
-		const [first, second] = bench.worlds;
+		const [first] = bench.worlds;
+		const fish = first.world.fish[0];
+		bench.removeWorld(first.id);
 
-		bench.openConditions(first.id);
-		expect(bench.conditionsWorldId).toBe(first.id);
+		// A pointer event can arrive after the tile is torn down. Hover is best-effort state about a
+		// cursor; throwing out of a mousemove listener would be the wrong answer.
+		expect(() => bench.setHover(first.id, fish)).not.toThrow();
+		expect(() => bench.setHover(first.id, null)).not.toThrow();
+	});
+});
 
-		bench.openConditions(second.id);
-		expect(bench.conditionsWorldId).toBe(second.id);
+describe('bench store — duplicate', () => {
+	it('gives each copy a name of its own', () => {
+		init(3);
+		const source = bench.worlds[2]; // "Direction"
 
-		bench.closeConditions();
-		expect(bench.conditionsWorldId).toBeNull();
+		bench.duplicateWorld(source.id);
+		bench.duplicateWorld(source.id);
+
+		const names = bench.worlds.map((entry) => entry.world.cfg.name);
+		expect(new Set(names).size).toBe(names.length); // two tiles reading the same name are ambiguous
+		expect(names).toContain('Direction copy');
 	});
 
-	it('closes the dialog if the world it is editing is removed', () => {
+	it('carries the evolved brains across, so a copy starts where the original is', () => {
+		init(1, 2); // prewarm, so there is something worth copying
+		const source = bench.worlds[0];
+		frame(1 / 60, 400);
+
+		bench.duplicateWorld(source.id);
+		const copy = bench.worlds[1];
+
+		expect(copy.world.gen).toBe(source.world.gen);
+		expect(copy.world.curve).toEqual(source.world.curve);
+		expect(copy.world.fish[0].genome).not.toBe(source.world.fish[0].genome); // a clone, not a share
+	});
+});
+
+describe('bench store — maxGenerations', () => {
+	it('publishes changes, so what is derived from it actually re-renders', () => {
 		init(1);
-		const { id } = bench.worlds[0];
-		bench.openConditions(id);
+		const seen: number[] = [];
+		const stop = $effect.root(() => {
+			$effect(() => void seen.push(bench.maxGenerations));
+		});
+		flushSync();
 
-		bench.removeWorld(id);
+		bench.setMaxGenerations(40); // what Phase 7 does to start the train→deploy transition
+		flushSync();
+		stop();
 
-		expect(bench.conditionsWorldId).toBeNull();
+		// A getter over a NON-reactive field reads correctly and notifies nobody: the tile would
+		// never gain its "· trained" suffix and the top bar would keep offering "Train +25 gens".
+		expect(seen).toEqual([0, 40]);
+		expect(bench.worlds[0].world.maxGen).toBe(40); // and it reached the engine
 	});
 });

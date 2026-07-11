@@ -100,24 +100,36 @@ test('★ Champion selects the best brain alive, and the tank draws it', async (
 	const first = tile(page, 0);
 	const tank = first.getByRole('img', { name: /tank/i });
 
-	const before = await tank.evaluate((el: HTMLCanvasElement) => {
-		const { data } = el.getContext('2d')!.getImageData(0, 0, el.width, el.height);
-		let h = 0;
-		for (let i = 0; i < data.length; i += 997) h = (h * 31 + data[i]) | 0;
-		return h;
-	});
+	const fingerprint = () =>
+		tank.evaluate((el: HTMLCanvasElement) => {
+			const { data } = el.getContext('2d')!.getImageData(0, 0, el.width, el.height);
+			let h = 0;
+			for (let i = 0; i < data.length; i += 997) h = (h * 31 + data[i]) | 0;
+			return h;
+		});
 
+	/*
+	 * PAUSE FIRST. This test compares the tank's pixels before and after the click — and against a
+	 * RUNNING sim those pixels change every frame regardless, so the comparison proved nothing. (I
+	 * checked: with the button's handler replaced by a no-op, the test still passed.) Paused, the
+	 * scene is frozen, and the ONLY thing that can repaint it is the selection the click makes:
+	 * the ring, the vision radius and the threat line drawn around the chosen fish.
+	 */
+	// There must BE a best brain alive to select. Blind drift is the world whose population really
+	// does get wiped out, and ★ Champion correctly does nothing when nothing is swimming — so wait
+	// for a live population instead of letting the test flake on the simulation being honest.
+	await expect.poll(() => first.getByTestId('alive').innerText().then(Number)).toBeGreaterThan(0);
+
+	await page.getByRole('button', { name: 'Pause' }).click();
+	await expect
+		.poll(async () => {
+			const [a, b] = [await fingerprint(), await fingerprint()];
+			return a === b;
+		})
+		.toBe(true); // the scene has settled
+
+	const frozen = await fingerprint();
 	await first.getByRole('button', { name: '★ Champion' }).click();
 
-	// the selection ring + perception overlay are painted around it, so the pixels must change
-	await expect
-		.poll(() =>
-			tank.evaluate((el: HTMLCanvasElement) => {
-				const { data } = el.getContext('2d')!.getImageData(0, 0, el.width, el.height);
-				let h = 0;
-				for (let i = 0; i < data.length; i += 997) h = (h * 31 + data[i]) | 0;
-				return h;
-			})
-		)
-		.not.toBe(before);
+	await expect.poll(fingerprint, { timeout: 5000 }).not.toBe(frozen);
 });

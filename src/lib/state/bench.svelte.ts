@@ -159,13 +159,16 @@ class BenchStore {
 	generationsEvolved = $state(0);
 	/** What the inspector is showing — one across the bench. `$state.raw`: replaced, never mutated. */
 	selection = $state.raw<Selection | null>(null);
-	/** The world whose Conditions dialog is open (Phase 5), or null. */
-	conditionsWorldId = $state<string | null>(null);
 
 	readonly playback = new Playback();
 	readonly painters = new PainterRegistry();
 
-	#maxGenerations = 0;
+	/**
+	 * $state, not a plain field: the tile's "· trained" suffix and the top bar's Train label are
+	 * derived from it, and a getter over a non-reactive field never wakes a reader. Invisible while
+	 * it is always 0 — and quietly broken the moment Phase 7 starts driving it.
+	 */
+	#maxGenerations = $state(0);
 	#nextId = 0;
 	#accentCursor = 0;
 	/** Cached raw worlds for the turbo path, so training allocates nothing per frame. */
@@ -200,7 +203,6 @@ class BenchStore {
 		this.#rawWorlds = [];
 		this.generationsEvolved = 0;
 		this.selection = null;
-		this.conditionsWorldId = null;
 		this.#maxGenerations = 0;
 		this.#nextId = 0;
 		this.#accentCursor = 0;
@@ -237,7 +239,7 @@ class BenchStore {
 		const source = assertEntry(this.worlds[index], id);
 
 		const cfg = structuredClone(source.world.cfg);
-		cfg.name += ' copy';
+		cfg.name = this.#uniqueName(`${cfg.name} copy`);
 		// carry the evolved brains across so the copy starts where the original is
 		const genomes = source.world.roster.map((fish) => cloneGenome(fish.genome));
 		const world = makeWorld(cfg, genomes);
@@ -257,10 +259,9 @@ class BenchStore {
 
 	removeWorld(id: string): void {
 		this.#setWorlds(this.worlds.filter((entry) => entry.id !== id));
-		// Anything pointing INTO the world that just went away has to go with it, now — not on the
+		// A selection pointing INTO the world that just went away has to go with it, now — not on the
 		// next frame, or a component could render one frame against a world the bench no longer has.
 		if (this.selection?.worldId === id) this.selection = null;
-		if (this.conditionsWorldId === id) this.conditionsWorldId = null;
 	}
 
 	/** Restart evolution from random brains. */
@@ -291,9 +292,16 @@ class BenchStore {
 		this.#publishConfig(id);
 	}
 
-	/** Highlight a creature under the pointer. Components must not touch `world.hover` directly. */
+	/**
+	 * Highlight a creature under the pointer. Components must not touch `world.hover` directly.
+	 *
+	 * Unlike every other method here this one does NOT assert the world exists: a pointer event can
+	 * land just after its tile was removed, and hover is best-effort state about a cursor, not a
+	 * claim about the bench. Throwing out of a mousemove listener would be the wrong answer.
+	 */
 	setHover(id: string, target: Fish | Predator | null): void {
-		this.entry(id).world.hover = target;
+		const entry = this.find(id);
+		if (entry) entry.world.hover = target;
 	}
 
 	// ---- selection (one inspector, so one selection across the bench) ----
@@ -323,14 +331,6 @@ class BenchStore {
 	clearSelection(): void {
 		this.#deselectEverywhere();
 		this.selection = null;
-	}
-
-	openConditions(id: string): void {
-		this.conditionsWorldId = this.entry(id).id;
-	}
-
-	closeConditions(): void {
-		this.conditionsWorldId = null;
 	}
 
 	/** Look up a world, throwing on an unknown id (a miss is always a caller bug). */
@@ -422,6 +422,15 @@ class BenchStore {
 
 	#id(): string {
 		return `w${++this.#nextId}`;
+	}
+
+	/** A name no live world is using — two tiles reading "Direction copy" are simply ambiguous. */
+	#uniqueName(wanted: string): string {
+		const taken = new Set(this.worlds.map((entry) => entry.world.cfg.name));
+		if (!taken.has(wanted)) return wanted;
+		let n = 2;
+		while (taken.has(`${wanted} ${n}`)) n++;
+		return `${wanted} ${n}`;
 	}
 
 	#wrap(world: World): WorldEntry {

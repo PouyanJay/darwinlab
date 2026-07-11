@@ -16,6 +16,7 @@
 	import Chip from '../common/Chip.svelte';
 	import EditableLabel from '../common/EditableLabel.svelte';
 	import { SENSES } from '../senses';
+	import { describeWorld } from './describeWorld';
 	import { bench } from '$lib/state';
 	import type { WorldEntry } from '$lib/state';
 
@@ -27,31 +28,21 @@
 
 	let { entry, index }: Props = $props();
 
-	// The reactive mirror, NOT world.cfg — the raw world never notifies anyone (see bench store).
-	const cfg = $derived(entry.config);
+	const config = $derived(entry.config);
 	const badge = $derived(String(index).padStart(2, '0'));
-
-	/** "20 prey · 2 sharks · 640×400", plus the predator speed when it isn't the default. */
-	const meta = $derived.by(() => {
-		const sharks = `${cfg.preds} ${cfg.preds === 1 ? 'shark' : 'sharks'}`;
-		const parts = [`${cfg.prey} prey`, sharks, `${cfg.bw}×${cfg.bh}`];
-		if (Math.abs(cfg.predSpeed - 1) > 0.001) {
-			parts.push(`${cfg.predSpeed.toFixed(2).replace(/0$/, '')}×`);
-		}
-		return parts.join(' · ');
-	});
+	const meta = $derived(describeWorld(config));
 
 	// Training is over once the world hits the bench-wide max generation; from then on it is a
 	// real-world run, and the tile says so rather than leaving the reader to infer it.
 	const trained = $derived(bench.maxGenerations > 0 && entry.stats.gen >= bench.maxGenerations);
 </script>
 
-<section class="tile" aria-label="world {index}: {cfg.name}">
+<section class="tile" aria-label="world {index}: {config.name}">
 	<header>
-		<Chip tone="accent" style="--chip-accent: {cfg.accent}" class="badge">{badge}</Chip>
+		<Chip tone="accent" style="--chip-accent: {config.accent}" class="badge">{badge}</Chip>
 
 		<EditableLabel
-			value={cfg.name}
+			value={config.name}
 			label="world name"
 			onchange={(name) => bench.renameWorld(entry.id, name)}
 		/>
@@ -98,8 +89,8 @@
 				<SensePill
 					label={sense.short}
 					name={sense.name}
-					on={cfg.senses[sense.key]}
-					accent={cfg.accent}
+					on={config.senses[sense.key]}
+					accent={config.accent}
 					onclick={() => bench.toggleSense(entry.id, sense.key)}
 				/>
 			{/each}
