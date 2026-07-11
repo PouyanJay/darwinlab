@@ -20,6 +20,25 @@
 	const accent = $derived(source?.config.accent ?? '#4f56d3');
 	const number = $derived(String(story.index + 1).padStart(2, '0'));
 
+	let stage = $state<HTMLElement>();
+
+	/**
+	 * A takeover takes focus.
+	 *
+	 * Without this, focus stays on the "Play story" button in the top bar — now behind a full-screen
+	 * film — and the keyboard breaks in a way that is worse than "nothing happens": Space would press
+	 * that button again and re-cut the story from scene one, right under the presenter. Focus moves
+	 * into the film, and returns to where it came from on the way out.
+	 */
+	$effect(() => {
+		if (!story.active || !stage) return;
+		const invoker = document.activeElement as HTMLElement | null;
+		stage.focus();
+		return () => {
+			if (invoker?.isConnected) invoker.focus();
+		};
+	});
+
 	/**
 	 * The keyboard IS the transport for anyone presenting this: Esc to get out, arrows to move
 	 * through the scenes, Space to hold on one. It stands down for a focused control, so Space on
@@ -50,8 +69,10 @@
 
 {#if story.active && story.entry && source}
 	<section
+		bind:this={stage}
 		class="story"
 		aria-label="story mode"
+		tabindex="-1"
 		style:--scene-accent={accent}
 		style:background="radial-gradient(1100px at 50% -10%, color-mix(in srgb, {accent} 14%, #0d1018), #0a0c12
 		62%)"
@@ -95,6 +116,10 @@
 {/if}
 
 <style>
+	.story:focus {
+		outline: none; /* it is a screen, not a control — the film arriving is the signal */
+	}
+
 	.story {
 		position: fixed;
 		inset: 0;
