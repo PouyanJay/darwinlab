@@ -34,6 +34,15 @@ export class Playback {
 		this.running = !this.running;
 	}
 
+	/** Say what you mean. A film that has reached its end must PAUSE, not toggle. */
+	play(): void {
+		this.running = true;
+	}
+
+	pause(): void {
+		this.running = false;
+	}
+
 	setSpeed(speed: Speed): void {
 		this.speed = speed;
 	}
