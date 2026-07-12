@@ -71,4 +71,11 @@
 		background: var(--panel2);
 		color: var(--ink);
 	}
+
+	/* On a phone the footer disclaimer owns the bottom edge — stack the hint above it. */
+	@media (max-width: 640px) {
+		.hint {
+			bottom: 54px;
+		}
+	}
 </style>

@@ -122,6 +122,26 @@
 		animation: fade-up var(--dur-enter) var(--ease) both;
 	}
 
+	/* On a phone the centred card becomes a full-screen sheet: a dialog this dense (Conditions
+	   is two steppers, five sliders and four senses) needs the whole viewport, not a keyhole. */
+	@media (max-width: 480px) {
+		dialog {
+			padding: 0;
+		}
+
+		dialog[open] {
+			place-items: stretch;
+		}
+
+		.panel {
+			width: 100%;
+			height: 100dvh;
+			max-height: none;
+			border: none;
+			border-radius: 0;
+		}
+	}
+
 	header {
 		display: flex;
 		align-items: center;

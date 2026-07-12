@@ -130,7 +130,9 @@
 	main {
 		flex: 1;
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+		/* min(450px, 100%): the tile minimum yields when the CONTAINER is the narrower party,
+		   so a phone gets one fitted column instead of a 450px track and a horizontal scrollbar. */
+		grid-template-columns: repeat(auto-fit, minmax(min(450px, 100%), 1fr));
 		gap: var(--sp-7);
 		align-content: start;
 		padding: var(--sp-7) var(--sp-8) 78px; /* the footer pill sits in that bottom margin */

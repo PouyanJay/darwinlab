@@ -102,6 +102,25 @@
 		animation: slide-in-right var(--dur-enter) var(--ease) both;
 	}
 
+	/* On a phone the inset side panel becomes a full-width overlay rising from the bottom edge —
+	   still non-modal, still over a running bench, just no longer pretending there is a "side". */
+	@media (max-width: 560px) {
+		.drawer {
+			left: 0;
+			right: 0;
+			bottom: 0;
+			width: auto;
+			max-width: none;
+			/* the footer disclaimer deliberately outranks every panel (z-footer) — leave its line
+			   of the viewport to it rather than letting it sit on the drawer's own legend */
+			padding-bottom: 46px;
+			border-left: none;
+			border-right: none;
+			border-bottom: none;
+			border-radius: var(--radius-card) var(--radius-card) 0 0;
+		}
+	}
+
 	/* The drawer takes focus on open; a ring around the whole panel would be noise, and the
 	   slide-in is what tells a sighted user where they now are. Keyboard focus then moves on to
 	   the close button, which does show its ring. */
