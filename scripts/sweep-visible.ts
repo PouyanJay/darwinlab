@@ -121,7 +121,19 @@ const VARIANTS: Record<string, Partial<WorldConfig>> = {
 	C1: { ...V3B, predSpeed: 0.7, preds: 3, prey: 12 },
 	C2: { ...V3B, predSpeed: 0.7, preds: 3, lungeFerocity: 1.8 },
 	C3: { ...V3B, predSpeed: 0.7, preds: 3, prey: 12, lungeFerocity: 1.8 },
-	C4: { ...V3B, predSpeed: 0.65, preds: 3, prey: 14 }
+	C4: { ...V3B, predSpeed: 0.65, preds: 3, prey: 14 },
+
+	// iteration 7 — PROPRIOCEPTION. The 9th brain input: the fish's own speed. Whether it
+	// pays is a measurement, not a hope; if the honest answer is "it doesn't", that is a
+	// finding and it ships as one (golden rules #1/#2).
+	SHOWCASE: { ...V3B, predSpeed: 0.7, preds: 3 }, // the locked world, 8-input brains
+	SPD: {
+		...V3B,
+		predSpeed: 0.7,
+		preds: 3,
+		brainInputs: 9 // the slot exists...
+		// ...and each world's `senses.speed` (set below, per-world) decides if it is fed
+	}
 };
 
 const wantedVariants = (process.env.VARIANTS ?? Object.keys(VARIANTS).join(',')).split(',');
@@ -139,6 +151,9 @@ for (const vname of wantedVariants) {
 	for (const base of DEFAULT_WORLDS) {
 		if (wantedWorlds && !wantedWorlds.includes(base.name)) continue;
 		const cfg: WorldConfig = { ...structuredClone(base), ...patch };
+		// a 9-input world FEEDS the proprioceptive slot; the ablation semantics are the usual
+		// ones (the slot exists either way, off means it receives 0)
+		if (cfg.brainInputs === 9) cfg.senses = { ...cfg.senses, speed: true };
 		const gens = Math.max(20, Math.round(EVOLVE_SIMSEC / (cfg.genDuration ?? GEN_DURATION)));
 
 		// average over independent evolution seeds — one lineage is a coin toss, not a result

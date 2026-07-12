@@ -1,23 +1,44 @@
 /**
  * The neural network — a tiny fully-connected MLP. Faithful port of engine2.js.
  *
- * Shape: 8 inputs → 6 hidden (tanh) → 2 outputs. One bias per hidden and output neuron.
- * Genome = the 68 weights, laid out as:
- *   [ NHID*NIN input→hidden | NHID hidden biases | NOUT*NHID hidden→output | NOUT output biases ]
+ * Shape: N inputs → 6 hidden (tanh) → 2 outputs. One bias per hidden and output neuron.
+ * Genome laid out as:
+ *   [ NHID*nin input→hidden | NHID hidden biases | NOUT*NHID hidden→output | NOUT output biases ]
  *
- * Fixed input slots (a disabled sense feeds 0 → a true ablation, see sensing.ts):
+ * Input slots (a disabled sense feeds 0 → a true ablation, see sensing.ts):
  *   0 bias · 1 distance · 2 dir→x · 3 dir→y · 4 closing · 5 wall L · 6 wall F · 7 wall R
+ *   8 own speed  ← the PROPRIOCEPTIVE slot, present only in 9-input worlds
+ *
+ * WHY THE INPUT COUNT IS DERIVED FROM THE GENOME, not a global constant: the reference
+ * engine's brain has exactly 8 inputs and 68 weights, and the fidelity gate asserts our
+ * numbers match it bit for bit. A world that gives its fish a sense of their own speed
+ * needs a 9th slot — and therefore 74 weights — so the shape has to be a property of the
+ * genome, not of the module. Reference worlds keep 68 weights and stay bit-exact; only a
+ * world that asks for the extra slot pays for it.
  */
 
 import { GENOME_INIT_SCALE } from './constants';
 import { randn, type Rng, defaultRng } from './rng';
 import type { Genome, ForwardResult, Senses } from './types';
 
+/** The reference brain's input count (bias + 4 senses across 7 slots). */
 export const NIN = 8;
+/** With the proprioceptive slot: the fish can feel its own speed. */
+export const NIN_WITH_SPEED = 9;
 export const NHID = 6;
 export const NOUT = 2;
-/** Genome length: NHID*NIN (48) + NHID (6) + NOUT*NHID (12) + NOUT (2) = 68. */
-export const GLEN = NHID * NIN + NHID + NOUT * NHID + NOUT;
+
+/** Weight count for a brain with `nin` inputs. The reference brain: 68. */
+export function genomeLength(nin: number = NIN): number {
+	return NHID * nin + NHID + NOUT * NHID + NOUT;
+}
+/** Genome length of the REFERENCE brain: 6*8 + 6 + 2*6 + 2 = 68. */
+export const GLEN = genomeLength(NIN);
+
+/** How many inputs this genome was built for — its own length says so. */
+export function inputCount(g: Genome): number {
+	return (g.length - NHID - NOUT * NHID - NOUT) / NHID;
+}
 
 export const IN_LABELS = [
 	'bias',
@@ -27,7 +48,8 @@ export const IN_LABELS = [
 	'closing',
 	'wall L',
 	'wall F',
-	'wall R'
+	'wall R',
+	'own speed'
 ];
 /** Which sense gates each input slot (null = ungated, always on). */
 export const IN_SENSE: (keyof Senses | null)[] = [
@@ -38,35 +60,42 @@ export const IN_SENSE: (keyof Senses | null)[] = [
 	'closing',
 	'walls',
 	'walls',
-	'walls'
+	'walls',
+	'speed'
 ];
 export const OUT_LABELS = ['turn', 'thrust'];
 
 /** A fresh random genome — each weight `randn() * 0.8` (gaussian init). */
-export function makeGenome(rng: Rng = defaultRng): Genome {
-	const g = new Float64Array(GLEN);
-	for (let i = 0; i < GLEN; i++) g[i] = randn(rng) * GENOME_INIT_SCALE;
+export function makeGenome(rng: Rng = defaultRng, nin: number = NIN): Genome {
+	const len = genomeLength(nin);
+	const g = new Float64Array(len);
+	for (let i = 0; i < len; i++) g[i] = randn(rng) * GENOME_INIT_SCALE;
 	return g;
 }
 
 /**
  * Forward pass. Returns motor outputs plus hidden/output activations for the brain viz.
  * `turn = tanh(o0)` ∈ [−1,1]; `thrust = sigmoid(o1)` ∈ [0,1].
+ *
+ * The genome's own length decides how many inputs are read, so an 8-input brain in a
+ * 9-input world simply never sees the extra slot (and vice versa is impossible: a fish
+ * only ever meets the input vector its world builds).
  */
 export function forward(g: Genome, x: number[]): ForwardResult {
+	const nin = inputCount(g);
 	const h = new Array<number>(NHID);
 	let p = 0;
 	for (let j = 0; j < NHID; j++) {
 		let s = 0;
-		for (let i = 0; i < NIN; i++) s += g[p++] * x[i];
-		h[j] = Math.tanh(s + g[NHID * NIN + j]);
+		for (let i = 0; i < nin; i++) s += g[p++] * (x[i] ?? 0);
+		h[j] = Math.tanh(s + g[NHID * nin + j]);
 	}
 	const o = new Array<number>(NOUT);
-	let q = NHID * NIN + NHID;
+	let q = NHID * nin + NHID;
 	for (let k = 0; k < NOUT; k++) {
 		let s = 0;
 		for (let j = 0; j < NHID; j++) s += g[q++] * h[j];
-		s += g[NHID * NIN + NHID + NOUT * NHID + k];
+		s += g[NHID * nin + NHID + NOUT * NHID + k];
 		o[k] = s;
 	}
 	const turn = Math.tanh(o[0]);
@@ -76,10 +105,11 @@ export function forward(g: Genome, x: number[]): ForwardResult {
 
 /** Weight from input `i` into hidden neuron `j`. */
 export function weightIH(g: Genome, j: number, i: number): number {
-	return g[j * NIN + i];
+	return g[j * inputCount(g) + i];
 }
 
 /** Weight from hidden neuron `j` into output `k`. */
 export function weightHO(g: Genome, k: number, j: number): number {
-	return g[NHID * NIN + NHID + k * NHID + j];
+	const nin = inputCount(g);
+	return g[NHID * nin + NHID + k * NHID + j];
 }

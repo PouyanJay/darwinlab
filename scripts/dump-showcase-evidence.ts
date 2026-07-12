@@ -12,14 +12,26 @@ const DT = 1 / 60;
 const SIMSEC = 1500;
 const BOUT_SEEDS = Array.from({ length: 12 }, (_, i) => 1000 + i);
 
-/** The showcase environment (variant V3B — the sweep's winner). */
+/**
+ * The showcase environment — the sweep's winner (S070S3).
+ *
+ * The two changes that unlocked the AWARENESS PREMIUM (Direction ÷ Blind, both evolved):
+ *  - predSpeed 0.7 → the shark cruises at 140 px/s, BELOW the fish's 176 top speed. Fleeing
+ *    correctly now means escaping; at cruise 200 even a perfectly-informed fish was run down,
+ *    so knowing could only ever buy a delay and selection had nothing to reward.
+ *  - preds 3 → less herd dilution. The shark eats whoever is NEAREST, so in a crowd a smart
+ *    fish is often spared because a dumber neighbour was closer; its own competence is never
+ *    tested. More hunters means your own choices decide whether you live.
+ */
 const SHOWCASE: Partial<WorldConfig> = {
 	persistence: false,
 	lungeCommit: true,
 	genDuration: 30,
 	lungeFerocity: 1.3,
 	vision: 240,
-	agility: 1.4
+	agility: 1.4,
+	predSpeed: 0.7,
+	preds: 3
 };
 
 function evolveTo(cfg: WorldConfig, seed: number): Genome[] {
@@ -64,23 +76,28 @@ const direction = DEFAULT_WORLDS[2];
 const refCfg: WorldConfig = structuredClone(direction);
 const showCfg: WorldConfig = { ...structuredClone(direction), ...SHOWCASE };
 
+/** Average over independent evolution seeds — one lineage is a coin toss, not a result. */
+const EVO_SEEDS = [1, 2, 3];
+const avgOver = (cfg: WorldConfig, pick: (s: ReturnType<typeof measureBouts>) => number) =>
+	EVO_SEEDS.reduce((a, s) => a + pick(measureBouts(cfg, evolveTo(cfg, s), BOUT_SEEDS)), 0) /
+	EVO_SEEDS.length;
+
 const ladder = DEFAULT_WORLDS.map((base) => {
 	const rc: WorldConfig = structuredClone(base);
 	const sc: WorldConfig = { ...structuredClone(base), ...SHOWCASE };
-	const refStats = measureBouts(rc, evolveTo(rc, 1), BOUT_SEEDS);
 	const refRand = measureBouts(rc, undefined, BOUT_SEEDS);
-	const shoStats = measureBouts(sc, evolveTo(sc, 1), BOUT_SEEDS);
 	const shoRand = measureBouts(sc, undefined, BOUT_SEEDS);
+	const shoStats = measureBouts(sc, evolveTo(sc, 1), BOUT_SEEDS);
 	const r1 = (v: number) => Math.round(v * 100) / 100;
 	return {
 		world: base.name,
-		ref: { life: r1(refStats.meanLife), rand: r1(refRand.meanLife) },
+		ref: { life: r1(avgOver(rc, (s) => s.meanLife)), rand: r1(refRand.meanLife) },
 		show: {
-			life: r1(shoStats.meanLife),
+			life: r1(avgOver(sc, (s) => s.meanLife)),
 			rand: r1(shoRand.meanLife),
-			flee: Math.round(shoStats.fleeAngleErrorDeg),
+			flee: Math.round(avgOver(sc, (s) => s.fleeAngleErrorDeg)),
 			fleeRand: Math.round(shoRand.fleeAngleErrorDeg),
-			dodge: Math.round(shoStats.dodgeRate * 100),
+			dodge: Math.round(avgOver(sc, (s) => s.dodgeRate) * 100),
 			dodgeRand: Math.round(shoRand.dodgeRate * 100),
 			dist: Math.round(shoStats.meanPredDistance),
 			distRand: Math.round(shoRand.meanPredDistance)

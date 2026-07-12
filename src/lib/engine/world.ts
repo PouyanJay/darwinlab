@@ -23,7 +23,7 @@ import {
 	CURVE_MAX_POINTS,
 	DECAY_SAMPLE_INTERVAL
 } from './constants';
-import { makeGenome, forward } from './network';
+import { makeGenome, forward, NIN } from './network';
 import { cloneGenome, breed } from './genetics';
 import { senseInputs } from './sensing';
 import type { World, WorldConfig, Fish, Predator, Genome } from './types';
@@ -40,7 +40,9 @@ export function makeFish(cfg: WorldConfig, genome?: Genome, rng: Rng = defaultRn
 		trail: [],
 		phase: rnd(rng, 0, TAU),
 		size: rnd(rng, 0.85, 1.15),
-		genome: genome ?? makeGenome(rng),
+		// a fresh brain is built to THIS world's shape — 8 inputs (the reference brain, 68
+		// weights) or 9, when the world lets its fish feel their own speed (74 weights)
+		genome: genome ?? makeGenome(rng, cfg.brainInputs ?? NIN),
 		fitness: 0,
 		turn: 0,
 		thrust: 0,
@@ -128,7 +130,8 @@ function spawnGeneration(w: World, genomes?: Genome[]): void {
 	w.sense = null;
 	w.hover = null;
 	for (let i = 0; i < c.prey; i++) {
-		const g = genomes && genomes[i] ? cloneGenome(genomes[i]) : makeGenome(w.rng);
+		const g =
+			genomes && genomes[i] ? cloneGenome(genomes[i]) : makeGenome(w.rng, c.brainInputs ?? NIN);
 		const f = makeFish(c, g, w.rng);
 		w.fish.push(f);
 		w.roster.push(f);

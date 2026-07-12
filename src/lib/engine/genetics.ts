@@ -28,10 +28,17 @@ export function cloneGenome(g: Genome): Genome {
 	return g.slice();
 }
 
-/** Uniform crossover: each gene taken 50/50 from either parent. */
+/**
+ * Uniform crossover: each gene taken 50/50 from either parent.
+ *
+ * Length comes from the PARENTS, not a module constant: a world whose brains carry the
+ * proprioceptive slot has 74-weight genomes, and its children must too. (Parents always
+ * share a world, so they always share a shape.)
+ */
 export function crossover(a: Genome, b: Genome, rng: Rng = defaultRng): Genome {
-	const g = new Float64Array(GLEN);
-	for (let i = 0; i < GLEN; i++) g[i] = rng() < 0.5 ? a[i] : b[i];
+	const len = a.length;
+	const g = new Float64Array(len);
+	for (let i = 0; i < len; i++) g[i] = rng() < 0.5 ? a[i] : b[i];
 	return g;
 }
 
@@ -42,7 +49,7 @@ export function crossover(a: Genome, b: Genome, rng: Rng = defaultRng): Genome {
  */
 export function mutate(g: Genome, rate: number, rng: Rng = defaultRng): Genome {
 	const s = MUTATION_BASE + rate * MUTATION_RATE_SCALE;
-	for (let i = 0; i < GLEN; i++) {
+	for (let i = 0; i < g.length; i++) {
 		if (rng() < MUTATION_PROB) g[i] += randn(rng) * s;
 		if (rng() < rate * MUTATION_RESET_RATE) g[i] = randn(rng) * GENOME_INIT_SCALE;
 	}

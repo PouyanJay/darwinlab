@@ -76,8 +76,9 @@ class StoryStore {
 		return SENSE_ORDER.map(({ key, name }) => ({
 			key,
 			name,
-			on: current[key],
-			isNew: current[key] && !previous?.[key]
+			// `speed` is optional on Senses (only 9-input worlds have the slot), so absent = off
+			on: !!current[key],
+			isNew: !!current[key] && !previous?.[key]
 		}));
 	}
 

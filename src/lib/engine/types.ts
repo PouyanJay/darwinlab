@@ -18,12 +18,18 @@ export interface Point {
 	y: number;
 }
 
-/** Which predator-derived inputs a world's fish brains receive. */
+/** Which inputs a world's fish brains receive. */
 export interface Senses {
 	dist: boolean;
 	dir: boolean;
 	closing: boolean;
 	walls: boolean;
+	/**
+	 * PROPRIOCEPTION — the fish's own speed. Not a sense of the predator at all: a sense of
+	 * ITSELF. Only exists in worlds whose brains carry the 9th input slot (`brainInputs: 9`);
+	 * in an 8-input world this flag has nothing to gate. Reference worlds never have it.
+	 */
+	speed?: boolean;
 }
 
 /** Per-world configuration (the Conditions schema, README §7 / spec §16). */
@@ -73,6 +79,13 @@ export interface WorldConfig {
 	genDuration?: number;
 	/** Fish steering/response authority multiplier — the body, not the brain. Reference = 1. */
 	agility?: number;
+	/**
+	 * How many inputs this world's brains have: 8 (the reference brain, 68 weights) or 9 —
+	 * which adds the proprioceptive slot, so a fish can feel how fast IT is going and learn
+	 * that running straight from something faster is death. 9-input genomes are 74 weights.
+	 * A world's brain shape is fixed at creation; the `speed` sense then ablates the slot.
+	 */
+	brainInputs?: number;
 	/**
 	 * Stamina: sprinting drains a reserve that only refills while cruising; an empty tank
 	 * halves top speed. Makes "always sprint" a losing strategy, so BOLTING — calm until
