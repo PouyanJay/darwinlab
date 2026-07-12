@@ -73,6 +73,19 @@ export interface WorldConfig {
 	genDuration?: number;
 	/** Fish steering/response authority multiplier — the body, not the brain. Reference = 1. */
 	agility?: number;
+	/**
+	 * Stamina: sprinting drains a reserve that only refills while cruising; an empty tank
+	 * halves top speed. Makes "always sprint" a losing strategy, so BOLTING — calm until
+	 * the threat nears, then a burst — becomes the winning, visible behavior. Reference = off.
+	 */
+	stamina?: boolean;
+	/**
+	 * Committed-lunge ferocity: multiplies the strike's speed and shortens its telegraph.
+	 * At 1 (reference) a lunge can be dodged on position alone; fiercer, the only fish that
+	 * escape are the ones that feel the lunge COMING — the closing-speed sense's unique job.
+	 * Only meaningful with lungeCommit on.
+	 */
+	lungeFerocity?: number;
 }
 
 export interface Fish {
@@ -89,6 +102,8 @@ export interface Fish {
 	turn: number;
 	thrust: number;
 	trailT: number;
+	/** Sprint reserve 0..1 — only meaningful when cfg.stamina is on (starts full). */
+	stamina?: number;
 }
 
 export interface Predator {

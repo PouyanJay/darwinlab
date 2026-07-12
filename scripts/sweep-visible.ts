@@ -29,6 +29,54 @@ const VARIANTS: Record<string, Partial<WorldConfig>> = {
 		genDuration: 30,
 		agility: 1.6,
 		wallInstinct: false
+	},
+	// iteration 2: stamina makes BOLTING the winning strategy (sprint-always drains dry);
+	// ferocity makes the lunge undodgeable on position alone (closing speed's unique job)
+	STAM: { persistence: false, lungeCommit: true, genDuration: 30, stamina: true },
+	FER: { persistence: false, lungeCommit: true, genDuration: 30, lungeFerocity: 1.5 },
+	STAMFER: {
+		persistence: false,
+		lungeCommit: true,
+		genDuration: 30,
+		stamina: true,
+		lungeFerocity: 1.5
+	},
+	STAMFERW: {
+		persistence: false,
+		lungeCommit: true,
+		genDuration: 30,
+		stamina: true,
+		lungeFerocity: 1.5,
+		wallInstinct: false
+	},
+	// iteration 3: each pressure works alone and they overdose together — soften both and
+	// give fish the runway (vision, agility) to express what they learn
+	V3A: {
+		persistence: false,
+		lungeCommit: true,
+		genDuration: 30,
+		stamina: true,
+		lungeFerocity: 1.3,
+		vision: 240,
+		agility: 1.4
+	},
+	V3B: {
+		persistence: false,
+		lungeCommit: true,
+		genDuration: 30,
+		lungeFerocity: 1.3,
+		vision: 240,
+		agility: 1.4
+	},
+	V3C: {
+		persistence: false,
+		lungeCommit: true,
+		genDuration: 30,
+		stamina: true,
+		lungeFerocity: 1.3,
+		vision: 240,
+		agility: 1.4,
+		wallInstinct: false
 	}
 };
 
@@ -40,19 +88,37 @@ for (const vname of wantedVariants) {
 	if (!patch) continue;
 	console.log(`\n═══ ${vname}  ${JSON.stringify(patch)}`);
 	console.log(
-		'  world          life e/r      bolt   flee° (rnd)   dodge (rnd)   corner (rnd)  gens'
+		'  world          life e/r      bolt   flee° (rnd)   dodge (rnd)   ctime (rnd)   dist (rnd)  gens'
 	);
 	for (const base of DEFAULT_WORLDS) {
 		if (wantedWorlds && !wantedWorlds.includes(base.name)) continue;
 		const cfg: WorldConfig = { ...structuredClone(base), ...patch };
 		const gens = Math.max(20, Math.round(EVOLVE_SIMSEC / (cfg.genDuration ?? GEN_DURATION)));
 
-		const w = makeWorld(cfg, undefined, seededRng(1));
-		let guard = EVOLVE_SIMSEC * 120;
-		while (w.gen < gens && guard-- > 0) stepWorld(w, DT);
-		const genomes = (w.roster.length ? w.roster : w.fish).map((f) => f.genome);
-
-		const ev = measureBouts(cfg, genomes, BOUT_SEEDS);
+		// average over independent evolution seeds — one lineage is a coin toss, not a result
+		const evoSeeds = Array.from({ length: Number(process.env.EVOSEEDS ?? 1) }, (_, i) => i + 1);
+		const runs = evoSeeds.map((seed) => {
+			const w = makeWorld(cfg, undefined, seededRng(seed));
+			let guard = EVOLVE_SIMSEC * 120;
+			while (w.gen < gens && guard-- > 0) stepWorld(w, DT);
+			const genomes = (w.roster.length ? w.roster : w.fish).map((f) => f.genome);
+			return { gen: w.gen, stats: measureBouts(cfg, genomes, BOUT_SEEDS) };
+		});
+		const w = { gen: runs[0].gen };
+		const avg = (pick: (s: ReturnType<typeof measureBouts>) => number) =>
+			runs.reduce((a, r) => a + pick(r.stats), 0) / runs.length;
+		const ev = {
+			boltRatio: avg((s) => s.boltRatio),
+			fleeAngleErrorDeg: avg((s) => s.fleeAngleErrorDeg),
+			dodgeRate: avg((s) => s.dodgeRate),
+			cornerDeathShare: avg((s) => s.cornerDeathShare),
+			cornerTimeShare: avg((s) => s.cornerTimeShare),
+			meanPredDistance: avg((s) => s.meanPredDistance),
+			meanLife: avg((s) => s.meanLife),
+			aliveAtEnd: avg((s) => s.aliveAtEnd),
+			lunges: avg((s) => s.lunges),
+			deaths: avg((s) => s.deaths)
+		};
 		const rnd = measureBouts(cfg, undefined, BOUT_SEEDS);
 		const pct = (a: number, b: number) => ((a / b - 1) * 100).toFixed(0).padStart(4);
 		console.log(
@@ -61,7 +127,8 @@ for (const vname of wantedVariants) {
 				rnd.meanLife
 			)}%  ${ev.boltRatio.toFixed(2)}   ${ev.fleeAngleErrorDeg.toFixed(0).padStart(4)} (${rnd.fleeAngleErrorDeg.toFixed(0)})    ` +
 				`${(ev.dodgeRate * 100).toFixed(0).padStart(4)}% (${(rnd.dodgeRate * 100).toFixed(0)}%)   ` +
-				`${(ev.cornerDeathShare * 100).toFixed(0).padStart(4)}% (${(rnd.cornerDeathShare * 100).toFixed(0)}%)  ${w.gen}`
+				`${(ev.cornerTimeShare * 100).toFixed(0).padStart(4)}% (${(rnd.cornerTimeShare * 100).toFixed(0)}%)   ` +
+				`${ev.meanPredDistance.toFixed(0).padStart(4)} (${rnd.meanPredDistance.toFixed(0)})  ${w.gen}`
 		);
 	}
 }

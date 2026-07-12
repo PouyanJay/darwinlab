@@ -298,6 +298,9 @@ function updatePredators(w: World, dt: number, frust: number, catchR: number): v
 		if (best) {
 			const commit = c.lungeCommit ?? false;
 			// lunge state machine: cruise → aim (telegraphed wind-up) → lunge (fast strike)
+			// ferocity only exists for committed strikes: faster, shorter-telegraphed lunges
+			// that position alone can no longer dodge — feeling them COMING is the edge.
+			const ferocity = commit ? (c.lungeFerocity ?? 1) : 1;
 			if (p.lunge <= 0 && p.aim > 0) {
 				p.aim -= dt;
 				if (p.aim <= 0) {
@@ -317,7 +320,7 @@ function updatePredators(w: World, dt: number, frust: number, catchR: number): v
 					}
 				}
 			} else if (p.lunge <= 0 && p.cool <= 0 && bd < 135) {
-				p.aim = 0.3;
+				p.aim = commit ? 0.3 / Math.max(1, ferocity) : 0.3;
 			}
 			let dirx: number;
 			let diry: number;
@@ -331,8 +334,8 @@ function updatePredators(w: World, dt: number, frust: number, catchR: number): v
 			if (p.lunge > 0 && commit && p._lockx !== undefined && p._locky !== undefined) {
 				dirx = p._lockx;
 				diry = p._locky;
-				acc = 1000 * ps;
-				max = 430 * ps * frust;
+				acc = 1000 * ps * ferocity;
+				max = 430 * ps * frust * ferocity;
 			} else if (p.lunge > 0) {
 				dirx = (lx - p.x) / ld;
 				diry = (ly - p.y) / ld;
@@ -424,7 +427,17 @@ function updatePrey(w: World, dt: number): void {
 		f.turn = out.turn;
 		f.thrust = out.thrust;
 		f.heading += out.turn * MAXTURN * agility * dt;
-		const target = out.thrust * MAXSPEED;
+		// stamina (optional): sprinting above 60% thrust drains the reserve, cruising below
+		// refills it, and an empty tank halves top speed. Sprint-always loses; bolting wins.
+		let speedCap = MAXSPEED;
+		if (c.stamina ?? false) {
+			const reserve = f.stamina ?? 1;
+			const next =
+				out.thrust > 0.6 ? reserve - (out.thrust - 0.6) * 0.85 * dt : reserve + 0.28 * dt;
+			f.stamina = clamp(next, 0, 1);
+			if (f.stamina <= 0.02) speedCap = MAXSPEED * 0.55;
+		}
+		const target = out.thrust * speedCap;
 		const dvx = Math.cos(f.heading) * target;
 		const dvy = Math.sin(f.heading) * target;
 		f.vx += (dvx - f.vx) * Math.min(1 / dt, RESP * agility) * dt;

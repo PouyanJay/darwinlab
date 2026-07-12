@@ -24,6 +24,12 @@ export interface BehaviorStats {
 	dodgeRate: number;
 	/** Of all deaths, the share that happened boxed near two walls at once. */
 	cornerDeathShare: number;
+	/** Share of living fish-time spent boxed near two walls — exposure-normalized, unlike
+	 *  the death share (long-lived populations otherwise look MORE corner-prone). */
+	cornerTimeShare: number;
+	/** Mean distance kept from the nearest predator, px — "keeping distance" is the
+	 *  Distance sense's visible story even when bolting isn't. */
+	meanPredDistance: number;
 	/** Mean seconds survived per fish over the bout. */
 	meanLife: number;
 	aliveAtEnd: number;
@@ -56,6 +62,10 @@ export function measureBout(
 	let lungeKills = 0;
 	let cornerDeaths = 0;
 	let deaths = 0;
+	let cornerTime = 0;
+	let liveTime = 0;
+	let predDist = 0;
+	let predDistN = 0;
 	const wasLunging = w.preds.map(() => false);
 
 	for (let s = 0; s < steps; s++) {
@@ -92,6 +102,14 @@ export function measureBout(
 					np = p;
 				}
 			}
+			liveTime += DT;
+			if (Math.min(f.x, cfg.bw - f.x) < 70 && Math.min(f.y, cfg.bh - f.y) < 70) {
+				cornerTime += DT;
+			}
+			if (np) {
+				predDist += nd;
+				predDistN++;
+			}
 			const speed = Math.hypot(f.vx, f.vy);
 			if (np && nd < cfg.vision) {
 				seenSpeed += speed;
@@ -117,6 +135,8 @@ export function measureBout(
 		fleeAngleErrorDeg: fleeN ? fleeErr / fleeN : 90,
 		dodgeRate: lunges ? clamp(1 - lungeKills / lunges, 0, 1) : 0,
 		cornerDeathShare: deaths ? cornerDeaths / deaths : 0,
+		cornerTimeShare: liveTime ? cornerTime / liveTime : 0,
+		meanPredDistance: predDistN ? predDist / predDistN : 0,
 		meanLife: lives.reduce((a, b) => a + b, 0) / lives.length,
 		aliveAtEnd: w.fish.length,
 		lunges,
@@ -139,6 +159,8 @@ export function measureBouts(
 		fleeAngleErrorDeg: mean((r) => r.fleeAngleErrorDeg),
 		dodgeRate: mean((r) => r.dodgeRate),
 		cornerDeathShare: mean((r) => r.cornerDeathShare),
+		cornerTimeShare: mean((r) => r.cornerTimeShare),
+		meanPredDistance: mean((r) => r.meanPredDistance),
 		meanLife: mean((r) => r.meanLife),
 		aliveAtEnd: mean((r) => r.aliveAtEnd),
 		lunges: mean((r) => r.lunges),
