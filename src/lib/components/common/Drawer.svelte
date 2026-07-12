@@ -35,8 +35,15 @@
 		takeFocus?: boolean;
 	}
 
-	let { open, onclose, title, children, subtitle, live = false, takeFocus = true }: Props =
-		$props();
+	let {
+		open,
+		onclose,
+		title,
+		children,
+		subtitle,
+		live = false,
+		takeFocus = true
+	}: Props = $props();
 
 	let panel = $state<HTMLElement>();
 
