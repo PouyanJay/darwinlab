@@ -90,7 +90,7 @@
 				<SensePill
 					label={sense.short}
 					name={sense.name}
-					on={config.senses[sense.key]}
+					on={!!config.senses[sense.key]}
 					accent={config.accent}
 					onclick={() => bench.toggleSense(entry.id, sense.key)}
 				/>

@@ -23,7 +23,7 @@ import {
 	CURVE_MAX_POINTS,
 	DECAY_SAMPLE_INTERVAL
 } from './constants';
-import { makeGenome, forward } from './network';
+import { makeGenome, forward, NIN } from './network';
 import { cloneGenome, breed } from './genetics';
 import { senseInputs } from './sensing';
 import type { World, WorldConfig, Fish, Predator, Genome } from './types';
@@ -40,7 +40,9 @@ export function makeFish(cfg: WorldConfig, genome?: Genome, rng: Rng = defaultRn
 		trail: [],
 		phase: rnd(rng, 0, TAU),
 		size: rnd(rng, 0.85, 1.15),
-		genome: genome ?? makeGenome(rng),
+		// a fresh brain is built to THIS world's shape — 8 inputs (the reference brain, 68
+		// weights) or 9, when the world lets its fish feel their own speed (74 weights)
+		genome: genome ?? makeGenome(rng, cfg.brainInputs ?? NIN),
 		fitness: 0,
 		turn: 0,
 		thrust: 0,
@@ -81,9 +83,11 @@ export function makeWorld(cfg: WorldConfig, genomes?: Genome[], rng: Rng = defau
 		gen: 0,
 		genT: 0,
 		curve: [],
+		lifeCurve: [],
 		champion: null,
 		championFish: null,
 		lastSurv: 1,
+		lastLife: 1,
 		maxGen: 0,
 		_deployed: false,
 		deployT: 0,
@@ -128,7 +132,8 @@ function spawnGeneration(w: World, genomes?: Genome[]): void {
 	w.sense = null;
 	w.hover = null;
 	for (let i = 0; i < c.prey; i++) {
-		const g = genomes && genomes[i] ? cloneGenome(genomes[i]) : makeGenome(w.rng);
+		const g =
+			genomes && genomes[i] ? cloneGenome(genomes[i]) : makeGenome(w.rng, c.brainInputs ?? NIN);
 		const f = makeFish(c, g, w.rng);
 		w.fish.push(f);
 		w.roster.push(f);
@@ -141,6 +146,7 @@ function spawnGeneration(w: World, genomes?: Genome[]): void {
 export function resetWorld(w: World): void {
 	w.gen = 0;
 	w.curve = [];
+	w.lifeCurve = []; // the learning curve the UI plots — a reset world has learned nothing
 	w.champion = null;
 	w.championFish = null;
 	w.selFish = null;
@@ -201,6 +207,26 @@ function evolve(w: World): void {
 	w.lastSurv = surv;
 	w.curve.push(surv);
 	if (w.curve.length > CURVE_MAX_POINTS) w.curve.shift();
+
+	/*
+	 * The LIFE curve — what selection actually rewards.
+	 *
+	 * `curve` above asks a yes/no question (were you alive when the bell rang?), and in a tank
+	 * where almost everyone dies it flattens to a few percent for every world alike: a fish that
+	 * lasted 18 of 20 seconds and one eaten at second 2 score the same zero. Fitness is SECONDS
+	 * SURVIVED, so this is the curve that can actually see a brain improving — mean fitness across
+	 * the whole roster, as a share of the generation. Same smoothing, same cap.
+	 * (`curve` is left exactly as the reference computes it: the fidelity gate compares it.)
+	 */
+	const meanLife = w.roster.length
+		? w.roster.reduce((sum, f) => sum + f.fitness, 0) / w.roster.length
+		: 0;
+	const rawLife = clamp(meanLife / (c.genDuration ?? GEN_DURATION), 0, 1);
+	const prevLife = w.lifeCurve.length ? w.lifeCurve[w.lifeCurve.length - 1] : rawLife;
+	const life = prevLife * CURVE_SMOOTH_PREV + rawLife * CURVE_SMOOTH_RAW;
+	w.lastLife = life;
+	w.lifeCurve.push(life);
+	if (w.lifeCurve.length > CURVE_MAX_POINTS) w.lifeCurve.shift();
 	const best = ranked[0];
 	if (best && (!w.champion || best.fitness > w.champion.fitness)) {
 		w.champion = { genome: cloneGenome(best.genome), fitness: best.fitness, gen: w.gen };
@@ -296,15 +322,31 @@ function updatePredators(w: World, dt: number, frust: number, catchR: number): v
 		const bd = p._td ?? 1e9;
 		const ps = c.predSpeed;
 		if (best) {
+			const commit = c.lungeCommit ?? false;
 			// lunge state machine: cruise → aim (telegraphed wind-up) → lunge (fast strike)
+			// ferocity only exists for committed strikes: faster, shorter-telegraphed lunges
+			// that position alone can no longer dodge — feeling them COMING is the edge.
+			const ferocity = commit ? (c.lungeFerocity ?? 1) : 1;
 			if (p.lunge <= 0 && p.aim > 0) {
 				p.aim -= dt;
 				if (p.aim <= 0) {
 					p.lunge = 0.4;
-					p.cool = 1.3;
+					// A committed strike costs more when it misses: the direction locks at THIS
+					// instant, and the longer cooldown is the recovery a dodged shark visibly
+					// pays, sailing past on its locked vector. (Reference: re-aims every frame
+					// with cool 1.3 — a guided missile no dodge can beat.)
+					p.cool = commit ? 2.4 : 1.3;
+					if (commit) {
+						const lead = 0.34;
+						const lx = best.x + best.vx * lead;
+						const ly = best.y + best.vy * lead;
+						const ld = Math.hypot(lx - p.x, ly - p.y) || 1;
+						p._lockx = (lx - p.x) / ld;
+						p._locky = (ly - p.y) / ld;
+					}
 				}
 			} else if (p.lunge <= 0 && p.cool <= 0 && bd < 135) {
-				p.aim = 0.3;
+				p.aim = commit ? 0.3 / Math.max(1, ferocity) : 0.3;
 			}
 			let dirx: number;
 			let diry: number;
@@ -315,7 +357,12 @@ function updatePredators(w: World, dt: number, frust: number, catchR: number): v
 			const lx = best.x + best.vx * lead;
 			const ly = best.y + best.vy * lead;
 			const ld = Math.hypot(lx - p.x, ly - p.y) || 1;
-			if (p.lunge > 0) {
+			if (p.lunge > 0 && commit && p._lockx !== undefined && p._locky !== undefined) {
+				dirx = p._lockx;
+				diry = p._locky;
+				acc = 1000 * ps * ferocity;
+				max = 430 * ps * frust * ferocity;
+			} else if (p.lunge > 0) {
 				dirx = (lx - p.x) / ld;
 				diry = (ly - p.y) / ld;
 				acc = 1000 * ps;
@@ -323,8 +370,14 @@ function updatePredators(w: World, dt: number, frust: number, catchR: number): v
 			} else if (p.aim > 0) {
 				dirx = (lx - p.x) / ld;
 				diry = (ly - p.y) / ld;
-				acc = 120 * ps;
-				max = 40 * ps;
+				// The reference wind-up BRAKES (max 40): the shark coils, so closing speed
+				// collapses right before the strike and the closing sense is worse than
+				// useless — it says "safe" at the exact moment it should scream. Charging
+				// instead keeps closing speed rising into the strike, which is the only way
+				// a fish can learn to feel a lunge coming.
+				const charging = c.aimCharge ?? false;
+				acc = charging ? 320 * ps : 120 * ps;
+				max = charging ? 250 * ps : 40 * ps;
 			} else {
 				const tx = lx - p.x;
 				const ty = ly - p.y;
@@ -397,17 +450,30 @@ function updatePredators(w: World, dt: number, frust: number, catchR: number): v
 /** Prey physics: each fish's own brain drives turn + thrust; plus separation and wall instinct. */
 function updatePrey(w: World, dt: number): void {
 	const c = w.cfg;
+	// agility scales how fast the BODY expresses what the brain decides (turn rate and
+	// velocity response) — the same evolved policy, on a sharper chassis. Reference = 1.
+	const agility = c.agility ?? 1;
 	for (const f of w.fish) {
 		const { x } = senseInputs(w, f);
 		const out = forward(f.genome, x);
 		f.turn = out.turn;
 		f.thrust = out.thrust;
-		f.heading += out.turn * MAXTURN * dt;
-		const target = out.thrust * MAXSPEED;
+		f.heading += out.turn * MAXTURN * agility * dt;
+		// stamina (optional): sprinting above 60% thrust drains the reserve, cruising below
+		// refills it, and an empty tank halves top speed. Sprint-always loses; bolting wins.
+		let speedCap = MAXSPEED;
+		if (c.stamina ?? false) {
+			const reserve = f.stamina ?? 1;
+			const next =
+				out.thrust > 0.6 ? reserve - (out.thrust - 0.6) * 0.85 * dt : reserve + 0.28 * dt;
+			f.stamina = clamp(next, 0, 1);
+			if (f.stamina <= 0.02) speedCap = MAXSPEED * 0.55;
+		}
+		const target = out.thrust * speedCap;
 		const dvx = Math.cos(f.heading) * target;
 		const dvy = Math.sin(f.heading) * target;
-		f.vx += (dvx - f.vx) * RESP * dt;
-		f.vy += (dvy - f.vy) * RESP * dt;
+		f.vx += (dvx - f.vx) * Math.min(1 / dt, RESP * agility) * dt;
+		f.vy += (dvy - f.vy) * Math.min(1 / dt, RESP * agility) * dt;
 		// mild positional separation so fish don't perfectly overlap (the velocity term in
 		// the reference was zeroed out, so only this position nudge remains)
 		for (const o of w.fish) {
@@ -420,12 +486,16 @@ function updatePrey(w: World, dt: number): void {
 				f.y += (dy / d) * (15 - d) * 0.06;
 			}
 		}
-		// baseline wall-avoidance instinct — keeps fish off the glass so they never pin in corners
-		const wm = 54;
-		if (f.x < wm) f.vx += (1 - f.x / wm) * 460 * dt;
-		else if (f.x > c.bw - wm) f.vx -= (1 - (c.bw - f.x) / wm) * 460 * dt;
-		if (f.y < wm) f.vy += (1 - f.y / wm) * 460 * dt;
-		else if (f.y > c.bh - wm) f.vy -= (1 - (c.bh - f.y) / wm) * 460 * dt;
+		// baseline wall-avoidance instinct — keeps fish off the glass so they never pin in
+		// corners. Optional (reference = on): with it OFF, staying out of corners is
+		// something only a brain with the walls sense can learn — the sense earns its keep.
+		if (c.wallInstinct ?? true) {
+			const wm = 54;
+			if (f.x < wm) f.vx += (1 - f.x / wm) * 460 * dt;
+			else if (f.x > c.bw - wm) f.vx -= (1 - (c.bw - f.x) / wm) * 460 * dt;
+			if (f.y < wm) f.vy += (1 - f.y / wm) * 460 * dt;
+			else if (f.y > c.bh - wm) f.vy -= (1 - (c.bh - f.y) / wm) * 460 * dt;
+		}
 		f.x += f.vx * dt;
 		f.y += f.vy * dt;
 		if (f.x < 7) {
@@ -511,9 +581,16 @@ export function stepWorld(w: World, dt: number): void {
 	updateDeployment(w, dt, trained);
 
 	// predator persistence: the longer without a kill, the faster the sharks get and the
-	// wider their catch radius, so no stalemate lasts forever
-	const frust = 1 + Math.min(0.85, w.sinceKill * 0.04);
-	const catchR = 14 + Math.min(20, Math.max(0, w.sinceKill - 8) * 2.2);
+	// wider their catch radius, so no stalemate lasts forever. Optional (reference = on,
+	// with ramp 0.04 / boost cap 0.85 / jaw cap 20): with it off, the shark is the same
+	// hunter forever, and a population that has genuinely learned is allowed to look safe.
+	const persist = w.cfg.persistence ?? true;
+	const frust = persist
+		? 1 + Math.min(w.cfg.persistMaxBoost ?? 0.85, w.sinceKill * (w.cfg.persistRamp ?? 0.04))
+		: 1;
+	const catchR = persist
+		? 14 + Math.min(w.cfg.persistMaxJaw ?? 20, Math.max(0, w.sinceKill - 8) * 2.2)
+		: 14;
 	w.sinceKill += dt;
 
 	assignPredatorTargets(w);
@@ -522,8 +599,10 @@ export function stepWorld(w: World, dt: number): void {
 	updateSenseSnapshot(w);
 	ageBursts(w, dt);
 
-	// generation boundary
-	if (w.genT >= GEN_DURATION || w.fish.length === 0) {
+	// generation boundary (configurable length — past ~gen 30 the reference's 10s cap is
+	// saturated by every decent fish and selection stops sharpening; longer keeps the
+	// gradient alive)
+	if (w.genT >= (w.cfg.genDuration ?? GEN_DURATION) || w.fish.length === 0) {
 		if (trained) {
 			w.genT = 0; // deployed: don't evolve, don't reset — let the population play out
 		} else {

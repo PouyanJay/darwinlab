@@ -30,10 +30,10 @@ test.beforeEach(async ({ page }) => {
 });
 
 test('★ Champion opens a live mind, and the bench keeps running behind it', async ({ page }) => {
-	await tile(page, 3).getByRole('button', { name: '★ Champion' }).click(); // "Anticipation"
+	await tile(page, 4).getByRole('button', { name: '★ Champion' }).click(); // "Full senses"
 
 	await expect(inspector(page)).toBeVisible();
-	await expect(inspector(page)).toContainText('one real evolved brain in “Anticipation”');
+	await expect(inspector(page)).toContainText('one real evolved brain in “Full senses”');
 	await expect(inspector(page)).toContainText('68 genes');
 
 	// NOT a modal: you inspect a brain while watching it swim, so the bench behind stays live and
@@ -44,7 +44,7 @@ test('★ Champion opens a live mind, and the bench keeps running behind it', as
 });
 
 test('the panel is alive: the numbers move because the fish is thinking', async ({ page }) => {
-	await tile(page, 3).getByRole('button', { name: '★ Champion' }).click();
+	await tile(page, 4).getByRole('button', { name: '★ Champion' }).click();
 
 	const lived = () =>
 		inspector(page)
@@ -57,7 +57,7 @@ test('the panel is alive: the numbers move because the fish is thinking', async 
 });
 
 test('ABLATION: cutting the closing-speed neuron really changes the brain', async ({ page }) => {
-	await tile(page, 3).getByRole('button', { name: '★ Champion' }).click(); // has closing speed on
+	await tile(page, 4).getByRole('button', { name: '★ Champion' }).click(); // Full senses — the only world with closing speed on
 	await expect(inspector(page)).toContainText('closing speed');
 
 	// Pause: the brain canvas animates its signal pulses every frame, so against a running sim its
@@ -79,14 +79,14 @@ test('ABLATION: cutting the closing-speed neuron really changes the brain', asyn
 	// this world, so an unscoped "off" would match either bar and prove nothing)
 	await expect(inspector(page).getByRole('status', { name: 'closing speed' })).toHaveText('off');
 	// and it is the same live ablation the tile performs: the tile's pill agrees
-	await expect(tile(page, 3).getByRole('button', { name: 'close', exact: true })).toHaveAttribute(
+	await expect(tile(page, 4).getByRole('button', { name: 'close', exact: true })).toHaveAttribute(
 		'aria-pressed',
 		'false'
 	);
 
 	// and it heals back
 	await inspector(page).getByRole('button', { name: 'Restore closing speed' }).click();
-	await expect(tile(page, 3).getByRole('button', { name: 'close', exact: true })).toHaveAttribute(
+	await expect(tile(page, 4).getByRole('button', { name: 'close', exact: true })).toHaveAttribute(
 		'aria-pressed',
 		'true'
 	);
@@ -99,7 +99,10 @@ test('the ladder reads the senses the world actually gives the brain', async ({ 
 		[0, 'rung 0 · reflex'], // Blind drift: no predator input at all
 		[1, 'rung 1 · tuned reflex'], // Distance: one channel
 		[2, 'rung 2 · sensor integration'], // Direction: two channels to combine
-		[3, 'rung 3 · prediction'] // Anticipation: closing speed carries the future
+		// index 3 is Corner-wise, which adds WALLS: more inputs, but none of them carries the
+		// future, so it stays on the integration rung. Only closing speed does.
+		[3, 'rung 2 · sensor integration'],
+		[4, 'rung 3 · prediction'] // Full senses: closing speed carries where the threat WILL be
 	] as const;
 
 	for (const [index, reads] of rungs) {

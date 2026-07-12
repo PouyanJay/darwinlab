@@ -18,12 +18,18 @@ export interface Point {
 	y: number;
 }
 
-/** Which predator-derived inputs a world's fish brains receive. */
+/** Which inputs a world's fish brains receive. */
 export interface Senses {
 	dist: boolean;
 	dir: boolean;
 	closing: boolean;
 	walls: boolean;
+	/**
+	 * PROPRIOCEPTION — the fish's own speed. Not a sense of the predator at all: a sense of
+	 * ITSELF. Only exists in worlds whose brains carry the 9th input slot (`brainInputs: 9`);
+	 * in an 8-input world this flag has nothing to gate. Reference worlds never have it.
+	 */
+	speed?: boolean;
 }
 
 /** Per-world configuration (the Conditions schema, README §7 / spec §16). */
@@ -43,6 +49,67 @@ export interface WorldConfig {
 	caption: string;
 	/** Optional seed for reproducible runs. */
 	seed?: number;
+
+	// ---- environment knobs (all optional; every default is the REFERENCE engine's behavior,
+	// which is what keeps the bit-exact fidelity gate green for reference configs) ----
+	/**
+	 * Predator persistence: the hunger ramp that makes the shark faster and wider-jawed the
+	 * longer it goes without a kill. Reference behavior = true. Off, the shark is the same
+	 * hunter forever — and evolved evasion is finally allowed to LOOK safe.
+	 */
+	persistence?: boolean;
+	/** Speed-boost ramp per hungry second (boost = min(cap, sinceKill·ramp)). Reference 0.04. */
+	persistRamp?: number;
+	/** Cap on the persistence speed boost. Reference 0.85 (≈1.85× top speed when starving). */
+	persistMaxBoost?: number;
+	/** Cap on how far the catch radius widens beyond its base 14px. Reference 20. */
+	persistMaxJaw?: number;
+	/**
+	 * Committed lunges: the strike direction locks at launch and a miss costs a recovery, so
+	 * a well-timed dodge makes the shark visibly sail past. Reference = false — the reference
+	 * lunge re-aims every frame, a guided missile no dodge can beat.
+	 */
+	lungeCommit?: boolean;
+	/**
+	 * The shark CHARGES while it winds up instead of coiling.
+	 *
+	 * This is what makes closing speed a real sense. In the reference the aim phase BRAKES the
+	 * shark to a crawl (max 40), so closing speed is at its LOWEST exactly when the strike is
+	 * imminent — a brain that learned "closing fast = danger" would relax at the worst possible
+	 * moment, which is why the closing sense measured as a net TAX rather than merely useless.
+	 * Charging instead, closing speed rises ahead of the strike and genuinely predicts it.
+	 * Reference = false.
+	 */
+	aimCharge?: boolean;
+	/**
+	 * The built-in wall-avoidance force every fish gets for free. Reference = true. Off,
+	 * corners are genuine death traps — and the walls SENSE has something real to earn.
+	 */
+	wallInstinct?: boolean;
+	/** Sim-seconds per generation. Reference = 10. Longer keeps selection sharpening after champions survive whole generations. */
+	genDuration?: number;
+	/** Fish steering/response authority multiplier — the body, not the brain. Reference = 1. */
+	agility?: number;
+	/**
+	 * How many inputs this world's brains have: 8 (the reference brain, 68 weights) or 9 —
+	 * which adds the proprioceptive slot, so a fish can feel how fast IT is going and learn
+	 * that running straight from something faster is death. 9-input genomes are 74 weights.
+	 * A world's brain shape is fixed at creation; the `speed` sense then ablates the slot.
+	 */
+	brainInputs?: number;
+	/**
+	 * Stamina: sprinting drains a reserve that only refills while cruising; an empty tank
+	 * halves top speed. Makes "always sprint" a losing strategy, so BOLTING — calm until
+	 * the threat nears, then a burst — becomes the winning, visible behavior. Reference = off.
+	 */
+	stamina?: boolean;
+	/**
+	 * Committed-lunge ferocity: multiplies the strike's speed and shortens its telegraph.
+	 * At 1 (reference) a lunge can be dodged on position alone; fiercer, the only fish that
+	 * escape are the ones that feel the lunge COMING — the closing-speed sense's unique job.
+	 * Only meaningful with lungeCommit on.
+	 */
+	lungeFerocity?: number;
 }
 
 export interface Fish {
@@ -59,6 +126,8 @@ export interface Fish {
 	turn: number;
 	thrust: number;
 	trailT: number;
+	/** Sprint reserve 0..1 — only meaningful when cfg.stamina is on (starts full). */
+	stamina?: number;
 }
 
 export interface Predator {
@@ -75,6 +144,9 @@ export interface Predator {
 	/** Transient per-step targeting (greedy nearest-unclaimed fish + its distance). */
 	_tgt?: Fish | null;
 	_td?: number;
+	/** Strike vector locked at lunge launch — only used when cfg.lungeCommit is on. */
+	_lockx?: number;
+	_locky?: number;
 }
 
 /** Best genome ever seen in a world — preserved verbatim (elitism). */
@@ -168,11 +240,21 @@ export interface World {
 	transform: Transform | null;
 	gen: number;
 	genT: number;
-	/** Survival-rate learning curve across generations. */
+	/** Survival-rate learning curve (fraction still alive when a generation ended). */
 	curve: number[];
+	/**
+	 * The LIFE curve — mean seconds survived across the whole roster, as a share of the
+	 * generation. This is what selection actually rewards (fitness IS seconds survived), and
+	 * unlike `curve` it can still see a brain improving in a tank where almost everyone dies:
+	 * a fish that lasted 18 of 20 seconds and one eaten at second 2 are the same zero to
+	 * `curve`, and very different here. The UI plots this one.
+	 */
+	lifeCurve: number[];
 	champion: Champion | null;
 	championFish: Fish | null;
 	lastSurv: number;
+	/** Latest smoothed life-curve sample (0–1). */
+	lastLife: number;
 	/** Once `gen >= maxGen`, the world deploys (stops evolving). 0 = never deploy. */
 	maxGen: number;
 	_deployed: boolean;

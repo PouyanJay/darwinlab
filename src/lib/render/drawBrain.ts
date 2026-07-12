@@ -14,6 +14,7 @@ import {
 	TAU,
 	NIN,
 	NHID,
+	inputCount,
 	NOUT,
 	IN_LABELS,
 	IN_SENSE,
@@ -65,18 +66,21 @@ export function drawBrain(
 	const x = sense ? sense.x : SILENT_INPUTS;
 	const h = sense ? sense.h : SILENT_HIDDEN;
 	const g = sense ? sense.genome : null;
+	// The brain is as wide as THIS world's brains are — 8 inputs, or 9 when the fish can
+	// feel its own speed. Never a module constant: the two shapes coexist on one bench.
+	const nin = g ? inputCount(g) : x.length;
 	const turn = sense ? sense.turn : 0;
 	const thrust = sense ? sense.thrust : 0;
 
 	const IX = 66;
 	const HX = W / 2;
 	const OX = W - 60;
-	const iy = (i: number) => 20 + (i * (H - 34)) / (NIN - 1);
+	const iy = (i: number) => 20 + (i * (H - 34)) / (nin - 1);
 	const hy = (j: number) => 40 + (j * (H - 70)) / (NHID - 1);
 	const oy = (k: number) => H * 0.38 + k * H * 0.26;
 	const senseOn = (idx: number): boolean => {
 		const key = IN_SENSE[idx];
-		return key === null ? true : S[key];
+		return key === null ? true : !!S[key];
 	};
 
 	const edge = (
@@ -110,7 +114,7 @@ export function drawBrain(
 	};
 
 	if (g) {
-		for (let i = 0; i < NIN; i++) {
+		for (let i = 0; i < nin; i++) {
 			for (let j = 0; j < NHID; j++)
 				edge(IX, iy(i), HX, hy(j), weightIH(g, j, i), x[i], i * NHID + j);
 		}
@@ -152,7 +156,7 @@ export function drawBrain(
 	};
 
 	ctx.font = '500 9px Inter, sans-serif';
-	for (let i = 0; i < NIN; i++) {
+	for (let i = 0; i < nin; i++) {
 		const on = senseOn(i);
 		node(IX, iy(i), x[i], on, 5);
 		ctx.fillStyle = on ? th.ink : th.inkSoft;

@@ -1,21 +1,25 @@
 <!--
-  The field note (README §5.2) — the intellectual point of the product, stated before you look at a
-  single tank: more senses is not more intelligence.
+  The field note — the intellectual point of the product, stated before you look at a single tank.
 
-  The copy is the reference's, verbatim. Do not soften it and do not cut it. It exists because the
-  measured result is unflattering (§8) and the product ships the real finding rather than a tuned
-  one — the banner is what makes that a lesson instead of a bug.
+  IT USED TO SAY "more senses is not more intelligence", which was the measured truth of the
+  ORIGINAL ocean: there, a fish with all four senses survives LESS than a blind one. But that was a
+  fact about the world, not about intelligence — the shark outran every fish (so knowing which way
+  to flee only delayed death), wall-avoidance was a free instinct (so the wall sense solved nothing),
+  and the strike re-aimed mid-flight (so nothing could be anticipated). Give each sense a danger only
+  it can solve and the same brains climb a real ladder. The lab now ships both oceans, because the
+  contrast IS the lesson. Do not soften this copy, and do not let it drift from the measurements.
 -->
 <aside class="note">
 	<span class="icon" aria-hidden="true">i</span>
 	<p>
-		<b>More senses is not more intelligence.</b> Watch the learning curves as they evolve: noticing
-		a threat and knowing <i>which way</i> it is (Distance → Direction) is where survival leaps.
-		Adding closing-speed and wall sense on top barely moves the needle — this predator simply
-		doesn't create dangers those inputs uniquely solve, so evolution never learns to use them. An
-		input the world doesn't reward is just noise a brain has to overcome.
+		<b>A sense is worth exactly what the world makes it worth.</b> Watch the curves: knowing a
+		threat is near (Distance) buys almost nothing — it never tells you <i>which way</i> to go.
+		Knowing which way (Direction) is the leap. Then walls, then closing speed, each paying only
+		because this ocean holds a danger that sense alone can solve. Take those dangers away — speed
+		the shark up past what a fish can swim, and it no longer matters which way you flee — and the
+		same ladder collapses: an input the world ignores is just noise a brain has to overcome.
 		<span class="aside">
-			Real neuroevolution — nothing here is scripted or tuned to flatter the result.
+			Real neuroevolution — nothing here is scripted, and every number was measured, not chosen.
 		</span>
 	</p>
 </aside>

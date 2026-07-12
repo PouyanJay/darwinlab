@@ -20,9 +20,9 @@
 	// in the signature: a capped series shift()s as it push()es (see TileStats).
 	const paintCurve = paintOnChange(
 		() =>
-			`${entry?.world.curve.length}|${entry?.world.curve.at(0)}|${entry?.world.curve.at(-1)}|${accent}|${theme.name}`,
+			`${entry?.world.lifeCurve.length}|${entry?.world.lifeCurve.at(0)}|${entry?.world.lifeCurve.at(-1)}|${accent}|${theme.name}`,
 		(ctx, width, height) => {
-			if (entry) drawCurve(ctx, width, height, entry.world.curve, accent, theme.name);
+			if (entry) drawCurve(ctx, width, height, entry.world.lifeCurve, accent, theme.name);
 		}
 	);
 </script>

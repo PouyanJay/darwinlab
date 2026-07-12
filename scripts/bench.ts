@@ -11,7 +11,7 @@
  * §8 figures. See reference/README.md. Do not tune the engine to close that gap.
  */
 
-import { DEFAULT_WORLDS } from '../src/lib/engine';
+import { REFERENCE_WORLDS } from '../src/lib/engine';
 import { sweep, findDrift } from '../src/lib/harness/survival';
 
 // Number('') is 0 and Number('abc') is NaN — either would run a degenerate sweep and report
@@ -47,8 +47,14 @@ const PUBLISHED_S8: Record<string, number> = {
 	'Corner-wise': 43
 };
 
-console.log(`\nDarwin Lab — survival sweep  (${SEEDS} seeds × ${GENERATIONS} generations)\n`);
-const stats = sweep(DEFAULT_WORLDS, seeds, GENERATIONS, 10);
+console.log(
+	`\nDarwin Lab — survival sweep of the REFERENCE worlds  (${SEEDS} seeds × ${GENERATIONS} generations)\n`
+);
+// The REFERENCE worlds, on the reference metric: these are the numbers the port is held to, and
+// the ones the fidelity gate keeps bit-identical. The shipped bench now runs a different ocean
+// (DEFAULT_WORLDS) whose ladder is measured by scripts/sweep-senses.ts — this watch guards the
+// science we inherited, which is exactly what must never drift underneath us.
+const stats = sweep(REFERENCE_WORLDS, seeds, GENERATIONS, 10);
 
 const pad = (s: string, n: number) => s.padEnd(n);
 const num = (v: number, n = 5) => v.toFixed(1).padStart(n);

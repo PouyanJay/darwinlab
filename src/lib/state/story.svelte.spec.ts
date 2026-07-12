@@ -58,9 +58,11 @@ describe('story — the scenes', () => {
 		story.next();
 		expect(tagged()).toEqual(['Direction']); // the one that pays
 		story.next();
-		expect(tagged()).toEqual(['Closing speed']);
-		story.next();
+		// walls comes BEFORE closing speed now — the order the measurements put them in (walls pays
+		// on top of direction; closing only stacks once everything else is in place)
 		expect(tagged()).toEqual(['Walls']);
+		story.next();
+		expect(tagged()).toEqual(['Closing speed']);
 	});
 
 	it('says which senses a scene’s brains actually have, not just the new one', () => {

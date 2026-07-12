@@ -21,8 +21,26 @@ export interface RunResult {
 	curve: number[];
 }
 
+/**
+ * Which curve counts as "survival".
+ *
+ * `alive` — the fraction still swimming when a generation ended. The reference engine's own
+ *   metric, and the one the nightly drift baselines are measured against, so it must stay.
+ * `life` — mean seconds survived across the roster, as a share of the generation. What selection
+ *   actually rewards, and the only one that can still see a brain improving in a tank where nearly
+ *   everyone dies (to `alive`, a fish eaten at second 2 and one that lasted 18 of 20 are the same
+ *   zero). The bench plots this one.
+ */
+export type SurvivalMetric = 'alive' | 'life';
+
 /** Evolve one seeded world for `generations` generations and return its converged survival. */
-export function runWorld(cfg: WorldConfig, seed: number, generations: number, tail = 8): RunResult {
+export function runWorld(
+	cfg: WorldConfig,
+	seed: number,
+	generations: number,
+	tail = 8,
+	metric: SurvivalMetric = 'alive'
+): RunResult {
 	const w = makeWorld(cfg, undefined, seededRng(seed));
 	const maxSteps = generations * 5000; // safety valve (a generation is ≤ 600 steps)
 	let steps = 0;
@@ -37,9 +55,10 @@ export function runWorld(cfg: WorldConfig, seed: number, generations: number, ta
 				`${w.gen}/${generations}. The survival number would be measured from an incomplete run.`
 		);
 	}
-	const k = Math.min(tail, w.curve.length);
-	const survival = k ? w.curve.slice(-k).reduce((a, b) => a + b, 0) / k : 0;
-	return { survival, finalGen: w.gen, curve: w.curve.slice() };
+	const curve = metric === 'life' ? w.lifeCurve : w.curve;
+	const k = Math.min(tail, curve.length);
+	const survival = k ? curve.slice(-k).reduce((a, b) => a + b, 0) / k : 0;
+	return { survival, finalGen: w.gen, curve: curve.slice() };
 }
 
 export interface SweepStat {
@@ -81,10 +100,11 @@ export function sweep(
 	cfgs: WorldConfig[],
 	seeds: number[],
 	generations: number,
-	tail = 8
+	tail = 8,
+	metric: SurvivalMetric = 'alive'
 ): SweepStat[] {
 	return cfgs.map((cfg) => {
-		const valuesPct = seeds.map((s) => runWorld(cfg, s, generations, tail).survival * 100);
+		const valuesPct = seeds.map((s) => runWorld(cfg, s, generations, tail, metric).survival * 100);
 		const m = mean(valuesPct);
 		const variance = mean(valuesPct.map((v) => (v - m) ** 2));
 		return { name: cfg.name, meanPct: m, stdPct: Math.sqrt(variance), valuesPct };

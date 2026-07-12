@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
 	NIN,
+	NIN_WITH_SPEED,
 	NHID,
 	NOUT,
 	GLEN,
@@ -8,6 +9,8 @@ import {
 	IN_LABELS,
 	OUT_LABELS,
 	makeGenome,
+	genomeLength,
+	inputCount,
 	forward,
 	weightIH,
 	weightHO
@@ -24,9 +27,43 @@ describe('network architecture', () => {
 	});
 
 	it('labels the inputs and their gating sense correctly', () => {
-		expect(IN_LABELS).toHaveLength(NIN);
-		expect(IN_SENSE).toEqual([null, 'dist', 'dir', 'dir', 'closing', 'walls', 'walls', 'walls']);
+		// Nine slots exist, but only the first eight belong to the REFERENCE brain — the ninth
+		// is proprioception, and only a 9-input world ever reads it.
+		expect(IN_LABELS).toHaveLength(NIN_WITH_SPEED);
+		expect(IN_SENSE).toEqual([
+			null,
+			'dist',
+			'dir',
+			'dir',
+			'closing',
+			'walls',
+			'walls',
+			'walls',
+			'speed'
+		]);
+		expect(IN_LABELS.slice(0, NIN)).not.toContain('own speed');
 		expect(OUT_LABELS).toEqual(['turn', 'thrust']);
+	});
+});
+
+describe('brain shape (the reference brain, and the one that feels its own speed)', () => {
+	it('derives the input count from the genome, so both shapes can share a bench', () => {
+		expect(genomeLength(NIN)).toBe(68);
+		expect(genomeLength(NIN_WITH_SPEED)).toBe(74);
+		expect(inputCount(makeGenome(seededRng(1), NIN))).toBe(8);
+		expect(inputCount(makeGenome(seededRng(1), NIN_WITH_SPEED))).toBe(9);
+	});
+
+	it('reads the 9th input ONLY in a 9-input brain — proof the extra slot is really wired', () => {
+		const quiet = [1, 0, 0, 0, 0, 0, 0, 0, 0];
+		const sprinting = [1, 0, 0, 0, 0, 0, 0, 0, 1]; // same world, same instant, but flat out
+
+		const wide = makeGenome(seededRng(7), NIN_WITH_SPEED);
+		expect(forward(wide, sprinting).turn).not.toBe(forward(wide, quiet).turn);
+
+		// the reference brain has no such slot: the same two vectors are one and the same to it
+		const reference = makeGenome(seededRng(7), NIN);
+		expect(forward(reference, sprinting)).toEqual(forward(reference, quiet));
 	});
 });
 

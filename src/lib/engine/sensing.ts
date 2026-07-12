@@ -11,7 +11,8 @@
  */
 
 import { clamp } from './math';
-import { CLOSING_NORM, WALL_RAY_NORM } from './constants';
+import { CLOSING_NORM, WALL_RAY_NORM, MAXSPEED } from './constants';
+import { NIN } from './network';
 import type { World, Fish, Predator, SenseResult } from './types';
 
 export function senseInputs(w: Pick<World, 'cfg' | 'preds'>, f: Fish): SenseResult {
@@ -29,7 +30,13 @@ export function senseInputs(w: Pick<World, 'cfg' | 'preds'>, f: Fish): SenseResu
 	}
 	const inVis = !!np && nd < c.vision;
 
-	const x = [1, 0, 0, 0, 0, 0, 0, 0];
+	// The vector is as long as this world's brains are wide: 8 slots (the reference brain) or
+	// 9, where the extra one is PROPRIOCEPTION — the fish's own speed. Unlike every other
+	// input it does not depend on the predator at all, and it is the only way a brain can
+	// learn "I am slower than that thing, so running straight is death — cut instead".
+	const nin = c.brainInputs ?? NIN;
+	const x = new Array<number>(nin).fill(0);
+	x[0] = 1;
 	let dirDeg = 0;
 	let closing = 0;
 	if (np) {
@@ -72,6 +79,10 @@ export function senseInputs(w: Pick<World, 'cfg' | 'preds'>, f: Fish): SenseResu
 		if (cy < 0) t = Math.min(t, -f.y / cy);
 		wF = t;
 	}
+
+	// slot 8 — own speed, normalized by the fish's own top speed (so 1 = flat out).
+	// Ablated like any other sense: off feeds 0, the neuron stays, the shape never changes.
+	if (nin > 8 && S.speed) x[8] = clamp(Math.hypot(f.vx, f.vy) / MAXSPEED, 0, 1);
 
 	return { x, np, dist: np ? nd : Infinity, inVis, dirDeg, closing, wallFront: wF };
 }

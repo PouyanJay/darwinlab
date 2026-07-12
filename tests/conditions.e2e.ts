@@ -43,7 +43,7 @@ test('THE POINT: an edit changes the world and the world keeps what it learned',
 	await dialog(page).getByRole('button', { name: 'more prey' }).click();
 
 	// the tile answers immediately…
-	await expect.poll(() => meta(page, 2)).toContain('22 prey · 3 sharks');
+	await expect.poll(() => meta(page, 2)).toContain('22 prey · 4 sharks'); // the bench runs 3
 	// …and it is still fifteen generations of evolution deep, not back at zero
 	await expect(tile(page, 2).getByTestId('gen')).toHaveText('Gen 15');
 
