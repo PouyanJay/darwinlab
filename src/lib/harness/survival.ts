@@ -54,6 +54,28 @@ export interface SweepStat {
 
 const mean = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
 
+/**
+ * Worlds whose mean wandered more than `tolerancePp` off their recorded baseline.
+ *
+ * A world with NO baseline throws instead of passing: `meanPct - undefined` is NaN, and
+ * `NaN > tolerance` is false — so a renamed or newly added world would otherwise be
+ * silently exempt from the very drift watch that exists to catch it.
+ */
+export function findDrift(
+	stats: SweepStat[],
+	baselines: Record<string, number>,
+	tolerancePp: number
+): SweepStat[] {
+	const missing = stats.filter((s) => !(s.name in baselines));
+	if (missing.length) {
+		throw new Error(
+			`No drift baseline for: ${missing.map((s) => s.name).join(', ')} — ` +
+				'a world the watch cannot judge must fail loudly, not pass silently. Measure it and add it.'
+		);
+	}
+	return stats.filter((s) => Math.abs(s.meanPct - baselines[s.name]) > tolerancePp);
+}
+
 /** Run every config across every seed and summarize converged survival per world. */
 export function sweep(
 	cfgs: WorldConfig[],

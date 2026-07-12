@@ -1,6 +1,8 @@
 /**
  * Survival bench — the headless science measurement (golden rule #4).
- * Run with `npm run bench:survival`. Slow and statistical; not part of CI.
+ * Run with `npm run bench:survival`. Slow and statistical, so it never blocks a PR — but it
+ * IS a CI consumer: the nightly workflow (.github/workflows/bench.yml) runs it and relies on
+ * the exit code below to turn drift into a red run.
  * (The *fidelity* gate — port ≡ reference, bit-exact — lives in src/lib/harness/fidelity.spec.ts.)
  *
  * NOTE ON THE README §8 NUMBERS: they are NOT reproducible from this engine. The vendored,
@@ -10,10 +12,22 @@
  */
 
 import { DEFAULT_WORLDS } from '../src/lib/engine';
-import { sweep } from '../src/lib/harness/survival';
+import { sweep, findDrift } from '../src/lib/harness/survival';
 
-const SEEDS = Number(process.env.SEEDS ?? 20);
-const GENERATIONS = Number(process.env.GENERATIONS ?? 50);
+// Number('') is 0 and Number('abc') is NaN — either would run a degenerate sweep and report
+// it as a science verdict. A bad knob must fail as a bad knob.
+function positiveInt(name: string, fallback: number): number {
+	const raw = process.env[name];
+	if (raw === undefined) return fallback;
+	const n = Number(raw);
+	if (!Number.isInteger(n) || n <= 0) {
+		throw new Error(`${name} must be a positive integer (got "${raw}")`);
+	}
+	return n;
+}
+
+const SEEDS = positiveInt('SEEDS', 20);
+const GENERATIONS = positiveInt('GENERATIONS', 50);
 const seeds = Array.from({ length: SEEDS }, (_, i) => i + 1);
 
 /** Measured converged survival (50 runs × 50 gens) — reference engine and our port agree. */
@@ -63,4 +77,21 @@ const directionLeads =
 console.log(
 	'\n  Direction leads and extras do not stack: ' + (directionLeads ? 'OK ✓' : 'MISMATCH ✗')
 );
+
+// Drift watch: a mean wandering off its measured baseline means the science moved — surface it.
+// ±5pp is generous against seed noise (the mean of 20 seeds swings ~1–2pp) but far tighter than
+// the ~23pp gap to the published Direction figure, so a drifted engine cannot hide inside it.
+// findDrift throws for a world with no baseline — silently exempting one is how a rename or a
+// sixth world would slip out from under the watch (see src/lib/harness/drift.spec.ts).
+const DRIFT_TOLERANCE_PP = 5;
+const drifted = findDrift(stats, MEASURED, DRIFT_TOLERANCE_PP);
+for (const s of drifted) {
+	console.log(
+		`  DRIFT ✗ ${s.name}: ${s.meanPct.toFixed(1)}% vs baseline ${MEASURED[s.name]}% ` +
+			`(tolerance ±${DRIFT_TOLERANCE_PP}pp)`
+	);
+}
 console.log('  (single runs are noisy — trust the mean over many seeds, not one curve)\n');
+
+// A non-zero exit is what makes the nightly CI run a drift REPORT instead of a green rubber stamp.
+if (!directionLeads || drifted.length > 0) process.exitCode = 1;

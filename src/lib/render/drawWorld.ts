@@ -137,7 +137,20 @@ function sceneGradients(
 	sharkBody.addColorStop(0.45, th.pred);
 	sharkBody.addColorStop(1, th.pred);
 
-	const built = { theme, bw, bh, W, H, big, water, sheen, innerVignette, darkGlow, bigBackdrop, sharkBody };
+	const built = {
+		theme,
+		bw,
+		bh,
+		W,
+		H,
+		big,
+		water,
+		sheen,
+		innerVignette,
+		darkGlow,
+		bigBackdrop,
+		sharkBody
+	};
 	gradientCache.set(ctx, built);
 	return built;
 }

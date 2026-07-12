@@ -1,6 +1,15 @@
 import { expect, type Page } from '@playwright/test';
 
 /**
+ * Open the bench. "." resolves against baseURL, so the same suite passes whether the app is
+ * served at the origin root or under a GitHub Pages sub-path (BASE_PATH=/darwinlab). A
+ * goto('/') would not: an absolute path resolves against the origin and escapes the base.
+ */
+export async function gotoApp(page: Page): Promise<void> {
+	await page.goto('.');
+}
+
+/**
  * Wait for the load-time prewarm to APPEAR and then finish.
  *
  * `toBeHidden` alone is the prewarm trap: it also passes before hydration has rendered the

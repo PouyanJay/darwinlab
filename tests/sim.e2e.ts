@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { waitForPrewarm } from './helpers';
+import { gotoApp, waitForPrewarm } from './helpers';
 
 /**
  * Phase 2 gate, verified against the real running app.
@@ -44,7 +44,7 @@ const generations = (page: Page) => page.getByTestId('generations').innerText().
 const alive = (page: Page) => page.getByTestId('alive').first().innerText().then(Number);
 
 test.beforeEach(async ({ page }) => {
-	await page.goto('/');
+	await gotoApp(page);
 	await waitForPrewarm(page);
 });
 
@@ -81,7 +81,7 @@ test('keeps simulating with requestAnimationFrame dead (as a backgrounded tab ma
 		window.requestAnimationFrame = () => 0; // never invokes the callback
 		window.cancelAnimationFrame = () => {};
 	});
-	await page.goto('/');
+	await gotoApp(page);
 	await waitForPrewarm(page);
 
 	const before = await fingerprint(page);
@@ -193,7 +193,7 @@ test('the theme is resolved before the first paint (no flash of the wrong theme)
 	// On reload, data-theme must already be 'dark' on the very first evaluation — the inline head
 	// script runs before paint, so a dark user never sees the light palette flash.
 	const fresh = await page.context().newPage();
-	await fresh.goto('/');
+	await gotoApp(fresh);
 	const themeAtFirstPaint = await fresh.evaluate(() => document.documentElement.dataset.theme);
 	expect(themeAtFirstPaint).toBe('dark');
 	await fresh.close();

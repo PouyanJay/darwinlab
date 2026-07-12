@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { waitForPrewarm } from './helpers';
+import { gotoApp, waitForPrewarm } from './helpers';
 
 /**
  * The Phase 6 gate: a real evolved mind, inspected in the real app.
@@ -25,7 +25,7 @@ const brainprint = (page: Page) =>
 		});
 
 test.beforeEach(async ({ page }) => {
-	await page.goto('/');
+	await gotoApp(page);
 	await waitForPrewarm(page);
 });
 

@@ -5,6 +5,16 @@ export default defineConfig({
 	testMatch: '**/*.e2e.{ts,js}',
 	use: {
 		/*
+		 * The suite must also pass against a GitHub Pages-style build (BASE_PATH=/darwinlab),
+		 * where the app lives under a sub-path instead of the origin root. baseURL carries that
+		 * sub-path, so tests navigate with gotoApp() (a base-relative "."), never goto('/') —
+		 * an absolute path resolves against the origin and would silently escape the base.
+		 */
+		baseURL: `http://localhost:4173${process.env.BASE_PATH ?? ''}/`,
+		// Keep traces for CI post-mortems. No retries anywhere, deliberately: a flake retried
+		// into green is a flake nobody fixes.
+		trace: process.env.CI ? 'retain-on-failure' : 'off',
+		/*
 		 * Pin the colour scheme. The app follows prefers-color-scheme on a first visit, so without
 		 * this the suite runs in whichever theme the machine happens to prefer — and the two themes
 		 * are not cosmetic variants of each other: the tank's predators are coral in one and magenta
