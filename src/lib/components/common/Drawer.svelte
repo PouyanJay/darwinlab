@@ -14,6 +14,7 @@
   because the bench is still usable.
 -->
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import type { Snippet } from 'svelte';
 	import Button from './Button.svelte';
 
@@ -25,23 +26,29 @@
 		subtitle?: string;
 		/** A pulsing dot next to the title — "this is live, not a snapshot". */
 		live?: boolean;
+		/**
+		 * Whether opening moves focus into the panel (and returns it on close). The default; the
+		 * caller passes false when the open is a SIDE EFFECT of something mid-flight — the tank's
+		 * keyboard walk opens the inspector, and stealing focus would end the walk one step in.
+		 * An explicit prop, not an inference from the invoker: the caller knows what opened it.
+		 */
+		takeFocus?: boolean;
 	}
 
-	let { open, onclose, title, children, subtitle, live = false }: Props = $props();
+	let { open, onclose, title, children, subtitle, live = false, takeFocus = true }: Props =
+		$props();
 
 	let panel = $state<HTMLElement>();
 
 	$effect(() => {
 		if (!open || !panel) return;
+		// untracked: the decision is made when the drawer OPENS. If the selection later changes
+		// kind while it stays open, re-running this would yank focus back to a stale invoker.
+		if (!untrack(() => takeFocus)) return;
 
 		// Effects run after the DOM update, and nothing has stolen focus yet, so this is still the
 		// element the user was on when they opened the drawer.
 		const invoker = document.activeElement as HTMLElement | null;
-
-		// The tank's creature cycler opens this drawer as a side effect of WALKING — stealing focus
-		// would end the walk after one step. The walker keeps their place; everyone else is moved
-		// in, and put back on close.
-		if (invoker?.getAttribute('role') === 'application') return;
 
 		panel.focus();
 

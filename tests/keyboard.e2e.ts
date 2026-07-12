@@ -74,6 +74,28 @@ test('arrows on a focused tank inside the FILM walk creatures — they must not 
 	await expect(story.getByText(/scene 1 of 5/i)).toBeVisible(); // …and the film did NOT jump
 });
 
+test('Esc in the inspector mid-film closes the inspector — not the film with it', async ({
+	page
+}) => {
+	await page.getByRole('button', { name: 'Play story' }).click();
+	const story = page.getByRole('dialog', { name: 'story mode' });
+	await expect(story).toBeVisible();
+
+	await tabToTank(page);
+	await page.keyboard.press('ArrowRight');
+	await expect(inspector(page)).toBeVisible();
+
+	// with focus INSIDE the drawer, Esc belongs to the drawer — both it and the film listen on
+	// window, and one press must not tear down both
+	await inspector(page).getByRole('button', { name: 'close inspector' }).focus();
+	await page.keyboard.press('Escape');
+	await expect(inspector(page)).toBeHidden();
+	await expect(story).toBeVisible(); // the film survived the press
+
+	await page.keyboard.press('Escape');
+	await expect(story).toBeHidden(); // the NEXT one leaves
+});
+
 test('the shortcuts are documented where a user will look: lab settings', async ({ page }) => {
 	await page.getByRole('button', { name: 'lab settings' }).click();
 	await expect(page.getByRole('heading', { name: 'Keyboard' })).toBeVisible();

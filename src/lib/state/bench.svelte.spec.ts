@@ -324,6 +324,17 @@ describe('bench store — painting only when something changed', () => {
 		expect(paint).toHaveBeenCalledTimes(1); // the hover ring appears — then quiet again
 	});
 
+	it('an unchanged hover does not wake a paused bench — mousemove fires at pointer rate', () => {
+		initPaused();
+		const entry = bench.worlds[0];
+		const paint = vi.fn();
+		bench.painters.add(paint);
+
+		bench.setHover(entry.id, null); // the pointer is over empty water, again
+		frame(1 / 60, 5);
+		expect(paint).not.toHaveBeenCalled();
+	});
+
 	it('keeps painting while training even though playback is paused', () => {
 		initPaused();
 		const paint = vi.fn();
@@ -339,6 +350,26 @@ describe('bench store — painting only when something changed', () => {
 		expect(bench.detail).toBe('cinematic');
 		for (let i = 0; i < 200; i++) bench.tick(1 / 60, 0.04); // 25fps, honestly reported
 		expect(bench.detail).toBe('performance');
+	});
+
+	it('never judges TRAINING frames — turbo is slow by design, not a struggling machine', () => {
+		init(1);
+		bench.trainTo(9999); // far more than this test will ever finish
+		expect(bench.turboTarget).not.toBeNull(); // the state under test actually holds
+
+		// every turbo frame deliberately burns its 15ms slice, and honestly reported that reads
+		// as ~31ms — past the downgrade line; the governor must not be listening
+		for (let i = 0; i < 60 && bench.turboTarget !== null; i++) bench.tick(1 / 60, 0.031);
+		expect(bench.turboTarget).not.toBeNull(); // it did not finish out from under the test
+		expect(bench.detail).toBe('cinematic');
+	});
+
+	it('a paused tick does not advance the sim — pause stops the WORLD, not just the paint', () => {
+		init(1);
+		bench.togglePlay();
+		const t = bench.worlds[0].world.t;
+		frame(1 / 60, 10);
+		expect(bench.worlds[0].world.t).toBe(t);
 	});
 
 	it('paints the story group and lets the covered bench sleep while a film plays', () => {
@@ -443,6 +474,30 @@ describe('bench store — keyboard creature cycling', () => {
 
 		bench.cycleSelection(e.id, 1);
 		expect(bench.selection).toBeNull();
+	});
+
+	it('a shark selection whose sharks were removed cannot block the walk', () => {
+		initCountable();
+		const e = bench.worlds[0];
+		bench.cycleSelection(e.id, -1); // onto the predator stop
+		expect(bench.selection?.type).toBe('pred');
+
+		bench.setCondition(e.id, 'preds', 0); // Conditions can empty the water of sharks, live
+
+		bench.cycleSelection(e.id, 1); // before any tick has reconciled the stale selection
+		expect(e.world.selFish).toBe(e.world.fish[0]); // enters at the FIRST fish, skips nothing
+	});
+
+	it('a shark selection whose sharks were removed is put down at the next tick', () => {
+		initCountable();
+		const e = bench.worlds[0];
+		bench.cycleSelection(e.id, -1);
+		expect(bench.selection?.type).toBe('pred');
+
+		bench.setCondition(e.id, 'preds', 0);
+		frame();
+
+		expect(bench.selection).toBeNull(); // the inspector never presents a shark not in the water
 	});
 
 	it('ignores a selection that lives in a different world', () => {

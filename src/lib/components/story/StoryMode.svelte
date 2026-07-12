@@ -60,6 +60,11 @@
 		const takesSpace = target?.closest('button, a, [role="radio"], input, select, textarea');
 
 		if (event.key === 'Escape') {
+			// An open inspector owns this Esc (its own window listener closes it in this same
+			// dispatch — stopPropagation cannot help between two listeners on one target). The
+			// film only leaves on the NEXT press, or the inspector and the film would tear down
+			// together in one keystroke.
+			if (bench.selection) return;
 			bench.exitStory();
 		} else if (event.key === 'ArrowRight' && !takesArrows) {
 			story.next();

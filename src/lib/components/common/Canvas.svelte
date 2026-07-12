@@ -84,8 +84,25 @@
 		observer.observe(canvas);
 		const unregister = register?.(render);
 
+		// A DPR change (dragging the window between monitors) resizes the BITMAP but not the CSS
+		// box, so the ResizeObserver never fires — and a paused bench no longer repaints per frame
+		// to self-correct. matchMedia is the one event the platform offers for it; the listener is
+		// re-armed each time because the query string pins a specific ratio.
+		let dprWatch: MediaQueryList | null = null;
+		const onDprChange = () => {
+			render();
+			armDprWatch();
+		};
+		const armDprWatch = () => {
+			dprWatch?.removeEventListener('change', onDprChange);
+			dprWatch = window.matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`);
+			dprWatch.addEventListener('change', onDprChange);
+		};
+		armDprWatch();
+
 		return () => {
 			observer.disconnect();
+			dprWatch?.removeEventListener('change', onDprChange);
 			unregister?.();
 		};
 	}

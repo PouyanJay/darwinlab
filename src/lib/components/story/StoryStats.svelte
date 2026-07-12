@@ -16,9 +16,11 @@
 
 	const register = (render: () => void) => bench.painters.add(render, 'story');
 
-	// The curve only gains a point at a generation boundary — don't repaint it 60×/s.
+	// The curve only gains a point at a generation boundary — don't repaint it 60×/s. Both ends
+	// in the signature: a capped series shift()s as it push()es (see TileStats).
 	const paintCurve = paintOnChange(
-		() => `${entry?.world.curve.length}|${entry?.world.curve.at(-1)}|${accent}|${theme.name}`,
+		() =>
+			`${entry?.world.curve.length}|${entry?.world.curve.at(0)}|${entry?.world.curve.at(-1)}|${accent}|${theme.name}`,
 		(ctx, width, height) => {
 			if (entry) drawCurve(ctx, width, height, entry.world.curve, accent, theme.name);
 		}

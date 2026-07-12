@@ -43,6 +43,17 @@ describe('Chip', () => {
 		const teal = tinted('rgb(14, 148, 136)'); // two of the real ACCENTS
 		const amber = tinted('rgb(216, 138, 44)');
 		expect(teal).not.toBe(amber);
-		expect(teal).not.toBe('rgb(29, 34, 48)'); // tinted, not swallowed by the ink outright
+
+		// And the RATIO is pinned, loosely: 60% accent / 40% ink is the AA-contrast tuning, and a
+		// typo'd 6% (or swapped operands) would still pass a mere "they differ" check. Chromium
+		// serializes the mixed value as `color(srgb r g b)` in 0–1 floats — normalize to 0–255.
+		const channels = (color: string) => {
+			const values = color.match(/[\d.]+/g)!.map(Number);
+			return color.startsWith('color(srgb') ? values.map((v) => v * 255) : values;
+		};
+		const [r, g, b] = channels(teal);
+		expect(r).toBeCloseTo(0.6 * 14 + 0.4 * 29, -1); // within ±5 of the 60/40 mix
+		expect(g).toBeCloseTo(0.6 * 148 + 0.4 * 34, -1);
+		expect(b).toBeCloseTo(0.6 * 136 + 0.4 * 48, -1);
 	});
 });

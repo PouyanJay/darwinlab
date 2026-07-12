@@ -35,7 +35,13 @@ function roundRect(
  * key rebuilds the whole set. (The god-rays stay per-frame: their positions are animated.)
  */
 interface SceneGradients {
-	key: string;
+	// the values the set was built from — compared field-wise so a cache hit allocates nothing
+	theme: ThemeName;
+	bw: number;
+	bh: number;
+	W: number;
+	H: number;
+	big: boolean;
 	water: CanvasGradient;
 	sheen: CanvasGradient;
 	innerVignette: CanvasGradient;
@@ -58,9 +64,18 @@ function sceneGradients(
 	H: number,
 	big: boolean
 ): SceneGradients {
-	const key = `${theme}|${bw}|${bh}|${W}|${H}|${big}`;
 	const cached = gradientCache.get(ctx);
-	if (cached?.key === key) return cached;
+	if (
+		cached &&
+		cached.theme === theme &&
+		cached.bw === bw &&
+		cached.bh === bh &&
+		cached.W === W &&
+		cached.H === H &&
+		cached.big === big
+	) {
+		return cached;
+	}
 
 	const water = ctx.createLinearGradient(0, 0, 0, bh);
 	if (theme === 'light') {
@@ -122,7 +137,7 @@ function sceneGradients(
 	sharkBody.addColorStop(0.45, th.pred);
 	sharkBody.addColorStop(1, th.pred);
 
-	const built = { key, water, sheen, innerVignette, darkGlow, bigBackdrop, sharkBody };
+	const built = { theme, bw, bh, W, H, big, water, sheen, innerVignette, darkGlow, bigBackdrop, sharkBody };
 	gradientCache.set(ctx, built);
 	return built;
 }

@@ -54,13 +54,18 @@
 	const register = (render: () => void) => bench.painters.add(render);
 
 	// Both series only gain a point at a generation / sampling boundary — don't repaint 60×/s.
+	// BOTH ends in the signature: once a series hits its cap it shift()s as it push()es, so the
+	// length holds still and a repeated last value would hide a window that scrolled — the moving
+	// head end is what still betrays the shift.
 	const paintCurve = paintOnChange(
-		() => `${entry.world.curve.length}|${entry.world.curve.at(-1)}|${accent}|${theme.name}`,
+		() =>
+			`${entry.world.curve.length}|${entry.world.curve.at(0)}|${entry.world.curve.at(-1)}|${accent}|${theme.name}`,
 		(ctx, width, height) => drawCurve(ctx, width, height, entry.world.curve, accent, theme.name)
 	);
 
 	const paintDecay = paintOnChange(
-		() => `${entry.world.decay.length}|${entry.world.decay.at(-1)}|${theme.name}`,
+		() =>
+			`${entry.world.decay.length}|${entry.world.decay.at(0)}|${entry.world.decay.at(-1)}|${theme.name}`,
 		(ctx, width, height) => drawDecay(ctx, width, height, entry.world.decay, theme.name)
 	);
 </script>
