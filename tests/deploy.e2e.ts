@@ -24,22 +24,28 @@ async function deployAt(page: Page, generation: number) {
 }
 
 /**
- * Crowd the tank with sharks, through the Conditions dialog, the way a user would.
+ * Make the run ACTUALLY end, through the Conditions dialog, the way a user would: more sharks, and
+ * sharks fast enough to catch a fish.
  *
- * The bench's shark no longer escalates when it goes hungry — persistence is off, so a population
- * that genuinely learned is allowed to look safe. Which means a well-evolved fish can now evade
- * INDEFINITELY: extinction has no time bound any more. A test that waits for "wiped out" without
- * stacking the odds is not testing the deploy lifecycle, it is racing a coin flip (this one did,
- * and it lost under a loaded suite). Six sharks against twenty fish ends the run in seconds, and
- * every claim under test — nothing respawns, the generation is frozen, the run is reported — is
- * indifferent to how the fish came to die.
+ * The bench's shark cruises at 140 px/s and a fish tops out at 176 — that inversion is the whole
+ * reason a sense pays here (fleeing the right way finally means getting away). It also means a
+ * well-evolved fish can OUTRUN every shark in the tank, forever, and persistence is off, so nothing
+ * escalates to end the stalemate. Extinction has no time bound any more.
+ *
+ * So a test that waits for "wiped out" on the default bench is not testing the deploy lifecycle —
+ * it is betting that no fish gets away, and it loses that bet on a slow machine (it lost in CI).
+ * Cranking the predator speed past what a fish can swim restores the guarantee, and every claim
+ * under test — nothing respawns, the generation is frozen, the run is reported — is indifferent to
+ * how the fish came to die.
  */
-async function crowdWithSharks(page: Page, index: number) {
+async function makeTheRunEnd(page: Page, index: number) {
 	await tile(page, index).getByRole('button', { name: 'Conditions' }).click();
 	const conditions = page.getByRole('dialog', { name: 'Conditions' });
 	for (let i = 0; i < 3; i++) {
 		await conditions.getByRole('button', { name: 'more predators' }).click(); // 3 → 6, the cap
 	}
+	// 1.8× → a 360 px/s cruise against a fish's 176: no fish can simply run away any more
+	await conditions.getByRole('slider', { name: /predator speed/i }).fill('1.8');
 	await page.keyboard.press('Escape');
 	await expect(conditions).toBeHidden();
 }
@@ -66,7 +72,7 @@ test('THE SECOND ACT: train to the horizon, and the population has to survive on
 	// default 30s budget covers none of that — and a test that dies of impatience reads exactly
 	// like a test that caught a bug.
 	test.setTimeout(240_000);
-	await crowdWithSharks(page, 2); // so the run actually ends — see the helper
+	await makeTheRunEnd(page, 2); // the default bench has no guarantee of extinction — see the helper
 	await deployAt(page, 20);
 	await expect(page.getByRole('button', { name: /Train to gen 20/ })).toBeVisible();
 
@@ -118,7 +124,7 @@ test('THE SECOND ACT: train to the horizon, and the population has to survive on
 
 test('the generation stops climbing once a world is deployed', async ({ page }) => {
 	test.setTimeout(240_000);
-	await crowdWithSharks(page, 2); // so the run actually ends — see the helper
+	await makeTheRunEnd(page, 2); // the default bench has no guarantee of extinction — see the helper
 	await deployAt(page, 20);
 	await page.getByRole('button', { name: /Train to gen 20/ }).click();
 	await expect(page.getByTestId('turbo')).toBeHidden({ timeout: 120_000 });
