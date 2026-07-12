@@ -17,8 +17,8 @@ import { expect, test, type Page } from '@playwright/test';
  * PROBE: we fingerprint the canvas rather than watch the generation counter. A generation is 10
  * sim-seconds, so the counter cannot move inside a short window — but the fish only move when
  * `stepWorld` runs (every animation is driven off `w.t`, the sim's own clock, not wall-clock), so
- * a changed fingerprint proves sim time actually advanced. A paused sim still repaints; it just
- * repaints the same frame — which is what makes this a real test of pause, too.
+ * a changed fingerprint proves sim time actually advanced. A paused sim stops repainting and the
+ * canvas holds its last frame — which is what makes this a real test of pause, too.
  */
 
 /**
@@ -36,8 +36,9 @@ function fingerprint(page: Page): Promise<number> {
 	});
 }
 
-/** The first world's tank — `role="img"` is the tank; the sparklines are canvases too. */
-const tank = (page: Page) => page.getByRole('img', { name: /tank/i }).first();
+/** The first world's tank — `role="application"` since Phase 9 (it answers the keyboard);
+ *  the sparklines are still plain `role="img"` canvases. */
+const tank = (page: Page) => page.getByRole('application', { name: /tank/i }).first();
 const generations = (page: Page) => page.getByTestId('generations').innerText().then(Number);
 const alive = (page: Page) => page.getByTestId('alive').first().innerText().then(Number);
 

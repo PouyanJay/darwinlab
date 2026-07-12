@@ -37,6 +37,12 @@
 		// Effects run after the DOM update, and nothing has stolen focus yet, so this is still the
 		// element the user was on when they opened the drawer.
 		const invoker = document.activeElement as HTMLElement | null;
+
+		// The tank's creature cycler opens this drawer as a side effect of WALKING — stealing focus
+		// would end the walk after one step. The walker keeps their place; everyone else is moved
+		// in, and put back on close.
+		if (invoker?.getAttribute('role') === 'application') return;
+
 		panel.focus();
 
 		return () => {
@@ -69,13 +75,15 @@
 		tabindex="-1"
 		class="drawer"
 	>
-		<header>
+		<!-- a div, not a <header>: an html header outside main/section is a BANNER landmark, and the
+		     page already has one — the top bar. (axe: landmark-no-duplicate-banner) -->
+		<div class="head">
 			{#if live}
 				<span class="dot" aria-hidden="true"></span>
 			{/if}
 			<h2>{title}</h2>
 			<Button variant="icon" aria-label="close inspector" onclick={onclose}>✕</Button>
-		</header>
+		</div>
 		{#if subtitle}
 			<p class="subtitle">{subtitle}</p>
 		{/if}
@@ -128,7 +136,7 @@
 		outline: none;
 	}
 
-	header {
+	.head {
 		display: flex;
 		align-items: center;
 		gap: var(--sp-3);

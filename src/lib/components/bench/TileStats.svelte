@@ -77,7 +77,10 @@
 	<div class="curve">
 		<div class="curve-head">
 			<span class="eyebrow">survival / generation</span>
-			<b class="tabular" style:color={accent} data-testid="survival">{entry.stats.survivalPct}%</b>
+			<!-- the number reads in the world's accent, run toward the ink so 12px stays AA -->
+			<b class="tabular survival" style:--curve-accent={accent} data-testid="survival"
+				>{entry.stats.survivalPct}%</b
+			>
 		</div>
 		<div class="sparkline">
 			<Canvas
@@ -136,7 +139,7 @@
 
 	.eaten {
 		font-size: var(--fs-sm);
-		color: var(--danger);
+		color: var(--danger-ink); /* danger AS TEXT — see tokens.css */
 	}
 
 	.curve {
@@ -155,6 +158,10 @@
 		font-weight: var(--fw-semibold);
 	}
 
+	.survival {
+		color: color-mix(in srgb, var(--curve-accent) 60%, var(--ink));
+	}
+
 	.sparkline {
 		height: 34px;
 		margin-top: 3px;
@@ -170,7 +177,7 @@
 		font-weight: var(--fw-semibold);
 		letter-spacing: var(--tracking-wide);
 		text-transform: uppercase;
-		color: var(--danger);
+		color: var(--danger-ink); /* danger AS TEXT — see tokens.css */
 	}
 
 	.deploy-stat div + div {

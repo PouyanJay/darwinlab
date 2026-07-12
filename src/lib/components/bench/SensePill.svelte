@@ -55,16 +55,17 @@
 			color var(--dur-fast) var(--ease);
 	}
 
+	/* Text runs the accent toward the ink — hue kept, AA contrast reached (the axe gate). */
 	.pill:hover {
 		border-color: var(--pill-accent);
-		color: var(--pill-accent);
+		color: color-mix(in srgb, var(--pill-accent) 60%, var(--ink));
 	}
 
 	.on {
 		border-style: solid;
 		border-color: color-mix(in srgb, var(--pill-accent) 32%, transparent);
 		background: color-mix(in srgb, var(--pill-accent) 14%, transparent);
-		color: var(--pill-accent);
+		color: color-mix(in srgb, var(--pill-accent) 60%, var(--ink));
 	}
 
 	/* A dense pill row cannot take a full 44px without its targets overlapping — mis-taps are

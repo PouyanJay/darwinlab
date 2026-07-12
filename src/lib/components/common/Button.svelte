@@ -107,7 +107,7 @@
 	}
 
 	.icon.danger:not(:disabled):hover {
-		color: var(--danger);
+		color: var(--danger-ink); /* danger AS TEXT — see tokens.css */
 	}
 
 	.icon.sm {

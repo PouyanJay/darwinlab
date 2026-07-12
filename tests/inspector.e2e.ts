@@ -118,7 +118,7 @@ test('clicking the shark says there is no brain, by design', async ({ page }) =>
 	 * happens to be.
 	 */
 	await page.getByRole('button', { name: 'Pause' }).click();
-	const tank = tile(page, 2).getByRole('img', { name: /tank/i });
+	const tank = tile(page, 2).getByRole('application', { name: /tank/i });
 	// mouse.click() takes VIEWPORT coordinates and, unlike locator.click(), does not scroll for you.
 	// This tile sits below the fold at the default viewport, so the canvas has to be brought up first
 	// or the click lands outside the window entirely and picks nothing.

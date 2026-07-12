@@ -76,7 +76,7 @@ test('the edit reaches the SIMULATION, not just the tile that describes it', asy
 	await tile(page, 2).getByRole('button', { name: 'Conditions' }).click();
 	await expect(dialog(page)).toBeVisible();
 
-	const tank = tile(page, 2).getByRole('img', { name: /tank/i });
+	const tank = tile(page, 2).getByRole('application', { name: /tank/i });
 	const fingerprint = () =>
 		tank.evaluate((el: HTMLCanvasElement) => {
 			const { data } = el.getContext('2d')!.getImageData(0, 0, el.width, el.height);

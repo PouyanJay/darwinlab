@@ -9,8 +9,12 @@
 
 <!-- Hidden under a story, which carries the same line in its own header — the film is a takeover,
      and the pill would otherwise sit on top of the scene's progress bar. -->
+<!-- an <aside>, so the one line of content that floats outside header/main still lives in a
+     landmark (the axe `region` rule — content a screen reader can't situate is content lost) -->
 {#if !story.active}
-	<p class="pill">real neuroevolution · a teaching caricature, not biology</p>
+	<aside aria-label="disclaimer">
+		<p class="pill">real neuroevolution · a teaching caricature, not biology</p>
+	</aside>
 {/if}
 
 <style>

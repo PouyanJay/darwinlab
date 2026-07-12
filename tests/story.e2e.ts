@@ -172,7 +172,7 @@ test('a segment is a jump: the progress bar is the table of contents', async ({ 
 test('nothing here is a recording: a fish can be stopped and read mid-scene', async ({ page }) => {
 	await page.getByRole('button', { name: 'pause story' }).click();
 
-	const tank = story(page).getByRole('img', { name: /tank/i });
+	const tank = story(page).getByRole('application', { name: /tank/i });
 	const box = (await tank.boundingBox())!;
 
 	// find a fish by its colour and click it — the same pickCreature path a presenter's click takes

@@ -25,11 +25,12 @@
 	});
 </script>
 
+<!-- an <aside>, so this floating line lives in a landmark (the axe `region` rule) -->
 {#if !dismissed && !story.active}
-	<div class="hint">
+	<aside class="hint" aria-label="hint">
 		<span>click any fish to open its mind</span>
 		<button type="button" aria-label="dismiss hint" onclick={dismiss}>✕</button>
-	</div>
+	</aside>
 {/if}
 
 <style>

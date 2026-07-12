@@ -97,14 +97,20 @@ test('a world can be renamed in place', async ({ page }) => {
 });
 
 test('★ Champion selects the best brain alive, and the tank draws it', async ({ page }) => {
-	const first = tile(page, 0);
-	const tank = first.getByRole('img', { name: /tank/i });
+	/*
+	 * "Direction", not "Blind drift" — deliberately. In a world with no senses the selection paints
+	 * only a thin ring, and a sparse pixel hash can genuinely MISS a 2px circle (it did, one run in
+	 * four). Direction has dist+dir wired, so selecting its champion also draws the whole perception
+	 * overlay — vision circle, glow, threat line, distance pill — which no hash can miss.
+	 */
+	const first = tile(page, 2);
+	const tank = first.getByRole('application', { name: /tank/i });
 
 	const fingerprint = () =>
 		tank.evaluate((el: HTMLCanvasElement) => {
 			const { data } = el.getContext('2d')!.getImageData(0, 0, el.width, el.height);
 			let h = 0;
-			for (let i = 0; i < data.length; i += 997) h = (h * 31 + data[i]) | 0;
+			for (let i = 0; i < data.length; i += 251) h = (h * 31 + data[i]) | 0;
 			return h;
 		});
 
@@ -115,15 +121,20 @@ test('★ Champion selects the best brain alive, and the tank draws it', async (
 	 * scene is frozen, and the ONLY thing that can repaint it is the selection the click makes:
 	 * the ring, the vision radius and the threat line drawn around the chosen fish.
 	 */
-	// There must BE a best brain alive to select. Blind drift is the world whose population really
-	// does get wiped out, and ★ Champion correctly does nothing when nothing is swimming. Waiting is
-	// not enough on its own either: an empty world only refills at its next generation boundary, which
-	// is a full 10 sim-seconds away, so the poll needs to outlast one.
-	await expect
-		.poll(() => first.getByTestId('alive').innerText().then(Number), { timeout: 20_000 })
-		.toBeGreaterThan(0);
-
-	await page.getByRole('button', { name: 'Pause' }).click();
+	// There must BE a best brain alive to select — ★ Champion correctly does nothing when nothing
+	// is swimming, and even Direction's population can be down at a generation's brutal end. An
+	// empty world only refills at its next generation boundary, a full 10 sim-seconds away, so the
+	// poll must outlast one. And the poll PASSING is not enough either — the sharks keep hunting in
+	// the gap before the pause lands, so confirm the tank is still inhabited once frozen, and run
+	// the sim on and retry if they won that race.
+	const alive = () => first.getByTestId('alive').innerText().then(Number);
+	for (let attempt = 0; ; attempt++) {
+		await expect.poll(alive, { timeout: 20_000 }).toBeGreaterThan(0);
+		await page.getByRole('button', { name: 'Pause' }).click();
+		if ((await alive()) > 0) break;
+		expect(attempt, 'the population kept dying before the pause landed').toBeLessThan(4);
+		await page.getByRole('button', { name: 'Evolve' }).click();
+	}
 	await expect
 		.poll(async () => {
 			const [a, b] = [await fingerprint(), await fingerprint()];

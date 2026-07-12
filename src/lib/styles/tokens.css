@@ -96,13 +96,21 @@
 	--panel2: #faf9f4;
 	--glass: rgba(248, 246, 240, 0.85);
 	--ink: #1d2230;
-	--ink2: rgba(29, 34, 48, 0.55);
-	--ink3: rgba(29, 34, 48, 0.42);
+	/* The two muted inks are tuned to hold WCAG AA (4.5:1) on --panel AND --panel2 — the Phase 9
+	   axe gate. Fade them further and the captions drop below what small text is allowed to be. */
+	--ink2: rgba(29, 34, 48, 0.72);
+	--ink3: rgba(29, 34, 48, 0.64);
 	--line: rgba(29, 34, 48, 0.1);
 	--chip: rgba(29, 34, 48, 0.06);
 	--accent: #4f56d3;
 	--danger: #e8604c;
 	--gold: #d8a13a;
+	/* Colour AS TEXT: --danger and --gold are tuned for painting shapes; at 10px on a white panel
+	   they fall to ~3:1. Small text uses these instead — same hue, AA contrast. (World accents,
+	   which are runtime values, get the same treatment via color-mix toward --ink at the point of
+	   use.) */
+	--danger-ink: #c9432f;
+	--gold-ink: #8a651c;
 	/* The brain viz only — see ThemePalette in render/theme.ts for why the two signs need colours
 	   of their own rather than reusing accent/danger. */
 	--excite: #4f56d3;
@@ -140,20 +148,26 @@
 	--panel2: #0e0e13;
 	--glass: rgba(17, 17, 23, 0.86);
 	--ink: #f5f5fa;
-	--ink2: rgba(245, 245, 250, 0.6);
-	--ink3: rgba(245, 245, 250, 0.42);
+	/* AA-held on the dark panels, same as light — see the note on the light pair. */
+	--ink2: rgba(245, 245, 250, 0.68);
+	--ink3: rgba(245, 245, 250, 0.55);
 	--line: rgba(255, 255, 255, 0.09);
 	--chip: rgba(255, 255, 255, 0.07);
 	/* accent and danger are the SAME magenta in dark — that is the V4 re-skin, not a mistake. */
 	--accent: #ff2d9c;
 	--danger: #ff2d9c;
 	--gold: #ffd166;
+	/* In dark both already read at AA on the near-black panels — the text variants ARE them. */
+	--danger-ink: #ff2d9c;
+	--gold-ink: #ffd166;
 	/* cyan: in dark, accent and danger are the same magenta, so + and − would look identical */
 	--excite: #38d0f5;
 	--inhibit: #ff2d9c;
 	--btn: #f5f5fa;
 	--btnink: #0a0a0e;
-	--accentink: #ffffff;
+	/* NOT white: white on this magenta is 3.4:1, and the pairing comment above is exactly about
+	   this — the accent moved for dark, so its ink moves with it. */
+	--accentink: #0a0a0e;
 
 	/* Every shadow is re-tuned for dark: a navy-tinted light-theme shadow reads as grey haze on a
 	   near-black panel, not as depth. */

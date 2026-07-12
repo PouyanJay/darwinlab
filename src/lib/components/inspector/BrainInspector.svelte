@@ -99,7 +99,7 @@
 
 	/* The champion's time is the bar this fish is measured against, so it wears the champion's gold. */
 	.gold {
-		color: var(--gold);
+		color: var(--gold-ink); /* gold AS TEXT — see tokens.css */
 	}
 
 	.section {
