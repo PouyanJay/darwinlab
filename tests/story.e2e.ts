@@ -30,8 +30,12 @@ test('opens on the first scene: the world that was given nothing', async ({ page
 	await expect(caption(page)).toHaveText('Blind drift');
 	await expect(counter(page)).toContainText('scene 1 of 5');
 
-	// the fish are the world's evolved brains, a full fresh generation of them, not the survivors
-	await expect(story(page).getByTestId('story-alive')).toHaveText('20');
+	// The fish are the world's evolved brains — a full FRESH generation of them, not the handful of
+	// survivors the bench had. Not an exact 20, though: the sharks start hunting on frame one, and
+	// racing them for an exact count is how this test flaked. The claim is "a full tank, not the
+	// remains of one", and the bench's Blind drift is typically down to a third by now.
+	await expect(story(page).getByTestId('story-alive')).toHaveText(/^(1[89]|20)$/);
+	await expect(story(page)).toContainText('/ 20'); // …out of the full generation
 	await expect(story(page)).toContainText('Gen 15'); // …bred to the generation the bench reached
 });
 

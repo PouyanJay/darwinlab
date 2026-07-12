@@ -93,14 +93,18 @@ test('the generation stops climbing once a world is deployed', async ({ page }) 
 	await expect(page.getByTestId('turbo')).toBeHidden({ timeout: 120_000 });
 	await expect(tile(page, 2).getByTestId('gen')).toHaveText('Gen 20 · trained');
 
-	// Wait on the SIMULATION, not on the clock: the real-world run reports its own elapsed seconds, so
-	// let it get past 15 of them — a generation and a half, had this world still been evolving.
+	/*
+	 * Wait on the SIMULATION, not on the clock — but wait for the RIGHT thing. This test used to poll
+	 * the run's elapsed seconds out of the readout, and that readout changes shape as the run goes on:
+	 * the moment the half-life latches it becomes "half-life 4s · 8 left", so the regex started reading
+	 * 4 and the poll could never pass. It only went green when the half-life happened to land late.
+	 *
+	 * The end of the run is unambiguous, so wait for that. It takes tens of sim-seconds — several
+	 * generations, had this world still been evolving. None pass.
+	 */
+	test.setTimeout(150_000);
 	await page.getByRole('radio', { name: '2×' }).click();
-	await expect
-		.poll(async () => Number((await deployment(page, 2)).match(/(\d+)s/)?.[1] ?? 0), {
-			timeout: 60_000
-		})
-		.toBeGreaterThan(15);
+	await expect.poll(() => deployment(page, 2), { timeout: 120_000 }).toMatch(/^wiped out · \d+s$/);
 
 	await expect(tile(page, 2).getByTestId('gen')).toHaveText('Gen 20 · trained');
 });

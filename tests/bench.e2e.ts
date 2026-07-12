@@ -116,9 +116,12 @@ test('★ Champion selects the best brain alive, and the tank draws it', async (
 	 * the ring, the vision radius and the threat line drawn around the chosen fish.
 	 */
 	// There must BE a best brain alive to select. Blind drift is the world whose population really
-	// does get wiped out, and ★ Champion correctly does nothing when nothing is swimming — so wait
-	// for a live population instead of letting the test flake on the simulation being honest.
-	await expect.poll(() => first.getByTestId('alive').innerText().then(Number)).toBeGreaterThan(0);
+	// does get wiped out, and ★ Champion correctly does nothing when nothing is swimming. Waiting is
+	// not enough on its own either: an empty world only refills at its next generation boundary, which
+	// is a full 10 sim-seconds away, so the poll needs to outlast one.
+	await expect
+		.poll(() => first.getByTestId('alive').innerText().then(Number), { timeout: 20_000 })
+		.toBeGreaterThan(0);
 
 	await page.getByRole('button', { name: 'Pause' }).click();
 	await expect
