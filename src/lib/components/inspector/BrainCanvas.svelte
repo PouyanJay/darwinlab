@@ -22,7 +22,8 @@
 
 	let { entry }: Props = $props();
 
-	const register = (render: () => void) => bench.painters.add(render);
+	// 'always': the inspector rides on top of the bench AND on top of a playing scene alike.
+	const register = (render: () => void) => bench.painters.add(render, 'always');
 
 	function paint(ctx: CanvasRenderingContext2D, width: number, height: number) {
 		drawBrain(ctx, width, height, {

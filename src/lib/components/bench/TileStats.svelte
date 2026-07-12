@@ -10,6 +10,7 @@
 <script lang="ts">
 	import Canvas from '../common/Canvas.svelte';
 	import Button from '../common/Button.svelte';
+	import { paintOnChange } from '../common/paintOnChange';
 	import { drawCurve, drawDecay } from '$lib/render';
 	import { bench, theme } from '$lib/state';
 	import type { WorldEntry } from '$lib/state';
@@ -37,13 +38,16 @@
 	// Stable identity: a new function each render would churn the Canvas attachment every frame.
 	const register = (render: () => void) => bench.painters.add(render);
 
-	function paintCurve(ctx: CanvasRenderingContext2D, width: number, height: number) {
-		drawCurve(ctx, width, height, entry.world.curve, accent, theme.name);
-	}
+	// Both series only gain a point at a generation / sampling boundary — don't repaint 60×/s.
+	const paintCurve = paintOnChange(
+		() => `${entry.world.curve.length}|${entry.world.curve.at(-1)}|${accent}|${theme.name}`,
+		(ctx, width, height) => drawCurve(ctx, width, height, entry.world.curve, accent, theme.name)
+	);
 
-	function paintDecay(ctx: CanvasRenderingContext2D, width: number, height: number) {
-		drawDecay(ctx, width, height, entry.world.decay, theme.name);
-	}
+	const paintDecay = paintOnChange(
+		() => `${entry.world.decay.length}|${entry.world.decay.at(-1)}|${theme.name}`,
+		(ctx, width, height) => drawDecay(ctx, width, height, entry.world.decay, theme.name)
+	);
 </script>
 
 <div class="row">

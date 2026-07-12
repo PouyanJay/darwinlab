@@ -490,6 +490,7 @@ export function updateSenseSnapshot(w: World): void {
 
 /** Age the catch bursts and drop the expired ones. */
 function ageBursts(w: World, dt: number): void {
+	if (w.bursts.length === 0) return; // almost always — don't reallocate an empty array per tick
 	for (const b of w.bursts) b.a += dt;
 	w.bursts = w.bursts.filter((b) => b.a < 0.65);
 }

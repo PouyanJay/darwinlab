@@ -27,6 +27,8 @@ const slider = (page: Page, name: RegExp) => dialog(page).getByRole('slider', { 
 
 test.beforeEach(async ({ page }) => {
 	await page.goto('/');
+	// appear THEN go — toBeHidden alone also passes before hydration renders the pill at all
+	await expect(page.getByTestId('turbo')).toBeVisible({ timeout: 30_000 });
 	await expect(page.getByTestId('turbo')).toBeHidden({ timeout: 90_000 }); // prewarmed to gen 15
 	await tile(page, 2).getByRole('button', { name: 'Conditions' }).click(); // "Direction"
 	await expect(dialog(page)).toBeVisible();

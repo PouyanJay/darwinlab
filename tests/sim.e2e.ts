@@ -43,7 +43,10 @@ const alive = (page: Page) => page.getByTestId('alive').first().innerText().then
 
 test.beforeEach(async ({ page }) => {
 	await page.goto('/');
-	await expect(page.getByTestId('turbo')).toBeHidden({ timeout: 30_000 }); // prewarm finished
+	// Appear THEN go: toBeHidden alone also passes before hydration has rendered the pill at all,
+	// and the test then runs against a bench still at generation zero (the prewarm trap).
+	await expect(page.getByTestId('turbo')).toBeVisible({ timeout: 30_000 });
+	await expect(page.getByTestId('turbo')).toBeHidden({ timeout: 90_000 }); // prewarm finished
 });
 
 test('prewarms the world so the bench opens already competent', async ({ page }) => {
@@ -80,7 +83,8 @@ test('keeps simulating with requestAnimationFrame dead (as a backgrounded tab ma
 		window.cancelAnimationFrame = () => {};
 	});
 	await page.goto('/');
-	await expect(page.getByTestId('turbo')).toBeHidden({ timeout: 30_000 });
+	await expect(page.getByTestId('turbo')).toBeVisible({ timeout: 30_000 });
+	await expect(page.getByTestId('turbo')).toBeHidden({ timeout: 90_000 });
 
 	const before = await fingerprint(page);
 	await expect.poll(() => fingerprint(page), { timeout: 15_000 }).not.toBe(before); // sim time still advances — CLAUDE.md gotcha #1 holds
@@ -99,7 +103,7 @@ test('pause really stops the simulation, and evolve resumes it', async ({ page }
 		})
 		.toBe(true);
 
-	// paused: the loop still repaints, but it repaints the SAME frame
+	// paused: the loop stops repainting entirely — the canvas holds its last frame
 	const paused = await fingerprint(page);
 	await expect.poll(() => fingerprint(page), { timeout: 2000 }).toBe(paused);
 

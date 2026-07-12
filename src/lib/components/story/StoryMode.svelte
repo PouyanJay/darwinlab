@@ -103,8 +103,9 @@
 				<div class="tank">
 					<Tank
 						entry={story.entry}
-						detail="cinematic"
+						detail={bench.detail}
 						big
+						group="story"
 						onselect={(picked) => bench.select(story.entry!.id, picked)}
 					/>
 				</div>

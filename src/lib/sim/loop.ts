@@ -24,8 +24,13 @@ export const TURBO_SLICE_MS = 15;
 export const TURBO_DT = 1 / 60;
 
 export interface SimLoopOptions {
-	/** Called once per frame with the real elapsed time in seconds (already clamped). */
-	onFrame: (elapsed: number) => void;
+	/**
+	 * Called once per frame. `elapsed` is the real elapsed time in seconds, already clamped, and
+	 * is what the physics steps on. `frameSeconds` is the same gap UNclamped — the honest frame
+	 * time, which is what a performance governor needs (a clamped value would report a struggling
+	 * machine as a healthy 50ms forever).
+	 */
+	onFrame: (elapsed: number, frameSeconds: number) => void;
 	intervalMs?: number;
 	maxFrameSeconds?: number;
 	/** Injectable clock — tests supply a controllable one. */
@@ -58,10 +63,10 @@ export function createSimLoop(options: SimLoopOptions): SimLoop {
 		// a backwards clock from feeding a NEGATIVE dt into stepWorld, which would run the physics
 		// in reverse (fitness would decrement, predator persistence would walk backwards).
 		// `|| 0` guards the first frame and any NaN from an exotic clock.
-		const seconds = (ts - last) / 1000 || 0;
-		const elapsed = Math.min(maxFrameSeconds, Math.max(0, seconds));
+		const seconds = Math.max(0, (ts - last) / 1000 || 0);
+		const elapsed = Math.min(maxFrameSeconds, seconds);
 		last = ts;
-		onFrame(elapsed);
+		onFrame(elapsed, seconds);
 		if (running) timer = setTimeout(tick, intervalMs);
 	};
 

@@ -16,10 +16,16 @@
 	import BrainInspector from '$lib/components/inspector/BrainInspector.svelte';
 	import StoryMode from '$lib/components/story/StoryMode.svelte';
 	import FooterPill from '$lib/components/common/FooterPill.svelte';
-	import { bench, story } from '$lib/state';
+	import { bench, story, theme, prefersReducedMotion } from '$lib/state';
 	import { DEFAULT_WORLDS, newWorldConfig, MAX_GENERATIONS_DEFAULT } from '$lib/engine';
 
 	const PREWARM_GENERATIONS = 15;
+
+	// A paused bench repaints only on demand (see bench.requestPaint) — but the palette and the
+	// reduced-motion flag change what the pixels look like WITHOUT going through the store, so
+	// their flips owe the canvases one repaint. Passing them is what subscribes this effect.
+	const repaintWhenChanged = (...looks: unknown[]) => looks && bench.requestPaint();
+	$effect(() => repaintWhenChanged(theme.name, prefersReducedMotion()));
 
 	onMount(() => {
 		bench.init({

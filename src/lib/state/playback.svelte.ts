@@ -28,7 +28,7 @@ export class Playback {
 	}
 
 	/** Begin driving `onFrame` on the visibility-safe loop. Idempotent. */
-	start(onFrame: (elapsed: number) => void): void {
+	start(onFrame: (elapsed: number, frameSeconds: number) => void): void {
 		this.#loop ??= createSimLoop({ onFrame });
 		this.#loop.start();
 	}

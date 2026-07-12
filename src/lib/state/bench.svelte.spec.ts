@@ -296,6 +296,85 @@ describe('bench store — painters', () => {
 	});
 });
 
+describe('bench store — painting only when something changed', () => {
+	/** Pause and drain the repaint owed by init itself, so each test starts from a quiet bench. */
+	const initPaused = (n = 1) => {
+		init(n);
+		bench.togglePlay();
+		frame();
+	};
+
+	it('does not repaint a paused, untouched bench', () => {
+		initPaused();
+		const paint = vi.fn();
+		bench.painters.add(paint);
+
+		frame(1 / 60, 5);
+		expect(paint).not.toHaveBeenCalled();
+	});
+
+	it('repaints exactly once after an interaction while paused', () => {
+		initPaused();
+		const entry = bench.worlds[0];
+		const paint = vi.fn();
+		bench.painters.add(paint);
+
+		bench.setHover(entry.id, entry.world.fish[0]);
+		frame(1 / 60, 5);
+		expect(paint).toHaveBeenCalledTimes(1); // the hover ring appears — then quiet again
+	});
+
+	it('keeps painting while training even though playback is paused', () => {
+		initPaused();
+		const paint = vi.fn();
+		bench.painters.add(paint);
+
+		bench.trainTo(50); // far more than three 15ms slices can finish
+		frame(1 / 60, 3);
+		expect(paint).toHaveBeenCalledTimes(3); // the turbo progress is the picture
+	});
+
+	it('downgrades the story detail after sustained slow frames', () => {
+		init(1);
+		expect(bench.detail).toBe('cinematic');
+		for (let i = 0; i < 200; i++) bench.tick(1 / 60, 0.04); // 25fps, honestly reported
+		expect(bench.detail).toBe('performance');
+	});
+
+	it('paints the story group and lets the covered bench sleep while a film plays', () => {
+		init(2);
+		const benchPaint = vi.fn();
+		const storyPaint = vi.fn();
+		bench.painters.add(benchPaint);
+		bench.painters.add(storyPaint, 'story');
+		frame(); // drain the repaint owed by init, while still on the bench
+		benchPaint.mockClear();
+		storyPaint.mockClear();
+
+		expect(bench.playStory()).toBe(true);
+		frame(1 / 60, 3);
+		expect(storyPaint).toHaveBeenCalledTimes(3);
+		expect(benchPaint).not.toHaveBeenCalled();
+
+		bench.exitStory();
+		frame();
+		expect(benchPaint).toHaveBeenCalledTimes(1); // the bench wakes with a repaint owed
+	});
+
+	it("an 'always' painter rides over both contexts (the inspector works mid-film)", () => {
+		init(2);
+		const paint = vi.fn();
+		bench.painters.add(paint, 'always');
+
+		frame();
+		expect(paint).toHaveBeenCalledTimes(1);
+
+		expect(bench.playStory()).toBe(true);
+		frame();
+		expect(paint).toHaveBeenCalledTimes(2);
+	});
+});
+
 describe('bench store — selection', () => {
 	/**
 	 * A world with no predators, so nothing can be eaten.

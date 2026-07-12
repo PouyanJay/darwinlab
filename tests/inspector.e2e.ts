@@ -25,6 +25,8 @@ const brainprint = (page: Page) =>
 
 test.beforeEach(async ({ page }) => {
 	await page.goto('/');
+	// appear THEN go — toBeHidden alone also passes before hydration renders the pill at all
+	await expect(page.getByTestId('turbo')).toBeVisible({ timeout: 30_000 });
 	await expect(page.getByTestId('turbo')).toBeHidden({ timeout: 90_000 });
 });
 

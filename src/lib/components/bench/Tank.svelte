@@ -23,9 +23,14 @@
 		 * background is how you put a creature down again.
 		 */
 		onselect?: (picked: Picked | null) => void;
+		/**
+		 * Which paint group this tank belongs to. Bench tanks sleep while a story plays — the film
+		 * covers them; the film's own stage registers as 'story' so it is the one that keeps moving.
+		 */
+		group?: 'bench' | 'story';
 	}
 
-	let { entry, detail = 'performance', big = false, onselect }: Props = $props();
+	let { entry, detail = 'performance', big = false, group = 'bench', onselect }: Props = $props();
 
 	let cursor = $state('default');
 
@@ -40,7 +45,7 @@
 
 	// Stable identity: Canvas's attachment re-runs if this changes, which would churn the
 	// ResizeObserver and re-register the painter on every re-render.
-	const register = (render: () => void) => bench.painters.add(render);
+	const register = (render: () => void) => bench.painters.add(render, group);
 
 	function pick(x: number, y: number) {
 		onselect?.(pickCreature(entry.world, x, y));
