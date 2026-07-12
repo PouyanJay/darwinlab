@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { waitForPrewarm } from './helpers';
 import AxeBuilder from '@axe-core/playwright';
 
 /**
@@ -28,9 +29,7 @@ const violations = async (page: Page) => {
 
 test.beforeEach(async ({ page }) => {
 	await page.goto('/');
-	// appear THEN go — toBeHidden alone also passes before hydration renders the pill at all
-	await expect(page.getByTestId('turbo')).toBeVisible({ timeout: 30_000 });
-	await expect(page.getByTestId('turbo')).toBeHidden({ timeout: 90_000 });
+	await waitForPrewarm(page);
 });
 
 test('the bench scans clean', async ({ page }) => {
@@ -40,17 +39,11 @@ test('the bench scans clean', async ({ page }) => {
 test('the bench scans clean in dark, too — contrast is per-palette, not per-layout', async ({
 	page
 }) => {
+	// No settling wait of its own: the theme's colour TRANSITIONS register in
+	// document.getAnimations(), so the settle inside violations() covers them — axe never reads
+	// a blend that exists for a fifth of a second and belongs to neither theme.
 	await page.getByRole('button', { name: 'switch theme' }).click();
-	// Let the colour TRANSITIONS land before measuring: axe reads computed colours, and a scan
-	// mid-flight fails on blends that exist for a fifth of a second and belong to neither theme.
-	await expect
-		.poll(async () => {
-			const a = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
-			await page.waitForTimeout(120);
-			const b = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
-			return a === b;
-		})
-		.toBe(true);
+	await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
 	expect(await violations(page)).toEqual([]);
 });
 

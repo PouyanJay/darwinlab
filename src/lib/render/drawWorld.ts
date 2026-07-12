@@ -248,8 +248,12 @@ function drawShark(
 	ctx: CanvasRenderingContext2D,
 	p: Predator,
 	th: ThemePalette,
-	{ t, hovered: hov, reducedMotion: rm }: Pick<CreatureState, 't' | 'hovered' | 'reducedMotion'>,
-	body: CanvasGradient
+	{
+		t,
+		hovered: hov,
+		reducedMotion: rm,
+		body
+	}: Pick<CreatureState, 't' | 'hovered' | 'reducedMotion'> & { body: CanvasGradient }
 ): void {
 	if (p.trail.length > 1) {
 		ctx.strokeStyle = 'rgba(' + th.burst + ',' + (p.lunge > 0 ? 0.4 : 0.18) + ')';
@@ -547,7 +551,12 @@ export function drawWorld(
 
 	if (w.selFish) drawPerception(w, ctx, th, rm);
 	for (const p of w.preds) {
-		drawShark(ctx, p, th, { t: w.t, hovered: p === w.hover, reducedMotion: rm }, grads.sharkBody);
+		drawShark(ctx, p, th, {
+			t: w.t,
+			hovered: p === w.hover,
+			reducedMotion: rm,
+			body: grads.sharkBody
+		});
 	}
 	for (const f of w.fish) {
 		drawFish(ctx, f, th, {

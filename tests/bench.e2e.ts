@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { waitForPrewarm } from './helpers';
 
 /**
  * The Phase 4 gate: the bench itself, driven the way a user drives it.
@@ -13,7 +14,7 @@ const tile = (page: Page, index: number) => tiles(page).nth(index);
 
 test.beforeEach(async ({ page }) => {
 	await page.goto('/');
-	await expect(page.getByTestId('turbo')).toBeHidden({ timeout: 90_000 }); // prewarm finished
+	await waitForPrewarm(page);
 });
 
 test('opens with the five-world sense ladder, already evolved', async ({ page }) => {

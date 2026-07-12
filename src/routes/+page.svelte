@@ -24,9 +24,13 @@
 
 	// A paused bench repaints only on demand (see bench.requestPaint) — but the palette and the
 	// reduced-motion flag change what the pixels look like WITHOUT going through the store, so
-	// their flips owe the canvases one repaint. Passing them is what subscribes this effect.
-	const repaintWhenChanged = (...looks: unknown[]) => looks && bench.requestPaint();
-	$effect(() => repaintWhenChanged(theme.name, prefersReducedMotion()));
+	// their flips owe the canvases one repaint. Reading them is what subscribes this effect;
+	// `void` marks them as read-for-tracking only.
+	$effect(() => {
+		void theme.name;
+		void prefersReducedMotion();
+		bench.requestPaint();
+	});
 
 	onMount(() => {
 		bench.init({

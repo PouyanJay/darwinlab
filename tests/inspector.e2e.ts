@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { waitForPrewarm } from './helpers';
 
 /**
  * The Phase 6 gate: a real evolved mind, inspected in the real app.
@@ -25,9 +26,7 @@ const brainprint = (page: Page) =>
 
 test.beforeEach(async ({ page }) => {
 	await page.goto('/');
-	// appear THEN go — toBeHidden alone also passes before hydration renders the pill at all
-	await expect(page.getByTestId('turbo')).toBeVisible({ timeout: 30_000 });
-	await expect(page.getByTestId('turbo')).toBeHidden({ timeout: 90_000 });
+	await waitForPrewarm(page);
 });
 
 test('★ Champion opens a live mind, and the bench keeps running behind it', async ({ page }) => {

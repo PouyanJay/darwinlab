@@ -21,10 +21,12 @@ const GENERATIONS = 30;
 let stats: SweepStat[];
 let by: Record<string, number>;
 
+// 60s, not the 10s default: the sweep itself takes ~5–8s, and a cold vite dep re-optimization
+// once pushed it past 10s — five tests silently skipped on a hook timeout is a false red.
 beforeAll(() => {
 	stats = sweep(DEFAULT_WORLDS, SEEDS, GENERATIONS, 10);
 	by = Object.fromEntries(stats.map((s) => [s.name, s.meanPct]));
-});
+}, 60_000);
 
 describe('converged survival (the honest finding)', () => {
 	it('lands every world in a flat ~20–50% band — there is no dramatic sense ladder', () => {
