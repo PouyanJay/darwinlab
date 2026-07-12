@@ -26,10 +26,17 @@
 	const register = (render: () => void) => bench.painters.add(render, 'always');
 
 	function paint(ctx: CanvasRenderingContext2D, width: number, height: number) {
+		// The tick that ends a selection (the fish is eaten, or its generation turns) paints in
+		// that SAME frame, before the effect flush unmounts this canvas — and `entry` chains to
+		// the page's derived selection lookup, which is already undefined by then. Skip the one
+		// orphaned frame; the unmount is a microtask away. (This froze the whole bench once: the
+		// throw killed the sim loop's timer chain.)
+		const world = entry?.world;
+		if (!world) return;
 		drawBrain(ctx, width, height, {
-			senses: entry.world.cfg.senses,
-			sense: entry.world.sense,
-			t: entry.world.t,
+			senses: world.cfg.senses,
+			sense: world.sense,
+			t: world.t,
 			theme: theme.name,
 			reducedMotion: prefersReducedMotion()
 		});

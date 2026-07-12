@@ -66,8 +66,14 @@ export function createSimLoop(options: SimLoopOptions): SimLoop {
 		const seconds = Math.max(0, (ts - last) / 1000 || 0);
 		const elapsed = Math.min(maxFrameSeconds, seconds);
 		last = ts;
-		onFrame(elapsed, seconds);
-		if (running) timer = setTimeout(tick, intervalMs);
+		// `finally`, so one bad frame cannot kill the chain: without it, a throw anywhere in
+		// onFrame ends the loop forever — page alive, every tank frozen. The exception still
+		// propagates (uncaught, loud in the console); nothing is swallowed here.
+		try {
+			onFrame(elapsed, seconds);
+		} finally {
+			if (running) timer = setTimeout(tick, intervalMs);
+		}
 	};
 
 	return {
