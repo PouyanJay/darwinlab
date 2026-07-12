@@ -1,19 +1,17 @@
 /**
- * The seeded bench — the sense ladder — plus the reference bench it replaced, and the accent
- * palette.
+ * The seeded bench — the sense ladder — and the accent palette.
  *
- * WHY THERE ARE TWO BENCHES. The original (reference) worlds run in an ocean where no sense can
- * pay: the shark outruns every fish (so knowing which way to flee only delays death), it re-aims
- * mid-lunge (so no dodge works), every fish avoids walls by a FREE instinct (so wall-sensing
- * solves a problem it does not have), and it brakes to wind up (so closing speed is at its lowest
- * exactly when the strike is coming). Measured, that world is brutal: a fish with ALL FOUR senses
- * survives 5% LESS than a blind one, because mutation taxes every live input and none of them buy
- * anything. That is not a fact about intelligence — it is a broken world, and we keep it, because
- * showing it next to a working one is the whole lesson.
- *
- * The default bench gives every sense a real job, and then the ladder climbs honestly:
+ * Every world here runs in an ocean where a sense can actually pay for itself (SHOWCASE_OCEAN
+ * below says how, and why each setting exists). The ladder then climbs honestly:
  *   blind 3.18s · +distance 3.33s · +direction 4.43s · +walls 4.78s · +closing (all four) 5.46s
  * (mean life per fish, 3 evolution seeds × 12 seeded bouts — scripts/sweep-senses.ts).
+ *
+ * It did not always. Under the original settings — a shark that outran every fish, a free
+ * wall-avoidance instinct, a strike that re-aimed mid-flight — no sense could buy anything, and a
+ * fish with ALL FOUR of them survived ~5% LESS than a blind one, because mutation charges rent on
+ * every live input. That was a fact about the world, not about intelligence. Each knob in
+ * SHOWCASE_OCEAN exists to take one of those excuses away; the Conditions dialog can put any of
+ * them back, and the ladder collapses again when you do.
  *
  * Captions carry the honest finding and must not be softened. Distance still barely pays: knowing
  * something is near does not tell you where to go, and no world we tried changed that.
@@ -110,87 +108,6 @@ export const DEFAULT_WORLDS: WorldConfig[] = [
 		senses: { dist: true, dir: true, closing: true, walls: true },
 		caption:
 			'Everything switched on, closing speed included: they feel the lunge coming and cut away early, and the shark — committed to its strike — sails right past. The top of the ladder, and it had to be earned one danger at a time.'
-	}
-];
-
-/**
- * The ORIGINAL bench, kept as a preset: the ocean where no sense can pay.
- *
- * Load it and measure: a fish with all four senses survives ~5% LESS than a blind one. Every
- * input is live, none of them buys anything, and mutation charges rent on all of them. It is the
- * sharpest exhibit the lab has — "more senses" is worse than useless when the world ignores them —
- * and it is also the configuration the fidelity gate holds bit-identical to the original engine.
- */
-export const REFERENCE_WORLDS: WorldConfig[] = [
-	{
-		name: 'Blind drift',
-		accent: '#64748b',
-		prey: 20,
-		preds: 2,
-		bw: 640,
-		bh: 400,
-		predSpeed: 1,
-		vision: 200,
-		mutation: 0.06,
-		senses: { dist: false, dir: false, closing: false, walls: false },
-		caption:
-			'No predator input reaches these brains at all, so natural selection has nothing to work with. The population is culled to almost nothing — and never really recovers.'
-	},
-	{
-		name: 'Distance',
-		accent: '#4f56d3',
-		prey: 20,
-		preds: 2,
-		bw: 640,
-		bh: 400,
-		predSpeed: 1,
-		vision: 200,
-		mutation: 0.06,
-		senses: { dist: true, dir: false, closing: false, walls: false },
-		caption:
-			'One input: how close danger is. Fish learn to bolt when threatened — but with no sense of which way, they bolt blindly, so it barely beats sensing nothing at all.'
-	},
-	{
-		name: 'Direction',
-		accent: '#0e9488',
-		prey: 20,
-		preds: 2,
-		bw: 640,
-		bh: 400,
-		predSpeed: 1,
-		vision: 200,
-		mutation: 0.06,
-		senses: { dist: true, dir: true, closing: false, walls: false },
-		caption:
-			'Add which-way, and survival climbs a little. In this ocean the shark still outruns them, so knowing where it is only ever delays the end.'
-	},
-	{
-		name: 'Anticipation',
-		accent: '#d88a2c',
-		prey: 20,
-		preds: 2,
-		bw: 640,
-		bh: 400,
-		predSpeed: 1,
-		vision: 200,
-		mutation: 0.06,
-		senses: { dist: true, dir: true, closing: true, walls: false },
-		caption:
-			'Closing speed piled on top — more information, and survival does not climb to match. This shark brakes to wind up, so closing speed reads its lowest just as the strike comes: the input is not merely useless here, it is misleading.'
-	},
-	{
-		name: 'Corner-wise',
-		accent: '#e8604c',
-		prey: 20,
-		preds: 2,
-		bw: 640,
-		bh: 400,
-		predSpeed: 1,
-		vision: 200,
-		mutation: 0.06,
-		senses: { dist: true, dir: true, closing: true, walls: true },
-		caption:
-			'All four senses on — and measured, these fish do WORSE than blind ones. They already dodge walls by instinct, so the wall sense buys nothing, and every live input costs mutation rent. A sense the world ignores is worse than no sense at all.'
 	}
 ];
 

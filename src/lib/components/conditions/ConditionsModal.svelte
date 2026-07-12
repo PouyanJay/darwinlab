@@ -32,6 +32,18 @@
 	const px = (value: number) => `${value} px`;
 	const times = (value: number) => `${value.toFixed(2)}×`;
 	const rate = (value: number) => value.toFixed(3);
+	const perSecond = (value: number) => `+${(value * 100).toFixed(0)}% / s`;
+	const boost = (value: number) => `up to ${(1 + value).toFixed(2)}×`;
+	const jaw = (value: number) => `up to ${14 + value} px`;
+
+	/**
+	 * The line that tells you what the speed slider is really doing. A fish tops out at MAXSPEED
+	 * (176 px/s) and the shark cruises at 200 × predSpeed, so the crossing point is ~0.88 — and it
+	 * is the most consequential number on the bench: above it no fish can outrun the shark, so
+	 * knowing which way to flee buys a delay and never an escape, and every sense stops paying.
+	 */
+	const cruise = $derived(Math.round(200 * config.predSpeed));
+	const outruns = $derived(cruise > 176);
 </script>
 
 <Modal
@@ -91,12 +103,26 @@
 		/>
 		<Slider
 			label="Predator speed"
+			hint={outruns ? '(the shark outruns the fish)' : '(a fish can outrun the shark)'}
 			value={config.predSpeed}
 			{...WORLD_LIMITS.predSpeed}
 			format={times}
 			tone="danger"
 			onchange={(value) => bench.setCondition(id, 'predSpeed', value)}
 		/>
+		<!-- The single most consequential number on the bench, said plainly: above a 176 px/s cruise
+		     no fish can get away, so knowing WHICH WAY to flee buys a delay and never an escape —
+		     and every sense stops paying for itself. Drag it across the line and watch. -->
+		<p class="speed-note" class:warn={outruns}>
+			{cruise} px/s against a fish's 176.
+			{#if outruns}
+				Nothing can outswim it, so fleeing correctly only delays the end — this is the setting under
+				which no sense pays.
+			{:else}
+				A fish that flees the right way can actually get away, which is what makes its senses worth
+				having.
+			{/if}
+		</p>
 		<Slider
 			label="Prey vision range"
 			value={config.vision}
@@ -113,6 +139,62 @@
 			onchange={(value) => bench.setCondition(id, 'mutation', value)}
 		/>
 	</div>
+
+	<!-- The hunger ramp. OFF by default, and that is a product decision, not a default that
+	     happened: with it on, the shark gets faster and wider-jawed until it kills, so no fish is
+	     ever allowed to look safe and a population that genuinely learned looks exactly like one
+	     that did not. Off, the shark is the same hunter all run long — and evolved evasion finally
+	     reads on screen. Switch it on and the three knobs beneath it say how hard it escalates. -->
+	<fieldset class="persistence">
+		<legend class="field-label">Predator persistence — the hunger ramp</legend>
+
+		<label class="sense">
+			<input
+				type="checkbox"
+				checked={config.persistence}
+				onchange={(event) => bench.setPersistence(id, event.currentTarget.checked)}
+			/>
+			<span>
+				<b>Escalate while hungry</b>
+				<span class="description">
+					The longer the shark goes without a kill, the faster it swims and the wider it bites — so
+					no stalemate lasts forever, and no fish stays safe. Off, it hunts the same all run long,
+					which is the only way a population that has genuinely learned can look it.
+				</span>
+			</span>
+		</label>
+
+		{#if config.persistence}
+			<div class="sliders">
+				<Slider
+					label="Ramp"
+					hint="(how fast hunger builds)"
+					value={config.persistRamp}
+					{...WORLD_LIMITS.persistRamp}
+					format={perSecond}
+					tone="danger"
+					onchange={(value) => bench.setCondition(id, 'persistRamp', value)}
+				/>
+				<Slider
+					label="Top speed when starving"
+					value={config.persistMaxBoost}
+					{...WORLD_LIMITS.persistMaxBoost}
+					format={boost}
+					tone="danger"
+					onchange={(value) => bench.setCondition(id, 'persistMaxBoost', value)}
+				/>
+				<Slider
+					label="Widest bite"
+					hint="(catch radius, from 14 px)"
+					value={config.persistMaxJaw}
+					{...WORLD_LIMITS.persistMaxJaw}
+					format={jaw}
+					tone="danger"
+					onchange={(value) => bench.setCondition(id, 'persistMaxJaw', value)}
+				/>
+			</div>
+		{/if}
+	</fieldset>
 
 	<fieldset class="senses">
 		<legend class="field-label">Senses — the brain's input neurons</legend>
@@ -212,6 +294,36 @@
 	.accents legend {
 		grid-column: 1 / -1;
 		margin-bottom: var(--sp-3);
+	}
+
+	.persistence {
+		display: flex;
+		flex-direction: column;
+		gap: var(--sp-4);
+		margin-top: var(--sp-5);
+	}
+
+	.persistence legend {
+		margin-bottom: var(--sp-3);
+	}
+
+	/* The ramp's own knobs sit indented under the switch that turns them on, so it reads as one
+	   decision with its dials rather than four unrelated controls. */
+	.persistence .sliders {
+		margin: 0 0 0 26px;
+		padding-left: var(--sp-5);
+		border-left: 2px solid var(--line);
+	}
+
+	.speed-note {
+		margin: calc(-1 * var(--sp-2)) 0 0;
+		font-size: var(--fs-label);
+		color: var(--ink3);
+	}
+
+	/* The one setting that decides whether ANY sense can pay — say so when it crosses the line. */
+	.speed-note.warn {
+		color: var(--danger-ink);
 	}
 
 	.sense {

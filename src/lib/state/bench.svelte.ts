@@ -35,6 +35,7 @@ import {
 	cloneGenome,
 	ACCENTS,
 	WORLD_LIMITS,
+	PERSISTENCE_DEFAULTS,
 	MAX_GENERATIONS
 } from '../engine';
 import type { World, WorldConfig, Senses, Fish, Predator, NumericCondition } from '../engine';
@@ -284,6 +285,28 @@ class BenchStore {
 	setCondition(id: string, key: NumericCondition, value: number): void {
 		const { world } = this.entry(id);
 		world.cfg[key] = clamp(value, WORLD_LIMITS[key]);
+		engineApplyCfg(world);
+		this.#publishConfig(id);
+	}
+
+	/**
+	 * The shark's hunger ramp: on, it gets faster and wider-jawed the longer it goes without a
+	 * kill, so no stalemate lasts forever and nothing stays safe. Off — the bench's default — it
+	 * is the same hunter all run long, and a population that genuinely learned is allowed to LOOK
+	 * safe, which is the only way evolved evasion ever reads on screen.
+	 *
+	 * Switching it on hands the world the reference engine's own ramp figures unless it already
+	 * carries its own, so the three sliders beneath the toggle open on something real rather than
+	 * on zeroes.
+	 */
+	setPersistence(id: string, on: boolean): void {
+		const { world } = this.entry(id);
+		world.cfg.persistence = on;
+		if (on) {
+			world.cfg.persistRamp ??= PERSISTENCE_DEFAULTS.persistRamp;
+			world.cfg.persistMaxBoost ??= PERSISTENCE_DEFAULTS.persistMaxBoost;
+			world.cfg.persistMaxJaw ??= PERSISTENCE_DEFAULTS.persistMaxJaw;
+		}
 		engineApplyCfg(world);
 		this.#publishConfig(id);
 	}
