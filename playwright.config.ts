@@ -11,8 +11,8 @@ export default defineConfig({
 		 * an absolute path resolves against the origin and would silently escape the base.
 		 */
 		baseURL: `http://localhost:4173${process.env.BASE_PATH ?? ''}/`,
-		// Keep traces for CI post-mortems. No retries anywhere: a flake retried into green is a
-		// flake nobody fixes (see CLAUDE.md — "flakes hide as green").
+		// Keep traces for CI post-mortems. No retries anywhere, deliberately: a flake retried
+		// into green is a flake nobody fixes.
 		trace: process.env.CI ? 'retain-on-failure' : 'off',
 		/*
 		 * Pin the colour scheme. The app follows prefers-color-scheme on a first visit, so without
