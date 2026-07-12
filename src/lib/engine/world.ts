@@ -296,12 +296,25 @@ function updatePredators(w: World, dt: number, frust: number, catchR: number): v
 		const bd = p._td ?? 1e9;
 		const ps = c.predSpeed;
 		if (best) {
+			const commit = c.lungeCommit ?? false;
 			// lunge state machine: cruise → aim (telegraphed wind-up) → lunge (fast strike)
 			if (p.lunge <= 0 && p.aim > 0) {
 				p.aim -= dt;
 				if (p.aim <= 0) {
 					p.lunge = 0.4;
-					p.cool = 1.3;
+					// A committed strike costs more when it misses: the direction locks at THIS
+					// instant, and the longer cooldown is the recovery a dodged shark visibly
+					// pays, sailing past on its locked vector. (Reference: re-aims every frame
+					// with cool 1.3 — a guided missile no dodge can beat.)
+					p.cool = commit ? 2.4 : 1.3;
+					if (commit) {
+						const lead = 0.34;
+						const lx = best.x + best.vx * lead;
+						const ly = best.y + best.vy * lead;
+						const ld = Math.hypot(lx - p.x, ly - p.y) || 1;
+						p._lockx = (lx - p.x) / ld;
+						p._locky = (ly - p.y) / ld;
+					}
 				}
 			} else if (p.lunge <= 0 && p.cool <= 0 && bd < 135) {
 				p.aim = 0.3;
@@ -315,7 +328,12 @@ function updatePredators(w: World, dt: number, frust: number, catchR: number): v
 			const lx = best.x + best.vx * lead;
 			const ly = best.y + best.vy * lead;
 			const ld = Math.hypot(lx - p.x, ly - p.y) || 1;
-			if (p.lunge > 0) {
+			if (p.lunge > 0 && commit && p._lockx !== undefined && p._locky !== undefined) {
+				dirx = p._lockx;
+				diry = p._locky;
+				acc = 1000 * ps;
+				max = 430 * ps * frust;
+			} else if (p.lunge > 0) {
 				dirx = (lx - p.x) / ld;
 				diry = (ly - p.y) / ld;
 				acc = 1000 * ps;
@@ -397,17 +415,20 @@ function updatePredators(w: World, dt: number, frust: number, catchR: number): v
 /** Prey physics: each fish's own brain drives turn + thrust; plus separation and wall instinct. */
 function updatePrey(w: World, dt: number): void {
 	const c = w.cfg;
+	// agility scales how fast the BODY expresses what the brain decides (turn rate and
+	// velocity response) — the same evolved policy, on a sharper chassis. Reference = 1.
+	const agility = c.agility ?? 1;
 	for (const f of w.fish) {
 		const { x } = senseInputs(w, f);
 		const out = forward(f.genome, x);
 		f.turn = out.turn;
 		f.thrust = out.thrust;
-		f.heading += out.turn * MAXTURN * dt;
+		f.heading += out.turn * MAXTURN * agility * dt;
 		const target = out.thrust * MAXSPEED;
 		const dvx = Math.cos(f.heading) * target;
 		const dvy = Math.sin(f.heading) * target;
-		f.vx += (dvx - f.vx) * RESP * dt;
-		f.vy += (dvy - f.vy) * RESP * dt;
+		f.vx += (dvx - f.vx) * Math.min(1 / dt, RESP * agility) * dt;
+		f.vy += (dvy - f.vy) * Math.min(1 / dt, RESP * agility) * dt;
 		// mild positional separation so fish don't perfectly overlap (the velocity term in
 		// the reference was zeroed out, so only this position nudge remains)
 		for (const o of w.fish) {
@@ -420,12 +441,16 @@ function updatePrey(w: World, dt: number): void {
 				f.y += (dy / d) * (15 - d) * 0.06;
 			}
 		}
-		// baseline wall-avoidance instinct — keeps fish off the glass so they never pin in corners
-		const wm = 54;
-		if (f.x < wm) f.vx += (1 - f.x / wm) * 460 * dt;
-		else if (f.x > c.bw - wm) f.vx -= (1 - (c.bw - f.x) / wm) * 460 * dt;
-		if (f.y < wm) f.vy += (1 - f.y / wm) * 460 * dt;
-		else if (f.y > c.bh - wm) f.vy -= (1 - (c.bh - f.y) / wm) * 460 * dt;
+		// baseline wall-avoidance instinct — keeps fish off the glass so they never pin in
+		// corners. Optional (reference = on): with it OFF, staying out of corners is
+		// something only a brain with the walls sense can learn — the sense earns its keep.
+		if (c.wallInstinct ?? true) {
+			const wm = 54;
+			if (f.x < wm) f.vx += (1 - f.x / wm) * 460 * dt;
+			else if (f.x > c.bw - wm) f.vx -= (1 - (c.bw - f.x) / wm) * 460 * dt;
+			if (f.y < wm) f.vy += (1 - f.y / wm) * 460 * dt;
+			else if (f.y > c.bh - wm) f.vy -= (1 - (c.bh - f.y) / wm) * 460 * dt;
+		}
 		f.x += f.vx * dt;
 		f.y += f.vy * dt;
 		if (f.x < 7) {
@@ -511,9 +536,16 @@ export function stepWorld(w: World, dt: number): void {
 	updateDeployment(w, dt, trained);
 
 	// predator persistence: the longer without a kill, the faster the sharks get and the
-	// wider their catch radius, so no stalemate lasts forever
-	const frust = 1 + Math.min(0.85, w.sinceKill * 0.04);
-	const catchR = 14 + Math.min(20, Math.max(0, w.sinceKill - 8) * 2.2);
+	// wider their catch radius, so no stalemate lasts forever. Optional (reference = on,
+	// with ramp 0.04 / boost cap 0.85 / jaw cap 20): with it off, the shark is the same
+	// hunter forever, and a population that has genuinely learned is allowed to look safe.
+	const persist = w.cfg.persistence ?? true;
+	const frust = persist
+		? 1 + Math.min(w.cfg.persistMaxBoost ?? 0.85, w.sinceKill * (w.cfg.persistRamp ?? 0.04))
+		: 1;
+	const catchR = persist
+		? 14 + Math.min(w.cfg.persistMaxJaw ?? 20, Math.max(0, w.sinceKill - 8) * 2.2)
+		: 14;
 	w.sinceKill += dt;
 
 	assignPredatorTargets(w);
@@ -522,8 +554,10 @@ export function stepWorld(w: World, dt: number): void {
 	updateSenseSnapshot(w);
 	ageBursts(w, dt);
 
-	// generation boundary
-	if (w.genT >= GEN_DURATION || w.fish.length === 0) {
+	// generation boundary (configurable length — past ~gen 30 the reference's 10s cap is
+	// saturated by every decent fish and selection stops sharpening; longer keeps the
+	// gradient alive)
+	if (w.genT >= (w.cfg.genDuration ?? GEN_DURATION) || w.fish.length === 0) {
 		if (trained) {
 			w.genT = 0; // deployed: don't evolve, don't reset — let the population play out
 		} else {

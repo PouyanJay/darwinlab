@@ -43,6 +43,36 @@ export interface WorldConfig {
 	caption: string;
 	/** Optional seed for reproducible runs. */
 	seed?: number;
+
+	// ---- environment knobs (all optional; every default is the REFERENCE engine's behavior,
+	// which is what keeps the bit-exact fidelity gate green for reference configs) ----
+	/**
+	 * Predator persistence: the hunger ramp that makes the shark faster and wider-jawed the
+	 * longer it goes without a kill. Reference behavior = true. Off, the shark is the same
+	 * hunter forever — and evolved evasion is finally allowed to LOOK safe.
+	 */
+	persistence?: boolean;
+	/** Speed-boost ramp per hungry second (boost = min(cap, sinceKill·ramp)). Reference 0.04. */
+	persistRamp?: number;
+	/** Cap on the persistence speed boost. Reference 0.85 (≈1.85× top speed when starving). */
+	persistMaxBoost?: number;
+	/** Cap on how far the catch radius widens beyond its base 14px. Reference 20. */
+	persistMaxJaw?: number;
+	/**
+	 * Committed lunges: the strike direction locks at launch and a miss costs a recovery, so
+	 * a well-timed dodge makes the shark visibly sail past. Reference = false — the reference
+	 * lunge re-aims every frame, a guided missile no dodge can beat.
+	 */
+	lungeCommit?: boolean;
+	/**
+	 * The built-in wall-avoidance force every fish gets for free. Reference = true. Off,
+	 * corners are genuine death traps — and the walls SENSE has something real to earn.
+	 */
+	wallInstinct?: boolean;
+	/** Sim-seconds per generation. Reference = 10. Longer keeps selection sharpening after champions survive whole generations. */
+	genDuration?: number;
+	/** Fish steering/response authority multiplier — the body, not the brain. Reference = 1. */
+	agility?: number;
 }
 
 export interface Fish {
@@ -75,6 +105,9 @@ export interface Predator {
 	/** Transient per-step targeting (greedy nearest-unclaimed fish + its distance). */
 	_tgt?: Fish | null;
 	_td?: number;
+	/** Strike vector locked at lunge launch — only used when cfg.lungeCommit is on. */
+	_lockx?: number;
+	_locky?: number;
 }
 
 /** Best genome ever seen in a world — preserved verbatim (elitism). */
