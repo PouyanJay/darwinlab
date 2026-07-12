@@ -63,4 +63,19 @@ const directionLeads =
 console.log(
 	'\n  Direction leads and extras do not stack: ' + (directionLeads ? 'OK ✓' : 'MISMATCH ✗')
 );
+
+// Drift watch: a mean wandering off its measured baseline means the science moved — surface it.
+// ±5pp is generous against seed noise (the mean of 20 seeds swings ~1–2pp) but far tighter than
+// the ~23pp gap to the published Direction figure, so a drifted engine cannot hide inside it.
+const DRIFT_TOLERANCE_PP = 5;
+const drifted = stats.filter((s) => Math.abs(s.meanPct - MEASURED[s.name]) > DRIFT_TOLERANCE_PP);
+for (const s of drifted) {
+	console.log(
+		`  DRIFT ✗ ${s.name}: ${s.meanPct.toFixed(1)}% vs baseline ${MEASURED[s.name]}% ` +
+			`(tolerance ±${DRIFT_TOLERANCE_PP}pp)`
+	);
+}
 console.log('  (single runs are noisy — trust the mean over many seeds, not one curve)\n');
+
+// A non-zero exit is what makes the nightly CI run a drift REPORT instead of a green rubber stamp.
+if (!directionLeads || drifted.length > 0) process.exitCode = 1;

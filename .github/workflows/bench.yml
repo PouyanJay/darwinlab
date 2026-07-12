@@ -1,0 +1,23 @@
+# Nightly science watch (plan §13): re-measure converged survival headlessly and fail the run
+# if the honest finding drifts — Direction must stay the only sense that pays, and every world
+# must stay near its measured baseline. Scheduled, so it never blocks a PR; a red run here is
+# the drift report. See scripts/bench.ts for the baselines and CLAUDE.md golden rules #1/#2.
+name: Survival bench
+
+on:
+  schedule:
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+
+jobs:
+  bench:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run bench:survival
