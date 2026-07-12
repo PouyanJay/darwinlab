@@ -71,6 +71,17 @@ export interface WorldConfig {
 	 */
 	lungeCommit?: boolean;
 	/**
+	 * The shark CHARGES while it winds up instead of coiling.
+	 *
+	 * This is what makes closing speed a real sense. In the reference the aim phase BRAKES the
+	 * shark to a crawl (max 40), so closing speed is at its LOWEST exactly when the strike is
+	 * imminent — a brain that learned "closing fast = danger" would relax at the worst possible
+	 * moment, which is why the closing sense measured as a net TAX rather than merely useless.
+	 * Charging instead, closing speed rises ahead of the strike and genuinely predicts it.
+	 * Reference = false.
+	 */
+	aimCharge?: boolean;
+	/**
 	 * The built-in wall-avoidance force every fish gets for free. Reference = true. Off,
 	 * corners are genuine death traps — and the walls SENSE has something real to earn.
 	 */

@@ -10,7 +10,6 @@
  * RNG draw order is preserved exactly from the original so seeded runs are reproducible.
  */
 
-import { GLEN } from './network';
 import {
 	ELITE_FRACTION,
 	TOURNAMENT_BIAS,

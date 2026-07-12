@@ -133,6 +133,53 @@ const VARIANTS: Record<string, Partial<WorldConfig>> = {
 		preds: 3,
 		brainInputs: 9 // the slot exists...
 		// ...and each world's `senses.speed` (set below, per-world) decides if it is fed
+	},
+
+	// iteration 8 — WHY it doesn't pay. Two fair objections to test before calling it:
+	//   (a) a 74-weight brain searches a bigger space on the same budget — run it longer;
+	//   (b) knowing your own speed is idle information in a world where speed COSTS nothing.
+	//       Turn stamina on and speed becomes a RESOURCE you must manage — now the input has
+	//       a job only it can do. If it pays here and nowhere else, that IS the thesis.
+	STAM_NOSPD: { ...V3B, predSpeed: 0.7, preds: 3, stamina: true },
+	STAM_SPD: { ...V3B, predSpeed: 0.7, preds: 3, stamina: true, brainInputs: 9 },
+
+	// iteration 9 — WHY A SENSE CAN HURT, and how to fix it honestly.
+	//
+	// An extra input should never hurt: evolution could zero its weights. But every weight is
+	// mutated with p=0.85 per generation, so a live-but-USELESS input is a noise channel that
+	// mutation keeps re-opening — selection pushes those weights to zero, mutation pushes them
+	// back, and the equilibrium is a permanent tax. That tax is only worth paying if the sense
+	// solves a problem the fish actually HAS. In the reference world neither extra sense does:
+	//   - walls: every fish gets a free 460-unit wall-avoidance INSTINCT, so wall-sensing
+	//     solves a problem it does not have. Take the instinct away and the sense has a job.
+	//   - closing: the reference lunge re-aims every frame, so there is nothing to anticipate.
+	//     Commit the strike (and make it fierce) and feeling it coming becomes the only escape.
+	L1: { ...V3B, predSpeed: 0.7, preds: 3, wallInstinct: false },
+	L2: { ...V3B, predSpeed: 0.7, preds: 3, wallInstinct: false, lungeFerocity: 1.7 },
+	L3: { ...V3B, predSpeed: 0.7, preds: 3, wallInstinct: false, lungeFerocity: 2.1 },
+
+	// iteration 10 — the LAST reason a sense was a tax: the reference wind-up BRAKES, so
+	// closing speed bottoms out exactly when the strike is imminent. The sense was not merely
+	// useless, it was ANTI-correlated with danger. Charge instead of coiling and it can
+	// finally predict the lunge. (aimCharge is why closing has a job; wallInstinct off is
+	// why walls has one; predSpeed 0.7 is why direction has one.)
+	W1: { ...V3B, predSpeed: 0.7, preds: 3, wallInstinct: false, aimCharge: true },
+	W2: {
+		...V3B,
+		predSpeed: 0.7,
+		preds: 3,
+		wallInstinct: false,
+		aimCharge: true,
+		lungeFerocity: 1.6
+	},
+	W3: {
+		...V3B,
+		predSpeed: 0.7,
+		preds: 3,
+		wallInstinct: false,
+		aimCharge: true,
+		lungeFerocity: 1.6,
+		vision: 200
 	}
 };
 
@@ -193,6 +240,21 @@ for (const vname of wantedVariants) {
 		);
 		lifeByWorld[base.name] = ev.meanLife;
 	}
+	// The ladder, rung by rung: what does EACH added sense pay over the world below it? A
+	// negative number means that sense is a net tax — the world gives it nothing unique to do.
+	const rungs = ['Blind drift', 'Distance', 'Direction', 'Anticipation', 'Corner-wise'];
+	const adds = ['+distance', '+direction', '+closing', '+walls'];
+	const marginal: string[] = [];
+	for (let i = 1; i < rungs.length; i++) {
+		const below = lifeByWorld[rungs[i - 1]];
+		const here = lifeByWorld[rungs[i]];
+		if (below && here) {
+			const pct = ((here / below - 1) * 100).toFixed(0);
+			marginal.push(`${adds[i - 1]} ${pct.padStart(3)}%`);
+		}
+	}
+	if (marginal.length) console.log(`  → MARGINAL VALUE OF EACH SENSE: ${marginal.join('  ·  ')}`);
+
 	const blind = lifeByWorld['Blind drift'];
 	const dir = lifeByWorld['Direction'];
 	if (blind && dir) {

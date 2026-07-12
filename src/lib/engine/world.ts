@@ -347,8 +347,14 @@ function updatePredators(w: World, dt: number, frust: number, catchR: number): v
 			} else if (p.aim > 0) {
 				dirx = (lx - p.x) / ld;
 				diry = (ly - p.y) / ld;
-				acc = 120 * ps;
-				max = 40 * ps;
+				// The reference wind-up BRAKES (max 40): the shark coils, so closing speed
+				// collapses right before the strike and the closing sense is worse than
+				// useless — it says "safe" at the exact moment it should scream. Charging
+				// instead keeps closing speed rising into the strike, which is the only way
+				// a fish can learn to feel a lunge coming.
+				const charging = c.aimCharge ?? false;
+				acc = charging ? 320 * ps : 120 * ps;
+				max = charging ? 250 * ps : 40 * ps;
 			} else {
 				const tx = lx - p.x;
 				const ty = ly - p.y;
