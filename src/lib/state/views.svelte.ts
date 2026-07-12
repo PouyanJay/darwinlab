@@ -36,8 +36,11 @@ export class WorldStats {
 		this.alive = world.fish.length;
 		this.eaten = world.eaten;
 		this.gen = world.gen;
-		const survival = world.curve.length
-			? world.curve[world.curve.length - 1]
+		// The LIFE curve, not the alive-at-the-bell curve: fitness is seconds survived, so this is
+		// the number selection is actually pushing on — and the only one that can still see a brain
+		// improving in a tank where nearly every fish dies (see World.lifeCurve).
+		const survival = world.lifeCurve.length
+			? world.lifeCurve[world.lifeCurve.length - 1]
 			: world.fish.length / Math.max(1, world.cfg.prey);
 		this.survivalPct = Math.round(survival * 100);
 		this.championFitness = world.champion?.fitness ?? 0;

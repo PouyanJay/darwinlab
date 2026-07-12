@@ -3,7 +3,7 @@
   once training ends — how fast the real world kills it.
 
   Two sparklines, both painted straight from engine data every frame:
-    • the learning curve — survival rate per generation, in the world's accent. This is the graph
+    • the learning curve — how long a fish lives, per generation, in the world's accent. This is the graph
       the whole product is an argument about, so it is on every tile, not hidden in a detail view.
     • the decay curve — the deployed population draining away. Red, because that is what it is.
 -->
@@ -59,8 +59,8 @@
 	// head end is what still betrays the shift.
 	const paintCurve = paintOnChange(
 		() =>
-			`${entry.world.curve.length}|${entry.world.curve.at(0)}|${entry.world.curve.at(-1)}|${accent}|${theme.name}`,
-		(ctx, width, height) => drawCurve(ctx, width, height, entry.world.curve, accent, theme.name)
+			`${entry.world.lifeCurve.length}|${entry.world.lifeCurve.at(0)}|${entry.world.lifeCurve.at(-1)}|${accent}|${theme.name}`,
+		(ctx, width, height) => drawCurve(ctx, width, height, entry.world.lifeCurve, accent, theme.name)
 	);
 
 	const paintDecay = paintOnChange(
@@ -81,7 +81,7 @@
 
 	<div class="curve">
 		<div class="curve-head">
-			<span class="eyebrow">survival / generation</span>
+			<span class="eyebrow">life / generation</span>
 			<!-- the number reads in the world's accent, run toward the ink so 12px stays AA -->
 			<b class="tabular survival" style:--curve-accent={accent} data-testid="survival"
 				>{entry.stats.survivalPct}%</b
@@ -91,8 +91,9 @@
 			<Canvas
 				paint={paintCurve}
 				{register}
-				label="{entry.config.name}: survival rate across {entry.stats.gen} generations, now {entry
-					.stats.survivalPct}%"
+				label="{entry.config
+					.name}: how much of a generation a fish survives on average, across {entry.stats
+					.gen} generations, now {entry.stats.survivalPct}%"
 			/>
 		</div>
 	</div>

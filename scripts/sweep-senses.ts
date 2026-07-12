@@ -31,6 +31,37 @@ const ENVS: Record<string, Partial<WorldConfig>> = {
 		predSpeed: 0.7,
 		preds: 3
 	},
+	/**
+	 * The shipped ocean. Two sharks rather than three: the third bought a few points of
+	 * awareness premium but killed nearly everyone, and a bench where 98% of every generation
+	 * dies has no curve left to read. Twenty-second generations keep selection sharpening
+	 * without wiping the tank.
+	 */
+	final: {
+		persistence: false,
+		lungeCommit: true,
+		aimCharge: true,
+		lungeFerocity: 1.6,
+		wallInstinct: false,
+		predSpeed: 0.7,
+		preds: 2,
+		genDuration: 20,
+		vision: 200,
+		agility: 1.4
+	},
+	/** w3 with shorter generations — the life curve reads higher without losing the ladder. */
+	w3b: {
+		persistence: false,
+		lungeCommit: true,
+		aimCharge: true,
+		lungeFerocity: 1.6,
+		wallInstinct: false,
+		predSpeed: 0.7,
+		preds: 3,
+		genDuration: 20,
+		vision: 200,
+		agility: 1.4
+	},
 	// every sense given a job: walls (no free instinct), closing (a charging wind-up)
 	w3: {
 		persistence: false,

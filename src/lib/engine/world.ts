@@ -83,9 +83,11 @@ export function makeWorld(cfg: WorldConfig, genomes?: Genome[], rng: Rng = defau
 		gen: 0,
 		genT: 0,
 		curve: [],
+		lifeCurve: [],
 		champion: null,
 		championFish: null,
 		lastSurv: 1,
+		lastLife: 1,
 		maxGen: 0,
 		_deployed: false,
 		deployT: 0,
@@ -144,6 +146,7 @@ function spawnGeneration(w: World, genomes?: Genome[]): void {
 export function resetWorld(w: World): void {
 	w.gen = 0;
 	w.curve = [];
+	w.lifeCurve = []; // the learning curve the UI plots — a reset world has learned nothing
 	w.champion = null;
 	w.championFish = null;
 	w.selFish = null;
@@ -204,6 +207,26 @@ function evolve(w: World): void {
 	w.lastSurv = surv;
 	w.curve.push(surv);
 	if (w.curve.length > CURVE_MAX_POINTS) w.curve.shift();
+
+	/*
+	 * The LIFE curve — what selection actually rewards.
+	 *
+	 * `curve` above asks a yes/no question (were you alive when the bell rang?), and in a tank
+	 * where almost everyone dies it flattens to a few percent for every world alike: a fish that
+	 * lasted 18 of 20 seconds and one eaten at second 2 score the same zero. Fitness is SECONDS
+	 * SURVIVED, so this is the curve that can actually see a brain improving — mean fitness across
+	 * the whole roster, as a share of the generation. Same smoothing, same cap.
+	 * (`curve` is left exactly as the reference computes it: the fidelity gate compares it.)
+	 */
+	const meanLife = w.roster.length
+		? w.roster.reduce((sum, f) => sum + f.fitness, 0) / w.roster.length
+		: 0;
+	const rawLife = clamp(meanLife / (c.genDuration ?? GEN_DURATION), 0, 1);
+	const prevLife = w.lifeCurve.length ? w.lifeCurve[w.lifeCurve.length - 1] : rawLife;
+	const life = prevLife * CURVE_SMOOTH_PREV + rawLife * CURVE_SMOOTH_RAW;
+	w.lastLife = life;
+	w.lifeCurve.push(life);
+	if (w.lifeCurve.length > CURVE_MAX_POINTS) w.lifeCurve.shift();
 	const best = ranked[0];
 	if (best && (!w.champion || best.fitness > w.champion.fitness)) {
 		w.champion = { genome: cloneGenome(best.genome), fitness: best.fitness, gen: w.gen };

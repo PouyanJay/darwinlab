@@ -151,7 +151,9 @@ describe('bench store — stats projection', () => {
 
 		world.eaten = 7;
 		world.gen = 4;
-		world.curve = [0.42];
+		// the LIFE curve is what the tiles plot and what this projects — mean seconds survived as a
+		// share of the generation, which is what selection actually rewards (see World.lifeCurve)
+		world.lifeCurve = [0.42];
 		frame();
 
 		expect(stats.alive).toBe(world.fish.length);

@@ -240,11 +240,21 @@ export interface World {
 	transform: Transform | null;
 	gen: number;
 	genT: number;
-	/** Survival-rate learning curve across generations. */
+	/** Survival-rate learning curve (fraction still alive when a generation ended). */
 	curve: number[];
+	/**
+	 * The LIFE curve — mean seconds survived across the whole roster, as a share of the
+	 * generation. This is what selection actually rewards (fitness IS seconds survived), and
+	 * unlike `curve` it can still see a brain improving in a tank where almost everyone dies:
+	 * a fish that lasted 18 of 20 seconds and one eaten at second 2 are the same zero to
+	 * `curve`, and very different here. The UI plots this one.
+	 */
+	lifeCurve: number[];
 	champion: Champion | null;
 	championFish: Fish | null;
 	lastSurv: number;
+	/** Latest smoothed life-curve sample (0–1). */
+	lastLife: number;
 	/** Once `gen >= maxGen`, the world deploys (stops evolving). 0 = never deploy. */
 	maxGen: number;
 	_deployed: boolean;

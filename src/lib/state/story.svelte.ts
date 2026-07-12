@@ -142,12 +142,17 @@ class StoryStore {
 /** The story world's id. It is not on the bench, but the inspector still has to be able to find it. */
 export const STORY_WORLD_ID = 'story';
 
-/** The senses, in the order the bench introduces them — which is the order the story tells them. */
+/**
+ * The senses, in the order the bench introduces them — which is the order the story tells them.
+ * Walls before closing speed, because that is the order the MEASUREMENTS put them in: walls pays
+ * on top of direction, and closing only stacks once everything else is in place (see
+ * DEFAULT_WORLDS and scripts/sweep-senses.ts).
+ */
 const SENSE_ORDER: { key: keyof Senses; name: string }[] = [
 	{ key: 'dist', name: 'Distance' },
 	{ key: 'dir', name: 'Direction' },
-	{ key: 'closing', name: 'Closing speed' },
-	{ key: 'walls', name: 'Walls' }
+	{ key: 'walls', name: 'Walls' },
+	{ key: 'closing', name: 'Closing speed' }
 ];
 
 export const story = new StoryStore();

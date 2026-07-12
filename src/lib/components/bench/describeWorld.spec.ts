@@ -8,7 +8,7 @@ const world = (overrides: Partial<WorldConfigView> = {}) =>
 
 describe('describeWorld', () => {
 	it('states the conditions of the standard tank', () => {
-		expect(describeWorld(world())).toBe('20 prey · 2 sharks · 640×400');
+		expect(describeWorld(world())).toBe('20 prey · 3 sharks · 640×400');
 	});
 
 	it('says "shark" when there is only one of them', () => {
@@ -16,8 +16,11 @@ describe('describeWorld', () => {
 	});
 
 	it('says nothing about predator speed while it is the baseline the bench is calibrated to', () => {
-		expect(describeWorld(world({ predSpeed: 1 }))).not.toContain('×1');
-		expect(describeWorld(world())).toBe('20 prey · 2 sharks · 640×400');
+		// The baseline is the bench's own 0.7× — a shark slower than the fish. Stating it on every
+		// tile would be noise; a shark that has been sped BACK UP to the reference's 1× is a real
+		// condition of the experiment (it is the setting under which no sense can pay) and is said.
+		expect(describeWorld(world())).toBe('20 prey · 3 sharks · 640×400');
+		expect(describeWorld(world({ predSpeed: 1 }))).toContain('· 1×');
 	});
 
 	it('states a predator speed that has been changed, trimmed of trailing zeros', () => {

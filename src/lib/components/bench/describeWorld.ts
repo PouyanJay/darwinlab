@@ -9,6 +9,7 @@
  * cases wants a test, not a template string buried in markup.
  */
 
+import { SHOWCASE_OCEAN } from '$lib/engine';
 import type { WorldConfigView } from '$lib/state';
 
 /** Below this, a predator-speed tweak is a rounding artefact rather than a condition worth stating. */
@@ -25,8 +26,11 @@ export function describeWorld(config: WorldConfigView): string {
 		`${config.preds} ${config.preds === 1 ? 'shark' : 'sharks'}`,
 		`${config.bw}×${config.bh}`
 	];
-	// The default speed is the baseline the whole bench is calibrated against, so it goes unsaid;
-	// any departure from it is a condition of the experiment and has to be on the tile.
-	if (Math.abs(config.predSpeed - 1) > SPEED_EPSILON) parts.push(multiplier(config.predSpeed));
+	// The bench's own predator speed is the baseline it is calibrated against, so it goes unsaid;
+	// any departure from it is a condition of the experiment and has to be on the tile. (That
+	// baseline is 0.7× — a shark slower than the fish, which is what lets any sense pay at all.)
+	if (Math.abs(config.predSpeed - SHOWCASE_OCEAN.predSpeed) > SPEED_EPSILON) {
+		parts.push(multiplier(config.predSpeed));
+	}
 	return parts.join(' · ');
 }
