@@ -46,6 +46,22 @@
 			lasts.
 		{/if}
 	</p>
+
+	<h3>Keyboard</h3>
+	<dl class="keys">
+		<div>
+			<dt><kbd>Space</kbd></dt>
+			<dd>play / pause</dd>
+		</div>
+		<div>
+			<dt><kbd>←</kbd> <kbd>→</kbd></dt>
+			<dd>walk a focused tank's creatures · move between story scenes</dd>
+		</div>
+		<div>
+			<dt><kbd>Esc</kbd></dt>
+			<dd>close a dialog · put a creature down · leave the story</dd>
+		</div>
+	</dl>
 </div>
 
 <style>
@@ -75,5 +91,51 @@
 		font-size: var(--fs-md);
 		line-height: var(--leading-body);
 		color: var(--ink2);
+	}
+
+	h3 {
+		margin: var(--sp-6) 0 var(--sp-3);
+		font-size: var(--fs-eyebrow);
+		font-weight: var(--fw-semibold);
+		letter-spacing: var(--tracking-wide);
+		text-transform: uppercase;
+		color: var(--ink3);
+	}
+
+	.keys {
+		display: flex;
+		flex-direction: column;
+		gap: var(--sp-3);
+		margin: 0;
+	}
+
+	.keys div {
+		display: flex;
+		align-items: baseline;
+		gap: var(--sp-4);
+	}
+
+	.keys dt {
+		flex: none;
+		min-width: 52px;
+	}
+
+	.keys dd {
+		margin: 0;
+		font-size: var(--fs-sm);
+		line-height: var(--leading-body);
+		color: var(--ink2);
+	}
+
+	kbd {
+		padding: 1px 5px;
+		border: 1px solid var(--line);
+		border-bottom-width: 2px;
+		border-radius: 4px;
+		background: var(--panel2);
+		font-family: inherit;
+		font-size: var(--fs-xs);
+		font-weight: var(--fw-semibold);
+		color: var(--ink);
 	}
 </style>

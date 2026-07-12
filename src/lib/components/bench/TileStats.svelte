@@ -35,6 +35,21 @@
 		return `${deployT.toFixed(0)}s · ${alive} left`;
 	});
 
+	/**
+	 * What AT hears about the real-world run. The visible readout ticks every second — announcing
+	 * that firehose would be noise — so the live region speaks only when the run TURNS: deployed,
+	 * half-life latched, wiped out. Each phrase is stable once said, so each is said once.
+	 */
+	const announcement = $derived.by(() => {
+		const { deployed, extinctT, halfLife } = entry.stats;
+		if (!deployed) return '';
+		if (extinctT !== null)
+			return `${entry.config.name}: population wiped out after ${extinctT.toFixed(0)} seconds`;
+		if (halfLife !== null)
+			return `${entry.config.name}: half the population gone at ${halfLife.toFixed(0)} seconds`;
+		return `${entry.config.name}: deployed — the real-world run has started`;
+	});
+
 	// Stable identity: a new function each render would churn the Canvas attachment every frame.
 	const register = (render: () => void) => bench.painters.add(render);
 
@@ -78,6 +93,7 @@
 </div>
 
 <div class="row deploy">
+	<span class="visually-hidden" role="status">{announcement}</span>
 	<div class="deploy-stat">
 		<div class="deploy-label">Real-world run</div>
 		<div class="tabular" data-testid="deployment">{deployment}</div>

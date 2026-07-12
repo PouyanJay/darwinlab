@@ -22,7 +22,8 @@
 <div class="output">
 	<div class="head">
 		<span id="motor-turn">turn</span>
-		<b class="tabular" role="status" aria-labelledby="motor-turn">{turnLabel}</b>
+		<!-- aria-live off: these change every frame — findable status, never a firehose. -->
+		<b class="tabular" role="status" aria-live="off" aria-labelledby="motor-turn">{turnLabel}</b>
 	</div>
 	<div class="meter">
 		<Meter value={turn} origin="centre" />
@@ -32,7 +33,9 @@
 <div class="output">
 	<div class="head">
 		<span id="motor-thrust">thrust</span>
-		<b class="tabular" role="status" aria-labelledby="motor-thrust">{mind.thrust.toFixed(2)}</b>
+		<b class="tabular" role="status" aria-live="off" aria-labelledby="motor-thrust"
+			>{mind.thrust.toFixed(2)}</b
+		>
 	</div>
 	<div class="meter">
 		<Meter value={mind.thrust} />

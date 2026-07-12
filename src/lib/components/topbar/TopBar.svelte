@@ -58,7 +58,9 @@
 <header {@attach publishHeight}>
 	<div class="brand">
 		<LogoMark />
-		<span class="wordmark">Darwin Lab</span>
+		<!-- The page's h1: the bench has real h2s (dialogs, drawers), and a page whose headings
+		     start at level two reads as if its top is missing. -->
+		<h1 class="wordmark">Darwin Lab</h1>
 		<Chip variant="tag">live evolution</Chip>
 	</div>
 
@@ -143,6 +145,7 @@
 	}
 
 	.wordmark {
+		margin: 0; /* an h1 for the outline, not for h1's browser styling */
 		font-family: var(--font-display);
 		font-size: var(--fs-wordmark);
 		font-weight: var(--fw-semibold);
