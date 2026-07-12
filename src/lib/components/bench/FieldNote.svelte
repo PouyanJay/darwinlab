@@ -15,9 +15,9 @@
 		<b>A sense is worth exactly what the world makes it worth.</b> Watch the curves: knowing a
 		threat is near (Distance) buys almost nothing — it never tells you <i>which way</i> to go.
 		Knowing which way (Direction) is the leap. Then walls, then closing speed, each paying only
-		because this ocean holds a danger that sense alone can solve. Load the original ocean and watch
-		the same ladder collapse: there, a fish with every sense does <i>worse</i> than a blind one,
-		because an input the world ignores is just noise a brain has to overcome.
+		because this ocean holds a danger that sense alone can solve. Take those dangers away — speed
+		the shark up past what a fish can swim, and it no longer matters which way you flee — and the
+		same ladder collapses: an input the world ignores is just noise a brain has to overcome.
 		<span class="aside">
 			Real neuroevolution — nothing here is scripted, and every number was measured, not chosen.
 		</span>

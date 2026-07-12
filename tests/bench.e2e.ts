@@ -24,7 +24,8 @@ test('opens with the five-world sense ladder, already evolved', async ({ page })
 	const names = await tiles(page)
 		.locator('input[aria-label="world name"]')
 		.evaluateAll((fields) => fields.map((field) => (field as HTMLInputElement).value));
-	expect(names).toEqual(['Blind drift', 'Distance', 'Direction', 'Anticipation', 'Corner-wise']);
+	// walls BEFORE closing speed — the order the measurements put them in (see DEFAULT_WORLDS)
+	expect(names).toEqual(['Blind drift', 'Distance', 'Direction', 'Corner-wise', 'Full senses']);
 
 	expect(await page.getByTestId('generations').innerText()).toBe('15'); // prewarmed
 	for (const gen of await page.getByTestId('gen').allInnerTexts()) {
@@ -45,8 +46,8 @@ test('each world wears its own senses: the ladder is visible, not just claimed',
 	expect(await pressed(0)).toEqual([]); // Blind drift: no predator input at all
 	expect(await pressed(1)).toEqual(['dist']);
 	expect(await pressed(2)).toEqual(['dist', 'dir']);
-	expect(await pressed(3)).toEqual(['dist', 'dir', 'close']);
-	expect(await pressed(4)).toEqual(['dist', 'dir', 'close', 'walls']);
+	expect(await pressed(3)).toEqual(['dist', 'dir', 'walls']); // Corner-wise: walls, no closing
+	expect(await pressed(4)).toEqual(['dist', 'dir', 'close', 'walls']); // Full senses
 });
 
 test('a sense pill is a live ablation — it really cuts the input neuron', async ({ page }) => {

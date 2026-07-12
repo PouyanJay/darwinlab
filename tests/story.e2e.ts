@@ -69,8 +69,8 @@ test('THE TOUR: it auto-advances through every scene and ends PAUSED on the last
 	for (const [index, name] of [
 		[2, 'Distance'],
 		[3, 'Direction'],
-		[4, 'Anticipation'],
-		[5, 'Corner-wise']
+		[4, 'Corner-wise'],
+		[5, 'Full senses']
 	] as const) {
 		await expect(counter(page)).toContainText(`scene ${index} of 5`, { timeout: 60_000 });
 		await expect(caption(page)).toHaveText(name);
@@ -164,7 +164,7 @@ test('the bench behind the film is INERT — Tab cannot reach a control nobody c
 test('a segment is a jump: the progress bar is the table of contents', async ({ page }) => {
 	await page.getByRole('button', { name: 'scene 5' }).click();
 
-	await expect(caption(page)).toHaveText('Corner-wise');
+	await expect(caption(page)).toHaveText('Full senses');
 	await expect(story(page).getByRole('button', { name: 'next scene' })).toBeDisabled();
 });
 
@@ -174,21 +174,30 @@ test('nothing here is a recording: a fish can be stopped and read mid-scene', as
 	const tank = story(page).getByRole('application', { name: /tank/i });
 	const box = (await tank.boundingBox())!;
 
-	// find a fish by its colour and click it — the same pickCreature path a presenter's click takes
-	const fish = await tank.evaluate((el: HTMLCanvasElement) => {
-		const { data, width, height } = el.getContext('2d')!.getImageData(0, 0, el.width, el.height);
-		for (let i = 0; i < data.length; i += 4) {
-			const [r, g, b] = [data[i], data[i + 1], data[i + 2]];
-			if (b > 150 && r < 110 && g < 110) {
-				const pixel = i / 4;
-				return {
-					x: (pixel % width) / (width / el.clientWidth),
-					y: Math.floor(pixel / width) / (height / el.clientHeight)
-				};
+	// Find a fish by its colour and click it — the same pickCreature path a presenter's click takes.
+	//
+	// POLLED, not scanned once: the stage paints on the sim loop, and a single scan taken before the
+	// scene's first frame lands finds an empty canvas and reports "no fish in the tank" — which is a
+	// lie about the product and a truth about the test's timing. It only ever bit under a loaded
+	// suite, which is exactly when a flake is least welcome.
+	const findFish = () =>
+		tank.evaluate((el: HTMLCanvasElement) => {
+			const { data, width, height } = el.getContext('2d')!.getImageData(0, 0, el.width, el.height);
+			for (let i = 0; i < data.length; i += 4) {
+				const [r, g, b] = [data[i], data[i + 1], data[i + 2]];
+				if (b > 150 && r < 110 && g < 110) {
+					const pixel = i / 4;
+					return {
+						x: (pixel % width) / (width / el.clientWidth),
+						y: Math.floor(pixel / width) / (height / el.clientHeight)
+					};
+				}
 			}
-		}
-		return null;
-	});
+			return null;
+		});
+
+	await expect.poll(async () => (await findFish()) !== null, { timeout: 15_000 }).toBe(true); // the scene has painted, and there are fish in it
+	const fish = await findFish();
 	expect(fish, 'no fish found in the tank').not.toBeNull();
 
 	await page.mouse.click(box.x + fish!.x, box.y + fish!.y);
