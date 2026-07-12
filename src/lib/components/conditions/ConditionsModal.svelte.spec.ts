@@ -57,6 +57,55 @@ describe('ConditionsModal', () => {
 		expect(world.fish.length).toBe(22); // applyCfg already added them
 	});
 
+	it('the hunger ramp is OFF, and its knobs stay hidden until it is switched on', async () => {
+		const { world } = open();
+		expect(world.cfg.persistence).toBe(false); // the bench's default, and a product decision
+
+		await expect
+			.element(page.getByRole('slider', { name: /how fast hunger builds/i }))
+			.not.toBeInTheDocument();
+
+		await page.getByRole('checkbox', { name: /escalate while hungry/i }).click();
+
+		// the ENGINE has it now — not merely the reactive mirror the dialog binds to
+		expect(world.cfg.persistence).toBe(true);
+		// …and it opens on the reference engine's own ramp rather than on zeroes, so the three
+		// sliders describe a shark that would actually hunt
+		expect(world.cfg.persistRamp).toBe(0.04);
+		expect(world.cfg.persistMaxBoost).toBe(0.85);
+		expect(world.cfg.persistMaxJaw).toBe(20);
+		await expect
+			.element(page.getByRole('slider', { name: /how fast hunger builds/i }))
+			.toBeInTheDocument();
+	});
+
+	it('the ramp knobs write into the live world', async () => {
+		const { world } = open();
+		await page.getByRole('checkbox', { name: /escalate while hungry/i }).click();
+
+		const jaw = page.getByRole('slider', { name: /widest bite/i }).element();
+		(jaw as HTMLInputElement).value = '40';
+		jaw.dispatchEvent(new Event('input', { bubbles: true }));
+
+		expect(world.cfg.persistMaxJaw).toBe(40);
+	});
+
+	it('says when the shark has become too fast for any sense to matter', async () => {
+		// The most consequential number on the bench: a fish tops out at 176 px/s, so above a
+		// ~0.88× cruise nothing can outswim the shark — knowing which way to flee buys a delay and
+		// never an escape, and every sense stops paying for itself. The dialog has to SAY that,
+		// because a slider that silently switches off the whole point of the lab is a trap.
+		open();
+		const speed = page.getByRole('slider', { name: /predator speed/i }).element();
+
+		await expect.element(page.getByText(/can actually get away/i)).toBeInTheDocument();
+
+		(speed as HTMLInputElement).value = '1.4';
+		speed.dispatchEvent(new Event('input', { bubbles: true }));
+
+		await expect.element(page.getByText(/no sense pays/i)).toBeInTheDocument();
+	});
+
 	it('a sense checkbox cuts the input neuron for every brain in the world', async () => {
 		const { world } = open();
 		expect(world.cfg.senses.dir).toBe(true);

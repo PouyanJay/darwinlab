@@ -114,6 +114,11 @@ export class WorldConfigView {
 	bw = $state(0);
 	bh = $state(0);
 	predSpeed = $state(1);
+	/** The shark's hunger ramp — off, it is the same hunter all run long. */
+	persistence = $state(false);
+	persistRamp = $state(0.04);
+	persistMaxBoost = $state(0.85);
+	persistMaxJaw = $state(20);
 	vision = $state(0);
 	mutation = $state(0);
 	caption = $state('');
@@ -127,6 +132,11 @@ export class WorldConfigView {
 		this.bw = cfg.bw;
 		this.bh = cfg.bh;
 		this.predSpeed = cfg.predSpeed;
+		// the engine's own fallbacks, so the sliders read the ramp the world would actually use
+		this.persistence = cfg.persistence ?? true;
+		this.persistRamp = cfg.persistRamp ?? 0.04;
+		this.persistMaxBoost = cfg.persistMaxBoost ?? 0.85;
+		this.persistMaxJaw = cfg.persistMaxJaw ?? 20;
 		this.vision = cfg.vision;
 		this.mutation = cfg.mutation;
 		this.caption = cfg.caption;

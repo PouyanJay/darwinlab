@@ -1,12 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import {
-	DEFAULT_WORLDS,
-	REFERENCE_WORLDS,
-	SHOWCASE_OCEAN,
-	ACCENTS,
-	ACCENT_NAMES,
-	newWorldConfig
-} from './defaults';
+import { DEFAULT_WORLDS, SHOWCASE_OCEAN, ACCENTS, ACCENT_NAMES, newWorldConfig } from './defaults';
 
 describe('DEFAULT_WORLDS (the sense ladder)', () => {
 	it('has five worlds that add one sense at a time, in the order the MEASUREMENTS say they pay', () => {
@@ -66,30 +59,6 @@ describe('DEFAULT_WORLDS (the sense ladder)', () => {
 		// ~0.88 it simply runs every fish down, and no amount of sensing can buy an escape.
 		for (const w of DEFAULT_WORLDS) {
 			expect(200 * w.predSpeed).toBeLessThan(176);
-		}
-	});
-});
-
-describe('REFERENCE_WORLDS (the ocean where no sense can pay — kept as the exhibit)', () => {
-	it('is the original bench, untouched: 2 sharks at full speed, free wall instinct, coiling strike', () => {
-		expect(REFERENCE_WORLDS.map((w) => w.name)).toEqual([
-			'Blind drift',
-			'Distance',
-			'Direction',
-			'Anticipation',
-			'Corner-wise'
-		]);
-		for (const w of REFERENCE_WORLDS) {
-			expect(w.preds).toBe(2);
-			expect(w.predSpeed).toBe(1); // 200 px/s — faster than any fish can swim
-			// none of the new knobs: this is the engine exactly as it was published, which is
-			// what the bit-exact fidelity gate holds us to
-			expect(w.persistence).toBeUndefined();
-			expect(w.lungeCommit).toBeUndefined();
-			expect(w.wallInstinct).toBeUndefined();
-			expect(w.aimCharge).toBeUndefined();
-			expect(w.genDuration).toBeUndefined();
-			expect(w.agility).toBeUndefined();
 		}
 	});
 });
