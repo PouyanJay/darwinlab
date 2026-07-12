@@ -66,4 +66,12 @@
 		background: color-mix(in srgb, var(--pill-accent) 14%, transparent);
 		color: var(--pill-accent);
 	}
+
+	/* A dense pill row cannot take a full 44px without its targets overlapping — mis-taps are
+	   worse than small targets — so on touch the pills grow to a comfortable middle instead. */
+	@media (pointer: coarse) {
+		.pill {
+			padding: 9px var(--sp-4);
+		}
+	}
 </style>

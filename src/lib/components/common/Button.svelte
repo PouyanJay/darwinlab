@@ -121,4 +121,26 @@
 		border-radius: var(--radius-sm);
 		font-size: var(--fs-md);
 	}
+
+	/* A fingertip is not a cursor: when the pointer is coarse, every button offers a full-size
+	   target. Visual density is a desktop luxury. */
+	@media (pointer: coarse) {
+		.btn {
+			min-height: 44px;
+		}
+
+		.icon {
+			width: 44px;
+			height: 44px;
+		}
+
+		.icon.sm {
+			width: 40px;
+			height: 40px;
+		}
+
+		.sm:not(.icon) {
+			min-height: 40px;
+		}
+	}
 </style>

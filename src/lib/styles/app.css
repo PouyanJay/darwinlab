@@ -73,6 +73,16 @@ select {
 	color: var(--ink3);
 }
 
+/* Every control opts out of double-tap-to-zoom, so a tap acts immediately. */
+button,
+a,
+input,
+select,
+textarea,
+[role='radio'] {
+	touch-action: manipulation;
+}
+
 /* Visible to screen readers, invisible on screen. */
 .visually-hidden {
 	position: absolute;

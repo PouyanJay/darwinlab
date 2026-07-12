@@ -63,6 +63,13 @@
 		flex: none;
 	}
 
+	/* Stacked under the tank on a narrow stage (see StoryMode) — the fixed rail width goes. */
+	@media (max-width: 820px) {
+		.rail {
+			width: auto;
+		}
+	}
+
 	h2,
 	.eyebrow {
 		margin: 0;

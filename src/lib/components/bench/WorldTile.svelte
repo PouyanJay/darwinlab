@@ -163,6 +163,13 @@
 		opacity: 1;
 	}
 
+	/* Touch cannot hover either: for a coarse pointer the actions are simply visible. */
+	@media (pointer: coarse) {
+		.actions {
+			opacity: 1;
+		}
+	}
+
 	.chips {
 		display: flex;
 		flex-wrap: wrap;

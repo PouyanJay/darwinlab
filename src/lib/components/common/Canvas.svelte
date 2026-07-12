@@ -115,5 +115,6 @@
 		display: block;
 		width: 100%;
 		height: 100%;
+		touch-action: manipulation; /* a tap picks a creature — never wait out a double-tap zoom */
 	}
 </style>

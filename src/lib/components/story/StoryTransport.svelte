@@ -165,4 +165,19 @@
 		height: 100%;
 		border-radius: 3px;
 	}
+
+	@media (pointer: coarse) {
+		.round {
+			width: 44px;
+			height: 44px;
+		}
+
+		/* The bar still DRAWS 5px tall — background-clip keeps the track inside the content box —
+		   but the button around it grows into something a thumb can actually land on. */
+		.segment {
+			height: 21px;
+			padding-block: 8px;
+			background-clip: content-box;
+		}
+	}
 </style>

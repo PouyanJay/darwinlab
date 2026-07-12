@@ -97,4 +97,12 @@
 		font-size: var(--fs-stat);
 		font-weight: var(--fw-semibold);
 	}
+
+	/* Full-size − / + for a fingertip. */
+	@media (pointer: coarse) {
+		button {
+			width: 42px;
+			height: 42px;
+		}
+	}
 </style>

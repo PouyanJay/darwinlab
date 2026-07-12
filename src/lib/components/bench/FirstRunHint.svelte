@@ -78,4 +78,12 @@
 			bottom: 54px;
 		}
 	}
+
+	/* The dismiss must be tappable without hitting the hint itself. */
+	@media (pointer: coarse) {
+		button {
+			width: 40px;
+			height: 40px;
+		}
+	}
 </style>

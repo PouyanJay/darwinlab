@@ -284,4 +284,12 @@
 		outline: var(--focus-ring);
 		outline-offset: var(--focus-offset);
 	}
+
+	/* A fingertip-sized colour dot. */
+	@media (pointer: coarse) {
+		.swatch {
+			width: 34px;
+			height: 34px;
+		}
+	}
 </style>
