@@ -58,8 +58,10 @@
 <header {@attach publishHeight}>
 	<div class="brand">
 		<LogoMark />
-		<span class="wordmark">Darwin Lab</span>
-		<Chip variant="tag">live evolution</Chip>
+		<!-- The page's h1: the bench has real h2s (dialogs, drawers), and a page whose headings
+		     start at level two reads as if its top is missing. -->
+		<h1 class="wordmark">Darwin Lab</h1>
+		<Chip variant="tag" class="live-tag">live evolution</Chip>
 	</div>
 
 	<span class="divider" aria-hidden="true"></span>
@@ -76,7 +78,7 @@
 	<p class="readout">
 		<span class="glyph" aria-hidden="true">⟳</span>
 		<b class="tabular" data-testid="generations">{bench.generationsEvolved}</b>
-		<span>generations evolved</span>
+		<span class="readout-label">generations evolved</span>
 	</p>
 
 	<!-- No aria-label on the buttons that carry visible text: an aria-label would REPLACE the label a
@@ -143,6 +145,7 @@
 	}
 
 	.wordmark {
+		margin: 0; /* an h1 for the outline, not for h1's browser styling */
 		font-family: var(--font-display);
 		font-size: var(--fs-wordmark);
 		font-weight: var(--fw-semibold);
@@ -220,6 +223,29 @@
 		.lab,
 		.divider {
 			display: none;
+		}
+	}
+
+	/* Phone: the bar keeps every CONTROL and sheds the prose. The wrap to a second row is the
+	   header's flex-wrap doing its job — --topbar-height tracks the extra row automatically. */
+	@media (max-width: 640px) {
+		header {
+			padding-inline: var(--sp-6);
+		}
+
+		header :global(.live-tag) {
+			display: none;
+		}
+
+		/* The count keeps its number on screen; the label folds into the accessibility tree
+		   (clipped, not display:none) so AT still hears "generations evolved". */
+		.readout-label {
+			position: absolute;
+			width: 1px;
+			height: 1px;
+			overflow: hidden;
+			clip-path: inset(50%);
+			white-space: nowrap;
 		}
 	}
 </style>

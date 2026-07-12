@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { waitForPrewarm } from './helpers';
 
 /**
  * The Phase 6 gate: a real evolved mind, inspected in the real app.
@@ -25,7 +26,7 @@ const brainprint = (page: Page) =>
 
 test.beforeEach(async ({ page }) => {
 	await page.goto('/');
-	await expect(page.getByTestId('turbo')).toBeHidden({ timeout: 90_000 });
+	await waitForPrewarm(page);
 });
 
 test('★ Champion opens a live mind, and the bench keeps running behind it', async ({ page }) => {
@@ -116,7 +117,7 @@ test('clicking the shark says there is no brain, by design', async ({ page }) =>
 	 * happens to be.
 	 */
 	await page.getByRole('button', { name: 'Pause' }).click();
-	const tank = tile(page, 2).getByRole('img', { name: /tank/i });
+	const tank = tile(page, 2).getByRole('application', { name: /tank/i });
 	// mouse.click() takes VIEWPORT coordinates and, unlike locator.click(), does not scroll for you.
 	// This tile sits below the fold at the default viewport, so the canvas has to be brought up first
 	// or the click lands outside the window entirely and picks nothing.

@@ -57,3 +57,35 @@ describe('TileStats — the real-world run', () => {
 		expect(page.getByTestId('survival').element().textContent).toBe('36%');
 	});
 });
+
+describe('TileStats — what a screen reader hears about the run', () => {
+	/**
+	 * The visible readout ticks every second; the LIVE REGION must not. It speaks only at the
+	 * moments the run turns, in phrases that are stable once said — so each is announced once.
+	 */
+	const spoken = () => page.getByRole('status').element().textContent;
+
+	it('says nothing while the world is still evolving', () => {
+		render(TileStats, { entry: entryWith({ deployed: false, alive: 14 }) });
+		expect(spoken()).toBe('');
+	});
+
+	it('announces the start of the run — without the ticking seconds', () => {
+		render(TileStats, { entry: entryWith({ deployed: true, deployT: 8.6, alive: 17 }) });
+		expect(spoken()).toBe('Direction: deployed — the real-world run has started');
+	});
+
+	it('announces the half-life the moment it latches, and holds that phrase', () => {
+		render(TileStats, {
+			entry: entryWith({ deployed: true, deployT: 30, halfLife: 12.4, alive: 6 })
+		});
+		expect(spoken()).toBe('Direction: half the population gone at 12 seconds');
+	});
+
+	it('announces extinction', () => {
+		render(TileStats, {
+			entry: entryWith({ deployed: true, deployT: 61, halfLife: 12.4, extinctT: 47.8, alive: 0 })
+		});
+		expect(spoken()).toBe('Direction: population wiped out after 48 seconds');
+	});
+});

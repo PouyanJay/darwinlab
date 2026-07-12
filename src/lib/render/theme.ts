@@ -64,7 +64,7 @@ export const THEMES: Record<ThemeName, ThemePalette> = {
 		inhibit: '#e8604c',
 		gold: '#d8a13a',
 		ink: '#1d2230',
-		inkSoft: 'rgba(29,34,48,.55)',
+		inkSoft: 'rgba(29,34,48,.72)', // mirrors --ink2 — deepened with it for the Phase 9 AA gate
 		pill: 'rgba(253,253,248,.92)',
 		shadow: 'rgba(30,45,35,.09)'
 	},
@@ -88,7 +88,7 @@ export const THEMES: Record<ThemeName, ThemePalette> = {
 		inhibit: '#ff2d9c',
 		gold: '#ffd166',
 		ink: '#f5f5fa',
-		inkSoft: 'rgba(245,245,250,.6)',
+		inkSoft: 'rgba(245,245,250,.68)', // mirrors --ink2 — deepened with it for the Phase 9 AA gate
 		pill: 'rgba(12,12,17,.88)',
 		shadow: 'rgba(0,0,0,.4)'
 	}

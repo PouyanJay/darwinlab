@@ -35,6 +35,11 @@ export interface DrawBrainOpts {
 	reducedMotion?: boolean;
 }
 
+// The resting net's activations — all zero, shared and never written, so painting a fish-less
+// brain 60×/s doesn't allocate two arrays a frame.
+const SILENT_INPUTS: readonly number[] = new Array<number>(NIN).fill(0);
+const SILENT_HIDDEN: readonly number[] = new Array<number>(NHID).fill(0);
+
 export function drawBrain(
 	ctx: CanvasRenderingContext2D,
 	W: number,
@@ -57,8 +62,8 @@ export function drawBrain(
 		}
 	}
 
-	const x = sense ? sense.x : new Array<number>(NIN).fill(0);
-	const h = sense ? sense.h : new Array<number>(NHID).fill(0);
+	const x = sense ? sense.x : SILENT_INPUTS;
+	const h = sense ? sense.h : SILENT_HIDDEN;
 	const g = sense ? sense.genome : null;
 	const turn = sense ? sense.turn : 0;
 	const thrust = sense ? sense.thrust : 0;

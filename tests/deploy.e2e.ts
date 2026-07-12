@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { waitForPrewarm } from './helpers';
 
 /**
  * The Phase 7 gate: the second act, driven in the real app.
@@ -24,7 +25,7 @@ async function deployAt(page: Page, generation: number) {
 
 test.beforeEach(async ({ page }) => {
 	await page.goto('/');
-	await expect(page.getByTestId('turbo')).toBeHidden({ timeout: 90_000 }); // prewarmed to gen 15
+	await waitForPrewarm(page);
 });
 
 test('the bench opens with a training horizon, and the Train button names it', async ({ page }) => {

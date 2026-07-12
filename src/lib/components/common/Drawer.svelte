@@ -14,6 +14,7 @@
   because the bench is still usable.
 -->
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import type { Snippet } from 'svelte';
 	import Button from './Button.svelte';
 
@@ -25,18 +26,30 @@
 		subtitle?: string;
 		/** A pulsing dot next to the title — "this is live, not a snapshot". */
 		live?: boolean;
+		/**
+		 * Whether opening moves focus into the panel (and returns it on close). The default; the
+		 * caller passes false when the open is a SIDE EFFECT of something mid-flight — the tank's
+		 * keyboard walk opens the inspector, and stealing focus would end the walk one step in.
+		 * An explicit prop, not an inference from the invoker: the caller knows what opened it.
+		 */
+		takeFocus?: boolean;
 	}
 
-	let { open, onclose, title, children, subtitle, live = false }: Props = $props();
+	let { open, onclose, title, children, subtitle, live = false, takeFocus = true }: Props =
+		$props();
 
 	let panel = $state<HTMLElement>();
 
 	$effect(() => {
 		if (!open || !panel) return;
+		// untracked: the decision is made when the drawer OPENS. If the selection later changes
+		// kind while it stays open, re-running this would yank focus back to a stale invoker.
+		if (!untrack(() => takeFocus)) return;
 
 		// Effects run after the DOM update, and nothing has stolen focus yet, so this is still the
 		// element the user was on when they opened the drawer.
 		const invoker = document.activeElement as HTMLElement | null;
+
 		panel.focus();
 
 		return () => {
@@ -69,13 +82,15 @@
 		tabindex="-1"
 		class="drawer"
 	>
-		<header>
+		<!-- a div, not a <header>: an html header outside main/section is a BANNER landmark, and the
+		     page already has one — the top bar. (axe: landmark-no-duplicate-banner) -->
+		<div class="head">
 			{#if live}
 				<span class="dot" aria-hidden="true"></span>
 			{/if}
 			<h2>{title}</h2>
 			<Button variant="icon" aria-label="close inspector" onclick={onclose}>✕</Button>
-		</header>
+		</div>
 		{#if subtitle}
 			<p class="subtitle">{subtitle}</p>
 		{/if}
@@ -102,6 +117,25 @@
 		animation: slide-in-right var(--dur-enter) var(--ease) both;
 	}
 
+	/* On a phone the inset side panel becomes a full-width overlay rising from the bottom edge —
+	   still non-modal, still over a running bench, just no longer pretending there is a "side". */
+	@media (max-width: 560px) {
+		.drawer {
+			left: 0;
+			right: 0;
+			bottom: 0;
+			width: auto;
+			max-width: none;
+			/* the footer disclaimer deliberately outranks every panel (z-footer) — leave its line
+			   of the viewport to it rather than letting it sit on the drawer's own legend */
+			padding-bottom: 46px;
+			border-left: none;
+			border-right: none;
+			border-bottom: none;
+			border-radius: var(--radius-card) var(--radius-card) 0 0;
+		}
+	}
+
 	/* The drawer takes focus on open; a ring around the whole panel would be noise, and the
 	   slide-in is what tells a sighted user where they now are. Keyboard focus then moves on to
 	   the close button, which does show its ring. */
@@ -109,7 +143,7 @@
 		outline: none;
 	}
 
-	header {
+	.head {
 		display: flex;
 		align-items: center;
 		gap: var(--sp-3);

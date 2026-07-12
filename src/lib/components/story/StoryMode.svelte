@@ -60,6 +60,11 @@
 		const takesSpace = target?.closest('button, a, [role="radio"], input, select, textarea');
 
 		if (event.key === 'Escape') {
+			// An open inspector owns this Esc (its own window listener closes it in this same
+			// dispatch — stopPropagation cannot help between two listeners on one target). The
+			// film only leaves on the NEXT press, or the inspector and the film would tear down
+			// together in one keystroke.
+			if (bench.selection) return;
 			bench.exitStory();
 		} else if (event.key === 'ArrowRight' && !takesArrows) {
 			story.next();
@@ -103,8 +108,9 @@
 				<div class="tank">
 					<Tank
 						entry={story.entry}
-						detail="cinematic"
+						detail={bench.detail}
 						big
+						group="story"
 						onselect={(picked) => bench.select(story.entry!.id, picked)}
 					/>
 				</div>
@@ -162,8 +168,9 @@
 
 	header {
 		display: flex;
+		flex-wrap: wrap; /* the honesty line WRAPS on a narrow stage — it never disappears */
 		align-items: center;
-		gap: 14px;
+		gap: var(--sp-3) 14px;
 		padding: var(--sp-5) 22px;
 	}
 
@@ -252,5 +259,39 @@
 		line-height: 1.5;
 		text-wrap: pretty;
 		color: var(--story-ink2);
+	}
+
+	/* A phone's film: the tank leads, the rails follow beneath it, and the whole stage scrolls
+	   if it must. Two fixed 196px rails beside a tank cannot share 375 points of width. */
+	@media (max-width: 820px) {
+		.stage {
+			flex-direction: column;
+			gap: var(--sp-5);
+			padding: 0 var(--sp-6);
+			overflow-y: auto;
+		}
+
+		.tank {
+			order: -1; /* the film opens with the water, not with a list of inputs */
+			flex: none;
+			height: 42vh;
+			min-height: 200px;
+		}
+
+		header {
+			padding: var(--sp-4) var(--sp-6);
+		}
+
+		footer {
+			padding: 8px var(--sp-6) var(--sp-6);
+		}
+
+		.number {
+			font-size: 30px;
+		}
+
+		h1 {
+			font-size: 19px;
+		}
 	}
 </style>

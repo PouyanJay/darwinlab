@@ -67,6 +67,20 @@ describe('createSimLoop', () => {
 		expect(seen[0]).toBe(MAX_FRAME_SECONDS); // clamped, not 30
 	});
 
+	it('reports the raw frame gap alongside the clamped elapsed (the governor needs the truth)', () => {
+		const c = clock();
+		const seen: Array<[number, number]> = [];
+		const loop = createSimLoop({ onFrame: (e, raw) => seen.push([e, raw]), now: c.now });
+
+		loop.start();
+		c.advance(500); // one genuinely slow frame
+		vi.advanceTimersByTime(16);
+		loop.stop();
+
+		expect(seen[0][0]).toBe(MAX_FRAME_SECONDS); // physics steps on the clamped value
+		expect(seen[0][1]).toBeCloseTo(0.5, 6); // the governor sees what really happened
+	});
+
 	it('stops cleanly and start is idempotent (never stacks two timer chains)', () => {
 		const c = clock();
 		const onFrame = vi.fn(() => c.advance(16));

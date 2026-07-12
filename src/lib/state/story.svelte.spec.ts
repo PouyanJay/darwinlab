@@ -87,6 +87,23 @@ describe('story — the film runs itself', () => {
 		expect(story.elapsed).toBeLessThan(SCENE_SECONDS); // and a fresh clock
 	});
 
+	it('a jump to the scene already on screen is NOT a jump — the held film keeps its world', () => {
+		openBench(2);
+		bench.playStory();
+		const first = story.entry!.world;
+
+		story.goTo(story.index); // clicking the segment already filling
+		story.previous(); // one back from the first scene — clamped onto itself
+		expect(story.entry!.world).toBe(first); // no silent re-cut
+
+		story.goTo(1);
+		const second = story.entry!.world;
+		expect(second).not.toBe(first); // a real jump still cuts fresh
+
+		story.next(); // one past the last scene — clamped onto itself
+		expect(story.entry!.world).toBe(second);
+	});
+
 	it('ENDS PAUSED on the last scene rather than looping or going black', () => {
 		openBench(2);
 		bench.playStory();

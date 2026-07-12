@@ -99,4 +99,11 @@
 		color: var(--ink);
 		box-shadow: var(--shadow-segment);
 	}
+
+	/* Taller segments for a fingertip. */
+	@media (pointer: coarse) {
+		button {
+			padding: 10px var(--sp-5);
+		}
+	}
 </style>

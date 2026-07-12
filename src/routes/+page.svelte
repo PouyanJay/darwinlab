@@ -11,15 +11,26 @@
 	import TopBar from '$lib/components/topbar/TopBar.svelte';
 	import TurboPill from '$lib/components/topbar/TurboPill.svelte';
 	import FieldNote from '$lib/components/bench/FieldNote.svelte';
+	import FirstRunHint from '$lib/components/bench/FirstRunHint.svelte';
 	import WorldTile from '$lib/components/bench/WorldTile.svelte';
 	import ConditionsModal from '$lib/components/conditions/ConditionsModal.svelte';
 	import BrainInspector from '$lib/components/inspector/BrainInspector.svelte';
 	import StoryMode from '$lib/components/story/StoryMode.svelte';
 	import FooterPill from '$lib/components/common/FooterPill.svelte';
-	import { bench, story } from '$lib/state';
+	import { bench, story, theme, prefersReducedMotion } from '$lib/state';
 	import { DEFAULT_WORLDS, newWorldConfig, MAX_GENERATIONS_DEFAULT } from '$lib/engine';
 
 	const PREWARM_GENERATIONS = 15;
+
+	// A paused bench repaints only on demand (see bench.requestPaint) — but the palette and the
+	// reduced-motion flag change what the pixels look like WITHOUT going through the store, so
+	// their flips owe the canvases one repaint. Reading them is what subscribes this effect;
+	// `void` marks them as read-for-tracking only.
+	$effect(() => {
+		void theme.name;
+		void prefersReducedMotion();
+		bench.requestPaint();
+	});
 
 	onMount(() => {
 		bench.init({
@@ -102,6 +113,7 @@
 	{/if}
 
 	<FooterPill />
+	<FirstRunHint />
 </div>
 
 <!-- OUTSIDE the app, deliberately: the app above is `inert` while a film plays, and a takeover that
@@ -122,7 +134,9 @@
 	main {
 		flex: 1;
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+		/* min(450px, 100%): the tile minimum yields when the CONTAINER is the narrower party,
+		   so a phone gets one fitted column instead of a 450px track and a horizontal scrollbar. */
+		grid-template-columns: repeat(auto-fit, minmax(min(450px, 100%), 1fr));
 		gap: var(--sp-7);
 		align-content: start;
 		padding: var(--sp-7) var(--sp-8) 78px; /* the footer pill sits in that bottom margin */

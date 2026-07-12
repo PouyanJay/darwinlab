@@ -39,7 +39,16 @@
 	);
 </script>
 
-<Drawer open live={fish} {title} {subtitle} onclose={() => bench.clearSelection()}>
+<!-- takeFocus: a selection made by the tank's keyboard walk keeps the walker's focus — a click
+     or the ★ Champion button still moves the reader into the panel, announcement and all. -->
+<Drawer
+	open
+	live={fish}
+	{title}
+	{subtitle}
+	takeFocus={!bench.walkSelection}
+	onclose={() => bench.clearSelection()}
+>
 	{#if fish}
 		<div class="stats">
 			<div class="stat">
@@ -99,7 +108,7 @@
 
 	/* The champion's time is the bar this fish is measured against, so it wears the champion's gold. */
 	.gold {
-		color: var(--gold);
+		color: var(--gold-ink); /* gold AS TEXT — see tokens.css */
 	}
 
 	.section {

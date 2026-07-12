@@ -41,6 +41,7 @@ import type { World, WorldConfig, Senses, Fish, Predator, NumericCondition } fro
 import type { Rng } from '../engine';
 import type { Picked } from '../render';
 import { subSteps, turboSlice } from '../sim/loop';
+import { DetailGovernor } from '../sim/governor';
 import { Playback, type Speed } from './playback.svelte';
 import { PainterRegistry } from './painters';
 import { WorldStats, WorldConfigView, MindView, makeEntry, type WorldEntry } from './views.svelte';
@@ -113,6 +114,20 @@ class BenchStore {
 	 * it is always 0 — and quietly broken the moment Phase 7 starts driving it.
 	 */
 	#maxGenerations = $state(0);
+	/**
+	 * The story stage's render detail — 'cinematic' until this machine proves it can't afford it.
+	 * `$state` because the stage binds to it and must re-render the frame the governor flips it.
+	 */
+	#detail = $state<'cinematic' | 'performance'>('cinematic');
+	/** One repaint owed outside the sim advancing — set by every method that changes pixels. */
+	#needsPaint = false;
+	/**
+	 * True when the current selection was made by the tank's keyboard cycler. The inspector reads
+	 * this to leave the walker's focus alone — a walk is not a click, and stealing focus on the
+	 * first arrow-press would end it one creature in. `$state` because the drawer binds to it.
+	 */
+	#walkSelection = $state(false);
+	#governor = new DetailGovernor();
 	#nextId = 0;
 	#accentCursor = 0;
 	/** Cached raw worlds for the turbo path, so training allocates nothing per frame. */
@@ -133,17 +148,24 @@ class BenchStore {
 	get maxGenerations(): number {
 		return this.#maxGenerations;
 	}
+	get detail(): 'cinematic' | 'performance' {
+		return this.#detail;
+	}
+	get walkSelection(): boolean {
+		return this.#walkSelection;
+	}
 
 	init({ configs, prewarmGenerations = 0, maxGenerations = 0, rng }: BenchInit): void {
 		this.setMaxGenerations(maxGenerations); // the same door every other caller uses, clamp and all
 		this.#rng = rng;
 		this.#setWorlds(configs.map((cfg) => this.#create(structuredClone(cfg))));
 		if (prewarmGenerations > 0) this.playback.requestTraining(prewarmGenerations);
-		this.playback.start((elapsed) => this.tick(elapsed));
+		this.playback.start((elapsed, frameSeconds) => this.tick(elapsed, frameSeconds));
 	}
 
 	/** Tear down completely — every field returns to its construction default, no state survives. */
 	destroy(): void {
+		story.exit(); // the film is composed from bench worlds — it cannot outlive them
 		this.playback.reset();
 		this.painters.clear();
 		this.worlds = [];
@@ -153,6 +175,10 @@ class BenchStore {
 		this.conditionsWorldId = null;
 		this.#rng = undefined;
 		this.#maxGenerations = 0;
+		this.#detail = 'cinematic';
+		this.#needsPaint = false;
+		this.#walkSelection = false;
+		this.#governor = new DetailGovernor();
 		this.#nextId = 0;
 		this.#accentCursor = 0;
 	}
@@ -182,6 +208,7 @@ class BenchStore {
 	setMaxGenerations(gen: number): void {
 		this.#maxGenerations = clamp(Math.round(gen), MAX_GENERATIONS);
 		for (const world of this.#rawWorlds) world.maxGen = this.#maxGenerations;
+		this.requestPaint(); // lowering it can deploy a world on the spot
 	}
 
 	// ---- world CRUD (all sim mutation funnels through engine fns) ----
@@ -224,6 +251,7 @@ class BenchStore {
 	/** Restart evolution from random brains. */
 	resetWorld(id: string): void {
 		engineResetWorld(this.entry(id).world);
+		this.requestPaint();
 	}
 
 	/**
@@ -304,13 +332,16 @@ class BenchStore {
 	 */
 	setHover(id: string, target: Fish | Predator | null): void {
 		const entry = this.find(id);
-		if (entry) entry.world.hover = target;
+		if (!entry || entry.world.hover === target) return; // mousemove fires at pointer rate —
+		entry.world.hover = target; // an unchanged hover must not wake a paused bench's canvases
+		this.requestPaint();
 	}
 
 	// ---- selection (one inspector, so one selection across the bench) ----
 
 	/** Select what the pointer landed on — a fish, the shark, or (on empty water) nothing. */
 	select(id: string, picked: Picked | null): void {
+		this.#walkSelection = false; // a pick is a pointer act unless cycleSelection says otherwise
 		this.#deselectEverywhere();
 		if (!picked) {
 			this.selection = null;
@@ -327,6 +358,7 @@ class BenchStore {
 	selectChampion(id: string): void {
 		const best = bestAliveFish(this.entry(id).world);
 		if (!best) return; // nothing alive to watch — leave the current selection alone
+		this.#walkSelection = false;
 		this.#deselectEverywhere();
 		this.#watch(id, best, true);
 	}
@@ -334,6 +366,49 @@ class BenchStore {
 	clearSelection(): void {
 		this.#deselectEverywhere();
 		this.selection = null;
+	}
+
+	/**
+	 * Move the selection to the next or previous creature in a world — the keyboard's click.
+	 *
+	 * The walk is the fish as the engine lists them, then ONE stop for the predator: sharks are
+	 * identical rule-machines and the store records a predator selection without saying which,
+	 * so as a selection they are a single creature however many are hunting. From nothing the
+	 * walk enters at whichever end the direction points at, and it wraps. A cycled-to fish is
+	 * HAND-PICKED (`followsChampion: false`): the user pointed at a particular creature, they
+	 * just did it with keys.
+	 */
+	cycleSelection(id: string, direction: 1 | -1): void {
+		const { world } = this.entry(id);
+		const stops: (Fish | Predator)[] = world.preds.length
+			? [...world.fish, world.preds[0]]
+			: [...world.fish];
+		if (stops.length === 0) return;
+
+		// Entering from nothing: one step forward lands on the first stop, one step back on the
+		// last — as if the selection had been standing just outside the matching end.
+		const current = this.#selectedStop(id, world, stops);
+		const start = current ?? (direction === 1 ? -1 : stops.length);
+		const target = stops[(start + direction + stops.length) % stops.length];
+
+		const picked: Picked =
+			'genome' in target ? { type: 'fish', obj: target } : { type: 'pred', obj: target };
+		this.select(id, picked);
+		this.#walkSelection = true; // after select(), which marks every pick a pointer act first
+	}
+
+	/** Where the current selection sits on this world's walk, or null for "not here". */
+	#selectedStop(id: string, world: World, stops: (Fish | Predator)[]): number | null {
+		if (this.selection?.worldId !== id) return null;
+		if (this.selection.type === 'fish' && world.selFish) {
+			const index = stops.indexOf(world.selFish);
+			return index === -1 ? null : index;
+		}
+		// The single predator stop — which only exists while predators do. A pred selection can
+		// outlive its predators (Conditions can set them to 0), and treating it as a stop then
+		// would start the walk one past the end and skip the first fish.
+		if (this.selection.type === 'pred') return world.preds.length ? world.fish.length : null;
+		return null;
 	}
 
 	/**
@@ -357,6 +432,7 @@ class BenchStore {
 		this.clearSelection();
 		story.exit();
 		this.playback.play();
+		this.requestPaint(); // the bench slept through the film — wake its canvases
 	}
 
 	/** Look up a world, throwing on an unknown id (a miss is always a caller bug). */
@@ -386,13 +462,42 @@ class BenchStore {
 	 * Advance the bench by one frame. The loop drives this; it is public so tests can step the
 	 * store deterministically instead of racing a 16ms timer.
 	 */
-	tick(elapsed: number): void {
+	tick(elapsed: number, frameSeconds: number = elapsed): void {
+		// The governor judges RENDERING, so it must not see training frames: turbo deliberately
+		// burns a 15ms slice per frame, which reads as ~31ms — past the downgrade line — and the
+		// load-time prewarm alone would ratchet every machine to 'performance' before the first
+		// story ever played.
+		if (!this.playback.training && this.#governor.sample(frameSeconds)) {
+			this.#detail = 'performance';
+		}
+
 		if (story.active) this.#tickStory(elapsed);
 		else this.#tickBench(elapsed);
 
 		this.#reconcileSelection();
 		this.#publishMind();
-		this.painters.paintAll();
+		this.#paint();
+	}
+
+	/**
+	 * Ask for one repaint even though the sim is not advancing. Every store method that changes
+	 * what the pixels are built from calls this, so a PAUSED bench still shows a hover ring or a
+	 * widened tank the frame after the interaction — and shows nothing at all the rest of the time.
+	 */
+	requestPaint(): void {
+		this.#needsPaint = true;
+	}
+
+	/**
+	 * Repaint only when there is something new to show: the sim advanced, or an interaction
+	 * changed the picture. A paused bench repainting sixteen canvases at 60fps was Phase 9's
+	 * biggest measured waste — worse, it kept doing it behind a playing film.
+	 */
+	#paint(): void {
+		const advanced = this.playback.running || this.playback.training;
+		if (!advanced && !this.#needsPaint) return;
+		this.#needsPaint = false;
+		this.painters.paintAll(story.active ? 'story' : 'bench');
 	}
 
 	/**
@@ -433,7 +538,10 @@ class BenchStore {
 		const worlds = this.#rawWorlds;
 
 		if (this.playback.training) {
-			if (turboSlice(worlds, this.playback.turboTarget!)) this.playback.finishTraining();
+			if (turboSlice(worlds, this.playback.turboTarget!)) {
+				this.playback.finishTraining();
+				this.requestPaint(); // the flag is already down when #paint runs — still show the result
+			}
 		} else if (this.playback.running) {
 			const { steps, dt } = subSteps(elapsed, this.playback.speed);
 			for (const world of worlds) {
@@ -461,8 +569,13 @@ class BenchStore {
 		this.#syncMind(world); // the panel opens populated, even when the sim is paused
 	}
 
-	/** There is one inspector, so at most one world may hold a selected fish — the scene included. */
+	/**
+	 * There is one inspector, so at most one world may hold a selected fish — the scene included.
+	 * Every selection change passes through here, so this is also where the repaint is owed: a
+	 * ring appearing or vanishing must reach a paused canvas too.
+	 */
 	#deselectEverywhere(): void {
+		this.requestPaint();
 		const worlds = story.entry ? [...this.#rawWorlds, story.entry.world] : this.#rawWorlds;
 		for (const world of worlds) {
 			world.selFish = null;
@@ -480,11 +593,17 @@ class BenchStore {
 	 */
 	#reconcileSelection(): void {
 		const selection = this.selection;
-		if (!selection || selection.type !== 'fish') return;
+		if (!selection) return;
 
 		const entry = this.find(selection.worldId);
 		if (!entry) {
 			this.selection = null; // its world was removed out from under it
+			return;
+		}
+		if (selection.type === 'pred') {
+			// Conditions can remove every predator live — the inspector must not keep presenting
+			// a shark that is no longer in the water.
+			if (entry.world.preds.length === 0) this.selection = null;
 			return;
 		}
 		if (entry.world.selFish) return; // still swimming
@@ -528,6 +647,7 @@ class BenchStore {
 	#publishConfig(id: string): void {
 		const entry = this.entry(id);
 		entry.config.syncFrom(entry.world.cfg);
+		this.requestPaint(); // a condition edit must be visible while paused, too
 	}
 
 	#create(cfg: WorldConfig): WorldEntry {
@@ -538,6 +658,7 @@ class BenchStore {
 	#setWorlds(entries: WorldEntry[]): void {
 		this.worlds = entries;
 		this.#rawWorlds = entries.map((entry) => entry.world);
+		this.requestPaint();
 	}
 }
 

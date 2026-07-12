@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { waitForPrewarm } from './helpers';
 
 /**
  * The Phase 5 gate, driven in the real app.
@@ -27,7 +28,7 @@ const slider = (page: Page, name: RegExp) => dialog(page).getByRole('slider', { 
 
 test.beforeEach(async ({ page }) => {
 	await page.goto('/');
-	await expect(page.getByTestId('turbo')).toBeHidden({ timeout: 90_000 }); // prewarmed to gen 15
+	await waitForPrewarm(page);
 	await tile(page, 2).getByRole('button', { name: 'Conditions' }).click(); // "Direction"
 	await expect(dialog(page)).toBeVisible();
 });
@@ -74,7 +75,7 @@ test('the edit reaches the SIMULATION, not just the tile that describes it', asy
 	await tile(page, 2).getByRole('button', { name: 'Conditions' }).click();
 	await expect(dialog(page)).toBeVisible();
 
-	const tank = tile(page, 2).getByRole('img', { name: /tank/i });
+	const tank = tile(page, 2).getByRole('application', { name: /tank/i });
 	const fingerprint = () =>
 		tank.evaluate((el: HTMLCanvasElement) => {
 			const { data } = el.getContext('2d')!.getImageData(0, 0, el.width, el.height);

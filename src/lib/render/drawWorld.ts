@@ -9,7 +9,7 @@
 
 import { TAU } from '../engine';
 import type { World, Fish, Predator } from '../engine';
-import { THEMES, type ThemePalette, type DrawWorldOpts } from './theme';
+import { THEMES, type ThemeName, type ThemePalette, type DrawWorldOpts } from './theme';
 
 function roundRect(
 	ctx: CanvasRenderingContext2D,
@@ -26,6 +26,120 @@ function roundRect(
 	ctx.arcTo(x, y + h, x, y, r);
 	ctx.arcTo(x, y, x + w, y, r);
 	ctx.closePath();
+}
+
+/**
+ * The static scene gradients, cached per canvas. Creating a CanvasGradient allocates and is
+ * measurably slow, and five of the six only change when the theme, the tank dimensions or the
+ * canvas itself do — not per frame. Keyed by everything they are built from; any change in the
+ * key rebuilds the whole set. (The god-rays stay per-frame: their positions are animated.)
+ */
+interface SceneGradients {
+	// the values the set was built from — compared field-wise so a cache hit allocates nothing
+	theme: ThemeName;
+	bw: number;
+	bh: number;
+	W: number;
+	H: number;
+	big: boolean;
+	water: CanvasGradient;
+	sheen: CanvasGradient;
+	innerVignette: CanvasGradient;
+	/** The magenta centre glow — dark theme only. */
+	darkGlow: CanvasGradient | null;
+	/** The soft radial backdrop behind a big (story) tank. */
+	bigBackdrop: CanvasGradient | null;
+	sharkBody: CanvasGradient;
+}
+
+const gradientCache = new WeakMap<CanvasRenderingContext2D, SceneGradients>();
+
+function sceneGradients(
+	ctx: CanvasRenderingContext2D,
+	theme: ThemeName,
+	th: ThemePalette,
+	bw: number,
+	bh: number,
+	W: number,
+	H: number,
+	big: boolean
+): SceneGradients {
+	const cached = gradientCache.get(ctx);
+	if (
+		cached &&
+		cached.theme === theme &&
+		cached.bw === bw &&
+		cached.bh === bh &&
+		cached.W === W &&
+		cached.H === H &&
+		cached.big === big
+	) {
+		return cached;
+	}
+
+	const water = ctx.createLinearGradient(0, 0, 0, bh);
+	if (theme === 'light') {
+		water.addColorStop(0, '#fbfefc');
+		water.addColorStop(0.45, '#eef3ea');
+		water.addColorStop(1, '#dce4d6');
+	} else {
+		water.addColorStop(0, '#0e0e15');
+		water.addColorStop(1, '#030304');
+	}
+
+	const sheen = ctx.createLinearGradient(0, 0, 0, 30);
+	if (theme === 'light') {
+		sheen.addColorStop(0, 'rgba(255,255,252,.75)');
+		sheen.addColorStop(1, 'rgba(255,255,252,0)');
+	} else {
+		sheen.addColorStop(0, 'rgba(255,45,156,.07)');
+		sheen.addColorStop(1, 'rgba(255,45,156,0)');
+	}
+
+	const innerVignette = ctx.createRadialGradient(
+		bw / 2,
+		bh / 2,
+		Math.min(bw, bh) * 0.35,
+		bw / 2,
+		bh / 2,
+		Math.max(bw, bh) * 0.72
+	);
+	if (theme === 'light') {
+		innerVignette.addColorStop(0, 'rgba(30,50,40,0)');
+		innerVignette.addColorStop(1, 'rgba(30,50,40,.06)');
+	} else {
+		innerVignette.addColorStop(0, 'rgba(0,0,0,0)');
+		innerVignette.addColorStop(1, 'rgba(0,0,0,.4)');
+	}
+
+	let darkGlow: CanvasGradient | null = null;
+	if (theme === 'dark') {
+		darkGlow = ctx.createRadialGradient(bw / 2, bh / 2, bh * 0.2, bw / 2, bh / 2, bw * 0.7);
+		darkGlow.addColorStop(0, 'rgba(255,45,156,.05)');
+		darkGlow.addColorStop(1, 'rgba(0,0,0,0)');
+	}
+
+	let bigBackdrop: CanvasGradient | null = null;
+	if (big) {
+		bigBackdrop = ctx.createRadialGradient(W / 2, H / 2, 10, W / 2, H / 2, Math.max(W, H) * 0.62);
+		if (theme === 'light') {
+			bigBackdrop.addColorStop(0, 'rgba(244,250,246,.16)');
+			bigBackdrop.addColorStop(1, 'rgba(244,250,246,0)');
+		} else {
+			bigBackdrop.addColorStop(0, 'rgba(255,45,156,.06)');
+			bigBackdrop.addColorStop(1, 'rgba(255,45,156,0)');
+		}
+	}
+
+	// drawn in the shark's local (translated/rotated) coordinates, so one gradient fits them all
+	const sharkBody = ctx.createLinearGradient(0, -8, 0, 8);
+	sharkBody.addColorStop(0, th.predDark);
+	sharkBody.addColorStop(0.45, th.pred);
+	sharkBody.addColorStop(1, th.pred);
+
+	const built = { theme, bw, bh, W, H, big, water, sheen, innerVignette, darkGlow, bigBackdrop, sharkBody };
+	gradientCache.set(ctx, built);
+	return built;
 }
 
 /** Per-frame render state for one creature — bundled so the painters don't take flag arguments. */
@@ -149,7 +263,12 @@ function drawShark(
 	ctx: CanvasRenderingContext2D,
 	p: Predator,
 	th: ThemePalette,
-	{ t, hovered: hov, reducedMotion: rm }: Pick<CreatureState, 't' | 'hovered' | 'reducedMotion'>
+	{
+		t,
+		hovered: hov,
+		reducedMotion: rm,
+		body
+	}: Pick<CreatureState, 't' | 'hovered' | 'reducedMotion'> & { body: CanvasGradient }
 ): void {
 	if (p.trail.length > 1) {
 		ctx.strokeStyle = 'rgba(' + th.burst + ',' + (p.lunge > 0 ? 0.4 : 0.18) + ')';
@@ -182,17 +301,13 @@ function drawShark(
 	ctx.fill();
 	ctx.restore();
 	// body
-	const bg = ctx.createLinearGradient(0, -8, 0, 8);
-	bg.addColorStop(0, th.predDark);
-	bg.addColorStop(0.45, th.pred);
-	bg.addColorStop(1, th.pred);
 	ctx.beginPath();
 	ctx.moveTo(21 * L, 0);
 	ctx.quadraticCurveTo(12, -7.8, -6, -5.4);
 	ctx.quadraticCurveTo(-15, -3.6, -19.5, -0.8);
 	ctx.quadraticCurveTo(-15, 3.6, -6, 5.4);
 	ctx.quadraticCurveTo(12, 7.8, 21 * L, 0);
-	ctx.fillStyle = bg;
+	ctx.fillStyle = body;
 	ctx.fill();
 	// belly, dorsal fin, pectoral fin, gills, eye
 	ctx.beginPath();
@@ -378,6 +493,7 @@ export function drawWorld(
 	const rm = opts.reducedMotion ?? false;
 	const c = w.cfg;
 	const rich = !!opts.big || opts.detail !== 'performance';
+	const grads = sceneGradients(ctx, theme, th, c.bw, c.bh, W, H, !!opts.big);
 	ctx.clearRect(0, 0, W, H);
 
 	// fit-scale transform (also consumed by pickCreature to invert pointer coords)
@@ -386,16 +502,8 @@ export function drawWorld(
 	const oy = (H - c.bh * s) / 2;
 	w.transform = { s, ox, oy };
 
-	if (opts.big) {
-		const g = ctx.createRadialGradient(W / 2, H / 2, 10, W / 2, H / 2, Math.max(W, H) * 0.62);
-		if (theme === 'light') {
-			g.addColorStop(0, 'rgba(244,250,246,.16)');
-			g.addColorStop(1, 'rgba(244,250,246,0)');
-		} else {
-			g.addColorStop(0, 'rgba(255,45,156,.06)');
-			g.addColorStop(1, 'rgba(255,45,156,0)');
-		}
-		ctx.fillStyle = g;
+	if (grads.bigBackdrop) {
+		ctx.fillStyle = grads.bigBackdrop;
 		ctx.fillRect(0, 0, W, H);
 	}
 
@@ -404,17 +512,8 @@ export function drawWorld(
 	ctx.scale(s, s);
 
 	// water
-	const g = ctx.createLinearGradient(0, 0, 0, c.bh);
-	if (theme === 'light') {
-		g.addColorStop(0, '#fbfefc');
-		g.addColorStop(0.45, '#eef3ea');
-		g.addColorStop(1, '#dce4d6');
-	} else {
-		g.addColorStop(0, '#0e0e15');
-		g.addColorStop(1, '#030304');
-	}
 	roundRect(ctx, 0, 0, c.bw, c.bh, 14);
-	ctx.fillStyle = g;
+	ctx.fillStyle = grads.water;
 	ctx.fill();
 
 	ctx.save();
@@ -422,15 +521,7 @@ export function drawWorld(
 	ctx.clip();
 
 	// surface sheen
-	const sg = ctx.createLinearGradient(0, 0, 0, 30);
-	if (theme === 'light') {
-		sg.addColorStop(0, 'rgba(255,255,252,.75)');
-		sg.addColorStop(1, 'rgba(255,255,252,0)');
-	} else {
-		sg.addColorStop(0, 'rgba(255,45,156,.07)');
-		sg.addColorStop(1, 'rgba(255,45,156,0)');
-	}
-	ctx.fillStyle = sg;
+	ctx.fillStyle = grads.sheen;
 	ctx.fillRect(0, 0, c.bw, 30);
 
 	// god-rays (light, cinematic only)
@@ -453,28 +544,19 @@ export function drawWorld(
 		}
 		ctx.globalAlpha = 1;
 	}
-	if (theme === 'dark') {
-		const vg = ctx.createRadialGradient(
-			c.bw / 2,
-			c.bh / 2,
-			c.bh * 0.2,
-			c.bw / 2,
-			c.bh / 2,
-			c.bw * 0.7
-		);
-		vg.addColorStop(0, 'rgba(255,45,156,.05)');
-		vg.addColorStop(1, 'rgba(0,0,0,0)');
-		ctx.fillStyle = vg;
+	if (grads.darkGlow) {
+		ctx.fillStyle = grads.darkGlow;
 		ctx.fillRect(0, 0, c.bw, c.bh);
 	}
 
-	// drifting particulate
+	// drifting particulate — frozen in place under reduced motion, like every other cosmetic
 	if (rich) {
 		ctx.fillStyle = th.dust;
 		for (const d of w.dust) {
-			const dy = (((d.y * c.bh + w.t * d.s) % c.bh) + c.bh) % c.bh;
-			const dx = d.x * c.bw + Math.sin(w.t * 0.4 + d.p) * 6;
-			ctx.globalAlpha = 0.25 + Math.sin(w.t * 0.8 + d.p) * 0.15;
+			const drift = rm ? 0 : w.t;
+			const dy = (((d.y * c.bh + drift * d.s) % c.bh) + c.bh) % c.bh;
+			const dx = d.x * c.bw + (rm ? 0 : Math.sin(w.t * 0.4 + d.p) * 6);
+			ctx.globalAlpha = 0.25 + (rm ? 0 : Math.sin(w.t * 0.8 + d.p) * 0.15);
 			ctx.beginPath();
 			ctx.arc(dx, dy, d.r, 0, TAU);
 			ctx.fill();
@@ -484,7 +566,12 @@ export function drawWorld(
 
 	if (w.selFish) drawPerception(w, ctx, th, rm);
 	for (const p of w.preds) {
-		drawShark(ctx, p, th, { t: w.t, hovered: p === w.hover, reducedMotion: rm });
+		drawShark(ctx, p, th, {
+			t: w.t,
+			hovered: p === w.hover,
+			reducedMotion: rm,
+			body: grads.sharkBody
+		});
 	}
 	for (const f of w.fish) {
 		drawFish(ctx, f, th, {
@@ -515,22 +602,7 @@ export function drawWorld(
 	}
 
 	// inner vignette
-	const iv = ctx.createRadialGradient(
-		c.bw / 2,
-		c.bh / 2,
-		Math.min(c.bw, c.bh) * 0.35,
-		c.bw / 2,
-		c.bh / 2,
-		Math.max(c.bw, c.bh) * 0.72
-	);
-	if (theme === 'light') {
-		iv.addColorStop(0, 'rgba(30,50,40,0)');
-		iv.addColorStop(1, 'rgba(30,50,40,.06)');
-	} else {
-		iv.addColorStop(0, 'rgba(0,0,0,0)');
-		iv.addColorStop(1, 'rgba(0,0,0,.4)');
-	}
-	ctx.fillStyle = iv;
+	ctx.fillStyle = grads.innerVignette;
 	ctx.fillRect(0, 0, c.bw, c.bh);
 
 	if (!w.fish.length) {

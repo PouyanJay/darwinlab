@@ -23,9 +23,14 @@
 		 * background is how you put a creature down again.
 		 */
 		onselect?: (picked: Picked | null) => void;
+		/**
+		 * Which paint group this tank belongs to. Bench tanks sleep while a story plays — the film
+		 * covers them; the film's own stage registers as 'story' so it is the one that keeps moving.
+		 */
+		group?: 'bench' | 'story';
 	}
 
-	let { entry, detail = 'performance', big = false, onselect }: Props = $props();
+	let { entry, detail = 'performance', big = false, group = 'bench', onselect }: Props = $props();
 
 	let cursor = $state('default');
 
@@ -40,7 +45,7 @@
 
 	// Stable identity: Canvas's attachment re-runs if this changes, which would churn the
 	// ResizeObserver and re-register the painter on every re-render.
-	const register = (render: () => void) => bench.painters.add(render);
+	const register = (render: () => void) => bench.painters.add(render, group);
 
 	function pick(x: number, y: number) {
 		onselect?.(pickCreature(entry.world, x, y));
@@ -56,6 +61,25 @@
 		bench.setHover(entry.id, null);
 		cursor = 'default';
 	}
+
+	/**
+	 * The keyboard's click: arrows walk the creatures, Esc puts the current one down. A handled
+	 * key stops here — on the story stage the same arrow would otherwise ALSO skip a scene, and
+	 * an Esc that just closed the inspector must not exit the film in the same press.
+	 */
+	function onkeydown(event: KeyboardEvent) {
+		if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+			bench.cycleSelection(entry.id, 1);
+		} else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+			bench.cycleSelection(entry.id, -1);
+		} else if (event.key === 'Escape' && bench.selection?.worldId === entry.id) {
+			bench.clearSelection();
+		} else {
+			return; // not ours — Space (play/pause) and the film's Esc keep working from here
+		}
+		event.preventDefault();
+		event.stopPropagation();
+	}
 </script>
 
 <Canvas
@@ -65,6 +89,7 @@
 	onpick={pick}
 	onhover={hover}
 	onleave={leave}
+	{onkeydown}
 	label="{entry.config.name} tank — {entry.stats.alive} prey alive, generation {entry.stats
-		.gen}. Click a creature to inspect its brain."
+		.gen}. Click a creature — or focus the tank and use the arrow keys — to inspect its brain."
 />

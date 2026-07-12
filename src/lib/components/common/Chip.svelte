@@ -69,10 +69,12 @@
 		color: var(--ink2);
 	}
 
-	/* Falls back to the theme accent, so a plain `tone="accent"` needs no wiring. */
+	/* Falls back to the theme accent, so a plain `tone="accent"` needs no wiring. The TEXT runs
+	   the accent toward the ink: a colour tuned for painting fish is too light to read at 10px
+	   (the Phase 9 axe gate), and mixing with --ink keeps the hue while flipping with the theme. */
 	.accent {
 		--chip-accent: var(--accent);
 		background: color-mix(in srgb, var(--chip-accent) 14%, transparent);
-		color: var(--chip-accent);
+		color: color-mix(in srgb, var(--chip-accent) 60%, var(--ink));
 	}
 </style>

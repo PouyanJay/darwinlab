@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { waitForPrewarm } from './helpers';
 
 /**
  * Phase 2 gate, verified against the real running app.
@@ -17,8 +18,8 @@ import { expect, test, type Page } from '@playwright/test';
  * PROBE: we fingerprint the canvas rather than watch the generation counter. A generation is 10
  * sim-seconds, so the counter cannot move inside a short window — but the fish only move when
  * `stepWorld` runs (every animation is driven off `w.t`, the sim's own clock, not wall-clock), so
- * a changed fingerprint proves sim time actually advanced. A paused sim still repaints; it just
- * repaints the same frame — which is what makes this a real test of pause, too.
+ * a changed fingerprint proves sim time actually advanced. A paused sim stops repainting and the
+ * canvas holds its last frame — which is what makes this a real test of pause, too.
  */
 
 /**
@@ -36,14 +37,15 @@ function fingerprint(page: Page): Promise<number> {
 	});
 }
 
-/** The first world's tank — `role="img"` is the tank; the sparklines are canvases too. */
-const tank = (page: Page) => page.getByRole('img', { name: /tank/i }).first();
+/** The first world's tank — `role="application"` since Phase 9 (it answers the keyboard);
+ *  the sparklines are still plain `role="img"` canvases. */
+const tank = (page: Page) => page.getByRole('application', { name: /tank/i }).first();
 const generations = (page: Page) => page.getByTestId('generations').innerText().then(Number);
 const alive = (page: Page) => page.getByTestId('alive').first().innerText().then(Number);
 
 test.beforeEach(async ({ page }) => {
 	await page.goto('/');
-	await expect(page.getByTestId('turbo')).toBeHidden({ timeout: 30_000 }); // prewarm finished
+	await waitForPrewarm(page);
 });
 
 test('prewarms the world so the bench opens already competent', async ({ page }) => {
@@ -80,7 +82,7 @@ test('keeps simulating with requestAnimationFrame dead (as a backgrounded tab ma
 		window.cancelAnimationFrame = () => {};
 	});
 	await page.goto('/');
-	await expect(page.getByTestId('turbo')).toBeHidden({ timeout: 30_000 });
+	await waitForPrewarm(page);
 
 	const before = await fingerprint(page);
 	await expect.poll(() => fingerprint(page), { timeout: 15_000 }).not.toBe(before); // sim time still advances — CLAUDE.md gotcha #1 holds
@@ -99,7 +101,7 @@ test('pause really stops the simulation, and evolve resumes it', async ({ page }
 		})
 		.toBe(true);
 
-	// paused: the loop still repaints, but it repaints the SAME frame
+	// paused: the loop stops repainting entirely — the canvas holds its last frame
 	const paused = await fingerprint(page);
 	await expect.poll(() => fingerprint(page), { timeout: 2000 }).toBe(paused);
 

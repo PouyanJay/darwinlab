@@ -98,10 +98,16 @@ class StoryStore {
 		this.elapsed = 0;
 	}
 
-	/** Jump to a scene. Out-of-range indices are clamped — a film has a first and a last frame. */
+	/**
+	 * Jump to a scene. Out-of-range indices are clamped — a film has a first and a last frame —
+	 * and a jump to the scene already on screen is NOT a jump: re-cutting it would swap a fresh
+	 * world in under a held film without the stage ever repainting (the paint gate only paints
+	 * what moved, and the scene remount is keyed on the index, which would not change).
+	 */
 	goTo(index: number): void {
 		if (!this.active) return;
-		this.#cut(Math.min(this.total - 1, Math.max(0, index)));
+		const target = Math.min(this.total - 1, Math.max(0, index));
+		if (target !== this.index) this.#cut(target);
 	}
 
 	next(): void {

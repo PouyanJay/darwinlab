@@ -7,17 +7,24 @@
 -->
 <script lang="ts">
 	import Canvas from '../common/Canvas.svelte';
+	import { paintOnChange } from '../common/paintOnChange';
 	import { drawCurve } from '$lib/render';
 	import { bench, story, theme } from '$lib/state';
 
 	const entry = $derived(story.entry);
 	const accent = $derived(story.source?.config.accent ?? '#4f56d3');
 
-	const register = (render: () => void) => bench.painters.add(render);
+	const register = (render: () => void) => bench.painters.add(render, 'story');
 
-	function paintCurve(ctx: CanvasRenderingContext2D, width: number, height: number) {
-		if (entry) drawCurve(ctx, width, height, entry.world.curve, accent, theme.name);
-	}
+	// The curve only gains a point at a generation boundary — don't repaint it 60×/s. Both ends
+	// in the signature: a capped series shift()s as it push()es (see TileStats).
+	const paintCurve = paintOnChange(
+		() =>
+			`${entry?.world.curve.length}|${entry?.world.curve.at(0)}|${entry?.world.curve.at(-1)}|${accent}|${theme.name}`,
+		(ctx, width, height) => {
+			if (entry) drawCurve(ctx, width, height, entry.world.curve, accent, theme.name);
+		}
+	);
 </script>
 
 {#if entry}
@@ -56,6 +63,13 @@
 		gap: 14px;
 		width: 196px;
 		flex: none;
+	}
+
+	/* Stacked under the tank on a narrow stage (see StoryMode) — the fixed rail width goes. */
+	@media (max-width: 820px) {
+		.rail {
+			width: auto;
+		}
 	}
 
 	h2,

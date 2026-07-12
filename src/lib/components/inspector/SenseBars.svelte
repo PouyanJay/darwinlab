@@ -84,8 +84,12 @@
 			<div class="head">
 				<span id="sense-{bar.key}">{bar.label}</span>
 				<!-- The reading is labelled by its row, so it can be found by name rather than by walking
-				     the DOM — and so a screen reader hears "predator distance: 164 px". -->
-				<b class="tabular" role="status" aria-labelledby="sense-{bar.key}">{bar.value}</b>
+				     the DOM — and so a screen reader hears "predator distance: 164 px". aria-live is
+				     OFF: this number changes every frame, and a status you can ask for must not be a
+				     firehose that interrupts. -->
+				<b class="tabular" role="status" aria-live="off" aria-labelledby="sense-{bar.key}"
+					>{bar.value}</b
+				>
 			</div>
 			<div class="meter">
 				<Meter value={bar.fill} tone={bar.tone === 'danger' ? 'danger' : 'accent'} />

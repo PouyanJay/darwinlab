@@ -169,4 +169,22 @@
 		background: var(--slider-tone);
 		box-shadow: var(--shadow-segment);
 	}
+
+	/* A grabbable thumb and a taller hit area for a fingertip; the 6px track stays. */
+	@media (pointer: coarse) {
+		input {
+			height: 32px;
+		}
+
+		input::-webkit-slider-thumb {
+			width: 22px;
+			height: 22px;
+			margin-top: -8px; /* re-centre the bigger thumb on the 6px track */
+		}
+
+		input::-moz-range-thumb {
+			width: 22px;
+			height: 22px;
+		}
+	}
 </style>

@@ -10,6 +10,7 @@
 <script lang="ts">
 	import Canvas from '../common/Canvas.svelte';
 	import Button from '../common/Button.svelte';
+	import { paintOnChange } from '../common/paintOnChange';
 	import { drawCurve, drawDecay } from '$lib/render';
 	import { bench, theme } from '$lib/state';
 	import type { WorldEntry } from '$lib/state';
@@ -34,16 +35,39 @@
 		return `${deployT.toFixed(0)}s · ${alive} left`;
 	});
 
+	/**
+	 * What AT hears about the real-world run. The visible readout ticks every second — announcing
+	 * that firehose would be noise — so the live region speaks only when the run TURNS: deployed,
+	 * half-life latched, wiped out. Each phrase is stable once said, so each is said once.
+	 */
+	const announcement = $derived.by(() => {
+		const { deployed, extinctT, halfLife } = entry.stats;
+		if (!deployed) return '';
+		if (extinctT !== null)
+			return `${entry.config.name}: population wiped out after ${extinctT.toFixed(0)} seconds`;
+		if (halfLife !== null)
+			return `${entry.config.name}: half the population gone at ${halfLife.toFixed(0)} seconds`;
+		return `${entry.config.name}: deployed — the real-world run has started`;
+	});
+
 	// Stable identity: a new function each render would churn the Canvas attachment every frame.
 	const register = (render: () => void) => bench.painters.add(render);
 
-	function paintCurve(ctx: CanvasRenderingContext2D, width: number, height: number) {
-		drawCurve(ctx, width, height, entry.world.curve, accent, theme.name);
-	}
+	// Both series only gain a point at a generation / sampling boundary — don't repaint 60×/s.
+	// BOTH ends in the signature: once a series hits its cap it shift()s as it push()es, so the
+	// length holds still and a repeated last value would hide a window that scrolled — the moving
+	// head end is what still betrays the shift.
+	const paintCurve = paintOnChange(
+		() =>
+			`${entry.world.curve.length}|${entry.world.curve.at(0)}|${entry.world.curve.at(-1)}|${accent}|${theme.name}`,
+		(ctx, width, height) => drawCurve(ctx, width, height, entry.world.curve, accent, theme.name)
+	);
 
-	function paintDecay(ctx: CanvasRenderingContext2D, width: number, height: number) {
-		drawDecay(ctx, width, height, entry.world.decay, theme.name);
-	}
+	const paintDecay = paintOnChange(
+		() =>
+			`${entry.world.decay.length}|${entry.world.decay.at(0)}|${entry.world.decay.at(-1)}|${theme.name}`,
+		(ctx, width, height) => drawDecay(ctx, width, height, entry.world.decay, theme.name)
+	);
 </script>
 
 <div class="row">
@@ -58,7 +82,10 @@
 	<div class="curve">
 		<div class="curve-head">
 			<span class="eyebrow">survival / generation</span>
-			<b class="tabular" style:color={accent} data-testid="survival">{entry.stats.survivalPct}%</b>
+			<!-- the number reads in the world's accent, run toward the ink so 12px stays AA -->
+			<b class="tabular survival" style:--curve-accent={accent} data-testid="survival"
+				>{entry.stats.survivalPct}%</b
+			>
 		</div>
 		<div class="sparkline">
 			<Canvas
@@ -74,6 +101,7 @@
 </div>
 
 <div class="row deploy">
+	<span class="visually-hidden" role="status">{announcement}</span>
 	<div class="deploy-stat">
 		<div class="deploy-label">Real-world run</div>
 		<div class="tabular" data-testid="deployment">{deployment}</div>
@@ -116,7 +144,7 @@
 
 	.eaten {
 		font-size: var(--fs-sm);
-		color: var(--danger);
+		color: var(--danger-ink); /* danger AS TEXT — see tokens.css */
 	}
 
 	.curve {
@@ -135,6 +163,10 @@
 		font-weight: var(--fw-semibold);
 	}
 
+	.survival {
+		color: color-mix(in srgb, var(--curve-accent) 60%, var(--ink));
+	}
+
 	.sparkline {
 		height: 34px;
 		margin-top: 3px;
@@ -150,7 +182,7 @@
 		font-weight: var(--fw-semibold);
 		letter-spacing: var(--tracking-wide);
 		text-transform: uppercase;
-		color: var(--danger);
+		color: var(--danger-ink); /* danger AS TEXT — see tokens.css */
 	}
 
 	.deploy-stat div + div {

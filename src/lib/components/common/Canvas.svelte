@@ -25,11 +25,25 @@
 		onpick?: (x: number, y: number) => void;
 		onhover?: (x: number, y: number) => void;
 		onleave?: () => void;
+		/**
+		 * Keyboard support (the tank's creature cycler). Present, the canvas joins the tab order
+		 * as an application widget; absent (the charts), it stays a plain graphic.
+		 */
+		onkeydown?: (event: KeyboardEvent) => void;
 		label: string;
 		cursor?: string;
 	}
 
-	let { paint, register, onpick, onhover, onleave, label, cursor = 'default' }: Props = $props();
+	let {
+		paint,
+		register,
+		onpick,
+		onhover,
+		onleave,
+		onkeydown,
+		label,
+		cursor = 'default'
+	}: Props = $props();
 
 	const deviceScale = () => Math.min(MAX_DPR, window.devicePixelRatio || 1);
 
@@ -70,27 +84,44 @@
 		observer.observe(canvas);
 		const unregister = register?.(render);
 
+		// A DPR change (dragging the window between monitors) resizes the BITMAP but not the CSS
+		// box, so the ResizeObserver never fires — and a paused bench no longer repaints per frame
+		// to self-correct. matchMedia is the one event the platform offers for it; the listener is
+		// re-armed each time because the query string pins a specific ratio.
+		let dprWatch: MediaQueryList | null = null;
+		const onDprChange = () => {
+			render();
+			armDprWatch();
+		};
+		const armDprWatch = () => {
+			dprWatch?.removeEventListener('change', onDprChange);
+			dprWatch = window.matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`);
+			dprWatch.addEventListener('change', onDprChange);
+		};
+		armDprWatch();
+
 		return () => {
 			observer.disconnect();
+			dprWatch?.removeEventListener('change', onDprChange);
 			unregister?.();
 		};
 	}
 </script>
 
 <!--
-	The canvas is a GRAPHIC that also accepts pointer input. Screen readers get its live state
-	from `aria-label` (meaning is never pixels-only); clicking is a mouse affordance, and
-	keyboard/AT users reach the same targets through real buttons (e.g. "★ Champion") rather
-	than by hit-testing pixels. Svelte's heuristic sees the click handler and objects to the
-	non-interactive role, but role="img" is the correct semantic here.
-	TODO(phase-9): full keyboard/focus pass — give the tank a focusable creature cycler.
+	Two kinds of canvas share this host. A chart is a GRAPHIC: role="img", not focusable, its
+	state readable from `aria-label` (meaning is never pixels-only) — its click handler is a
+	mouse shortcut to targets the keyboard reaches through real buttons (e.g. "★ Champion").
+	A tank with a keyboard handler is a WIDGET: role="application" (so AT hands the arrow keys
+	through to the creature cycler), focusable, operable without a pointer.
 -->
-<!-- svelte-ignore a11y_no_interactive_element_to_noninteractive_role -->
 <canvas
 	{@attach host}
-	role="img"
+	role={onkeydown ? 'application' : 'img'}
 	aria-label={label}
+	tabindex={onkeydown ? 0 : undefined}
 	style:cursor
+	{onkeydown}
 	onclick={(e) => onpick?.(e.offsetX, e.offsetY)}
 	onmousemove={(e) => onhover?.(e.offsetX, e.offsetY)}
 	onmouseleave={() => onleave?.()}
@@ -101,5 +132,6 @@
 		display: block;
 		width: 100%;
 		height: 100%;
+		touch-action: manipulation; /* a tap picks a creature — never wait out a double-tap zoom */
 	}
 </style>
