@@ -107,6 +107,51 @@ describe('drawWorld', () => {
 		expect(w.sense).not.toBeNull();
 		expect(() => drawWorld(w, mockCtx(), 640, 400, { theme: 'light' })).not.toThrow();
 	});
+
+	it('freezes the drifting dust under reduced motion — the same pixels at any clock', () => {
+		/** Records every arc (position, radius, alpha at the time). An empty tank draws arcs for
+		 *  nothing BUT the dust, so the recording is the dust field verbatim. */
+		function arcRecorder(): { ctx: CanvasRenderingContext2D; arcs: string[] } {
+			const gradient = { addColorStop: () => {} };
+			const arcs: string[] = [];
+			const state: Record<string, unknown> = {};
+			const ctx = new Proxy(
+				{},
+				{
+					get(_t, prop) {
+						if (prop === 'createLinearGradient' || prop === 'createRadialGradient')
+							return () => gradient;
+						if (prop === 'measureText') return () => ({ width: 20 });
+						if (prop === 'arc')
+							return (x: number, y: number, r: number) =>
+								arcs.push(`${x.toFixed(3)},${y.toFixed(3)},${r},${state.globalAlpha}`);
+						if (typeof prop === 'string' && prop in state) return state[prop];
+						return () => {};
+					},
+					set(_t, prop, value) {
+						state[prop as string] = value;
+						return true;
+					}
+				}
+			) as unknown as CanvasRenderingContext2D;
+			return { ctx, arcs };
+		}
+
+		const w = world();
+		w.fish = []; // no creatures: every arc that gets painted is a dust mote
+		w.preds = [];
+
+		const dustAt = (t: number, reducedMotion: boolean) => {
+			w.t = t;
+			const rec = arcRecorder();
+			drawWorld(w, rec.ctx, 300, 200, { theme: 'light', detail: 'cinematic', reducedMotion });
+			return rec.arcs.join('|');
+		};
+
+		expect(dustAt(1, true).length).toBeGreaterThan(0); // the dust IS painted, just still
+		expect(dustAt(1, true)).toBe(dustAt(9, true)); // frozen: the clock moves, the motes don't
+		expect(dustAt(1, false)).not.toBe(dustAt(9, false)); // and honestly animated without the flag
+	});
 });
 
 describe('drawBrain', () => {

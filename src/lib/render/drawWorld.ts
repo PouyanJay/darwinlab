@@ -530,13 +530,14 @@ export function drawWorld(
 		ctx.fillRect(0, 0, c.bw, c.bh);
 	}
 
-	// drifting particulate
+	// drifting particulate — frozen in place under reduced motion, like every other cosmetic
 	if (rich) {
 		ctx.fillStyle = th.dust;
 		for (const d of w.dust) {
-			const dy = (((d.y * c.bh + w.t * d.s) % c.bh) + c.bh) % c.bh;
-			const dx = d.x * c.bw + Math.sin(w.t * 0.4 + d.p) * 6;
-			ctx.globalAlpha = 0.25 + Math.sin(w.t * 0.8 + d.p) * 0.15;
+			const drift = rm ? 0 : w.t;
+			const dy = (((d.y * c.bh + drift * d.s) % c.bh) + c.bh) % c.bh;
+			const dx = d.x * c.bw + (rm ? 0 : Math.sin(w.t * 0.4 + d.p) * 6);
+			ctx.globalAlpha = 0.25 + (rm ? 0 : Math.sin(w.t * 0.8 + d.p) * 0.15);
 			ctx.beginPath();
 			ctx.arc(dx, dy, d.r, 0, TAU);
 			ctx.fill();

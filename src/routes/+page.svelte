@@ -11,6 +11,7 @@
 	import TopBar from '$lib/components/topbar/TopBar.svelte';
 	import TurboPill from '$lib/components/topbar/TurboPill.svelte';
 	import FieldNote from '$lib/components/bench/FieldNote.svelte';
+	import FirstRunHint from '$lib/components/bench/FirstRunHint.svelte';
 	import WorldTile from '$lib/components/bench/WorldTile.svelte';
 	import ConditionsModal from '$lib/components/conditions/ConditionsModal.svelte';
 	import BrainInspector from '$lib/components/inspector/BrainInspector.svelte';
@@ -108,6 +109,7 @@
 	{/if}
 
 	<FooterPill />
+	<FirstRunHint />
 </div>
 
 <!-- OUTSIDE the app, deliberately: the app above is `inert` while a film plays, and a takeover that
