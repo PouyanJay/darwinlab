@@ -3,6 +3,13 @@ import { playwright } from '@vitest/browser-playwright';
 import adapter from '@sveltejs/adapter-static';
 import { sveltekit } from '@sveltejs/kit/vite';
 
+// GitHub Pages serves a project site from /<repo>, not the domain root. The deploy
+// workflow sets BASE_PATH=/darwinlab; local dev and plain builds stay at "".
+const basePath = process.env.BASE_PATH ?? '';
+if (basePath !== '' && !basePath.startsWith('/')) {
+	throw new Error(`BASE_PATH must start with "/" (got "${basePath}")`);
+}
+
 export default defineConfig({
 	plugins: [
 		sveltekit({
@@ -11,7 +18,8 @@ export default defineConfig({
 				runes: ({ filename }) =>
 					filename.split(/[/\\]/).includes('node_modules') ? undefined : true
 			},
-			adapter: adapter()
+			adapter: adapter(),
+			paths: { base: basePath as '' | `/${string}` }
 		})
 	],
 	test: {

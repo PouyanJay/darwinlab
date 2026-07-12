@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { waitForPrewarm } from './helpers';
+import { gotoApp, waitForPrewarm } from './helpers';
 
 /**
  * The Phase 4 gate: the bench itself, driven the way a user drives it.
@@ -13,7 +13,7 @@ const tiles = (page: Page) => page.locator('section[aria-label^="world"]');
 const tile = (page: Page, index: number) => tiles(page).nth(index);
 
 test.beforeEach(async ({ page }) => {
-	await page.goto('/');
+	await gotoApp(page);
 	await waitForPrewarm(page);
 });
 

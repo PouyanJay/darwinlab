@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { waitForPrewarm } from './helpers';
+import { gotoApp, waitForPrewarm } from './helpers';
 
 /**
  * The Phase 5 gate, driven in the real app.
@@ -27,7 +27,7 @@ const field = (page: Page, name: string | RegExp) => dialog(page).getByRole('tex
 const slider = (page: Page, name: RegExp) => dialog(page).getByRole('slider', { name });
 
 test.beforeEach(async ({ page }) => {
-	await page.goto('/');
+	await gotoApp(page);
 	await waitForPrewarm(page);
 	await tile(page, 2).getByRole('button', { name: 'Conditions' }).click(); // "Direction"
 	await expect(dialog(page)).toBeVisible();

@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { waitForPrewarm } from './helpers';
+import { gotoApp, waitForPrewarm } from './helpers';
 
 /**
  * The Phase 9 keyboard gate: the whole product is drivable without a pointer.
@@ -25,7 +25,7 @@ async function tabToTank(page: Page) {
 }
 
 test.beforeEach(async ({ page }) => {
-	await page.goto('/');
+	await gotoApp(page);
 	await waitForPrewarm(page);
 });
 

@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { waitForPrewarm } from './helpers';
+import { gotoApp, waitForPrewarm } from './helpers';
 
 /**
  * The Phase 9 responsive gate: usable and coherent at 375px, with a coarse pointer.
@@ -15,7 +15,7 @@ const overflow = (page: Page) =>
 	page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
 
 test.beforeEach(async ({ page }) => {
-	await page.goto('/');
+	await gotoApp(page);
 	await waitForPrewarm(page);
 });
 

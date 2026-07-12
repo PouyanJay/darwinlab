@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { waitForPrewarm } from './helpers';
+import { gotoApp, waitForPrewarm } from './helpers';
 
 /**
  * The Phase 8 gate: the bench told as a film, driven in the real app.
@@ -15,7 +15,7 @@ const caption = (page: Page) => story(page).locator('h1');
 const counter = (page: Page) => story(page).getByText(/scene \d+ of \d+/i);
 
 test.beforeEach(async ({ page }) => {
-	await page.goto('/');
+	await gotoApp(page);
 	// The prewarm must LAND before the film rolls. (The trap cost a debugging session once — the
 	// story opened over a bench that was still at generation 3.)
 	await expect(page.getByRole('button', { name: 'Pause' })).toBeVisible();
