@@ -176,6 +176,47 @@ test('clicking the shark says there is no brain, by design', async ({ page }) =>
 	await expect(panel).toContainText('coevolutionary arms race');
 });
 
+test('the bench outlives a watched fish: it dies, the drawer closes, and the sim keeps running', async ({
+	page
+}) => {
+	/*
+	 * The freeze this pins down: a HAND-PICKED selection is released inside the tick where its
+	 * fish stops existing (eaten, or its generation turns) — and that same tick paints, one
+	 * flush before the inspector unmounts. The brain painter once read the already-undefined
+	 * selection lookup there, threw, and killed the sim loop's timer chain: page alive, every
+	 * tank frozen. So: watch a fish by hand, let nature take it, and demand both silence in the
+	 * console and a bench that is still moving afterwards.
+	 */
+	const frameErrors: string[] = [];
+	page.on('pageerror', (error) => frameErrors.push(String(error)));
+
+	// A keyboard walk is a hand-picked selection — released on death, not swapped for an heir.
+	const tank = tile(page, 0).getByRole('application');
+	await tank.scrollIntoViewIfNeeded();
+	await tank.click({ position: { x: 8, y: 8 } }); // corner = water: focuses without picking
+	await page.keyboard.press('ArrowRight');
+	await expect(inspector(page)).toBeVisible();
+
+	// Hold the selection until the fish stops existing. Two sharks hunt from frame one and a
+	// training generation lasts 10 sim-seconds, so one of the two release paths — eaten, or
+	// generation turnover — arrives well inside this window. Both run through the crash tick.
+	await expect(inspector(page)).toBeHidden({ timeout: 20_000 });
+
+	expect(frameErrors, 'a frame threw when the watched fish stopped existing').toEqual([]);
+
+	// And the water is still moving — the original bug did not throw twice, it froze EVERYTHING:
+	// the loop died with the throw and no tank ever painted again.
+	const waterprint = () =>
+		tank.evaluate((el: HTMLCanvasElement) => {
+			const { data } = el.getContext('2d')!.getImageData(0, 0, el.width, el.height);
+			let h = 0;
+			for (let i = 0; i < data.length; i += 397) h = (h * 31 + data[i]) | 0;
+			return h;
+		});
+	const before = await waterprint();
+	await expect.poll(waterprint, { timeout: 5000 }).not.toBe(before);
+});
+
 test('Esc closes the inspector', async ({ page }) => {
 	await tile(page, 2).getByRole('button', { name: '★ Champion' }).click();
 	await expect(inspector(page)).toBeVisible();

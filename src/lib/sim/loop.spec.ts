@@ -54,6 +54,30 @@ describe('createSimLoop', () => {
 		expect(seen[0]).toBeCloseTo(0.016, 6);
 	});
 
+	it('outlives a throwing frame — one bad onFrame must not kill the chain', () => {
+		// This shipped as a total freeze once: a painter threw during the tick that ended a
+		// selection, the next setTimeout was never scheduled, and every tank froze while the
+		// page stayed alive. The throw must still PROPAGATE (nothing swallowed here) — but
+		// the chain must survive it.
+		const c = clock();
+		let calls = 0;
+		const loop = createSimLoop({
+			onFrame: () => {
+				calls++;
+				if (calls === 1) throw new Error('one bad frame');
+			},
+			now: c.now
+		});
+
+		loop.start();
+		c.advance(16);
+		expect(() => vi.advanceTimersByTime(16)).toThrowError('one bad frame'); // still loud
+		c.advance(16);
+		vi.advanceTimersByTime(16);
+		expect(calls).toBe(2); // and still alive
+		loop.stop();
+	});
+
 	it('clamps a long stall so one frame can never deliver a huge dt', () => {
 		const c = clock();
 		const seen: number[] = [];
