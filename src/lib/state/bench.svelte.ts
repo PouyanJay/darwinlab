@@ -361,6 +361,45 @@ class BenchStore {
 	}
 
 	/**
+	 * Move the selection to the next or previous creature in a world — the keyboard's click.
+	 *
+	 * The walk is the fish as the engine lists them, then ONE stop for the predator: sharks are
+	 * identical rule-machines and the store records a predator selection without saying which,
+	 * so as a selection they are a single creature however many are hunting. From nothing the
+	 * walk enters at whichever end the direction points at, and it wraps. A cycled-to fish is
+	 * HAND-PICKED (`followsChampion: false`): the user pointed at a particular creature, they
+	 * just did it with keys.
+	 */
+	cycleSelection(id: string, direction: 1 | -1): void {
+		const { world } = this.entry(id);
+		const stops: (Fish | Predator)[] = world.preds.length
+			? [...world.fish, world.preds[0]]
+			: [...world.fish];
+		if (stops.length === 0) return;
+
+		// Entering from nothing: one step forward lands on the first stop, one step back on the
+		// last — as if the selection had been standing just outside the matching end.
+		const current = this.#selectedStop(id, world, stops);
+		const start = current ?? (direction === 1 ? -1 : stops.length);
+		const target = stops[(start + direction + stops.length) % stops.length];
+
+		const picked: Picked =
+			'genome' in target ? { type: 'fish', obj: target } : { type: 'pred', obj: target };
+		this.select(id, picked);
+	}
+
+	/** Where the current selection sits on this world's walk, or null for "not here". */
+	#selectedStop(id: string, world: World, stops: (Fish | Predator)[]): number | null {
+		if (this.selection?.worldId !== id) return null;
+		if (this.selection.type === 'fish' && world.selFish) {
+			const index = stops.indexOf(world.selFish);
+			return index === -1 ? null : index;
+		}
+		if (this.selection.type === 'pred') return world.fish.length; // the single predator stop
+		return null;
+	}
+
+	/**
 	 * Roll the film. The bench stops where it is and waits.
 	 *
 	 * Not while it is TRAINING, though: a story does not advance the bench, so a turbo burst caught

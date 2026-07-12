@@ -375,6 +375,90 @@ describe('bench store — painting only when something changed', () => {
 	});
 });
 
+describe('bench store — keyboard creature cycling', () => {
+	/** A tiny world with a known census: 3 fish then 1 shark, so the walk order is checkable. */
+	const initCountable = () =>
+		bench.init({ configs: [{ ...structuredClone(DEFAULT_WORLDS[0]), prey: 3, preds: 1 }] });
+
+	it('enters at the first fish and walks forward, hand-picked', () => {
+		initCountable();
+		const e = bench.worlds[0];
+
+		bench.cycleSelection(e.id, 1);
+		expect(e.world.selFish).toBe(e.world.fish[0]);
+		expect(bench.selection).toEqual({ worldId: e.id, type: 'fish', followsChampion: false });
+
+		bench.cycleSelection(e.id, 1);
+		expect(e.world.selFish).toBe(e.world.fish[1]);
+	});
+
+	it('enters at the shark walking backward, and wraps around both ends', () => {
+		initCountable();
+		const e = bench.worlds[0];
+
+		bench.cycleSelection(e.id, -1); // the predator stop sits last, so backwards enters there
+		expect(bench.selection?.type).toBe('pred');
+
+		bench.cycleSelection(e.id, 1); // one past the shark wraps to the first fish
+		expect(e.world.selFish).toBe(e.world.fish[0]);
+
+		bench.cycleSelection(e.id, -1); // and one back from the first fish is the shark again
+		expect(bench.selection?.type).toBe('pred');
+	});
+
+	it('a pack of sharks is ONE stop — the walk can always get past them', () => {
+		initCountable();
+		const e = bench.worlds[0];
+		// The engine's documented fidelity quirk: a fresh world opens gen 0 with 2× predators.
+		// That is exactly the state this test needs, so assert it actually holds.
+		expect(e.world.preds.length).toBeGreaterThan(1);
+
+		bench.cycleSelection(e.id, -1); // onto the predator stop
+		expect(bench.selection?.type).toBe('pred');
+		bench.cycleSelection(e.id, 1); // one step must LEAVE the pack, not walk shark to shark
+		expect(bench.selection?.type).toBe('fish');
+		expect(e.world.selFish).toBe(e.world.fish[0]);
+	});
+
+	it('walks from wherever the champion selection stood, and hands over to a hand-pick', () => {
+		initCountable();
+		const e = bench.worlds[0];
+		bench.selectChampion(e.id);
+		const champion = e.world.selFish!;
+		const at = e.world.fish.indexOf(champion);
+
+		bench.cycleSelection(e.id, 1);
+
+		const expected = at === e.world.fish.length - 1 ? null : e.world.fish[at + 1];
+		if (expected) expect(e.world.selFish).toBe(expected);
+		else expect(bench.selection?.type).toBe('pred'); // the champion was last — next is the shark
+		expect(bench.selection?.followsChampion).toBe(false);
+	});
+
+	it('does nothing at all in an empty tank', () => {
+		initCountable();
+		const e = bench.worlds[0];
+		e.world.fish.length = 0; // a deployed world after the last catch
+		e.world.preds.length = 0;
+
+		bench.cycleSelection(e.id, 1);
+		expect(bench.selection).toBeNull();
+	});
+
+	it('ignores a selection that lives in a different world', () => {
+		bench.init({
+			configs: [0, 1].map((i) => ({ ...structuredClone(DEFAULT_WORLDS[i]), prey: 3, preds: 1 }))
+		});
+		const [a, b] = bench.worlds;
+		bench.cycleSelection(a.id, 1);
+		expect(a.world.selFish).toBe(a.world.fish[0]);
+
+		bench.cycleSelection(b.id, 1); // must enter b at ITS first fish, not continue a's walk
+		expect(b.world.selFish).toBe(b.world.fish[0]);
+		expect(a.world.selFish).toBeNull(); // one inspector: the old selection was put down
+	});
+});
+
 describe('bench store — selection', () => {
 	/**
 	 * A world with no predators, so nothing can be eaten.
