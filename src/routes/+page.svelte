@@ -11,6 +11,7 @@
 	import TopBar from '$lib/components/topbar/TopBar.svelte';
 	import TurboPill from '$lib/components/topbar/TurboPill.svelte';
 	import FieldNote from '$lib/components/bench/FieldNote.svelte';
+	import AblationMatrix from '$lib/components/bench/AblationMatrix.svelte';
 	import FirstRunHint from '$lib/components/bench/FirstRunHint.svelte';
 	import WorldTile from '$lib/components/bench/WorldTile.svelte';
 	import ConditionsModal from '$lib/components/conditions/ConditionsModal.svelte';
@@ -100,8 +101,14 @@
 			<WorldTile {entry} index={index + 1} />
 		{/each}
 
-		<button class="ghost" onclick={addWorld}>+ Add world</button>
+		<button class="ghost" onclick={addWorld}>+ Add environment</button>
 	</main>
+
+	<!-- Below the bench, because it ANSWERS the bench: the cards are cumulative and cannot say what
+	     one channel is worth on its own. This can, and the bench's own order was read off it. -->
+	<div class="banner">
+		<AblationMatrix />
+	</div>
 
 	{#if editing}
 		<ConditionsModal entry={editing} onclose={() => bench.closeConditions()} />
