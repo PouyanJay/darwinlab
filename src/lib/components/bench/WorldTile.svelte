@@ -11,6 +11,7 @@
 <script lang="ts">
 	import Tank from './Tank.svelte';
 	import TileStats from './TileStats.svelte';
+	import EvalPanel from './EvalPanel.svelte';
 	import SensePill from './SensePill.svelte';
 	import Button from '../common/Button.svelte';
 	import Chip from '../common/Chip.svelte';
@@ -141,6 +142,7 @@
 	</div>
 
 	<TileStats {entry} />
+	<EvalPanel {entry} />
 </section>
 
 <style>

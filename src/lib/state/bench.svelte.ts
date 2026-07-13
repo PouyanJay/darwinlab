@@ -49,6 +49,7 @@ import { Playback, type Speed } from './playback.svelte';
 import { PainterRegistry } from './painters';
 import { WorldStats, WorldConfigView, MindView, makeEntry, type WorldEntry } from './views.svelte';
 import { story } from './story.svelte';
+import { evals } from './evals.svelte';
 
 export { WorldStats, WorldConfigView, MindView, type WorldEntry };
 
@@ -291,6 +292,8 @@ class BenchStore {
 
 	/** Restart evolution from random brains. */
 	resetWorld(id: string): void {
+		// the result described a population that no longer exists — keeping it would be a lie
+		evals.forget(id);
 		engineResetWorld(this.entry(id).world);
 		this.requestPaint();
 	}

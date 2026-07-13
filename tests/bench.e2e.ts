@@ -186,3 +186,33 @@ test('an environment that has been edited says so on its face', async ({ page })
 
 	await expect(tile3.getByText('▲ 1 override')).toBeVisible();
 });
+
+test('EVALUATION: a card reports a result with an error bar, and withdraws it when the config changes', async ({
+	page
+}) => {
+	/*
+	 * The tank is one population on one seed. This is the control that turns the bench into a
+	 * benchmark: replicate the environment across independent seeds, freeze each evolved population
+	 * so nothing evolves while it is judged, and state the mean, the error bar and the n.
+	 *
+	 * And then WITHDRAW it. A result measured at a configuration you have since changed is not an
+	 * answer to the question you are now asking, and a number that no longer matches its config is
+	 * worse than no number at all.
+	 */
+	test.setTimeout(240_000);
+	const tile = page.locator('section[aria-label^="world"]').nth(2);
+
+	await tile.getByTestId('evaluate').click();
+	await expect(tile.getByTestId('eval-return')).toBeVisible({ timeout: 180_000 });
+	await expect(tile.getByTestId('eval-return')).toHaveText(/^\d+\.\d\ds$/);
+	await expect(tile.locator('.eval')).toContainText('n = 5 seeds');
+	await expect(tile.locator('.eval')).toContainText('strikes dodged');
+
+	// the result is NOT stale yet
+	await expect(tile.getByTestId('eval-stale')).toHaveCount(0);
+
+	// change the environment out from under it — one sense pill is enough
+	await tile.getByRole('button', { name: 'close', exact: true }).click();
+
+	await expect(tile.getByTestId('eval-stale')).toBeVisible();
+});
