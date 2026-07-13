@@ -49,23 +49,39 @@ test('EVALUATION: a card reports a result with an error bar, and withdraws it wh
 	await expect(tile.getByTestId('eval-stale')).toBeVisible();
 });
 
-test('THE ABLATION MATRIX: what each observation channel is worth, measured directly', async ({
+test("THE ABLATION MATRIX is PER CARD: it runs in that environment's own conditions", async ({
 	page
 }) => {
 	/*
-	 * The bench's environments are cumulative, so an environment carrying a channel that pays and one
-	 * that taxes reports their sum and neither shows. This runs the SUBSETS — same environment, same
-	 * seeds, equal budgets — and says what each is worth against the blind policy.
+	 * The point of the fix this test exists for: a channel is worth exactly what ITS OWN environment
+	 * makes it worth. Boundary rays pay in a world with no free wall-avoidance and are worthless in
+	 * one that has it; bearing pays when the adversary is slow enough to escape and buys nothing when
+	 * it is not. A single bench-wide matrix — which is what shipped first — answered a question
+	 * nobody asked, because it measured somebody else's tank.
 	 */
 	test.setTimeout(300_000);
+	const tile = page.locator('section[aria-label^="world"]').nth(2);
+	const matrix = tile.getByRole('region', { name: /ablation matrix/ });
 
-	await page.getByTestId('run-ablation').click();
+	// every card carries its own, and it is on the card — not once at the bottom of the bench
+	await expect(page.getByRole('region', { name: /ablation matrix/ })).toHaveCount(5);
 
-	const matrix = page.getByRole('region', { name: 'ablation matrix' });
+	await matrix.getByRole('button', { name: 'ablation matrix', exact: true }).click();
+	await matrix.getByTestId('run-ablation').click();
+
 	await expect(matrix.getByRole('row', { name: /all four/ })).toBeVisible({ timeout: 240_000 });
+	await expect(matrix.getByRole('row')).toHaveCount(7); // header + six observation subsets
+	await expect(matrix.getByRole('row', { name: /^blind/ })).toContainText('0%'); // the baseline
 
-	// every subset is reported, each with an error bar and a verdict against blindness
-	await expect(matrix.getByRole('row')).toHaveCount(7); // header + six subsets
-	await expect(matrix.getByRole('row', { name: /^blind/ })).toContainText('0%'); // the baseline itself
-	await expect(matrix).toContainText('populations frozen while scored');
+	/*
+	 * AND IT BELONGS TO THESE CONDITIONS. Change what the environment IS — not its pills, which the
+	 * matrix varies itself — and the numbers stop describing it. They are struck through and said so,
+	 * rather than sitting there answering a question about a tank that no longer exists.
+	 */
+	await tile.getByRole('button', { name: 'Conditions' }).click();
+	const conditions = page.getByRole('dialog', { name: 'Conditions' });
+	await conditions.getByRole('slider', { name: /predator speed/i }).fill('1.4');
+	await page.keyboard.press('Escape');
+
+	await expect(matrix.getByTestId('ablation-stale')).toBeVisible();
 });

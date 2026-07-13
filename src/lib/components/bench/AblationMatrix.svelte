@@ -1,194 +1,175 @@
 <!--
-  The ablation matrix — what each observation channel is actually WORTH.
+  The ablation matrix — what each observation channel is worth IN THIS ENVIRONMENT.
 
-  The bench's five environments are CUMULATIVE (each adds a channel to the one before), and that
-  hides the individual verdicts: an environment carrying a channel that pays and one that taxes
-  reports their sum, so neither shows. This runs the SUBSETS directly — every combination on equal
-  budgets, on the same seeds, in the same environment — and prints what each one is worth against
-  the blind policy.
+  It belongs on the card, and that is not a layout preference. A channel is worth exactly what its
+  own environment makes it worth: boundary rays pay in a world with no free wall-avoidance and are
+  worthless in one that has it; bearing pays when the adversary is slow enough to escape and buys
+  nothing when it is not. A single matrix run against some other card's conditions answers a
+  question nobody asked — which is what the first cut of this did, and why it is per-card now.
 
-  It is the panel that settles arguments, and it is the reason the bench's own ladder is ordered the
-  way it is: the order was read off this table, not chosen.
+  Every row is THIS card's conditions — its adversaries, its speeds, its tank — with a different
+  observation space. Only the observation space varies, which is what makes it an ablation.
+
+  It stales on the CONDITIONS, not on the pills: the matrix varies the senses itself, so toggling a
+  pill cannot invalidate it, but changing the adversaries or the speeds can and does.
 -->
 <script lang="ts">
 	import Button from '../common/Button.svelte';
-	import { evaluate } from '$lib/lab/evaluator';
-	import { bench } from '$lib/state';
-	import type { Senses, WorldConfig } from '$lib/engine';
+	import { evals } from '$lib/state';
+	import type { WorldEntry } from '$lib/state';
 
-	/** The subsets worth asking about. Each is a policy that receives exactly these channels. */
-	const SUBSETS: { label: string; senses: Senses }[] = [
-		{ label: 'blind', senses: { dist: false, dir: false, closing: false, walls: false } },
-		{ label: 'range', senses: { dist: true, dir: false, closing: false, walls: false } },
-		{ label: 'bearing', senses: { dist: false, dir: true, closing: false, walls: false } },
-		{ label: 'range + bearing', senses: { dist: true, dir: true, closing: false, walls: false } },
-		{
-			label: '+ boundary rays',
-			senses: { dist: true, dir: true, closing: false, walls: true }
-		},
-		{ label: 'all four', senses: { dist: true, dir: true, closing: true, walls: true } }
-	];
-
-	interface Row {
-		label: string;
-		mean: number;
-		sd: number;
-		vsBlind: number;
+	interface Props {
+		entry: WorldEntry;
 	}
 
-	let rows = $state<Row[]>([]);
-	let running = $state(false);
-	let progress = $state(0);
-	let controller: AbortController | null = null;
+	let { entry }: Props = $props();
 
-	/** Seeds and episodes: enough for a real error bar without asking the reader to wait forever. */
-	const SEEDS = 3;
-	const EPISODES = 20;
+	let open = $state(false);
 
-	async function run() {
-		if (running) return;
-		const base = bench.worlds[0]?.world.cfg;
-		if (!base) return;
-
-		running = true;
-		rows = [];
-		progress = 0;
-		controller = new AbortController();
-		const signal = controller.signal;
-
-		let blindMean = 0;
-		for (const [index, subset] of SUBSETS.entries()) {
-			const cfg: WorldConfig = { ...structuredClone(base), senses: { ...subset.senses } };
-			const result = await evaluate(
-				{ cfg, seeds: SEEDS, episodes: EPISODES },
-				{
-					signal,
-					onProgress: (fraction) => (progress = (index + fraction) / SUBSETS.length)
-				}
-			);
-			if (!result || signal.aborted) {
-				running = false;
-				return;
-			}
-			if (index === 0) blindMean = result.meanReturn;
-			rows = [
-				...rows,
-				{
-					label: subset.label,
-					mean: result.meanReturn,
-					sd: result.sdReturn,
-					// what this subset is worth OVER BLINDNESS — the only comparison that answers
-					// "does knowing pay", which comparing against random policies never did
-					vsBlind: blindMean ? (result.meanReturn / blindMean - 1) * 100 : 0
-				}
-			];
-		}
-
-		running = false;
-		progress = 0;
-	}
-
-	function cancel() {
-		controller?.abort();
-		running = false;
-		progress = 0;
-	}
+	const cfg = $derived(entry.world.cfg);
+	// Touch the REACTIVE mirror so staleness re-derives when a condition changes: the raw world is
+	// $state.raw and would never wake this.
+	const version = $derived(
+		`${entry.config.preds}·${entry.config.predSpeed}·${entry.config.prey}·${entry.config.vision}·${entry.config.persistence}`
+	);
+	const rows = $derived(version ? evals.heldAblation(entry.id) : null);
+	const stale = $derived(version ? evals.isAblationStale(entry.id, cfg) : false);
+	const busy = $derived(evals.ablating === entry.id);
 </script>
 
-<section class="matrix" aria-label="ablation matrix">
-	<header>
-		<div>
-			<h2>Ablation matrix</h2>
-			<p>
-				What each observation channel is worth, measured directly. The bench's environments are
-				cumulative, so a channel that pays and one that taxes report their sum and neither shows.
-				Every row here is the same environment with a different observation space — equal budgets,
-				equal seeds — scored against the blind policy.
-			</p>
+<section class="ablation" aria-label="ablation matrix for {entry.config.name}">
+	<!-- An explicit label: the visible text mentions the environment, and a role-name lookup for
+	     "Conditions" (the dialog's button, right above) would otherwise match this too. -->
+	<button
+		class="head"
+		onclick={() => (open = !open)}
+		aria-expanded={open}
+		aria-label="ablation matrix"
+	>
+		<span class="eyebrow">ablation matrix</span>
+		<span class="sub">what each channel is worth, in this environment</span>
+		<span class="chevron" aria-hidden="true">{open ? '−' : '+'}</span>
+	</button>
+
+	{#if open}
+		<div class="body">
+			{#if busy}
+				<div class="running">
+					<div class="bar">
+						<div class="fill" style:width="{evals.ablationProgress * 100}%"></div>
+					</div>
+					<span class="tabular">{Math.round(evals.ablationProgress * 100)}%</span>
+					<Button size="sm" variant="ghost" onclick={() => evals.cancelAblation()}>Cancel</Button>
+				</div>
+			{/if}
+
+			{#if rows?.length}
+				<table class:stale>
+					<thead>
+						<tr>
+							<th>observation space</th>
+							<th class="n">mean return</th>
+							<th class="n">± sd</th>
+							<th class="n">vs blind</th>
+						</tr>
+					</thead>
+					<tbody>
+						{#each rows as row (row.label)}
+							<tr>
+								<td>{row.label}</td>
+								<td class="n tabular">{row.mean.toFixed(2)}s</td>
+								<td class="n tabular muted">{row.sd.toFixed(2)}</td>
+								<td class="n tabular" class:pays={row.vsBlind > 2} class:taxes={row.vsBlind < -2}>
+									{row.vsBlind > 0 ? '+' : ''}{row.vsBlind.toFixed(0)}%
+								</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+
+				{#if stale}
+					<p class="warn" data-testid="ablation-stale">
+						The conditions changed since this was measured — a channel is worth what ITS environment
+						makes it worth, so these numbers no longer describe this one.
+					</p>
+				{/if}
+			{:else if !busy}
+				<p class="empty">
+					Runs this environment's own conditions with one observation space after another, and
+					reports what each is worth against the blind policy. The card's own pills stay as they
+					are.
+				</p>
+			{/if}
+
+			{#if !busy}
+				<Button size="sm" onclick={() => evals.ablate(entry.id, cfg)} data-testid="run-ablation">
+					{rows?.length ? 'Re-run' : 'Run ablation'}
+				</Button>
+			{/if}
 		</div>
-		{#if running}
-			<Button size="sm" variant="ghost" onclick={cancel}>Cancel</Button>
-		{:else}
-			<Button size="sm" onclick={run} data-testid="run-ablation">
-				{rows.length ? 'Re-run' : `Run (${SUBSETS.length} × ${SEEDS} seeds)`}
-			</Button>
-		{/if}
-	</header>
-
-	{#if running}
-		<div class="bar"><div class="fill" style:width="{progress * 100}%"></div></div>
-	{/if}
-
-	{#if rows.length}
-		<table>
-			<thead>
-				<tr>
-					<th>observation space</th>
-					<th class="n">mean return</th>
-					<th class="n">± sd</th>
-					<th class="n">vs blind</th>
-				</tr>
-			</thead>
-			<tbody>
-				{#each rows as row (row.label)}
-					<tr>
-						<td>{row.label}</td>
-						<td class="n tabular">{row.mean.toFixed(2)}s</td>
-						<td class="n tabular muted">{row.sd.toFixed(2)}</td>
-						<td class="n tabular" class:pays={row.vsBlind > 2} class:taxes={row.vsBlind < -2}>
-							{row.vsBlind > 0 ? '+' : ''}{row.vsBlind.toFixed(0)}%
-						</td>
-					</tr>
-				{/each}
-			</tbody>
-		</table>
-		<p class="footnote">
-			n = {SEEDS} seeds × {EPISODES} episodes per row, populations frozen while scored. A channel that
-			pays does so because this environment holds a hazard only it can solve; one that taxes is noise
-			the policy has to overcome.
-		</p>
 	{/if}
 </section>
 
 <style>
-	.matrix {
-		padding: var(--sp-5) var(--sp-6);
-		border: 1px solid var(--line);
-		border-radius: var(--radius-panel);
-		background: var(--panel);
+	.ablation {
+		border-top: 1px solid var(--line);
+		background: var(--panel2);
 	}
 
-	header {
+	.head {
 		display: flex;
-		align-items: flex-start;
-		justify-content: space-between;
-		gap: var(--sp-5);
+		align-items: baseline;
+		gap: var(--sp-3);
+		width: 100%;
+		padding: var(--sp-4) var(--sp-5);
+		border: 0;
+		background: none;
+		text-align: left;
+		cursor: pointer;
 	}
 
-	h2 {
-		margin: 0;
-		font-family: var(--font-display);
-		font-size: var(--fs-title);
+	.eyebrow {
+		font-size: var(--fs-eyebrow);
 		font-weight: var(--fw-semibold);
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		color: var(--ink3);
 	}
 
-	header p {
-		margin: var(--sp-2) 0 0;
-		max-width: 68ch;
+	.sub {
+		flex: 1;
 		font-size: var(--fs-label);
 		color: var(--ink3);
 	}
 
+	.chevron {
+		font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+		color: var(--ink3);
+	}
+
+	.body {
+		display: flex;
+		flex-direction: column;
+		gap: var(--sp-3);
+		padding: 0 var(--sp-5) var(--sp-5);
+	}
+
 	table {
 		width: 100%;
-		margin-top: var(--sp-5);
 		border-collapse: collapse;
 		font-size: var(--fs-sm);
 	}
 
+	/* Numbers measured in conditions that no longer exist are not an answer to anything. */
+	table.stale {
+		opacity: 0.55;
+		text-decoration: line-through;
+		text-decoration-thickness: 1px;
+	}
+
 	th,
 	td {
-		padding: 7px 10px;
+		padding: 5px 8px;
 		border-bottom: 1px solid var(--line);
 		text-align: left;
 	}
@@ -219,15 +200,31 @@
 		color: var(--danger-ink);
 	}
 
-	.footnote {
-		margin: var(--sp-3) 0 0;
+	.empty,
+	.warn {
+		margin: 0;
 		font-size: var(--fs-label);
+	}
+
+	.empty {
 		color: var(--ink3);
 	}
 
+	.warn {
+		color: var(--danger-ink);
+	}
+
+	.running {
+		display: flex;
+		align-items: center;
+		gap: var(--sp-3);
+		font-size: var(--fs-label);
+		color: var(--ink2);
+	}
+
 	.bar {
+		flex: 1;
 		height: 4px;
-		margin-top: var(--sp-4);
 		border-radius: 2px;
 		background: var(--line);
 		overflow: hidden;
