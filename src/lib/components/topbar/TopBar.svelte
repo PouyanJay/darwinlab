@@ -13,8 +13,10 @@
 	import Segmented from '../common/Segmented.svelte';
 	import LogoMark from './LogoMark.svelte';
 	import LabSettings from './LabSettings.svelte';
+	import RunManifest from './RunManifest.svelte';
 	import TransportIcon from '../common/TransportIcon.svelte';
 	import { bench, theme, SPEEDS } from '$lib/state';
+	import { SCENARIO } from '$lib/lab/scenario';
 
 	interface Props {
 		/** Wired in Phase 8. Until story mode exists, the button simply isn't there. */
@@ -61,24 +63,34 @@
 		<!-- The page's h1: the bench has real h2s (dialogs, drawers), and a page whose headings
 		     start at level two reads as if its top is missing. -->
 		<h1 class="wordmark">Darwin Lab</h1>
-		<Chip variant="tag" class="live-tag">live evolution</Chip>
+		<Chip variant="tag" class="live-tag">agent sandbox</Chip>
 	</div>
 
 	<span class="divider" aria-hidden="true"></span>
 
+	<!-- The lab is the instrument; the scenario is what it is pointed AT. Saying both — and saying
+	     which concrete thing each role is bound to — is what keeps this from reading as a fish game
+	     with charts on it. Point it at a maze tomorrow and only the binding changes. -->
 	<div class="lab">
-		<span class="lab-name">Lab 01 · Predator &amp; Prey</span>
+		<span class="lab-name">{SCENARIO.index} · {SCENARIO.name}</span>
 		<span class="lab-blurb">
-			Real neuroevolution — every fish carries a tiny brain that survives, breeds, and mutates.
+			<b>agents</b>
+			{SCENARIO.agent.many} · <b>adversary</b>
+			{SCENARIO.adversary.many} ·
+			<b>policy</b>
+			{SCENARIO.policy.one} (68 params) · <b>objective</b>
+			{SCENARIO.objective}
 		</span>
 	</div>
 
 	<div class="spacer"></div>
 
+	<RunManifest />
+
 	<p class="readout">
 		<span class="glyph" aria-hidden="true">⟳</span>
 		<b class="tabular" data-testid="generations">{bench.generationsEvolved}</b>
-		<span class="readout-label">generations evolved</span>
+		<span class="readout-label">episodes</span>
 	</p>
 
 	<!-- No aria-label on the buttons that carry visible text: an aria-label would REPLACE the label a

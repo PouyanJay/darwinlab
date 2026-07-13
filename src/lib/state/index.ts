@@ -9,3 +9,4 @@ export * from './playback.svelte';
 export * from './painters';
 export * from './theme.svelte';
 export * from './motion.svelte';
+export * from './evals.svelte';

@@ -38,7 +38,9 @@ import {
 	PERSISTENCE_DEFAULTS,
 	MAX_GENERATIONS
 } from '../engine';
+import { seededRng } from '../engine';
 import type { World, WorldConfig, Senses, Fish, Predator, NumericCondition } from '../engine';
+import { configHash, manifest } from '../lab/run';
 import type { Rng } from '../engine';
 import type { Picked } from '../render';
 import { subSteps, turboSlice } from '../sim/loop';
@@ -47,6 +49,7 @@ import { Playback, type Speed } from './playback.svelte';
 import { PainterRegistry } from './painters';
 import { WorldStats, WorldConfigView, MindView, makeEntry, type WorldEntry } from './views.svelte';
 import { story } from './story.svelte';
+import { evals } from './evals.svelte';
 
 export { WorldStats, WorldConfigView, MindView, type WorldEntry };
 
@@ -81,6 +84,8 @@ export interface BenchInit {
 	prewarmGenerations?: number;
 	/** Once a world reaches this generation it deploys (stops evolving). 0 = never. */
 	maxGenerations?: number;
+	/** The seed this run is launched on. Null (the default) = unseeded, and NOT reproducible. */
+	seed?: number | null;
 }
 
 /** Hold a value inside the range the lab offers. The engine does not validate; the store must. */
@@ -135,6 +140,16 @@ class BenchStore {
 	#rawWorlds: World[] = [];
 	/** Undefined = each world uses the engine's default (Math.random). Tests pass a seeded one. */
 	#rng: Rng | undefined;
+	/**
+	 * The seed this run was launched with, or null when it is unseeded.
+	 *
+	 * `$state` because the run manifest in the top bar reads it. NULL IS THE HONEST DEFAULT: the
+	 * app opens on Math.random, so the opening run is genuinely NOT reproducible, and a manifest
+	 * that printed a seed anyway would be lying about what it can hand you.
+	 */
+	#seed = $state<number | null>(null);
+	/** What each environment was CREATED as — the baseline its "overrides" chip is measured against. */
+	#baselines = new Map<string, WorldConfig>();
 
 	// read-only projections of playback, so the UI binds to one object
 	get running(): boolean {
@@ -156,9 +171,35 @@ class BenchStore {
 		return this.#walkSelection;
 	}
 
-	init({ configs, prewarmGenerations = 0, maxGenerations = 0, rng }: BenchInit): void {
+	/** The seed this run was launched with — null when unseeded, and therefore unreproducible. */
+	get seed(): number | null {
+		return this.#seed;
+	}
+
+	/** Fingerprint of the CURRENT configuration of every environment on the bench. */
+	get configHash(): string {
+		return configHash(this.worlds.map((entry) => entry.world.cfg));
+	}
+
+	/** The full run manifest — what "copy config" hands to someone who wants your numbers. */
+	get manifest(): Record<string, unknown> {
+		return manifest(
+			this.worlds.map((entry) => entry.world.cfg),
+			this.#seed,
+			this.#maxGenerations
+		);
+	}
+
+	/** What this environment was created as. The tile diffs its REACTIVE view against this. */
+	baselineOf(id: string): WorldConfig | undefined {
+		return this.#baselines.get(id);
+	}
+
+	init({ configs, prewarmGenerations = 0, maxGenerations = 0, rng, seed = null }: BenchInit): void {
 		this.setMaxGenerations(maxGenerations); // the same door every other caller uses, clamp and all
-		this.#rng = rng;
+		this.#seed = seed;
+		this.#rng = rng ?? (seed === null ? undefined : seededRng(seed));
+		this.#baselines.clear();
 		this.#setWorlds(configs.map((cfg) => this.#create(structuredClone(cfg))));
 		if (prewarmGenerations > 0) this.playback.requestTraining(prewarmGenerations);
 		this.playback.start((elapsed, frameSeconds) => this.tick(elapsed, frameSeconds));
@@ -251,6 +292,8 @@ class BenchStore {
 
 	/** Restart evolution from random brains. */
 	resetWorld(id: string): void {
+		// the result described a population that no longer exists — keeping it would be a lie
+		evals.forget(id);
 		engineResetWorld(this.entry(id).world);
 		this.requestPaint();
 	}
@@ -482,6 +525,24 @@ class BenchStore {
 	}
 
 	/**
+	 * Relaunch the whole bench on a seed — the control that makes a run REPRODUCIBLE.
+	 *
+	 * Everything goes: the worlds, their evolved brains, the curves, the selection. That is the
+	 * point — a seeded run is a fresh experiment, not the old one relabelled, and pretending
+	 * otherwise would hand someone a manifest that does not reproduce what they are looking at.
+	 * Pass null to go back to an unseeded run.
+	 */
+	reseed(seed: number | null, configs: WorldConfig[], prewarmGenerations = 0): void {
+		const maxGenerations = this.#maxGenerations;
+		this.playback.reset();
+		this.painters.clear();
+		this.selection = null;
+		this.conditionsWorldId = null;
+		this.#nextId = 0;
+		this.init({ configs, prewarmGenerations, maxGenerations, seed });
+	}
+
+	/**
 	 * Advance the bench by one frame. The loop drives this; it is public so tests can step the
 	 * store deterministically instead of racing a 16ms timer.
 	 */
@@ -663,7 +724,10 @@ class BenchStore {
 
 	#wrap(world: World): WorldEntry {
 		world.maxGen = this.#maxGenerations;
-		return makeEntry(this.#id(), world);
+		const entry = makeEntry(this.#id(), world);
+		// what it was created as — every override chip is measured against this
+		this.#baselines.set(entry.id, structuredClone(world.cfg));
+		return entry;
 	}
 
 	/** Re-project a world's cfg after the store has written to it. Every cfg write ends here. */

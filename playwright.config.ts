@@ -3,6 +3,19 @@ import { defineConfig } from '@playwright/test';
 export default defineConfig({
 	webServer: { command: 'npm run build && npm run preview', port: 4173 },
 	testMatch: '**/*.e2e.{ts,js}',
+	/*
+	 * Two projects, and the second waits for the first.
+	 *
+	 * The measurement tests (n-seed evaluation, ablation matrix) burn real CPU — they replicate
+	 * environments across seeds, which is the entire point of them. Run in parallel with the rest of
+	 * the suite they starve the other workers, and the simulations those tests are watching crawl:
+	 * what you see is a DIFFERENT story or bench test failing on each run, never the one at fault.
+	 * Sequencing them after everything else means the heavy work happens with the machine to itself.
+	 */
+	projects: [
+		{ name: 'app', testIgnore: '**/measure.e2e.ts' },
+		{ name: 'measure', testMatch: '**/measure.e2e.ts', dependencies: ['app'] }
+	],
 	use: {
 		/*
 		 * The suite must also pass against a GitHub Pages-style build (BASE_PATH=/darwinlab),

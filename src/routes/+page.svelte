@@ -11,6 +11,7 @@
 	import TopBar from '$lib/components/topbar/TopBar.svelte';
 	import TurboPill from '$lib/components/topbar/TurboPill.svelte';
 	import FieldNote from '$lib/components/bench/FieldNote.svelte';
+	import AblationMatrix from '$lib/components/bench/AblationMatrix.svelte';
 	import FirstRunHint from '$lib/components/bench/FirstRunHint.svelte';
 	import WorldTile from '$lib/components/bench/WorldTile.svelte';
 	import ConditionsModal from '$lib/components/conditions/ConditionsModal.svelte';
@@ -19,8 +20,7 @@
 	import FooterPill from '$lib/components/common/FooterPill.svelte';
 	import { bench, story, theme, prefersReducedMotion } from '$lib/state';
 	import { DEFAULT_WORLDS, newWorldConfig, MAX_GENERATIONS_DEFAULT } from '$lib/engine';
-
-	const PREWARM_GENERATIONS = 15;
+	import { PREWARM_GENERATIONS } from '$lib/lab/scenario';
 
 	// A paused bench repaints only on demand (see bench.requestPaint) — but the palette and the
 	// reduced-motion flag change what the pixels look like WITHOUT going through the store, so
@@ -101,8 +101,14 @@
 			<WorldTile {entry} index={index + 1} />
 		{/each}
 
-		<button class="ghost" onclick={addWorld}>+ Add world</button>
+		<button class="ghost" onclick={addWorld}>+ Add environment</button>
 	</main>
+
+	<!-- Below the bench, because it ANSWERS the bench: the cards are cumulative and cannot say what
+	     one channel is worth on its own. This can, and the bench's own order was read off it. -->
+	<div class="banner">
+		<AblationMatrix />
+	</div>
 
 	{#if editing}
 		<ConditionsModal entry={editing} onclose={() => bench.closeConditions()} />
