@@ -81,7 +81,7 @@
 
 	<div class="curve">
 		<div class="curve-head">
-			<span class="eyebrow">life / generation</span>
+			<span class="eyebrow">mean return / episode</span>
 			<!-- the number reads in the world's accent, run toward the ink so 12px stays AA -->
 			<b class="tabular survival" style:--curve-accent={accent} data-testid="survival"
 				>{entry.stats.survivalPct}%</b
@@ -104,7 +104,7 @@
 <div class="row deploy">
 	<span class="visually-hidden" role="status">{announcement}</span>
 	<div class="deploy-stat">
-		<div class="deploy-label">Real-world run</div>
+		<div class="deploy-label">Held-out run</div>
 		<div class="tabular" data-testid="deployment">{deployment}</div>
 	</div>
 	<div class="sparkline decay">

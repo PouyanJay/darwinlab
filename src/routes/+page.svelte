@@ -19,8 +19,7 @@
 	import FooterPill from '$lib/components/common/FooterPill.svelte';
 	import { bench, story, theme, prefersReducedMotion } from '$lib/state';
 	import { DEFAULT_WORLDS, newWorldConfig, MAX_GENERATIONS_DEFAULT } from '$lib/engine';
-
-	const PREWARM_GENERATIONS = 15;
+	import { PREWARM_GENERATIONS } from '$lib/lab/scenario';
 
 	// A paused bench repaints only on demand (see bench.requestPaint) — but the palette and the
 	// reduced-motion flag change what the pixels look like WITHOUT going through the store, so

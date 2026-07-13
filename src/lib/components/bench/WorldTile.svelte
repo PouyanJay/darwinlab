@@ -18,6 +18,7 @@
 	import { SENSES } from '../senses';
 	import { describeWorld } from './describeWorld';
 	import { bench } from '$lib/state';
+	import { configDiff } from '$lib/lab/run';
 	import type { WorldEntry } from '$lib/state';
 
 	interface Props {
@@ -31,6 +32,21 @@
 	const config = $derived(entry.config);
 	const badge = $derived(String(index).padStart(2, '0'));
 	const meta = $derived(describeWorld(config));
+
+	/**
+	 * How this environment differs from what it was created as. An eval card's job is to say what is
+	 * DIFFERENT about it; without this, a bench of five cards all look equally default and a reader
+	 * has to open five dialogs to find the one you changed.
+	 *
+	 * Derived from the REACTIVE config view, never from `entry.world.cfg` — the world is
+	 * `$state.raw`, so a diff read off it would never update. (It didn't; the e2e caught it.)
+	 */
+	const baseline = $derived(bench.baselineOf(entry.id));
+	const diff = $derived(baseline ? configDiff(config, baseline) : {});
+	const diffKeys = $derived(Object.keys(diff));
+	const diffText = $derived(
+		diffKeys.map((k) => `${k} = ${JSON.stringify(diff[k as keyof typeof diff])}`).join(' · ')
+	);
 
 	// The ENGINE decides when a world is deployed; the tile does not re-derive it. Two copies of that
 	// rule would eventually disagree, and the "· trained" pill would say one thing while the
@@ -85,7 +101,19 @@
 
 	<div class="chips">
 		<Chip>{meta}</Chip>
-		<div class="senses" role="group" aria-label="senses — the brain's input neurons">
+		{#if diffKeys.length}
+			<!-- What this environment is, said as a DIFF from the bench it launched with. "Same as the
+			     baseline except three adversaries" is the sentence a reader actually needs, and a card
+			     that cannot say it is a picture rather than an experiment. -->
+			<Chip
+				tone="accent"
+				style="--chip-accent: {config.accent}"
+				title="overrides vs the launched baseline — {diffText}"
+			>
+				▲ {diffKeys.length} override{diffKeys.length > 1 ? 's' : ''}
+			</Chip>
+		{/if}
+		<div class="senses" role="group" aria-label="observation space — the policy's input channels">
 			{#each SENSES as sense (sense.key)}
 				<SensePill
 					label={sense.short}

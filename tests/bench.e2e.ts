@@ -149,3 +149,40 @@ test('★ Champion selects the best brain alive, and the tank draws it', async (
 
 	await expect.poll(fingerprint, { timeout: 5000 }).not.toBe(frozen);
 });
+
+test('THE INSTRUMENT: a run is identified, and an unseeded one says so', async ({ page }) => {
+	/*
+	 * What separates a lab from a demo: the run can be handed to someone else. The chip carries the
+	 * configuration fingerprint and the seed — and when there is no seed it says "unseeded" rather
+	 * than printing a number that would reproduce nothing.
+	 */
+	const manifest = page.getByTestId('run-manifest');
+	await expect(manifest).toContainText('run');
+	await expect(page.getByTestId('seed')).toHaveText('unseeded');
+
+	await manifest.click();
+	const dialog = page.getByRole('dialog', { name: 'Run manifest' });
+	await expect(dialog).toBeVisible();
+
+	// pinning a seed RELAUNCHES the bench — a seeded run is a fresh experiment, not a relabelled one
+	await dialog.getByRole('textbox', { name: 'seed' }).fill('42');
+	await dialog.getByRole('button', { name: 'Relaunch' }).click();
+
+	await expect(page.getByTestId('seed')).toHaveText('42');
+	await waitForPrewarm(page);
+	await expect(page.getByTestId('generations')).toHaveText('15'); // and it evolved again, seeded
+});
+
+test('an environment that has been edited says so on its face', async ({ page }) => {
+	// A bench of five identical-looking cards makes the reader open five dialogs to find the one you
+	// changed. The card states its own overrides against the baseline the run launched with.
+	const tile3 = page.locator('section[aria-label^="world"]').nth(2);
+	await expect(tile3.getByText(/override/)).toHaveCount(0);
+
+	await tile3.getByRole('button', { name: 'Conditions' }).click();
+	const conditions = page.getByRole('dialog', { name: 'Conditions' });
+	await conditions.getByRole('button', { name: 'more predators' }).click();
+	await page.keyboard.press('Escape');
+
+	await expect(tile3.getByText('▲ 1 override')).toBeVisible();
+});
