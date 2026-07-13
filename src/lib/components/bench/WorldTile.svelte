@@ -12,6 +12,7 @@
 	import Tank from './Tank.svelte';
 	import TileStats from './TileStats.svelte';
 	import EvalPanel from './EvalPanel.svelte';
+	import AblationMatrix from './AblationMatrix.svelte';
 	import SensePill from './SensePill.svelte';
 	import Button from '../common/Button.svelte';
 	import Chip from '../common/Chip.svelte';
@@ -143,6 +144,10 @@
 
 	<TileStats {entry} />
 	<EvalPanel {entry} />
+	<!-- On the CARD, because the answer belongs to the environment: a channel is worth exactly what
+	     ITS OWN conditions make it worth, and a matrix run in some other card's tank answers a
+	     question nobody asked. -->
+	<AblationMatrix {entry} />
 </section>
 
 <style>
