@@ -134,6 +134,12 @@
 	   Retuned to 4.92:1 on --panel2 (5.33:1 on --panel) — move either surface again and re-measure. */
 	--danger-ink: #c03d2a;
 	--gold-ink: #8a651c;
+	/* The flee lens's ramp. ⚠️ MIRROR of THEMES.light.lens* in render/theme.ts — the tank paints the
+	   fish from there and this legend explains them from here, so they must be the same three
+	   colours or the legend is a lie about the picture next to it. */
+	--lens-good: #1a9478;
+	--lens-mid: #d8a13a;
+	--lens-bad: #c93d2a;
 	/* The brain viz only — see ThemePalette in render/theme.ts for why the two signs need colours
 	   of their own rather than reusing accent/danger. */
 	--excite: #4f56d3;
@@ -191,6 +197,10 @@
 	/* In dark both already read at AA on the near-black panels — the text variants ARE them. */
 	--danger-ink: #ff2d9c;
 	--gold-ink: #ffd166;
+	/* ⚠️ MIRROR of THEMES.dark.lens* — see the note in the light block. */
+	--lens-good: #38d0f5;
+	--lens-mid: #ffd166;
+	--lens-bad: #ff5c7c;
 	/* cyan: in dark, accent and danger are the same magenta, so + and − would look identical */
 	--excite: #38d0f5;
 	--inhibit: #ff2d9c;

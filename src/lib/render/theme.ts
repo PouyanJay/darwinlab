@@ -12,6 +12,16 @@
 
 export type ThemeName = 'light' | 'dark';
 
+/**
+ * What the tank is coloured BY.
+ *
+ * A lens is a way of looking, never a way of changing: 'flee' repaints each fish by how wrong its
+ * escape is at this instant, and that is the whole of it. No lens writes to a weight, a fitness, a
+ * curve or the RNG — the population that swims under a lens is the identical population that swims
+ * without one, frame for frame.
+ */
+export type Lens = 'none' | 'flee';
+
 export interface ThemePalette {
 	tankEdge: string;
 	/** rgb triplet (no alpha) — composed into rgba() at draw time. */
@@ -43,6 +53,27 @@ export interface ThemePalette {
 	inkSoft: string;
 	pill: string;
 	shadow: string;
+	/**
+	 * The flee lens — rgb triplets, composed into rgb() at draw time.
+	 *
+	 * The ramp DIVERGES around `lensMid`, and the midpoint is not a design choice — it is the null
+	 * hypothesis. 90° of flee error is exactly what aimless drift scores: a fish that ignores the
+	 * shark entirely averages a right angle to it. So 90° is "no opinion", below it is fleeing, above
+	 * it is swimming into the mouth, and the colour says which side of chance the fish is on.
+	 *
+	 * A plain 0→180 ramp was tried first and was useless: measured populations sit between 70° and
+	 * 90°, which on a linear scale is the same muddy middle colour for a world that learned and a
+	 * world that did not. The difference was real (blind 85°, bearing 73°) and invisible. Diverging
+	 * around chance is what makes a 12° shift a colour a human can actually see.
+	 *
+	 * `lensIdle` is for a fish with NO READING — nothing in vision, or too slow for its heading to
+	 * mean anything. Deliberately a neutral grey, and deliberately not `lensGood`: an unmeasured fish
+	 * must never be flattered into looking like a correct one.
+	 */
+	lensGood: string;
+	lensMid: string;
+	lensBad: string;
+	lensIdle: string;
 }
 
 export const THEMES: Record<ThemeName, ThemePalette> = {
@@ -66,7 +97,11 @@ export const THEMES: Record<ThemeName, ThemePalette> = {
 		ink: '#1d2230',
 		inkSoft: 'rgba(29,34,48,.72)', // mirrors --ink2 — deepened with it for the Phase 9 AA gate
 		pill: 'rgba(253,253,248,.92)',
-		shadow: 'rgba(30,45,35,.09)'
+		shadow: 'rgba(30,45,35,.09)',
+		lensGood: '26,148,120',
+		lensMid: '216,161,58',
+		lensBad: '201,61,42',
+		lensIdle: '150,152,162'
 	},
 	dark: {
 		// Softened from the reference's .42: a 2px magenta rim at nearly half opacity read as a neon
@@ -93,7 +128,13 @@ export const THEMES: Record<ThemeName, ThemePalette> = {
 		ink: '#f5f5fa',
 		inkSoft: 'rgba(245,245,250,.68)', // mirrors --ink2 — deepened with it for the Phase 9 AA gate
 		pill: 'rgba(12,12,17,.88)',
-		shadow: 'rgba(0,0,0,.4)'
+		shadow: 'rgba(0,0,0,.4)',
+		// NOT the predator's magenta for `bad`: a fish painted in the shark's own colour is a fish
+		// the eye stops finding. Cyan → rose is the ramp that stays legible against a magenta hunter.
+		lensGood: '56,208,245',
+		lensMid: '255,209,102',
+		lensBad: '255,92,124',
+		lensIdle: '138,140,155'
 	}
 };
 
@@ -104,6 +145,12 @@ export interface DrawWorldOpts {
 	detail?: 'cinematic' | 'performance';
 	/** Big/cinematic mode — the story stage. */
 	big?: boolean;
+	/**
+	 * What the tank is COLOURED by. 'none' paints the fish in the palette's own colour; 'flee' paints
+	 * each one by how wrong its escape is right now (engine/flee.ts). A lens changes what you SEE,
+	 * never what evolved — no lens touches a single weight, a fitness, or a curve.
+	 */
+	lens?: Lens;
 	/**
 	 * Freeze tail-flick, shark sway and signal pulses to a legible static state.
 	 * INJECTED (the reference read `matchMedia` at module scope; render must stay DOM-free).

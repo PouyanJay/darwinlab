@@ -39,6 +39,7 @@
 			theme: theme.name,
 			detail,
 			big,
+			lens: bench.lens,
 			reducedMotion: prefersReducedMotion()
 		});
 	}

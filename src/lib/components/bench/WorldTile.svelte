@@ -10,6 +10,7 @@
 -->
 <script lang="ts">
 	import Tank from './Tank.svelte';
+	import LensStrip from './LensStrip.svelte';
 	import TileStats from './TileStats.svelte';
 	import EvalPanel from './EvalPanel.svelte';
 	import AblationMatrix from './AblationMatrix.svelte';
@@ -144,6 +145,12 @@
 	<div class="tank" style:--tank-aspect="{config.bw} / {config.bh}">
 		<Tank {entry} onselect={(picked) => bench.select(entry.id, picked)} />
 	</div>
+
+	<!-- The lens's own reading for this tank, only while the lens is on. The colour in the water and
+	     this number are the same quantity — one for the eye, one for the argument. -->
+	{#if bench.lens === 'flee'}
+		<LensStrip {entry} />
+	{/if}
 
 	<!-- The card's actions, on a bar of their own. Champion used to float ON the water, which put a
 	     button over the one thing on this card you are meant to be watching — and over any fish that

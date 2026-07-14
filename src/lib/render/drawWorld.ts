@@ -7,7 +7,7 @@
  * (see pick.ts) can invert it.
  */
 
-import { TAU } from '../engine';
+import { TAU, fleeError } from '../engine';
 import type { World, Fish, Predator } from '../engine';
 import { THEMES, type ThemeName, type ThemePalette, type DrawWorldOpts } from './theme';
 
@@ -166,14 +166,43 @@ interface CreatureState {
 	hovered: boolean;
 	champion: boolean;
 	reducedMotion: boolean;
+	/** The lens's verdict on this fish, as a body colour. `null` = paint it in the palette's own. */
+	tint?: string | null;
+}
+
+/** What aimless drift scores: a fish ignoring the shark averages a right angle to it. */
+export const FLEE_CHANCE_DEG = 90;
+
+const triplet = (rgb: string) => rgb.split(',').map(Number);
+
+/**
+ * The flee lens, as a colour — DIVERGING around chance (see ThemePalette.lensGood).
+ *
+ * 90° is the colour of a coin toss. Below it the fish is fleeing (toward `lensGood`), above it the
+ * fish is swimming into the shark (toward `lensBad`), and `null` — no predator in vision, or too
+ * slow to have a heading worth reading — is grey, because "not asked" is not the same as "correct".
+ */
+function fleeTint(th: ThemePalette, error: number | null): string {
+	if (error === null) return `rgb(${th.lensIdle})`;
+
+	const [mr, mg, mb] = triplet(th.lensMid);
+	const away = error <= FLEE_CHANCE_DEG;
+	const [er, eg, eb] = triplet(away ? th.lensGood : th.lensBad);
+
+	// How far past chance, as a fraction of the half-scale either side of it.
+	const k = Math.min(1, Math.abs(error - FLEE_CHANCE_DEG) / FLEE_CHANCE_DEG);
+	const mix = (m: number, e: number) => Math.round(m + (e - m) * k);
+	return `rgb(${mix(mr, er)},${mix(mg, eg)},${mix(mb, eb)})`;
 }
 
 function drawFish(
 	ctx: CanvasRenderingContext2D,
 	f: Fish,
 	th: ThemePalette,
-	{ t, selected: sel, hovered: hov, champion: champ, reducedMotion: rm }: CreatureState
+	{ t, selected: sel, hovered: hov, champion: champ, reducedMotion: rm, tint }: CreatureState
 ): void {
+	// Under a lens the fish wears the lens's colour; otherwise it wears the palette's.
+	const body = tint ?? th.fish;
 	if (f.trail.length > 1) {
 		ctx.strokeStyle = 'rgba(' + th.fishTrail + ',.2)';
 		ctx.lineWidth = 1.4;
@@ -200,7 +229,7 @@ function drawFish(
 	ctx.lineTo(-5.6 * s, -3.5 * s);
 	ctx.lineTo(-5.6 * s, 3.5 * s);
 	ctx.closePath();
-	ctx.fillStyle = th.fish;
+	ctx.fillStyle = body;
 	ctx.globalAlpha = 0.92;
 	ctx.fill();
 	ctx.globalAlpha = 1;
@@ -214,7 +243,7 @@ function drawFish(
 	ctx.quadraticCurveTo(-1.5 * s, 3.4 * s, -3.6 * s, 4 * s);
 	ctx.quadraticCurveTo(-2 * s, 1.4 * s, -2 * s, 0);
 	ctx.closePath();
-	ctx.fillStyle = th.fish;
+	ctx.fillStyle = body;
 	ctx.globalAlpha = 0.75;
 	ctx.fill();
 	ctx.globalAlpha = 1;
@@ -222,7 +251,7 @@ function drawFish(
 	// body + countershading + dorsal + eye
 	ctx.beginPath();
 	ctx.ellipse(0, 0, 7.6 * s, 3.1 * s, 0, 0, TAU);
-	ctx.fillStyle = th.fish;
+	ctx.fillStyle = body;
 	ctx.fill();
 	ctx.beginPath();
 	ctx.ellipse(0.6 * s, 1.15 * s, 5.4 * s, 1.6 * s, 0, 0, TAU);
@@ -234,7 +263,7 @@ function drawFish(
 	ctx.moveTo(-1 * s, -2.6 * s);
 	ctx.quadraticCurveTo(0.5 * s, -4.6 * s, 2.4 * s, -2.7 * s);
 	ctx.closePath();
-	ctx.fillStyle = th.fish;
+	ctx.fillStyle = body;
 	ctx.fill();
 	ctx.fillStyle = 'rgba(8,10,18,.9)';
 	ctx.beginPath();
@@ -592,13 +621,17 @@ export function drawWorld(
 			body: grads.sharkBody
 		});
 	}
+	const lens = opts.lens ?? 'none';
 	for (const f of w.fish) {
 		drawFish(ctx, f, th, {
 			t: w.t,
 			selected: f === w.selFish,
 			hovered: f === w.hover,
 			champion: f === w.championFish,
-			reducedMotion: rm
+			reducedMotion: rm,
+			// The lens asks the ENGINE for the reading (engine/flee.ts) — the same function the
+			// evaluation panel's "flee error" is averaged from. One definition, two presentations.
+			tint: lens === 'flee' ? fleeTint(th, fleeError(c, f, w.preds)) : null
 		});
 	}
 

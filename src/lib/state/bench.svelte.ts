@@ -42,7 +42,7 @@ import { seededRng } from '../engine';
 import type { World, WorldConfig, Senses, Fish, Predator, NumericCondition } from '../engine';
 import { configHash, manifest } from '../lab/run';
 import type { Rng } from '../engine';
-import type { Picked } from '../render';
+import type { Picked, Lens } from '../render';
 import { subSteps, turboSlice } from '../sim/loop';
 import { DetailGovernor } from '../sim/governor';
 import { Playback, type Speed } from './playback.svelte';
@@ -125,6 +125,14 @@ class BenchStore {
 	 * `$state` because the stage binds to it and must re-render the frame the governor flips it.
 	 */
 	#detail = $state<'cinematic' | 'performance'>('cinematic');
+	/**
+	 * What every tank is coloured BY — one lens across the whole bench, deliberately.
+	 *
+	 * The lens exists to make a COMPARISON legible ("blind is confetti, bearing is calm"), and a
+	 * comparison you have to switch on five times, card by card, is a comparison nobody makes. It is
+	 * a way of looking and nothing else: no lens writes a weight, a fitness, a curve or an RNG draw.
+	 */
+	#lens = $state<Lens>('none');
 	/** One repaint owed outside the sim advancing — set by every method that changes pixels. */
 	#needsPaint = false;
 	/**
@@ -160,6 +168,9 @@ class BenchStore {
 	}
 	get turboTarget(): number | null {
 		return this.playback.turboTarget;
+	}
+	get lens(): Lens {
+		return this.#lens;
 	}
 	/** Is a fast-forward burst under way? Playback already knows; every caller asking
 	 *  `turboTarget !== null` for itself is the same question spelled a second way. */
@@ -234,6 +245,12 @@ class BenchStore {
 
 	togglePlay(): void {
 		this.playback.toggle();
+	}
+
+	/** Change what the tanks are coloured by. A paused bench still owes the new colours a repaint. */
+	setLens(lens: Lens): void {
+		this.#lens = lens;
+		this.requestPaint();
 	}
 
 	setSpeed(speed: Speed): void {
@@ -639,9 +656,11 @@ class BenchStore {
 		}
 
 		let highest = 0;
+		const lensOn = this.#lens === 'flee';
 		for (const entry of this.worlds) {
 			entry.world.championFish = bestAliveFish(entry.world);
 			entry.stats.syncFrom(entry.world);
+			entry.stats.syncLens(entry.world, lensOn);
 			if (entry.world.gen > highest) highest = entry.world.gen;
 		}
 		this.generationsEvolved = highest;
