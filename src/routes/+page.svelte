@@ -72,8 +72,17 @@
 	 * `auto-fit` then reduces the columns for real (a narrow window, or a dragged-wide sidebar) rather
 	 * than letting the cards squeeze: the cap sets the maximum, the viewport sets the actual.
 	 */
-	const columns = $derived(Math.min(3, Math.max(1, bench.worlds.length)));
-	const cardWidth = $derived(columns === 1 ? 780 : columns === 2 ? 580 : 470);
+	const MAX_COLUMNS = 3;
+
+	/**
+	 * How wide a card is, given how many are sharing the row. Fewer environments on the bench means a
+	 * bigger tank in each — one on its own is a card you can actually watch a fish in, not a card
+	 * stretched to the width of a monitor.
+	 */
+	const CARD_WIDTH: Record<number, number> = { 1: 780, 2: 580, 3: 470 };
+
+	const columns = $derived(Math.min(MAX_COLUMNS, Math.max(1, bench.worlds.length)));
+	const cardWidth = $derived(CARD_WIDTH[columns]);
 
 	/**
 	 * How much of the left edge the sidebar is holding.

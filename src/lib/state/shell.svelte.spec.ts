@@ -1,53 +1,29 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import {
 	shell,
 	SIDEBAR_STORAGE_KEY,
 	SIDEBAR_MIN,
 	SIDEBAR_MAX,
-	SIDEBAR_DEFAULT,
-	NARROW_QUERY
+	SIDEBAR_DEFAULT
 } from './shell.svelte';
+import { stubViewport } from './testkit';
 
 /**
- * A media query the tests can drive. jsdom's matchMedia never matches and never changes, so a store
- * that decides between "docked" and "overlay" from it would be untestable — and the overlay half of
- * this store is exactly the half worth testing.
+ * The viewport is stubbed (see testkit): jsdom's matchMedia never matches and never changes, so the
+ * store's whole docked-vs-overlay decision would be untestable — and that is the half worth testing.
  */
-function stubViewport(narrow: boolean) {
-	const listeners = new Set<() => void>();
-	const media = {
-		matches: narrow,
-		addEventListener: (_: string, fn: () => void) => listeners.add(fn),
-		removeEventListener: (_: string, fn: () => void) => listeners.delete(fn)
-	};
-
-	vi.stubGlobal('matchMedia', (query: string) => {
-		expect(query).toBe(NARROW_QUERY); // the store must ask the question the CSS asks
-		return media;
-	});
-
-	/** Resize the "window", the way the platform would tell the store about it. */
-	return (nowNarrow: boolean) => {
-		media.matches = nowNarrow;
-		listeners.forEach((fn) => fn());
-	};
-}
-
-let teardown: () => void = () => {};
+let viewport: ReturnType<typeof stubViewport>;
 
 beforeEach(() => localStorage.removeItem(SIDEBAR_STORAGE_KEY));
 
 afterEach(() => {
-	teardown();
-	teardown = () => {};
-	vi.unstubAllGlobals();
+	viewport?.restore();
 	localStorage.removeItem(SIDEBAR_STORAGE_KEY);
 });
 
 describe('the docked sidebar', () => {
 	beforeEach(() => {
-		stubViewport(false);
-		teardown = shell.init();
+		viewport = stubViewport(false);
 	});
 
 	it('opens at the default width', () => {
@@ -55,15 +31,29 @@ describe('the docked sidebar', () => {
 		expect(shell.width).toBe(SIDEBAR_DEFAULT);
 	});
 
-	it('remembers a width, and a collapse, across a reload', () => {
+	/**
+	 * The two preferences are saved by two different paths, so they are tested by two different
+	 * tests. Asserting them together passed even with the save torn out of `setWidth` — `toggle()`
+	 * persists BOTH fields, so it was quietly saving the width the other path had stopped saving. A
+	 * user who only ever drags the divider would have lost it on every reload, and the test would
+	 * have gone on being green.
+	 */
+	it('remembers a width across a reload — from a drag alone', () => {
 		shell.setWidth(340);
-		shell.toggle();
 
 		// what a fresh page load does with what the last one left behind
-		teardown();
-		teardown = shell.init();
+		viewport.restore();
+		viewport = stubViewport(false);
 
 		expect(shell.width).toBe(340);
+	});
+
+	it('remembers a collapse across a reload — from a collapse alone', () => {
+		shell.toggle();
+
+		viewport.restore();
+		viewport = stubViewport(false);
+
 		expect(shell.collapsed).toBe(true);
 		expect(shell.open).toBe(false);
 	});
@@ -79,8 +69,8 @@ describe('the docked sidebar', () => {
 	it('survives a corrupt saved entry rather than opening broken', () => {
 		localStorage.setItem(SIDEBAR_STORAGE_KEY, '{ not json');
 
-		teardown();
-		teardown = shell.init();
+		viewport.restore();
+		viewport = stubViewport(false);
 
 		expect(shell.width).toBe(SIDEBAR_DEFAULT);
 		expect(shell.open).toBe(true);
@@ -88,11 +78,8 @@ describe('the docked sidebar', () => {
 });
 
 describe('the overlay sidebar (no room to dock)', () => {
-	let resize: (narrow: boolean) => void;
-
 	beforeEach(() => {
-		resize = stubViewport(true);
-		teardown = shell.init();
+		viewport = stubViewport(true);
 	});
 
 	it('starts SHUT even when the remembered preference is expanded', () => {
@@ -116,7 +103,7 @@ describe('the overlay sidebar (no room to dock)', () => {
 		shell.toggle();
 		expect(shell.open).toBe(true);
 
-		resize(false);
+		viewport.resize(false);
 
 		expect(shell.narrow).toBe(false);
 		expect(shell.overlayOpen).toBe(false); // else it would re-open the panel on the next shrink
@@ -124,10 +111,9 @@ describe('the overlay sidebar (no room to dock)', () => {
 	});
 
 	it('stops listening once torn down', () => {
-		teardown();
-		teardown = () => {};
+		viewport.restore();
 
-		resize(false);
+		viewport.resize(false);
 
 		expect(shell.narrow).toBe(true); // the store let go of the viewport, as it was told to
 	});

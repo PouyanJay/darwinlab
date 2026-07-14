@@ -25,7 +25,6 @@
 
 	let { onaddworld, onplaystory }: Props = $props();
 
-	const training = $derived(bench.turboTarget !== null);
 	const speed = $derived(SPEEDS.find((option) => option.value === bench.speed) ?? SPEEDS[1]);
 	const train = $derived(trainLabel(bench.maxGenerations));
 
@@ -74,7 +73,7 @@
 			variant="icon"
 			aria-label={train}
 			title={train}
-			disabled={training}
+			disabled={bench.training}
 			onclick={() => bench.trainTo(trainTarget(bench.generationsEvolved, bench.maxGenerations))}
 		>
 			<span aria-hidden="true">⏩</span>
@@ -96,7 +95,7 @@
 			class="story"
 			aria-label="Play story"
 			title="play story"
-			disabled={training}
+			disabled={bench.training}
 			onclick={onplaystory}
 		>
 			<TransportIcon playing={false} size={9} />

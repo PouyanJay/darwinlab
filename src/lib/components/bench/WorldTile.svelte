@@ -196,7 +196,7 @@
 	   stops the instant the sim does — which is how you tell a paused bench from a stalled one. */
 	.status.evolving {
 		background: var(--accent);
-		animation: pulse 1.8s var(--ease) infinite;
+		animation: pulse 1.6s var(--ease) infinite; /* the app's one pulse rate — see Drawer, SensorRail */
 	}
 
 	/* Training is over for good. Gold, like the champion — this population is what is left. */

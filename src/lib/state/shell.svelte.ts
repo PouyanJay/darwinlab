@@ -56,17 +56,32 @@ function load(): Saved {
 
 class ShellStore {
 	/** The docked panel's width in px. Meaningless while collapsed, but remembered across one. */
-	width = $state(SIDEBAR_DEFAULT);
+	#width = $state(SIDEBAR_DEFAULT);
 	/** The DOCKED preference — persisted, and only honoured on the wide layout. */
-	collapsed = $state(false);
+	#collapsed = $state(false);
 	/** Is the viewport too narrow to dock? Tracked, not guessed: the CSS asks the same question. */
-	narrow = $state(false);
+	#narrow = $state(false);
 	/** Narrow layout only: the panel is showing OVER the bench. Session-local, starts shut. */
-	overlayOpen = $state(false);
+	#overlayOpen = $state(false);
+
+	// Read-only outward, like the bench store's projections: a width assigned from a component would
+	// skip the clamp AND the save, leaving a panel at a width it cannot be and will not remember.
+	get width(): number {
+		return this.#width;
+	}
+	get collapsed(): boolean {
+		return this.#collapsed;
+	}
+	get narrow(): boolean {
+		return this.#narrow;
+	}
+	get overlayOpen(): boolean {
+		return this.#overlayOpen;
+	}
 
 	/** Whether the full panel is showing, on whichever layout we are in. */
 	get open(): boolean {
-		return this.narrow ? this.overlayOpen : !this.collapsed;
+		return this.#narrow ? this.#overlayOpen : !this.#collapsed;
 	}
 
 	/**
@@ -77,21 +92,21 @@ class ShellStore {
 	 * pill about the tanks, printed on top of the controls that hide them.
 	 */
 	get overlaying(): boolean {
-		return this.narrow && this.overlayOpen;
+		return this.#narrow && this.#overlayOpen;
 	}
 
 	/** Adopt what was saved and start watching the viewport. Returns its teardown. */
 	init(): () => void {
 		const saved = load();
-		this.width = saved.width;
-		this.collapsed = saved.collapsed;
+		this.#width = saved.width;
+		this.#collapsed = saved.collapsed;
 
 		const media = matchMedia(NARROW_QUERY);
 		const sync = () => {
-			this.narrow = media.matches;
+			this.#narrow = media.matches;
 			// Growing back to the wide layout retires the overlay: it is a phone affordance, and a
 			// leftover `true` would re-open the panel the next time the window shrank.
-			if (!media.matches) this.overlayOpen = false;
+			if (!media.matches) this.#overlayOpen = false;
 		};
 
 		sync();
@@ -100,28 +115,28 @@ class ShellStore {
 	}
 
 	setWidth(px: number): void {
-		this.width = clampWidth(px);
-		this.save();
+		this.#width = clampWidth(px);
+		this.#save();
 	}
 
 	/** Open or shut, in whichever sense this layout means it. */
 	toggle(): void {
-		if (this.narrow) {
-			this.overlayOpen = !this.overlayOpen;
+		if (this.#narrow) {
+			this.#overlayOpen = !this.#overlayOpen;
 			return;
 		}
-		this.collapsed = !this.collapsed;
-		this.save();
+		this.#collapsed = !this.#collapsed;
+		this.#save();
 	}
 
 	/** Shut the overlay (Esc, the scrim, or following a control that takes over the screen). */
 	closeOverlay(): void {
-		this.overlayOpen = false;
+		this.#overlayOpen = false;
 	}
 
-	private save(): void {
+	#save(): void {
 		if (!browser) return;
-		const saved: Saved = { width: this.width, collapsed: this.collapsed };
+		const saved: Saved = { width: this.#width, collapsed: this.#collapsed };
 		localStorage.setItem(SIDEBAR_STORAGE_KEY, JSON.stringify(saved));
 	}
 }

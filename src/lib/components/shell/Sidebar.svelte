@@ -18,7 +18,7 @@
 	import Button from '../common/Button.svelte';
 	import Segmented from '../common/Segmented.svelte';
 	import TransportIcon from '../common/TransportIcon.svelte';
-	import RunManifest from '../topbar/RunManifest.svelte';
+	import RunManifest from './RunManifest.svelte';
 	import SidebarRail from './SidebarRail.svelte';
 	import SidebarResizer from './SidebarResizer.svelte';
 	import { trainTarget, trainLabel } from './train';
@@ -32,7 +32,6 @@
 
 	let { onaddworld, onplaystory }: Props = $props();
 
-	const training = $derived(bench.turboTarget !== null);
 	const target = $derived(trainTarget(bench.generationsEvolved, bench.maxGenerations));
 	const label = $derived(trainLabel(bench.maxGenerations));
 
@@ -127,7 +126,7 @@
 					/>
 				</div>
 
-				<Button class="wide" disabled={training} onclick={() => bench.trainTo(target)}>
+				<Button class="wide" disabled={bench.training} onclick={() => bench.trainTo(target)}>
 					<span aria-hidden="true">⏩</span>
 					<span>{label}</span>
 				</Button>
@@ -143,7 +142,12 @@
 					<span>Add environment</span>
 				</Button>
 
-				<Button variant="accent" class="wide" disabled={training} onclick={andClose(onplaystory)}>
+				<Button
+					variant="accent"
+					class="wide"
+					disabled={bench.training}
+					onclick={andClose(onplaystory)}
+				>
 					<TransportIcon playing={false} size={9} />
 					<span>Play story</span>
 				</Button>
@@ -180,7 +184,9 @@
 		top: var(--topbar-height);
 		left: 0;
 		z-index: var(--z-sidebar-overlay);
-		max-width: calc(100vw - 64px); /* the rail stays uncovered, so the way out stays visible */
+		/* The rail stays uncovered, so the way out stays visible — measured off the rail's own token,
+		   not off a 64 that would quietly go stale the day the rail changes width. */
+		max-width: calc(100vw - var(--rail-width) - var(--sp-3));
 		box-shadow: var(--shadow-drawer);
 		animation: slide-in-left var(--dur-enter) var(--ease) both;
 	}
