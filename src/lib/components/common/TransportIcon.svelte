@@ -1,26 +1,19 @@
 <!--
-  The play/pause glyph. It appears in the top bar and again in the story's transport, and a pair of
-  hand-drawn SVGs copied between them is a pair that will eventually disagree.
+  The play/pause glyph — now a thin binding over the app's icon set rather than a second pair of
+  hand-drawn paths. It exists because "playing → show PAUSE" is a rule worth stating once: every
+  transport in the app reads its own state backwards, and the day one of them gets it right and the
+  other doesn't is the day the bench says it is running while the film says it is stopped.
 -->
 <script lang="ts">
+	import Icon from './Icon.svelte';
+
 	interface Props {
 		/** Showing the PAUSE bars means the thing is currently playing. */
 		playing: boolean;
 		size?: number;
 	}
 
-	let { playing, size = 10 }: Props = $props();
-
-	const height = $derived(size * 1.1);
+	let { playing, size = 15 }: Props = $props();
 </script>
 
-{#if playing}
-	<svg width={size} {height} viewBox="0 0 10 12" aria-hidden="true">
-		<rect x="0" y="0" width="3.4" height="12" rx="1" fill="currentColor" />
-		<rect x="6.6" y="0" width="3.4" height="12" rx="1" fill="currentColor" />
-	</svg>
-{:else}
-	<svg width={size} {height} viewBox="0 0 10 12" aria-hidden="true">
-		<polygon points="0,0 10,6 0,12" fill="currentColor" />
-	</svg>
-{/if}
+<Icon name={playing ? 'pause' : 'play'} {size} />

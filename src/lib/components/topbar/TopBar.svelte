@@ -12,6 +12,7 @@
 <script lang="ts">
 	import Button from '../common/Button.svelte';
 	import Chip from '../common/Chip.svelte';
+	import Icon from '../common/Icon.svelte';
 	import LogoMark from './LogoMark.svelte';
 	import LabSettings from './LabSettings.svelte';
 	import { theme } from '$lib/state';
@@ -64,11 +65,25 @@
 
 	<div class="spacer"></div>
 
-	<LabSettings />
+	<!--
+		Theme first, lab settings second — reading order matches how often they are pressed and how
+		much they weigh: a theme flip is a whim, the lab settings decide when evolution STOPS FOR GOOD
+		(the deploy generation). The heavier switch sits at the end, where a hand does not land on it
+		by accident on the way to the light switch.
 
-	<Button aria-label="switch theme" title="switch theme" onclick={() => theme.toggle()}>
-		<span aria-hidden="true">{theme.name === 'light' ? '◐' : '◑'}</span>
+		And both now say what they are. A half-filled circle ◐ is a shape, not a meaning; the button
+		shows the theme you would GET — a sun to go light, a moon to go dark — which is the only one of
+		the two conventions a user can act on without pressing it to find out.
+	-->
+	<Button
+		aria-label={theme.name === 'light' ? 'switch to dark theme' : 'switch to light theme'}
+		title={theme.name === 'light' ? 'dark theme' : 'light theme'}
+		onclick={() => theme.toggle()}
+	>
+		<Icon name={theme.name === 'light' ? 'moon' : 'sun'} />
 	</Button>
+
+	<LabSettings />
 </header>
 
 <style>

@@ -148,7 +148,7 @@ test('Space plays/pauses the bench — but never out from under a focused contro
 	// But Space is ALSO how a focused button is pressed. The shortcut used to preventDefault it
 	// regardless of focus, so Space on the theme toggle paused the sim instead of switching theme —
 	// a keyboard user could not operate the top bar at all. Verified to fail before the fix.
-	await page.getByRole('button', { name: 'switch theme' }).focus();
+	await page.getByRole('button', { name: /switch to (dark|light) theme/ }).focus();
 	await page.keyboard.press(' ');
 
 	await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark'); // the button won
@@ -187,7 +187,7 @@ test('the canvas backing store is DPR-scaled and stays crisp when resized', asyn
 test('the theme is resolved before the first paint (no flash of the wrong theme)', async ({
 	page
 }) => {
-	await page.getByRole('button', { name: 'switch theme' }).click();
+	await page.getByRole('button', { name: /switch to (dark|light) theme/ }).click();
 	await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
 
 	// On reload, data-theme must already be 'dark' on the very first evaluation — the inline head
@@ -203,7 +203,7 @@ test('the tank repaints in the theme palette (canvas is not stuck on one theme)'
 	page
 }) => {
 	const light = await fingerprint(page);
-	await page.getByRole('button', { name: 'switch theme' }).click();
+	await page.getByRole('button', { name: /switch to (dark|light) theme/ }).click();
 	// the dark tank is a different palette entirely, so the pixels must differ
 	await expect.poll(() => fingerprint(page), { timeout: 5000 }).not.toBe(light);
 });
