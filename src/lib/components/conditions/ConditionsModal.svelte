@@ -10,13 +10,14 @@
   Which is also why it says so, out loud, under the title.
 -->
 <script lang="ts">
+	import Button from '../common/Button.svelte';
 	import Modal from '../common/Modal.svelte';
 	import Slider from '../common/Slider.svelte';
 	import Stepper from '../common/Stepper.svelte';
 	import { SENSES } from '../senses';
 	import { bench } from '$lib/state';
 	import type { WorldEntry } from '$lib/state';
-	import { ACCENTS, ACCENT_NAMES, WORLD_LIMITS } from '$lib/engine';
+	import { ACCENTS, ACCENT_NAMES, WORLD_LIMITS, CROWDED_OCEAN } from '$lib/engine';
 
 	interface Props {
 		entry: WorldEntry;
@@ -44,6 +45,11 @@
 	 */
 	const cruise = $derived(Math.round(200 * config.predSpeed));
 	const outruns = $derived(cruise > 176);
+
+	/** Already crowded — the preset would change nothing, and a button that does nothing is a lie. */
+	const crowded = $derived(
+		config.preds >= CROWDED_OCEAN.preds && config.vision >= CROWDED_OCEAN.vision
+	);
 </script>
 
 <Modal
@@ -53,6 +59,38 @@
 	accent={config.accent}
 	{onclose}
 >
+	<!--
+		The one preset on the bench, and it is not a shortcut to a better world — it is an EXHIBIT of
+		the lab's own thesis, and its copy has to carry both halves or it is propaganda.
+
+		Measured (50 generations × 3 seeds, before a line of this UI existed): crowding the ocean widens
+		the gap between a blind world and a bearing-sensing one from +34% to +67% of a life, and lifts
+		the share of fish that turn the RIGHT way from 51% to 64%. And it collapses everything above
+		bearing: full-sense fish fall below corner-wise ones. A harsher world does not make more senses
+		pay. It makes ONE sense decisive and drowns the rest.
+
+		The obvious idea — slow the shark down so that fleeing "genuinely works" — was measured first
+		and was simply wrong: everyone survives, selection has nothing to sort, and the ladder dies.
+		Mercy is not pressure. See CROWDED_OCEAN in engine/defaults.ts.
+	-->
+	<section class="preset">
+		<div>
+			<h3>Raise the stakes</h3>
+			<p>
+				Five hunters and long sight, so <b>no fish survives by never meeting a shark</b>. Bearing
+				becomes decisive: blind and bearing worlds pull 33 points apart on survival, and the share
+				of fish turning the right way climbs from 51% to 64%.
+			</p>
+			<p class="cost">
+				It also <b>collapses the rungs above bearing</b> — in an ocean this lethal, the extra senses stop
+				paying. That is the finding, not a side effect.
+			</p>
+		</div>
+		<Button variant="primary" size="sm" disabled={crowded} onclick={() => bench.crowdTheOcean(id)}>
+			{crowded ? 'Ocean is crowded' : 'Crowd the ocean'}
+		</Button>
+	</section>
+
 	<label class="field">
 		<span class="field-label">World name</span>
 		<input
@@ -231,6 +269,42 @@
 </Modal>
 
 <style>
+	.preset {
+		display: flex;
+		align-items: center;
+		gap: var(--sp-5);
+		margin-bottom: var(--sp-6);
+		padding: var(--sp-5);
+		border: 1px solid var(--line);
+		border-radius: var(--radius-input);
+		background: var(--panel2);
+	}
+
+	.preset h3 {
+		margin: 0 0 var(--sp-2);
+		font-family: var(--font-display);
+		font-size: var(--fs-body);
+		font-weight: var(--fw-semibold);
+	}
+
+	.preset p {
+		margin: 0;
+		font-size: var(--fs-sm);
+		line-height: var(--leading-body);
+		color: var(--ink2);
+	}
+
+	.preset b {
+		font-weight: var(--fw-semibold);
+		color: var(--ink);
+	}
+
+	/* The honest half. It is not a footnote — it is half the finding. */
+	.preset .cost {
+		margin-top: var(--sp-2);
+		color: var(--ink3);
+	}
+
 	.field {
 		display: block;
 		margin-top: var(--sp-5);

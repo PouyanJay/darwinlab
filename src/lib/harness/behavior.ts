@@ -8,7 +8,7 @@
  * the ladder must emerge from selection, never from a script.
  */
 
-import { makeWorld, stepWorld, seededRng } from '../engine';
+import { makeWorld, stepWorld, seededRng, fleeError, nearestPred } from '../engine';
 import { clamp } from '../engine';
 import type { Genome, WorldConfig, Fish } from '../engine';
 
@@ -93,15 +93,10 @@ export function measureBout(
 
 		// per-fish motion vs the nearest predator
 		for (const f of w.fish) {
-			let nd = Infinity;
-			let np = null;
-			for (const p of w.preds) {
-				const d = Math.hypot(p.x - f.x, p.y - f.y);
-				if (d < nd) {
-					nd = d;
-					np = p;
-				}
-			}
+			const near = nearestPred(f, w.preds);
+			const nd = near ? near.dist : Infinity;
+			const np = near ? near.pred : null;
+
 			liveTime += DT;
 			if (Math.min(f.x, cfg.bw - f.x) < 70 && Math.min(f.y, cfg.bh - f.y) < 70) {
 				cornerTime += DT;
@@ -114,12 +109,12 @@ export function measureBout(
 			if (np && nd < cfg.vision) {
 				seenSpeed += speed;
 				seenN++;
-				if (speed > 12) {
-					const away = Math.atan2(f.y - np.y, f.x - np.x);
-					const vel = Math.atan2(f.vy, f.vx);
-					let d = Math.abs(vel - away) % (2 * Math.PI);
-					if (d > Math.PI) d = 2 * Math.PI - d;
-					fleeErr += (d * 180) / Math.PI;
+				// The SAME reading the lens paints on the fish — see engine/flee.ts. It returns null
+				// under exactly the conditions this branch used to spell out for itself (in vision,
+				// moving), so a null here is "no reading", never a zero.
+				const err = fleeError(cfg, f, w.preds);
+				if (err !== null) {
+					fleeErr += err;
 					fleeN++;
 				}
 			} else {

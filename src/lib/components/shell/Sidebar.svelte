@@ -25,6 +25,13 @@
 	import { trainTarget, trainLabel } from './train';
 	import { DISCLAIMER } from '../common/disclaimer';
 	import { bench, shell, SPEEDS } from '$lib/state';
+	import type { Lens } from '$lib/render';
+
+	/** The lenses the bench offers. One list, so the control and the store cannot disagree. */
+	const LENSES: { value: Lens; label: string }[] = [
+		{ value: 'none', label: 'Off' },
+		{ value: 'flee', label: 'Flee error' }
+	];
 
 	interface Props {
 		onaddworld: () => void;
@@ -143,6 +150,31 @@
 						<span>{label}</span>
 					</Button>
 				</div>
+			</section>
+
+			<!--
+				A LENS is a way of looking, not a way of changing. It repaints what is already there and
+				touches nothing that evolved — which is why it is safe to leave on, and why it belongs
+				here rather than on a card: the whole point is to see five tanks answer the same question
+				at once. Blind drift comes out as confetti; a bearing-sensing world comes out calm.
+			-->
+			<section>
+				<h2 class="field-label">Lens</h2>
+
+				<Segmented
+					label="tank lens"
+					options={LENSES}
+					value={bench.lens}
+					onchange={(lens) => bench.setLens(lens)}
+				/>
+
+				{#if bench.lens === 'flee'}
+					<p class="lens-note">
+						Every fish is painted by how wrong its escape is <b>right now</b> — away from the shark
+						at one end, into its mouth at the other. Grey is <b>no reading</b>: nothing in vision,
+						or too slow to be going anywhere.
+					</p>
+				{/if}
 			</section>
 
 			<section>
@@ -289,6 +321,18 @@
 		display: flex;
 		flex-wrap: wrap;
 		gap: var(--sp-2);
+	}
+
+	.lens-note {
+		margin: var(--sp-1) 0 0;
+		font-size: var(--fs-sm);
+		line-height: var(--leading-body);
+		color: var(--ink3);
+	}
+
+	.lens-note b {
+		font-weight: var(--fw-semibold);
+		color: var(--ink2);
 	}
 
 	.readout {

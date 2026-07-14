@@ -34,11 +34,19 @@
 
 	let cursor = $state('default');
 
+	/**
+	 * The world this tank is SHOWING — the champion exhibit while one is up, the real run otherwise.
+	 * Asked for on every use rather than captured once: an exhibit can open, close or be re-cloned
+	 * under this component, and a stale reference would paint a tank that no longer exists.
+	 */
+	const shown = () => bench.shown(entry.id);
+
 	function paint(ctx: CanvasRenderingContext2D, width: number, height: number) {
-		drawWorld(entry.world, ctx, width, height, {
+		drawWorld(shown(), ctx, width, height, {
 			theme: theme.name,
 			detail,
 			big,
+			lens: bench.lens,
 			reducedMotion: prefersReducedMotion()
 		});
 	}
@@ -48,11 +56,11 @@
 	const register = (render: () => void) => bench.painters.add(render, group);
 
 	function pick(x: number, y: number) {
-		onselect?.(pickCreature(entry.world, x, y));
+		onselect?.(pickCreature(shown(), x, y));
 	}
 
 	function hover(x: number, y: number) {
-		const hit = pickCreature(entry.world, x, y);
+		const hit = pickCreature(shown(), x, y);
 		bench.setHover(entry.id, hit ? hit.obj : null);
 		cursor = hit ? 'pointer' : 'default';
 	}

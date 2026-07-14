@@ -27,7 +27,9 @@
 		| 'chevron-left'
 		| 'chevron-right'
 		| 'episodes'
-		| 'flask';
+		| 'flask'
+		| 'bottleneck'
+		| 'compass';
 
 	interface Props {
 		name: IconName;
@@ -101,6 +103,12 @@
 		<!-- a generation: the loop that keeps coming round -->
 		<path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
 		<path d="M21 3v5h-5" />
+	{:else if name === 'compass'}
+		<circle cx="12" cy="12" r="9" />
+		<path d="M15.5 8.5l-2.1 5-5 2.1 2.1-5z" />
+	{:else if name === 'bottleneck'}
+		<!-- a funnel: a whole population goes in, one lineage comes out -->
+		<path d="M3.5 4.5h17l-6.5 7.5v7l-4 2.5v-9.5z" />
 	{:else if name === 'flask'}
 		<path
 			d="M9.5 3.5h5M10.5 3.5v6L5.8 17a2.4 2.4 0 0 0 2 3.5h8.4a2.4 2.4 0 0 0 2-3.5l-4.7-7.5v-6"

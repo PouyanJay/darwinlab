@@ -10,6 +10,9 @@
 -->
 <script lang="ts">
 	import Tank from './Tank.svelte';
+	import AssayPanel from './AssayPanel.svelte';
+	import ExhibitControl from './ExhibitControl.svelte';
+	import LensStrip from './LensStrip.svelte';
 	import TileStats from './TileStats.svelte';
 	import EvalPanel from './EvalPanel.svelte';
 	import AblationMatrix from './AblationMatrix.svelte';
@@ -145,6 +148,15 @@
 		<Tank {entry} onselect={(picked) => bench.select(entry.id, picked)} />
 	</div>
 
+	<!-- Champion clones: put ONE brain in the water and the strategy stops being a smear. -->
+	<ExhibitControl {entry} />
+
+	<!-- The lens's own reading for this tank, only while the lens is on. The colour in the water and
+	     this number are the same quantity — one for the eye, one for the argument. -->
+	{#if bench.lens === 'flee'}
+		<LensStrip {entry} />
+	{/if}
+
 	<!-- The card's actions, on a bar of their own. Champion used to float ON the water, which put a
 	     button over the one thing on this card you are meant to be watching — and over any fish that
 	     swam beneath it. A control that obscures its own subject is in the wrong place. -->
@@ -166,6 +178,8 @@
 	</div>
 
 	<TileStats {entry} />
+	<!-- Stage the question instead of waiting for the ocean to ask it. -->
+	<AssayPanel {entry} />
 	<EvalPanel {entry} />
 	<!-- On the CARD, because the answer belongs to the environment: a channel is worth exactly what
 	     ITS OWN conditions make it worth, and a matrix run in some other card's tank answers a

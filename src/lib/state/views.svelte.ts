@@ -16,6 +16,7 @@
  * what lets the UI claim to be showing the simulation rather than an illustration of it.
  */
 
+import { fleeError } from '../engine';
 import type { World, WorldConfig, Senses, SenseSnapshot } from '../engine';
 
 /** Cheap reactive snapshot of one world, refreshed once per frame for the UI to bind to. */
@@ -32,6 +33,80 @@ export class WorldStats {
 	extinctT = $state<number | null>(null);
 
 	/** Project the raw world onto this snapshot. The projection lives with the data it produces. */
+	/**
+	 * What the flee lens is reading in this tank: a RUNNING mean of the error across the fish that
+	 * have a reading, and how many are readable this frame.
+	 *
+	 * Running, and not instantaneous, because an instantaneous one is noise and lies. A single frame
+	 * averages a handful of fish over a fraction of a second; measured live, a blind tank read 54°
+	 * and a bearing tank read 99° — the exact reverse of what twelve seconds of the same measurement
+	 * says (blind 85°, bearing 73°). A number that flips its own verdict between frames is not a
+	 * reading, it is a coin, and putting it on the card next to a claim would have been indefensible.
+	 *
+	 * So the samples decay instead: every fish-frame is weighted, older ones fade with a half-life of
+	 * a couple of seconds, and what the card prints is the mean over roughly the last few seconds of
+	 * fish-time. It converges on exactly what the harness measures over a bout, it tracks a population
+	 * that is still improving, and it never needs to be reset by hand.
+	 *
+	 * Rounded to a whole degree ON PURPOSE: this is a $state field on a 60fps path, and an unrounded
+	 * float would write a new value — and re-render the card — on every single frame.
+	 */
+	fleeNow = $state<number | null>(null);
+	/** Effective sample size in the window — the card shows it, because a mean without an n is a rumour. */
+	fleeSamples = $state(0);
+	fleeReadable = $state(0);
+
+	/**
+	 * Per-frame decay on the accumulators — a half-life of about twenty seconds at 60fps.
+	 *
+	 * It has to be this long because the readings are SPARSE: a shark is only in vision for a small
+	 * fraction of the tank at any moment, so a frame contributes a handful of fish, not twenty. At a
+	 * two-second half-life the number still swung from 76° to 47° in the same tank, six seconds apart
+	 * — it was measuring which fish happened to be near a shark, not what the population had learned.
+	 */
+	static readonly LENS_DECAY = 0.9994;
+
+	/**
+	 * How much fish-time must be in the window before a number is worth printing. Under this, the card
+	 * says it is still measuring rather than publishing a mean of nine samples with a straight face.
+	 */
+	static readonly LENS_MIN_SAMPLES = 200;
+
+	#fleeSum = 0;
+	#fleeN = 0;
+
+	/** Only computed when the lens is on; the rest of the time it costs a branch. */
+	syncLens(world: World, on: boolean): void {
+		if (!on) {
+			// Off means off: the next time the lens opens it must not average in a stale population's
+			// readings — very likely from before this world was reset, or its senses were cut.
+			this.#fleeSum = 0;
+			this.#fleeN = 0;
+			this.fleeNow = null;
+			this.fleeSamples = 0;
+			this.fleeReadable = 0;
+			return;
+		}
+
+		let sum = 0;
+		let n = 0;
+		for (const f of world.fish) {
+			const err = fleeError(world.cfg, f, world.preds);
+			if (err !== null) {
+				sum += err;
+				n++;
+			}
+		}
+
+		this.#fleeSum = this.#fleeSum * WorldStats.LENS_DECAY + sum;
+		this.#fleeN = this.#fleeN * WorldStats.LENS_DECAY + n;
+
+		this.fleeReadable = n;
+		this.fleeSamples = Math.round(this.#fleeN);
+		this.fleeNow =
+			this.#fleeN >= WorldStats.LENS_MIN_SAMPLES ? Math.round(this.#fleeSum / this.#fleeN) : null;
+	}
+
 	syncFrom(world: World): void {
 		this.alive = world.fish.length;
 		this.eaten = world.eaten;

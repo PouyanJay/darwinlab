@@ -56,10 +56,28 @@
 	// BOTH ends in the signature: once a series hits its cap it shift()s as it push()es, so the
 	// length holds still and a repeated last value would hide a window that scrolled — the moving
 	// head end is what still betrays the shift.
+	// The interventions are part of the key: a bottleneck must show up on the curve the moment it
+	// happens, and a paint-on-change that ignored them would keep showing an unmarked run.
+	const interventions = $derived(bench.interventionsOf(entry.id));
+
+	/**
+	 * The bottlenecked generations, as points on the curve that is actually on screen.
+	 *
+	 * The series scrolls (it shift()s past CURVE_MAX_POINTS), so the first point is not generation
+	 * zero once a run gets long: it is generation `gen - length`. A mark that fell off the left edge
+	 * resolves to a negative index and the painter drops it, which is the honest outcome — that part
+	 * of the history is no longer being shown, so nothing should be claimed about it.
+	 */
+	const marks = $derived.by(() => {
+		const firstGen = entry.stats.gen - entry.world.lifeCurve.length;
+		return interventions.map((gen) => gen - firstGen);
+	});
+
 	const paintCurve = paintOnChange(
 		() =>
-			`${entry.world.lifeCurve.length}|${entry.world.lifeCurve.at(0)}|${entry.world.lifeCurve.at(-1)}|${accent}|${theme.name}`,
-		(ctx, width, height) => drawCurve(ctx, width, height, entry.world.lifeCurve, accent, theme.name)
+			`${entry.world.lifeCurve.length}|${entry.world.lifeCurve.at(0)}|${entry.world.lifeCurve.at(-1)}|${accent}|${theme.name}|${marks.join()}`,
+		(ctx, width, height) =>
+			drawCurve(ctx, width, height, entry.world.lifeCurve, accent, theme.name, marks)
 	);
 
 	const paintDecay = paintOnChange(
