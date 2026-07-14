@@ -32,8 +32,7 @@
  */
 
 import { TAU } from './math';
-import { makeWorld } from './world';
-import { stepWorld } from './world';
+import { makeWorld, stepWorld, applyCfg } from './world';
 import { cloneGenome } from './genetics';
 import { seededRng } from './rng';
 import { fleeError } from './flee';
@@ -224,6 +223,14 @@ export function makeTrial(
 ): Trial {
 	const staged: WorldConfig = { ...cfg, prey: 1, preds: 1 };
 	const world = makeWorld(staged, [cloneGenome(genome)], seededRng(seed));
+
+	/*
+	 * ONE shark. `makeWorld` spawns the configured predators twice (a documented reference quirk that
+	 * an evolving world's first generation boundary silently corrects) — so every trial in this assay
+	 * was staged with TWO sharks: the one placed at the bearing under test, and a second one dropped
+	 * at random. A controlled trial with an uncontrolled variable in it is not a controlled trial.
+	 */
+	applyCfg(world);
 
 	const fish = world.fish[0];
 	fish.x = staged.bw / 2;

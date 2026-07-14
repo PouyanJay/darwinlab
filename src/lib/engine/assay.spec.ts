@@ -33,6 +33,16 @@ describe('the staged trial', () => {
 		expect(Math.hypot(pred.x - fish.x, pred.y - fish.y)).toBeCloseTo(150, 6);
 	});
 
+	it('stages ONE shark — a controlled trial with an uncontrolled variable is not one', () => {
+		// makeWorld spawns the configured predators twice, so every trial was running with the shark
+		// under test PLUS a second one dropped at random. See the note in assay.ts.
+		const genome = randomBrains(DIRECTION, 1, 3)[0];
+		const trial = makeTrial(DIRECTION, genome, 90);
+
+		expect(trial.world.preds).toHaveLength(1);
+		expect(trial.world.fish).toHaveLength(1);
+	});
+
 	it('does not ask the bearings that have no right answer', () => {
 		const genome = randomBrains(DIRECTION, 1, 3)[0];
 

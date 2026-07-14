@@ -141,36 +141,37 @@ export function newWorldConfig(name: string, accent: string): WorldConfig {
  * a fish tops out at 176 px/s and the shark cruises at 200 × this number, so somewhere around 0.88
  * the shark stops being able to run a fish down — and every sense the fish owns suddenly matters.
  */
-/**
- * THE CROWDED OCEAN — a one-click preset that makes BEARING decisive, and says what that costs.
+/*
+ * WHAT WAS MEASURED WHEN WE TRIED TO "RAISE THE STAKES" — kept, because the finding cost a day and
+ * the button it produced did not survive review. There is no preset any more: crowding the ocean is
+ * just the predator and vision sliders, and a button that only moves two sliders is a button that
+ * hides where the change came from. Raise them by hand.
  *
- * The brief was "amplify the stakes so the difference is visible". Five candidate oceans were
- * measured before any of them was believed (50 generations × 3 seeds, mean life + the assay's turn
- * accuracy), and the result overturned the obvious answer:
+ * Five candidate oceans, 50 generations × 3 seeds, scored on mean life and on the assay's turn
+ * accuracy:
  *
- *   • Making the shark SLOWER — so that fleeing "genuinely works" — DESTROYS the ladder. Blind fish
- *     live 5.55s and bearing fish 5.32s: everyone survives, so selection has nothing left to sort.
- *     Mercy is not pressure. That was the first idea and it was simply wrong.
- *   • A fiercer strike sharpens survival (+39%) but barely moves the DECISION (+3 points).
- *   • What works is making sure every fish is TESTED. Five hunters and long sight: the survival gap
- *     between blind and bearing widens from +34% to +67%, and the share of fish that turn the right
- *     way climbs 51% → 64%.
+ *   • SLOWING THE SHARK DOWN — so that fleeing "genuinely works" — DESTROYS the ladder. Blind fish
+ *     live 5.55s and bearing fish 5.32s: when everybody survives, selection has nothing left to
+ *     sort. Mercy is not pressure, and this was the obvious idea.
+ *   • A fiercer strike sharpens survival (+39%) and barely moves the decision (+3 points).
+ *   • MORE HUNTERS AND LONGER SIGHT is what works: the blind-vs-bearing survival gap widens from
+ *     +34% to +67%, and the share of fish turning the right way climbs 51% → 64%.
+ *   • …AND IT COLLAPSES THE RUNGS ABOVE BEARING. Full-sense fish fall below corner-wise ones, and no
+ *     milder version kept the ladder monotone. A harsher world does not make MORE senses pay: it
+ *     makes ONE sense decisive and drowns the rest. That is the thesis, one level up.
  *
- * ⚠️ AND IT COLLAPSES THE UPPER LADDER, WHICH IS THE HONEST HALF. Measured across all five worlds,
- * an ocean this lethal stops paying for the senses ABOVE bearing: full-sense fish drop below
- * corner-wise ones (2.7s vs 4.0s), and no milder version (4 hunters, shorter sight) kept the ladder
- * monotone either. This is the product's own thesis one level up: a harsher world does not make MORE
- * senses pay — it makes ONE sense decisive and drowns the rest. Do not soften this, and do not sell
- * the preset as a better ocean. It is an exhibit of the thesis, not an improvement on the bench.
+ * ⚠️ THOSE NUMBERS WERE TAKEN BEFORE THE DOUBLE-PREDATOR BUG WAS FOUND (a frozen bout ran against
+ * twice the sharks its config asked for — see behavior.ts). The DIRECTION of every one of them is
+ * safe, because every world was equally over-hunted; the magnitudes are not. Re-measure before
+ * quoting them.
  */
-export const CROWDED_OCEAN = {
-	preds: 5,
-	vision: 280
-} as const satisfies Partial<WorldConfig>;
 
 export const WORLD_LIMITS = {
 	prey: { min: 2, max: 80, step: 2 },
-	preds: { min: 0, max: 6, step: 1 },
+	/* Raised from 6: the owner's point, and a good one — "crowd the ocean" is not a feature, it is
+	   this slider. A bench that wants to know what five or eight hunters does to the ladder should be
+	   able to just ask, without a button standing between the question and the answer. */
+	preds: { min: 0, max: 10, step: 1 },
 	bw: { min: 320, max: 1300, step: 10 },
 	bh: { min: 220, max: 860, step: 10 },
 	predSpeed: { min: 0.4, max: 1.8, step: 0.05 },

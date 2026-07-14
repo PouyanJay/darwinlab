@@ -60,6 +60,21 @@ describe('makeExhibit', () => {
 		for (const f of exhibit.fish) expect(Array.from(f.genome)).toEqual(first);
 	});
 
+	it("shows the world the CONFIG describes — not makeWorld's double predators", () => {
+		/*
+		 * The bug the owner found. makeWorld spawns cfg.preds predators and then spawns them again (a
+		 * reference quirk it documents), and an evolving world's first generation boundary quietly puts
+		 * it right. An exhibit is frozen by construction and never reaches one — so a world configured
+		 * for three sharks showed SIX, permanently, and the Conditions slider could not take them away
+		 * because the config had never been wrong.
+		 */
+		const w = evolved(3);
+		const exhibit = makeExhibit(w, championGenome(w)!, seededRng(2));
+
+		expect(exhibit.preds).toHaveLength(cfg.preds);
+		expect(exhibit.preds.length).toBe(w.preds.length); // the same water, the same hunters
+	});
+
 	it('cannot evolve: it never breeds, never scores, never respawns', () => {
 		const w = evolved(3);
 		const exhibit = makeExhibit(w, championGenome(w)!, seededRng(2));

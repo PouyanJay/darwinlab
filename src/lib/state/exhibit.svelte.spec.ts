@@ -67,16 +67,23 @@ describe('the champion exhibit, in the store', () => {
 		expect(bench.shown(entry.id)).not.toBe(entry.world); // …while you watched the champion
 	});
 
-	it('a training burst takes the exhibits down rather than invalidating them', () => {
+	it('a training burst KEEPS the exhibit, and re-clones it from the brain that came out', () => {
+		/*
+		 * The owner's second bug: switching the clones on and pressing Train made the clones vanish.
+		 * Pressing Train is not a request to stop looking at clones. The mode survives the burst, and
+		 * the exhibit is rebuilt from the new champion when it ends.
+		 */
 		const entry = benchWithChampion();
 		bench.setExhibit(entry.id, 'frozen');
+		const before = bench.shown(entry.id);
 
-		bench.trainTo(entry.world.gen + 1);
+		bench.trainTo(entry.world.gen + 2);
+		while (bench.turboTarget !== null) run(1 / 60); // drive the burst to completion
 
-		// Training fast-forwards every real run: a frozen exhibit's promise could not be kept, and a
-		// live one would be showing a champion that is about to be superseded a hundred times over.
-		expect(bench.exhibitMode(entry.id)).toBe('off');
-		expect(bench.shown(entry.id)).toBe(entry.world);
+		expect(bench.exhibitMode(entry.id)).toBe('frozen'); // still looking at clones…
+		const after = bench.shown(entry.id);
+		expect(after).not.toBe(entry.world); // …still an exhibit, not the population…
+		expect(after).not.toBe(before); // …and re-cloned from the champion that just evolved
 	});
 
 	it('a bottleneck is RECORDED on the run it changed', () => {

@@ -35,7 +35,6 @@ import {
 	cloneGenome,
 	ACCENTS,
 	WORLD_LIMITS,
-	CROWDED_OCEAN,
 	PERSISTENCE_DEFAULTS,
 	MAX_GENERATIONS
 } from '../engine';
@@ -559,12 +558,20 @@ class BenchStore {
 
 	/** Fast-forward every world to `gen` (used by prewarm and the "Train N gens" button). */
 	trainTo(gen: number): void {
-		// A training burst fast-forwards every real run — which would advance a world whose exhibit
-		// promised to hold it still, and would leave every other exhibit showing a champion that has
-		// been superseded a hundred generations ago. So a burst closes the exhibits, and abandons any
-		// assay in flight, rather than quietly invalidating them.
+		/*
+		 * A training burst fast-forwards every real run, so an exhibit's champion is about to be
+		 * superseded — possibly a hundred times over.
+		 *
+		 * The first version CLOSED the exhibits, which the owner rightly called a bug: you switch the
+		 * clones on, press Train, and the thing you were looking at is gone. Pressing Train is not a
+		 * request to stop looking at clones. So the MODE survives the burst, and each exhibit is
+		 * re-cloned from the new champion when the burst ends (see #tickBench) — you come back to the
+		 * same view, showing the brain that just finished evolving.
+		 *
+		 * An assay in flight is a different thing: it is a measurement of a brain that is about to stop
+		 * existing, so it is abandoned rather than silently re-pointed at a different one.
+		 */
 		for (const id of [...this.#assays.keys()]) this.stopAssay(id);
-		this.closeExhibits();
 		if (gen > this.generationsEvolved) this.playback.requestTraining(gen);
 	}
 
@@ -666,25 +673,6 @@ class BenchStore {
 		world.cfg[key] = clamp(value, WORLD_LIMITS[key]);
 		engineApplyCfg(world);
 		this.#publishConfig(id);
-	}
-
-	/**
-	 * Crowd the ocean: five hunters, long sight, and nobody survives by never meeting a shark.
-	 *
-	 * It goes through `setCondition`, one field at a time — the same door a hand on the slider uses,
-	 * with the same clamping and the same live apply. A preset that wrote to `world.cfg` directly
-	 * would be a second way of changing a world, and the day the two disagreed the bug would be in
-	 * whichever one nobody was looking at.
-	 *
-	 * It does NOT reset the population. The whole point is to watch what an already-evolved world does
-	 * when the stakes change under it.
-	 */
-	crowdTheOcean(id: string): void {
-		const preset: Partial<Record<NumericCondition, number>> = CROWDED_OCEAN;
-		for (const [key, value] of Object.entries(preset) as [NumericCondition, number][]) {
-			this.setCondition(id, key, value);
-		}
-		this.requestPaint();
 	}
 
 	/**
@@ -980,6 +968,10 @@ class BenchStore {
 		if (this.playback.training) {
 			if (turboSlice(worlds, this.playback.turboTarget!)) {
 				this.playback.finishTraining();
+				// The burst is over and every champion has moved. Any exhibit that was up is re-cloned
+				// from the brain that just came out of it, so the view the user left is the view they
+				// come back to — showing what the run has learned rather than what it used to know.
+				for (const id of [...this.#exhibitWorlds.keys()]) this.#rebuildExhibit(id);
 				this.requestPaint(); // the flag is already down when #paint runs — still show the result
 			}
 		} else if (this.playback.running) {

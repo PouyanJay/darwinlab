@@ -16,7 +16,7 @@
  */
 
 import { cloneGenome } from './genetics';
-import { makeWorld, makeFish } from './world';
+import { makeWorld, makeFish, applyCfg } from './world';
 import { defaultRng, type Rng } from './rng';
 import type { Genome, World } from './types';
 
@@ -69,6 +69,20 @@ export function makeExhibit(w: World, genome: Genome, rng: Rng = defaultRng): Wo
 	const exhibit = makeWorld(w.cfg, clones, rng);
 	exhibit.maxGen = 1;
 	exhibit.gen = 1;
+
+	/*
+	 * NORMALISE THE POPULATION, or the tank shows a world nobody configured.
+	 *
+	 * `makeWorld` carries a fidelity quirk it documents in place: the reference engine spawns
+	 * `cfg.preds` predators and then spawns them AGAIN, so a fresh world opens generation 0 with
+	 * DOUBLE the sharks. In an evolving world the first generation boundary quietly puts it right and
+	 * nobody is any the wiser. An exhibit never has a generation boundary — it is frozen by
+	 * construction — so the doubles are permanent: a world configured for three sharks was showing
+	 * six, and the Conditions slider could not take them away, because the config was never wrong.
+	 *
+	 * `applyCfg` is the engine's own "make this world match its config", and it trims them.
+	 */
+	applyCfg(exhibit);
 	return exhibit;
 }
 

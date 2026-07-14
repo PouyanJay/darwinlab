@@ -8,7 +8,7 @@
  * the ladder must emerge from selection, never from a script.
  */
 
-import { makeWorld, stepWorld, seededRng, fleeError, nearestPred } from '../engine';
+import { makeWorld, stepWorld, seededRng, applyCfg, fleeError, nearestPred } from '../engine';
 import { clamp } from '../engine';
 import type { Genome, WorldConfig, Fish } from '../engine';
 
@@ -49,6 +49,15 @@ export function measureBout(
 		: makeWorld(cfg, undefined, seededRng(seed));
 	w.maxGen = 1; // deployed semantics: no respawns, no breeding — the population is frozen
 	w.gen = 1;
+	/*
+	 * …and a frozen world has to be normalised BY HAND. makeWorld spawns the configured predators
+	 * twice (its own comment says so: the reference does it, and an evolving world's first generation
+	 * boundary puts it right). This bout never reaches a generation boundary, so every measurement
+	 * taken here — the Evaluate panel's mean return, its flee error, the ablation matrix — was taken
+	 * against DOUBLE the sharks the environment says it has. The relative ladder survived it (every
+	 * world was equally over-hunted); the absolute numbers did not.
+	 */
+	applyCfg(w);
 
 	const steps = Math.round(seconds / DT);
 	const lifespans = new Map<Fish, number>(w.fish.map((f) => [f, seconds]));
