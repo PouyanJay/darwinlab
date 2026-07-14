@@ -38,7 +38,7 @@ import {
 	PERSISTENCE_DEFAULTS,
 	MAX_GENERATIONS
 } from '../engine';
-import { seededRng } from '../engine';
+import { seededRng, championGenome, makeExhibit, exhibitSpent, bottleneck } from '../engine';
 import type { World, WorldConfig, Senses, Fish, Predator, NumericCondition } from '../engine';
 import { configHash, manifest } from '../lab/run';
 import type { Rng } from '../engine';
@@ -52,6 +52,14 @@ import { story } from './story.svelte';
 import { evals } from './evals.svelte';
 
 export { WorldStats, WorldConfigView, MindView, type WorldEntry };
+
+/**
+ * What a card is showing in place of its own population.
+ *
+ * 'frozen' holds the real run still; 'live' lets it keep evolving and re-clones the exhibit each
+ * generation. Neither one breeds, scores, or writes to a curve — see engine/exhibit.ts.
+ */
+export type ExhibitMode = 'off' | 'frozen' | 'live';
 
 export type { Speed };
 
@@ -133,6 +141,28 @@ class BenchStore {
 	 * a way of looking and nothing else: no lens writes a weight, a fitness, a curve or an RNG draw.
 	 */
 	#lens = $state<Lens>('none');
+	/**
+	 * Which worlds are showing an EXHIBIT instead of their own population, and in which mode.
+	 *
+	 * `frozen` — the real run is HELD, exactly as it was, and a sealed tank of champion clones swims
+	 *            in its place. Switch it off and the run resumes where it stood.
+	 * `live`   — the real run keeps evolving underneath, and the exhibit is re-cloned from the newest
+	 *            champion at every generation, so you watch the strategy sharpen. What you are looking
+	 *            at is still never the population being selected.
+	 *
+	 * Reactive, because the card's banner and the tank both change with it. The exhibit WORLDS
+	 * themselves live in a plain Map beside it — like every other world in this store, they are
+	 * mutated 60×/s and must never be proxied.
+	 */
+	#exhibits = $state<Record<string, ExhibitMode>>({});
+	#exhibitWorlds = new Map<string, World>();
+	/** The generation each live exhibit was last cloned at, so it re-clones exactly once per turn. */
+	#exhibitGen = new Map<string, number>();
+	/**
+	 * Generations at which a world was deliberately bottlenecked — kept so the curve can MARK them.
+	 * An intervention that is not recorded is a lie by omission.
+	 */
+	#interventions = $state<Record<string, number[]>>({});
 	/** One repaint owed outside the sim advancing — set by every method that changes pixels. */
 	#needsPaint = false;
 	/**
@@ -253,12 +283,128 @@ class BenchStore {
 		this.requestPaint();
 	}
 
+	/** What a card is SHOWING — the exhibit while one is up, the real run otherwise. */
+	shown(id: string): World {
+		return this.#exhibitWorlds.get(id) ?? this.entry(id).world;
+	}
+
+	exhibitMode(id: string): ExhibitMode {
+		return this.#exhibits[id] ?? 'off';
+	}
+
+	/** The generations at which this world was bottlenecked. The curve marks them. */
+	interventionsOf(id: string): number[] {
+		return this.#interventions[id] ?? [];
+	}
+
+	/**
+	 * Put champion clones in a tank — or take them out again.
+	 *
+	 * Refuses when there is no champion yet (generation 0 has nothing to exhibit, and exhibiting a
+	 * random brain as "the best" would be a lie the UI would happily tell). Returns whether it took.
+	 */
+	setExhibit(id: string, mode: ExhibitMode): boolean {
+		const entry = this.entry(id);
+
+		if (mode === 'off') {
+			this.#closeExhibit(id);
+			this.requestPaint();
+			return true;
+		}
+
+		const genome = championGenome(entry.world);
+		if (!genome) return false;
+
+		// A selection pointing into the world we are about to stop showing must not survive the swap:
+		// it would leave the inspector presenting a fish from a tank nobody can see.
+		if (this.selection?.worldId === id) this.clearSelection();
+
+		this.#exhibitWorlds.set(id, makeExhibit(entry.world, genome, this.#exhibitRng(entry.world)));
+		this.#exhibitGen.set(id, entry.world.gen);
+		this.#exhibits = { ...this.#exhibits, [id]: mode };
+		this.requestPaint();
+		return true;
+	}
+
+	/**
+	 * THE CLONAL BOTTLENECK. Not a view — an intervention, and the only control in this group that
+	 * changes the run. Every fish becomes a copy of the champion and evolution carries on from there,
+	 * so variation collapses and the whole future of the run descends from one individual.
+	 *
+	 * It is RECORDED (see #interventions): the curve marks the generation it struck at, because a
+	 * learning curve with an unexplained cliff in it is exactly the sort of chart this lab exists to
+	 * argue against.
+	 */
+	bottleneckWorld(id: string): boolean {
+		const entry = this.entry(id);
+		this.#closeExhibit(id); // you cannot bottleneck a run you are not looking at
+		if (this.selection?.worldId === id) this.clearSelection();
+
+		const gen = bottleneck(entry.world);
+		if (gen === null) return false;
+
+		this.#interventions = {
+			...this.#interventions,
+			[id]: [...(this.#interventions[id] ?? []), gen]
+		};
+		entry.stats.syncFrom(entry.world);
+		this.requestPaint();
+		return true;
+	}
+
+	/** Take every exhibit down (a training burst is about to move every champion underneath them). */
+	closeExhibits(): void {
+		for (const id of [...this.#exhibitWorlds.keys()]) this.#closeExhibit(id);
+	}
+
+	#closeExhibit(id: string): void {
+		if (this.selection?.worldId === id && this.#exhibitWorlds.has(id)) this.clearSelection();
+		this.#exhibitWorlds.delete(id);
+		this.#exhibitGen.delete(id);
+		if (this.#exhibits[id]) {
+			const next = { ...this.#exhibits };
+			delete next[id];
+			this.#exhibits = next;
+		}
+	}
+
+	/** Re-clone an exhibit from its world's CURRENT champion (a live exhibit at a generation turn). */
+	#rebuildExhibit(id: string): void {
+		const entry = this.find(id);
+		const genome = entry && championGenome(entry.world);
+		if (!entry || !genome) {
+			this.#closeExhibit(id);
+			return;
+		}
+		if (this.selection?.worldId === id) this.clearSelection();
+		this.#exhibitWorlds.set(id, makeExhibit(entry.world, genome, this.#exhibitRng(entry.world)));
+		this.#exhibitGen.set(id, entry.world.gen);
+	}
+
+	/**
+	 * An exhibit's OWN random stream — never the real world's.
+	 *
+	 * Handing it `world.rng` was the bug the sabotage pass found: the exhibit would then draw from the
+	 * run's stream every time it spawned a shark or stepped a fish, so a run you merely LOOKED at came
+	 * out different from one you did not. The whole promise of a sealed exhibit is that observing it
+	 * costs the experiment nothing, and an experiment shares nothing with an observer — including its
+	 * dice.
+	 */
+	#exhibitRng(world: World): Rng {
+		return seededRng(world.gen * 7919 + world.cfg.prey);
+	}
+
 	setSpeed(speed: Speed): void {
 		this.playback.setSpeed(speed);
 	}
 
 	/** Fast-forward every world to `gen` (used by prewarm and the "Train N gens" button). */
 	trainTo(gen: number): void {
+		// A training burst fast-forwards every real run — which would advance a world whose exhibit
+		// promised to hold it still, and would leave every other exhibit showing a champion that has
+		// been superseded a hundred generations ago. So a burst closes the exhibits rather than
+		// quietly invalidating them.
+		this.closeExhibits();
 		if (gen > this.generationsEvolved) this.playback.requestTraining(gen);
 	}
 
@@ -305,6 +451,7 @@ class BenchStore {
 	}
 
 	removeWorld(id: string): void {
+		this.#closeExhibit(id); // nothing may outlive the world it was cloned from
 		this.#setWorlds(this.worlds.filter((entry) => entry.id !== id));
 		// Anything pointing INTO the world that just went away has to go with it, now — not on the
 		// next frame, or a component could render one frame against a world the bench no longer has.
@@ -314,6 +461,8 @@ class BenchStore {
 
 	/** Restart evolution from random brains. */
 	resetWorld(id: string): void {
+		// The champion on show was the champion of a run that no longer exists.
+		this.#closeExhibit(id);
 		// the result described a population that no longer exists — keeping it would be a lie
 		evals.forget(id);
 		engineResetWorld(this.entry(id).world);
@@ -331,6 +480,8 @@ class BenchStore {
 
 	/** Apply live config edits without wiping learning. */
 	applyConfig(id: string): void {
+		// The conditions the exhibit was swimming in have changed underneath it.
+		this.#closeExhibit(id);
 		engineApplyCfg(this.entry(id).world);
 		this.#publishConfig(id);
 	}
@@ -419,9 +570,10 @@ class BenchStore {
 	 * claim about the bench. Throwing out of a mousemove listener would be the wrong answer.
 	 */
 	setHover(id: string, target: Fish | Predator | null): void {
-		const entry = this.find(id);
-		if (!entry || entry.world.hover === target) return; // mousemove fires at pointer rate —
-		entry.world.hover = target; // an unchanged hover must not wake a paused bench's canvases
+		if (!this.find(id)) return;
+		const world = this.shown(id); // the tank you are pointing AT — the exhibit, when one is up
+		if (world.hover === target) return; // mousemove fires at pointer rate —
+		world.hover = target; // an unchanged hover must not wake a paused bench's canvases
 		this.requestPaint();
 	}
 
@@ -444,7 +596,7 @@ class BenchStore {
 
 	/** "★ Champion" — watch the best brain currently alive, and keep watching it as it evolves. */
 	selectChampion(id: string): void {
-		const best = bestAliveFish(this.entry(id).world);
+		const best = bestAliveFish(this.shown(id));
 		if (!best) return; // nothing alive to watch — leave the current selection alone
 		this.#walkSelection = false;
 		this.#deselectEverywhere();
@@ -467,7 +619,7 @@ class BenchStore {
 	 * just did it with keys.
 	 */
 	cycleSelection(id: string, direction: 1 | -1): void {
-		const { world } = this.entry(id);
+		const world = this.shown(id);
 		const stops: (Fish | Predator)[] = world.preds.length
 			? [...world.fish, world.preds[0]]
 			: [...world.fish];
@@ -650,8 +802,26 @@ class BenchStore {
 			}
 		} else if (this.playback.running) {
 			const { steps, dt } = subSteps(elapsed, this.playback.speed);
-			for (const world of worlds) {
-				for (let i = 0; i < steps; i++) stepWorld(world, dt);
+			for (const entry of this.worlds) {
+				const mode = this.exhibitMode(entry.id);
+				const exhibit = this.#exhibitWorlds.get(entry.id);
+
+				// FROZEN is the whole promise of the sealed exhibit: the real run does not advance one
+				// step while you are looking at the clones, so switching the exhibit off puts you back
+				// exactly where you were. Only the exhibit's own water moves.
+				if (mode !== 'frozen') {
+					for (let i = 0; i < steps; i++) stepWorld(entry.world, dt);
+				}
+				if (exhibit) {
+					for (let i = 0; i < steps; i++) stepWorld(exhibit, dt);
+
+					// An exhibit never respawns (it cannot: nothing in it breeds), so when the sharks have
+					// eaten the last clone the show is over — put the same brain back in the water and run
+					// it again. A live exhibit ALSO re-clones whenever its world turns a generation, which
+					// is what lets you watch the strategy sharpen.
+					const turned = mode === 'live' && entry.world.gen !== this.#exhibitGen.get(entry.id);
+					if (exhibitSpent(exhibit) || turned) this.#rebuildExhibit(entry.id);
+				}
 			}
 		}
 
@@ -660,7 +830,10 @@ class BenchStore {
 		for (const entry of this.worlds) {
 			entry.world.championFish = bestAliveFish(entry.world);
 			entry.stats.syncFrom(entry.world);
-			entry.stats.syncLens(entry.world, lensOn);
+			// The lens reads what is IN THE WATER — which, under an exhibit, is the champion's clones.
+			// That is the point: the lens on an exhibit is the champion's own flee error, with the
+			// mutant smear removed.
+			entry.stats.syncLens(this.shown(entry.id), lensOn);
 			if (entry.world.gen > highest) highest = entry.world.gen;
 		}
 		this.generationsEvolved = highest;
@@ -670,7 +843,7 @@ class BenchStore {
 
 	/** Point a world at the fish to inspect, and fill in its mind now (it may be paused). */
 	#watch(id: string, fish: Fish, followsChampion: boolean): void {
-		const { world } = this.entry(id);
+		const world = this.shown(id);
 		world.selFish = fish;
 		updateSenseSnapshot(world);
 		this.selection = { worldId: id, type: 'fish', followsChampion };
@@ -684,7 +857,11 @@ class BenchStore {
 	 */
 	#deselectEverywhere(): void {
 		this.requestPaint();
-		const worlds = story.entry ? [...this.#rawWorlds, story.entry.world] : this.#rawWorlds;
+		const worlds = [
+			...this.#rawWorlds,
+			...this.#exhibitWorlds.values(),
+			...(story.entry ? [story.entry.world] : [])
+		];
 		for (const world of worlds) {
 			world.selFish = null;
 			world.sense = null;
@@ -708,15 +885,16 @@ class BenchStore {
 			this.selection = null; // its world was removed out from under it
 			return;
 		}
+		const world = this.shown(selection.worldId); // the tank the watched creature is swimming in
 		if (selection.type === 'pred') {
 			// Conditions can remove every predator live — the inspector must not keep presenting
 			// a shark that is no longer in the water.
-			if (entry.world.preds.length === 0) this.selection = null;
+			if (world.preds.length === 0) this.selection = null;
 			return;
 		}
-		if (entry.world.selFish) return; // still swimming
+		if (world.selFish) return; // still swimming
 
-		const heir = selection.followsChampion ? bestAliveFish(entry.world) : null;
+		const heir = selection.followsChampion ? bestAliveFish(world) : null;
 		if (heir) this.#watch(selection.worldId, heir, true);
 		else this.selection = null;
 	}
@@ -725,8 +903,8 @@ class BenchStore {
 	#publishMind(): void {
 		const selection = this.selection;
 		if (!selection || selection.type !== 'fish') return;
-		const world = this.find(selection.worldId)?.world;
-		if (world) this.#syncMind(world);
+		if (!this.find(selection.worldId)) return;
+		this.#syncMind(this.shown(selection.worldId));
 	}
 
 	#syncMind(world: World): void {

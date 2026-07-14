@@ -85,6 +85,7 @@ export function makeWorld(cfg: WorldConfig, genomes?: Genome[], rng: Rng = defau
 		curve: [],
 		lifeCurve: [],
 		champion: null,
+		best: null,
 		championFish: null,
 		lastSurv: 1,
 		lastLife: 1,
@@ -148,6 +149,7 @@ export function resetWorld(w: World): void {
 	w.curve = [];
 	w.lifeCurve = []; // the learning curve the UI plots — a reset world has learned nothing
 	w.champion = null;
+	w.best = null;
 	w.championFish = null;
 	w.selFish = null;
 	w.sense = null;
@@ -231,6 +233,22 @@ function evolve(w: World): void {
 	if (best && (!w.champion || best.fitness > w.champion.fitness)) {
 		w.champion = { genome: cloneGenome(best.genome), fitness: best.fitness, gen: w.gen };
 	}
+	/*
+	 * THE BEST OF THIS GENERATION — which is not the same thing as `champion`, and the difference
+	 * matters more than it looks.
+	 *
+	 * `champion` is the best fitness EVER, and it only updates on a strictly greater score. But
+	 * fitness is seconds survived, and it is capped by the generation's length: the moment any fish
+	 * survives a whole generation it scores the maximum, and no later fish can ever beat it — only
+	 * tie. So `champion` FREEZES, permanently, on the first fish to run the clock out, and by
+	 * generation ninety it is a fossil from generation five that got lucky.
+	 *
+	 * That is the reference engine's elitism and it stays exactly as it is (the fidelity gate pins
+	 * it). But anything that wants to show a human "the brain this population has NOW" — the exhibit
+	 * — must ask this instead. Nothing else reads it, and it consumes no RNG, so the bit-exact port
+	 * is untouched.
+	 */
+	w.best = best ? { genome: cloneGenome(best.genome), fitness: best.fitness, gen: w.gen } : null;
 	const next = breed(ranked, c, w.champion, w.rng);
 	w.gen++;
 	spawnGeneration(w, next);

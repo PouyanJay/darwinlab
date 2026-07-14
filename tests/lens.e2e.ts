@@ -12,7 +12,14 @@ import { gotoApp, waitForPrewarm } from './helpers';
  */
 
 const tile = (page: Page, index: number) => page.locator('section[aria-label^="world"]').nth(index);
-const lens = (page: Page, label: 'Off' | 'Flee error') => page.getByRole('radio', { name: label });
+
+/**
+ * Scoped to the lens's OWN group. "Off" is not a unique name on this page — every card's champion-
+ * clones selector has one too — and a bare name lookup matched six controls and threw. A control is
+ * identified by its group first and its label second.
+ */
+const lens = (page: Page, label: 'Off' | 'Flee error') =>
+	page.getByRole('radiogroup', { name: 'tank lens' }).getByRole('radio', { name: label });
 
 /**
  * Hash the tank's pixels.

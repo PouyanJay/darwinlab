@@ -10,6 +10,7 @@
 -->
 <script lang="ts">
 	import Tank from './Tank.svelte';
+	import ExhibitControl from './ExhibitControl.svelte';
 	import LensStrip from './LensStrip.svelte';
 	import TileStats from './TileStats.svelte';
 	import EvalPanel from './EvalPanel.svelte';
@@ -145,6 +146,9 @@
 	<div class="tank" style:--tank-aspect="{config.bw} / {config.bh}">
 		<Tank {entry} onselect={(picked) => bench.select(entry.id, picked)} />
 	</div>
+
+	<!-- Champion clones: put ONE brain in the water and the strategy stops being a smear. -->
+	<ExhibitControl {entry} />
 
 	<!-- The lens's own reading for this tank, only while the lens is on. The colour in the water and
 	     this number are the same quantity — one for the eye, one for the argument. -->

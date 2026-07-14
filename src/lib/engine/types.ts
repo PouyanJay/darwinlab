@@ -149,7 +149,7 @@ export interface Predator {
 	_locky?: number;
 }
 
-/** Best genome ever seen in a world — preserved verbatim (elitism). */
+/** Best genome ever seen in a world — preserved verbatim (elitism), or best of the last generation. */
 export interface Champion {
 	genome: Genome;
 	fitness: number;
@@ -250,7 +250,18 @@ export interface World {
 	 * `curve`, and very different here. The UI plots this one.
 	 */
 	lifeCurve: number[];
+	/**
+	 * The best fitness EVER seen — the GA's elite, preserved verbatim into every generation.
+	 *
+	 * ⚠️ It SATURATES. Fitness is seconds survived and the generation caps it, so the first fish to
+	 * live a whole generation scores the maximum and can only be tied, never beaten. From then on
+	 * this field never changes again. It is the reference engine's elitism and it is correct as the
+	 * ALGORITHM's elite — but it is a fossil as a description of what the population currently knows.
+	 * To show a human the brain the population has NOW, read `best`.
+	 */
 	champion: Champion | null;
+	/** The best fish of the LAST COMPLETED generation — what the population knows now. See `champion`. */
+	best: Champion | null;
 	championFish: Fish | null;
 	lastSurv: number;
 	/** Latest smoothed life-curve sample (0–1). */

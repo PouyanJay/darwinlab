@@ -20,5 +20,6 @@ export * from './genetics';
 export * from './sensing';
 export * from './flee';
 export * from './world';
+export * from './exhibit';
 export * from './defaults';
 export * from './story';
