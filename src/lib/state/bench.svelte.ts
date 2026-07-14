@@ -304,6 +304,24 @@ class BenchStore {
 		this.#governor = new DetailGovernor();
 		this.#nextId = 0;
 		this.#accentCursor = 0;
+
+		/*
+		 * EVERYTHING keyed by world id, or it leaks into the next bench.
+		 *
+		 * Ids are handed out from #nextId, which resets to 0 above — so the world called `w1` in the
+		 * next bench is a different world with the same name, and a stale exhibit, assay or bottleneck
+		 * mark left behind here would attach itself to it. The tank would show clones of a brain from a
+		 * run that no longer exists. (Found by two tests failing in a way that depended on the ORDER
+		 * they ran in, which is the smell this rule exists to catch.)
+		 */
+		this.#exhibitWorlds.clear();
+		this.#exhibitGen.clear();
+		this.#assays.clear();
+		this.#exhibits = {};
+		this.#assayProgress = {};
+		this.#assayResults = {};
+		this.#interventions = {};
+		this.#lens = 'none';
 	}
 
 	// ---- controls (delegated) ----

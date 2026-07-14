@@ -45,8 +45,15 @@
 	const mode = $derived(bench.exhibitMode(entry.id));
 	const interventions = $derived(bench.interventionsOf(entry.id));
 
-	/** Generation 0 has no champion — there is nothing to exhibit, and nothing to bottleneck. */
-	const hasChampion = $derived(entry.stats.gen > 0 || entry.stats.championFitness > 0);
+	/**
+	 * Nothing has been JUDGED yet, so there is nothing to clone.
+	 *
+	 * A brain is only crowned at a generation boundary, so generation 0 has none — and the old test
+	 * for this ("any fish with fitness above zero") was worthless, because fitness is seconds survived
+	 * and every fish has some a second after a reset. The control now says it is unavailable instead
+	 * of silently snapping back to Off, which is what a freshly reset world used to do.
+	 */
+	const hasChampion = $derived(entry.stats.gen > 0);
 
 	let confirming = $state(false);
 
@@ -68,6 +75,7 @@
 			label="champion clones"
 			options={MODES}
 			value={mode}
+			disabled={!hasChampion}
 			onchange={(next) => choose(next)}
 		/>
 
@@ -85,6 +93,13 @@
 			<Icon name="bottleneck" size={15} />
 		</Button>
 	</div>
+
+	{#if !hasChampion}
+		<p class="waiting">
+			Nothing has been judged yet — a brain is crowned at the end of a generation. The clones will
+			be available as soon as this world finishes its first one.
+		</p>
+	{/if}
 
 	{#if mode !== 'off'}
 		<!-- The banner is not decoration. A tank full of identical fish that is NOT the population
@@ -151,6 +166,13 @@
 		align-items: center;
 		justify-content: space-between;
 		gap: var(--sp-3);
+	}
+
+	.waiting {
+		margin: 0;
+		font-size: var(--fs-sm);
+		line-height: var(--leading-body);
+		color: var(--ink3);
 	}
 
 	.banner {

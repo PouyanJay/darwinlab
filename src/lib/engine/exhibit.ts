@@ -21,36 +21,28 @@ import { defaultRng, type Rng } from './rng';
 import type { Genome, World } from './types';
 
 /**
- * The brain to put on show: THE BEST OF THE LAST GENERATION — what this population currently knows.
+ * The brain to put on show: THE BEST OF THE LAST COMPLETED GENERATION.
  *
- * Deliberately not `w.champion`, and this is the single most important line in the file. `champion`
- * is the best fitness ever recorded, but fitness is seconds survived and the generation caps it: the
- * first fish to run the clock out scores the maximum and can never be beaten, only tied, so the
- * champion freezes forever on an early lucky fish. Cloning THAT was measurably worse than the
- * population it was drawn from — the exhibit was showing a fossil and calling it the best brain in
- * the tank. `best` is re-crowned every generation and is what the population actually has.
+ * `best` is re-crowned at every generation boundary and is what the population currently knows.
+ * `champion` — the GA's all-time elite — is the fallback, and it is a fallback rather than the answer
+ * because it SATURATES: fitness is seconds survived, the generation caps it, and the elite is only
+ * re-crowned on a strictly greater score, so the first fish to run the clock out holds the title
+ * forever. Cloning that fossil measured worse than cloning the current population.
  *
- * Falls back to the elite, and then to the best fish alive that has earned anything at all. A world
- * at generation 0 honestly has nothing to exhibit, and says so with a null — the caller must be able
- * to refuse rather than put a random brain on a pedestal.
+ * BOTH ARE ONLY EVER SET AT A GENERATION BOUNDARY, and that is the whole point of this function's
+ * shape. A world at generation 0 has judged nobody, so it returns null and the caller must be able to
+ * refuse.
+ *
+ * There used to be a third fallback here — "the best fish alive with any fitness at all" — and it was
+ * a trap. Fitness is seconds survived, so one second after a reset every fish has some, and the
+ * "best" of an unevolved population is an arbitrary random brain. The exhibit would then open on it,
+ * and a FROZEN exhibit holds the run — so the world could never reach the generation that would have
+ * crowned it a real champion. Generation 0, forever. Nothing is exhibited until something is judged.
  */
 export function championGenome(w: World): Genome | null {
 	if (w.best) return cloneGenome(w.best.genome);
 	if (w.champion) return cloneGenome(w.champion.genome);
-
-	// The fallback is for MID-generation, before the first champion has been crowned: the best fish
-	// alive is a defensible "best brain so far". But it must have actually EARNED something — at
-	// generation zero every fitness is 0, and picking the first fish out of a random population and
-	// presenting it as the champion would be the exhibit lying on the lab's behalf.
-	let best: Genome | null = null;
-	let bestFitness = 0;
-	for (const f of w.fish) {
-		if (f.fitness > bestFitness) {
-			bestFitness = f.fitness;
-			best = f.genome;
-		}
-	}
-	return best ? cloneGenome(best) : null;
+	return null;
 }
 
 /**

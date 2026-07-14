@@ -18,14 +18,21 @@
 		onchange: (value: T) => void;
 		/** Names the group for assistive tech, e.g. "simulation speed". */
 		label: string;
+		/**
+		 * The whole choice is unavailable — every segment goes quiet and none of them can be picked.
+		 * A control that silently refuses is worse than one that says it cannot: the champion-clones
+		 * selector used to snap back to Off with no explanation whenever there was no brain to clone.
+		 */
+		disabled?: boolean;
 	}
 
-	let { options, value, onchange, label }: Props = $props();
+	let { options, value, onchange, label, disabled = false }: Props = $props();
 
 	let group = $state<HTMLDivElement>();
 
 	/** Move the selection and take focus with it — a radio group's selection *is* its focus. */
 	function select(index: number) {
+		if (disabled) return;
 		const wrapped = (index + options.length) % options.length;
 		onchange(options[wrapped].value);
 		// The chosen segment is the only tabbable one, so it is the one that must hold focus.
@@ -49,13 +56,21 @@
 	}
 </script>
 
-<div bind:this={group} class="segmented" role="radiogroup" aria-label={label}>
+<div
+	bind:this={group}
+	class="segmented"
+	class:disabled
+	role="radiogroup"
+	aria-label={label}
+	aria-disabled={disabled}
+>
 	{#each options as option, index (option.value)}
 		{@const checked = option.value === value}
 		<button
 			type="button"
 			role="radio"
 			aria-checked={checked}
+			{disabled}
 			class:checked
 			tabindex={checked ? 0 : -1}
 			onclick={() => select(index)}
@@ -98,6 +113,14 @@
 		background: var(--panel);
 		color: var(--ink);
 		box-shadow: var(--shadow-segment);
+	}
+
+	.segmented.disabled {
+		opacity: 0.5;
+	}
+
+	.segmented.disabled button {
+		cursor: not-allowed;
 	}
 
 	/* Taller segments for a fingertip. The min-height is what actually guarantees the target: the

@@ -108,4 +108,63 @@ describe('the champion exhibit, in the store', () => {
 		expect(bench.setExhibit(entry.id, 'frozen')).toBe(false);
 		expect(bench.shown(entry.id)).toBe(entry.world); // and the tank still shows the real thing
 	});
+
+	it('THE DEADLOCK: a world that has been running but has not FINISHED a generation still refuses', () => {
+		/*
+		 * The owner's bug, and it was a trap of my own making. Fitness is SECONDS SURVIVED, so one
+		 * second after a reset every fish has some — and a "best fish alive with any fitness" fallback
+		 * therefore crowns an arbitrary, unevolved brain. The exhibit would open on it, and a FROZEN
+		 * exhibit holds the run: the world could then never reach the generation boundary that would
+		 * have crowned it a real champion. Generation 0, forever, with no way out but a reset.
+		 *
+		 * So: run a fresh world for several seconds — long enough for every fish to have real fitness,
+		 * nowhere near long enough to finish a generation (they are 30 sim-seconds) — and demand the
+		 * exhibit still refuses.
+		 */
+		bench.init({ configs: [DEFAULT_WORLDS[2]], prewarmGenerations: 0, maxGenerations: 0 });
+		const entry = bench.worlds[0];
+
+		run(5);
+		expect(entry.world.gen).toBe(0); // no generation has ended…
+		expect(Math.max(...entry.world.fish.map((f) => f.fitness))).toBeGreaterThan(0); // …but they have all lived
+
+		expect(bench.setExhibit(entry.id, 'frozen')).toBe(false);
+		expect(bench.shown(entry.id)).toBe(entry.world);
+
+		// …and the run is still running, which is the whole point: it can still reach a champion.
+		const t = entry.world.t;
+		run(2);
+		expect(entry.world.t).toBeGreaterThan(t);
+	});
+
+	it('does not leak an exhibit into the NEXT bench', () => {
+		/*
+		 * Ids are handed out from a counter that `destroy()` resets, so the `w1` of the next bench has
+		 * the same id as the `w1` of this one — and an exhibit left behind in a Map keyed by id would
+		 * attach itself to a completely different world. The tank would show clones of a brain from a
+		 * run that no longer exists, and nothing on screen would say so.
+		 */
+		const first = benchWithChampion();
+		expect(bench.setExhibit(first.id, 'frozen')).toBe(true);
+		const staleId = first.id;
+
+		bench.destroy();
+		bench.init({ configs: [DEFAULT_WORLDS[2]], prewarmGenerations: 0, maxGenerations: 0 });
+
+		const fresh = bench.worlds[0];
+		expect(fresh.id).toBe(staleId); // the same id — which is exactly why this can go wrong
+		expect(bench.exhibitMode(fresh.id)).toBe('off');
+		expect(bench.shown(fresh.id)).toBe(fresh.world); // its own water, not the dead run's clones
+	});
+
+	it('recovers the moment the world crowns its first brain', () => {
+		bench.init({ configs: [DEFAULT_WORLDS[2]], prewarmGenerations: 0, maxGenerations: 0 });
+		const entry = bench.worlds[0];
+
+		expect(bench.setExhibit(entry.id, 'live')).toBe(false); // nothing judged yet
+		run(35); // one generation (30 sim-seconds)
+
+		expect(entry.world.best).not.toBeNull();
+		expect(bench.setExhibit(entry.id, 'live')).toBe(true); // …and now it works
+	});
 });
