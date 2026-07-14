@@ -31,7 +31,20 @@
 		// the page's derived selection lookup, which is already undefined by then. Skip the one
 		// orphaned frame; the unmount is a microtask away. (This froze the whole bench once: the
 		// throw killed the sim loop's timer chain.)
-		const world = entry?.world;
+		if (!entry) return;
+
+		/*
+		 * The world the fish is actually SWIMMING IN — which, while an exhibit is up, is the exhibit
+		 * and not the run beneath it.
+		 *
+		 * This read `entry.world` and drew a brain with no edges at all: the selected fish lives in the
+		 * exhibit, so the real world's `sense` snapshot is null, and a null snapshot draws the empty
+		 * scaffold — eight input nodes, six hidden, two out, and not one weight between them. The
+		 * sense bars beside it were full of numbers the whole time, because they read the store's
+		 * published mind (which does use the shown world). One panel was looking at the clone and the
+		 * other at the population; only one of them said so.
+		 */
+		const world = bench.shown(entry.id);
 		if (!world) return;
 		drawBrain(ctx, width, height, {
 			senses: world.cfg.senses,

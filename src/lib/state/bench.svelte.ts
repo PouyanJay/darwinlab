@@ -984,6 +984,22 @@ class BenchStore {
 		const worlds = this.#rawWorlds;
 
 		if (this.playback.training) {
+			/*
+			 * AN EXHIBIT KEEPS SWIMMING THROUGH A BURST.
+			 *
+			 * Turbo fast-forwards the real runs and does not animate them — that is the whole bargain,
+			 * and the pill says so. But an exhibit is not one of the runs being trained: it is a tank the
+			 * user is watching. Leaving it unstepped left a STILL IMAGE on screen for as long as the
+			 * burst lasted (gen 1 → 150 is a long minute), which reads as an application that has hung —
+			 * and it reads that way ONLY when the clones are on, which is exactly what the owner saw.
+			 * Twenty fish in one tank is nothing next to a training burst; it can afford to swim.
+			 */
+			const { steps, dt } = subSteps(elapsed, this.playback.speed);
+			for (const [id, exhibit] of this.#exhibitWorlds) {
+				for (let i = 0; i < steps; i++) stepWorld(exhibit, dt);
+				if (exhibitSpent(exhibit)) this.#rebuildExhibit(id);
+			}
+
 			if (turboSlice(worlds, this.playback.turboTarget!)) {
 				this.playback.finishTraining();
 				// The burst is over and every champion has moved. Any exhibit that was up is re-cloned

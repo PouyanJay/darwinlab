@@ -67,6 +67,32 @@ describe('the champion exhibit, in the store', () => {
 		expect(bench.shown(entry.id)).not.toBe(entry.world); // …while you watched the champion
 	});
 
+	it('an exhibit KEEPS SWIMMING through a training burst', () => {
+		/*
+		 * Turbo fast-forwards the real runs and does not animate them — that is the bargain, and the
+		 * pill says so. But an exhibit is not one of the runs being trained; it is a tank the user is
+		 * watching. Left unstepped, it froze into a still image for as long as the burst lasted (gen 1
+		 * to 150 is a long minute), and the app looked hung — but ONLY when the clones were on, which
+		 * is exactly what the owner saw and reported.
+		 */
+		const entry = benchWithChampion();
+		bench.setExhibit(entry.id, 'live');
+
+		// A burst long enough to still be running when we look — the owner's was gen 1 to 150.
+		bench.trainTo(entry.world.gen + 60);
+		const exhibit = bench.shown(entry.id);
+		expect(exhibit).not.toBe(entry.world);
+
+		// Its own clock, on its own object: a REBUILT exhibit is a new world with a fresh (random)
+		// start time, so comparing `shown().t` across a rebuild compares two different clocks and
+		// proves nothing. This holds the tank and watches it move.
+		const clock = exhibit.t;
+		run(0.3);
+
+		expect(bench.turboTarget).not.toBeNull(); // the burst really is still under way…
+		expect(exhibit.t).toBeGreaterThan(clock); // …and the clones are swimming through it
+	});
+
 	it('a training burst KEEPS the exhibit, and re-clones it from the brain that came out', () => {
 		/*
 		 * The owner's second bug: switching the clones on and pressing Train made the clones vanish.
