@@ -141,6 +141,33 @@ export function newWorldConfig(name: string, accent: string): WorldConfig {
  * a fish tops out at 176 px/s and the shark cruises at 200 × this number, so somewhere around 0.88
  * the shark stops being able to run a fish down — and every sense the fish owns suddenly matters.
  */
+/**
+ * THE CROWDED OCEAN — a one-click preset that makes BEARING decisive, and says what that costs.
+ *
+ * The brief was "amplify the stakes so the difference is visible". Five candidate oceans were
+ * measured before any of them was believed (50 generations × 3 seeds, mean life + the assay's turn
+ * accuracy), and the result overturned the obvious answer:
+ *
+ *   • Making the shark SLOWER — so that fleeing "genuinely works" — DESTROYS the ladder. Blind fish
+ *     live 5.55s and bearing fish 5.32s: everyone survives, so selection has nothing left to sort.
+ *     Mercy is not pressure. That was the first idea and it was simply wrong.
+ *   • A fiercer strike sharpens survival (+39%) but barely moves the DECISION (+3 points).
+ *   • What works is making sure every fish is TESTED. Five hunters and long sight: the survival gap
+ *     between blind and bearing widens from +34% to +67%, and the share of fish that turn the right
+ *     way climbs 51% → 64%.
+ *
+ * ⚠️ AND IT COLLAPSES THE UPPER LADDER, WHICH IS THE HONEST HALF. Measured across all five worlds,
+ * an ocean this lethal stops paying for the senses ABOVE bearing: full-sense fish drop below
+ * corner-wise ones (2.7s vs 4.0s), and no milder version (4 hunters, shorter sight) kept the ladder
+ * monotone either. This is the product's own thesis one level up: a harsher world does not make MORE
+ * senses pay — it makes ONE sense decisive and drowns the rest. Do not soften this, and do not sell
+ * the preset as a better ocean. It is an exhibit of the thesis, not an improvement on the bench.
+ */
+export const CROWDED_OCEAN = {
+	preds: 5,
+	vision: 280
+} as const satisfies Partial<WorldConfig>;
+
 export const WORLD_LIMITS = {
 	prey: { min: 2, max: 80, step: 2 },
 	preds: { min: 0, max: 6, step: 1 },

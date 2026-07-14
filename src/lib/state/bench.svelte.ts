@@ -35,6 +35,7 @@ import {
 	cloneGenome,
 	ACCENTS,
 	WORLD_LIMITS,
+	CROWDED_OCEAN,
 	PERSISTENCE_DEFAULTS,
 	MAX_GENERATIONS
 } from '../engine';
@@ -665,6 +666,25 @@ class BenchStore {
 		world.cfg[key] = clamp(value, WORLD_LIMITS[key]);
 		engineApplyCfg(world);
 		this.#publishConfig(id);
+	}
+
+	/**
+	 * Crowd the ocean: five hunters, long sight, and nobody survives by never meeting a shark.
+	 *
+	 * It goes through `setCondition`, one field at a time — the same door a hand on the slider uses,
+	 * with the same clamping and the same live apply. A preset that wrote to `world.cfg` directly
+	 * would be a second way of changing a world, and the day the two disagreed the bug would be in
+	 * whichever one nobody was looking at.
+	 *
+	 * It does NOT reset the population. The whole point is to watch what an already-evolved world does
+	 * when the stakes change under it.
+	 */
+	crowdTheOcean(id: string): void {
+		const preset: Partial<Record<NumericCondition, number>> = CROWDED_OCEAN;
+		for (const [key, value] of Object.entries(preset) as [NumericCondition, number][]) {
+			this.setCondition(id, key, value);
+		}
+		this.requestPaint();
 	}
 
 	/**
