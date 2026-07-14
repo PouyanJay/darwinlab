@@ -69,6 +69,17 @@ class ShellStore {
 		return this.narrow ? this.overlayOpen : !this.collapsed;
 	}
 
+	/**
+	 * The panel is COVERING the bench rather than sitting beside it.
+	 *
+	 * What floats over the bench (the disclaimer, the first-run hint) is pinned to the viewport and
+	 * layered above it, so it would otherwise punch straight through the panel and its scrim — a
+	 * pill about the tanks, printed on top of the controls that hide them.
+	 */
+	get overlaying(): boolean {
+		return this.narrow && this.overlayOpen;
+	}
+
 	/** Adopt what was saved and start watching the viewport. Returns its teardown. */
 	init(): () => void {
 		const saved = load();

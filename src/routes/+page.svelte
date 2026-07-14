@@ -75,6 +75,16 @@
 	const columns = $derived(Math.min(3, Math.max(1, bench.worlds.length)));
 	const cardWidth = $derived(columns === 1 ? 780 : columns === 2 ? 580 : 470);
 
+	/**
+	 * How much of the left edge the sidebar is holding.
+	 *
+	 * The three things that float over the bench (the disclaimer, the first-run hint, the training
+	 * pill) are positioned against the VIEWPORT, which no longer starts where the bench does. Without
+	 * this they anchor under the sidebar and read as centred on a page they are not centred on. An
+	 * overlay panel is not counted: it is on top of the bench, not beside it.
+	 */
+	const gutter = $derived(shell.open && !shell.narrow ? `${shell.width}px` : 'var(--rail-width)');
+
 	// One dialog, for whichever world asked for it. It resolves to `undefined` the instant that world
 	// is removed, so the dialog cannot outlive the thing it edits.
 	const editing = $derived(
@@ -117,7 +127,7 @@
 
 <!-- inert while a film is playing: the bench is behind a full-screen takeover, and a keyboard user
      must not be able to Tab onto controls they cannot see and remove a world mid-presentation. -->
-<div class="app" inert={story.active}>
+<div class="app" inert={story.active} style:--shell-gutter={gutter}>
 	<TopBar />
 	<TurboPill />
 
@@ -132,13 +142,13 @@
 				{#each bench.worlds as entry, index (entry.id)}
 					<WorldTile {entry} index={index + 1} />
 				{/each}
-			</main>
 
-			<!-- Below the grid rather than inside it: as a cell it would take a column from the very
-			     layout it is standing next to, and a bench of one would stop being a bench of one. -->
-			<div class="add">
-				<button class="ghost" onclick={addWorld}>＋ Add environment</button>
-			</div>
+				<!-- A row of its own, spanning every column, rather than a cell: as a cell it would take a
+				     column away from the very layout it stands next to, and a bench of one would stop
+				     being a bench of one. It stays INSIDE <main> — a button loose in a bare <div> is
+				     content no landmark owns, which is content a screen reader cannot situate. -->
+				<button class="ghost" onclick={addWorld}>+ Add environment</button>
+			</main>
 		</div>
 	</div>
 
@@ -181,8 +191,7 @@
 	}
 
 	.banner,
-	main,
-	.add {
+	main {
 		width: 100%;
 		/* The cap, in one line: N cards and the gaps between them. Everything else is centring. */
 		max-width: calc(var(--columns) * var(--card) + (var(--columns) - 1) * var(--sp-7));
@@ -200,7 +209,7 @@
 
 	/* The one card that holds nothing: an empty slot inviting a new experiment. */
 	.ghost {
-		width: 100%;
+		grid-column: 1 / -1; /* its own row, under the cards, however many columns there are */
 		min-height: 64px;
 		border: 1.5px dashed var(--line);
 		border-radius: var(--radius-card);

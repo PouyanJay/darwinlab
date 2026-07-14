@@ -26,7 +26,8 @@
 	.turbo {
 		position: fixed;
 		top: calc(var(--topbar-height) + var(--sp-1));
-		left: 50%;
+		/* Centred on the bench rather than the window — see the note in FirstRunHint. */
+		left: calc(50% + var(--shell-gutter, 0px) / 2);
 		transform: translateX(-50%);
 		z-index: var(--z-turbo);
 		display: flex;

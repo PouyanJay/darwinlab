@@ -51,7 +51,7 @@ test('Tab reaches the tank; arrows walk creatures; the walk keeps its focus; Esc
 test('the ★ Champion path still moves focus into the drawer — a button click is not a walk', async ({
 	page
 }) => {
-	await page.getByRole('button', { name: '★ Champion' }).first().click();
+	await page.getByRole('button', { name: 'Champion' }).first().click();
 	await expect(inspector(page)).toBeVisible();
 	// the drawer took focus (its close button is the first stop inside)
 	expect(

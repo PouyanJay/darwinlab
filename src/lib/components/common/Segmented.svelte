@@ -100,9 +100,11 @@
 		box-shadow: var(--shadow-segment);
 	}
 
-	/* Taller segments for a fingertip. */
+	/* Taller segments for a fingertip. The min-height is what actually guarantees the target: the
+	   padding alone left a 34px segment, because the type inside it is 11.5px. */
 	@media (pointer: coarse) {
 		button {
+			min-height: 40px;
 			padding: 10px var(--sp-5);
 		}
 	}

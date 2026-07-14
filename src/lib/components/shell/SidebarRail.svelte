@@ -35,7 +35,9 @@
 	}
 </script>
 
-<div class="rail" inert={shell.open}>
+<!-- Labelled the same as the panel, and for the same reason (see Sidebar.svelte). Both are only ever
+     in the page at once on a phone, where this one is inert underneath the other. -->
+<aside class="rail" aria-label="lab controls" inert={shell.open}>
 	<Button
 		variant="icon"
 		aria-label="expand the controls"
@@ -80,7 +82,12 @@
 
 		<span class="divider" aria-hidden="true"></span>
 
-		<Button variant="icon" aria-label="Add environment" title="add environment" onclick={onaddworld}>
+		<Button
+			variant="icon"
+			aria-label="Add environment"
+			title="add environment"
+			onclick={onaddworld}
+		>
 			<span aria-hidden="true">＋</span>
 		</Button>
 
@@ -95,7 +102,7 @@
 			<TransportIcon playing={false} size={9} />
 		</Button>
 	{/if}
-</div>
+</aside>
 
 <style>
 	.rail {

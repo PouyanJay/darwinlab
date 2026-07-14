@@ -35,6 +35,10 @@
 	const target = $derived(trainTarget(bench.generationsEvolved, bench.maxGenerations));
 	const label = $derived(trainLabel(bench.maxGenerations));
 
+	// "Close" on a phone, where the panel is OVER the bench; "collapse" on a desktop, where it is
+	// beside it. The same press, and two honest words for what it does.
+	const dismiss = $derived(shell.narrow ? 'close the controls' : 'collapse the controls');
+
 	/**
 	 * On the narrow layout the panel floats over the bench, so anything that TAKES the screen has to
 	 * shut it on the way out — otherwise the film plays behind an open control panel, and a new world
@@ -63,26 +67,29 @@
 		<button
 			type="button"
 			class="scrim"
-			aria-label="close the controls"
+			aria-label="dismiss the controls"
 			onclick={() => shell.closeOverlay()}
 		></button>
 	{/if}
 
-	<div
+	<!-- An <aside>, not a <nav>: these are controls, not links, and a landmark is what keeps a screen
+	     reader able to jump to them (and what stops the axe `region` rule finding orphaned content).
+	     The rail carries the same label — only ever one of the two is live, the other is inert. -->
+	<aside
 		class="sidebar"
 		class:overlay={shell.narrow}
 		style:width="{shell.width}px"
 		aria-label="lab controls"
 	>
-		<nav>
+		<div class="panel">
 			<header>
 				<span class="title">Controls</span>
 				<Button
 					variant="icon"
 					size="sm"
-					aria-label="collapse the controls"
+					aria-label={dismiss}
 					aria-expanded={true}
-					title="collapse the controls"
+					title={dismiss}
 					onclick={() => shell.toggle()}
 				>
 					<span aria-hidden="true">«</span>
@@ -107,7 +114,10 @@
 				</Button>
 
 				<div class="field">
-					<span class="field-label" id="speed-label">Speed</span>
+					<!-- Decorative: the Segmented control carries its own accessible name ("simulation
+					     speed"), so this word is for the eye. Wiring it up as a second label would have a
+					     screen reader announce the group twice. -->
+					<span class="field-label" aria-hidden="true">Speed</span>
 					<Segmented
 						label="simulation speed"
 						options={SPEEDS}
@@ -137,13 +147,13 @@
 					<span>Play story</span>
 				</Button>
 			</section>
-		</nav>
+		</div>
 
 		<!-- Docked only: there is nothing to resize when the panel is floating over the page. -->
 		{#if !shell.narrow}
 			<SidebarResizer />
 		{/if}
-	</div>
+	</aside>
 {/if}
 
 <style>
@@ -182,7 +192,7 @@
 		animation: fade-in var(--dur-fast) var(--ease) both;
 	}
 
-	nav {
+	.panel {
 		flex: 1;
 		min-width: 0; /* a dragged-narrow panel clips its content instead of pushing the divider */
 		display: flex;
@@ -192,7 +202,7 @@
 		overflow-y: auto;
 	}
 
-	nav > header {
+	.panel > header {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;

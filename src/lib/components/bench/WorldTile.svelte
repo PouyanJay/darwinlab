@@ -54,6 +54,8 @@
 	// rule would eventually disagree, and the "· trained" pill would say one thing while the
 	// real-world run row said another.
 	const trained = $derived(entry.stats.deployed);
+
+	const status = $derived(trained ? 'trained' : bench.running ? 'evolving' : 'paused');
 </script>
 
 <section class="tile" aria-label="world {index}: {config.name}">
@@ -66,7 +68,14 @@
 			onchange={(name) => bench.renameWorld(entry.id, name)}
 		/>
 
-		<Chip tabular data-testid="gen">Gen {entry.stats.gen}{trained ? ' · trained' : ''}</Chip>
+		<!-- The dot is the card's pulse: still evolving, standing still, or done training for good.
+		     It is DECORATIVE, and deliberately silent — the chip already says "· trained" in words,
+		     and whether the sim is running is what the transport button in the sidebar is for. A dot
+		     that also spoke would be the third voice saying the same thing. -->
+		<Chip tabular data-testid="gen">
+			<span class="status {status}" aria-hidden="true"></span>
+			Gen {entry.stats.gen}{trained ? ' · trained' : ''}
+		</Chip>
 
 		<!-- The destructive controls stay quiet until you are actually on this tile. -->
 		<div class="actions">
@@ -174,6 +183,26 @@
 
 	.tile:hover {
 		transform: translateY(-2px);
+	}
+
+	.status {
+		width: 6px;
+		height: 6px;
+		border-radius: 50%;
+		background: var(--ink3);
+	}
+
+	/* A generation is running: the dot breathes. It is the only motion on the card's chrome, and it
+	   stops the instant the sim does — which is how you tell a paused bench from a stalled one. */
+	.status.evolving {
+		background: var(--accent);
+		animation: pulse 1.8s var(--ease) infinite;
+	}
+
+	/* Training is over for good. Gold, like the champion — this population is what is left. */
+	.status.trained {
+		background: var(--gold);
+		animation: none;
 	}
 
 	header {

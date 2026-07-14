@@ -19,19 +19,40 @@ test.beforeEach(async ({ page }) => {
 	await waitForPrewarm(page);
 });
 
-test('the bench fits a phone: one column, every control present, no sideways scroll', async ({
+test('the bench fits a phone: one column, the run controls on the rail, no sideways scroll', async ({
 	page
 }) => {
 	expect(await overflow(page)).toBe(0);
 
-	// the priority controls survived the narrow bar
-	await expect(page.getByRole('button', { name: 'Pause' })).toBeVisible();
+	/*
+	 * A phone has no room to dock the control panel, so it lives behind the rail — but the RUN
+	 * controls are the ones you reach for mid-experiment, and the rail is what keeps them one tap
+	 * away instead of behind a panel. They are here, and they are finger-sized.
+	 */
+	const pause = page.getByRole('button', { name: 'Pause' });
+	await expect(pause).toBeVisible();
 	await expect(page.getByRole('button', { name: 'Play story' })).toBeVisible();
-	await expect(page.getByRole('radio', { name: '1×' })).toBeVisible();
 
-	// and they are finger-sized — the coarse-pointer rules are live
-	const box = await page.getByRole('button', { name: 'Pause' }).boundingBox();
-	expect(box!.height).toBeGreaterThanOrEqual(44);
+	const box = await pause.boundingBox();
+	expect(box!.height).toBeGreaterThanOrEqual(44); // the coarse-pointer rules are live
+});
+
+test('the control panel opens over the bench, with the full controls on it', async ({ page }) => {
+	// The panel is an OVERLAY here: it starts shut, so the bench is what a phone opens on.
+	await expect(page.getByRole('radio', { name: '1×' })).toBeHidden();
+
+	await page.getByRole('button', { name: 'expand the controls' }).tap();
+
+	// what the rail could not fit: the speed control in full, and the run manifest
+	const speed = page.getByRole('radio', { name: '1×' });
+	await expect(speed).toBeVisible();
+	await expect(page.getByTestId('run-manifest')).toBeVisible();
+	expect((await speed.boundingBox())!.height).toBeGreaterThanOrEqual(40);
+	expect(await overflow(page)).toBe(0);
+
+	// and it gets out of the way again
+	await page.getByRole('button', { name: 'close the controls' }).tap();
+	await expect(speed).toBeHidden();
 });
 
 test('the conditions dialog becomes a full-screen sheet', async ({ page }) => {
@@ -49,7 +70,7 @@ test('the conditions dialog becomes a full-screen sheet', async ({ page }) => {
 });
 
 test('the inspector becomes a full-width overlay', async ({ page }) => {
-	await page.getByRole('button', { name: '★ Champion' }).first().tap();
+	await page.getByRole('button', { name: 'Champion' }).first().tap();
 	const drawer = page.getByRole('dialog', { name: /fish mind/i });
 	await expect(drawer).toBeVisible();
 
