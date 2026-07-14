@@ -63,7 +63,7 @@ test('a sense pill is a live ablation — it really cuts the input neuron', asyn
 });
 
 test('adding, duplicating and removing worlds', async ({ page }) => {
-	await page.getByRole('button', { name: '+ Add environment' }).click();
+	await page.locator('main').getByRole('button', { name: 'Add environment' }).click();
 	await expect(tiles(page)).toHaveCount(6);
 	await expect(tiles(page).last().locator('input')).toHaveValue('World 6');
 

@@ -105,9 +105,17 @@
 		gap: 9px;
 	}
 
-	/* Dimmed, not hidden: a cut sense is the experiment, so it stays on screen saying "off". */
-	.cut {
-		opacity: 0.35;
+	/*
+	 * Dimmed, not hidden: a cut sense is the experiment, so it stays on screen saying "off".
+	 *
+	 * But the dimming is on the BAR, never on the words. It used to be `opacity: .35` on the whole
+	 * row, which put the label at 1.7:1 against the panel — text no one with less than perfect sight
+	 * could read, and a serious axe failure the moment the surface behind it lightened. Faded text is
+	 * not a state; it is just text you cannot read. The row says "off" in a colour that holds AA, and
+	 * the meter — which carries no words — is what goes quiet.
+	 */
+	.cut .meter {
+		opacity: 0.3;
 	}
 
 	.head {
@@ -120,6 +128,12 @@
 
 	.head b {
 		color: var(--ink);
+	}
+
+	/* AA-held muted, rather than a fade: --ink3 is the token tuned for exactly this on both panels. */
+	.cut .head,
+	.cut .head b {
+		color: var(--ink3);
 	}
 
 	.meter {

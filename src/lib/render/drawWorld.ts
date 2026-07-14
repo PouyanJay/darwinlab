@@ -79,9 +79,12 @@ function sceneGradients(
 
 	const water = ctx.createLinearGradient(0, 0, 0, bh);
 	if (theme === 'light') {
-		water.addColorStop(0, '#fbfefc');
-		water.addColorStop(0.45, '#eef3ea');
-		water.addColorStop(1, '#dce4d6');
+		// Deeper and a touch cooler than the reference's near-white wash, which went pale grey-green
+		// the moment it sat on a warm page and read as a blank panel rather than as water. The floor
+		// is darker than the surface now, so the tank has a top and a bottom.
+		water.addColorStop(0, '#f6fcfa');
+		water.addColorStop(0.45, '#e6f0ea');
+		water.addColorStop(1, '#cddcd3');
 	} else {
 		water.addColorStop(0, '#0e0e15');
 		water.addColorStop(1, '#030304');
@@ -106,7 +109,7 @@ function sceneGradients(
 	);
 	if (theme === 'light') {
 		innerVignette.addColorStop(0, 'rgba(30,50,40,0)');
-		innerVignette.addColorStop(1, 'rgba(30,50,40,.06)');
+		innerVignette.addColorStop(1, 'rgba(30,50,40,.1)'); // corners fall away — the water has depth
 	} else {
 		innerVignette.addColorStop(0, 'rgba(0,0,0,0)');
 		innerVignette.addColorStop(1, 'rgba(0,0,0,.4)');

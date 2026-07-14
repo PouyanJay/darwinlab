@@ -16,6 +16,7 @@
 -->
 <script lang="ts">
 	import Button from '../common/Button.svelte';
+	import Icon from '../common/Icon.svelte';
 	import Segmented from '../common/Segmented.svelte';
 	import TransportIcon from '../common/TransportIcon.svelte';
 	import RunManifest from './RunManifest.svelte';
@@ -92,7 +93,7 @@
 					title={dismiss}
 					onclick={() => shell.toggle()}
 				>
-					<span aria-hidden="true">«</span>
+					<Icon name="chevron-left" size={15} />
 				</Button>
 			</header>
 
@@ -100,15 +101,24 @@
 				<h2 class="field-label">Run</h2>
 
 				<p class="readout">
-					<span class="glyph" aria-hidden="true">⟳</span>
+					<Icon name="episodes" size={14} />
 					<b class="tabular" data-testid="generations">{bench.generationsEvolved}</b>
 					<span>episodes</span>
 				</p>
 
-				<!-- No aria-label on a button that carries visible text: an aria-label REPLACES the label
-				     a sighted user reads with a different one AT hears — the mismatch WCAG's "label in
-				     name" is about. Only the glyph-only buttons (the rail's) get one. -->
-				<Button variant="primary" class="wide" onclick={() => bench.togglePlay()}>
+				<!--
+					ONE full-width button in the column, and it is the transport — the thing you press most,
+					and the only one that earns the whole measure. The rest are sized to what they say.
+
+					Four stacked full-bleed buttons read as a stack of slabs: nothing is more important than
+					anything else, and every label floats in a field of its own empty space. A control panel
+					is a hierarchy, not a list.
+
+					No aria-label on a button that carries visible text: an aria-label REPLACES the label a
+					sighted user reads with a different one AT hears — the mismatch WCAG's "label in name" is
+					about. Only the glyph-only buttons (the rail's) get one.
+				-->
+				<Button variant="primary" class="transport" onclick={() => bench.togglePlay()}>
 					<TransportIcon playing={bench.running} />
 					<span>{bench.running ? 'Pause' : 'Evolve'}</span>
 				</Button>
@@ -126,10 +136,13 @@
 					/>
 				</div>
 
-				<Button class="wide" disabled={bench.training} onclick={() => bench.trainTo(target)}>
-					<span aria-hidden="true">⏩</span>
-					<span>{label}</span>
-				</Button>
+				<div class="field">
+					<span class="field-label" aria-hidden="true">Fast-forward</span>
+					<Button size="sm" disabled={bench.training} onclick={() => bench.trainTo(target)}>
+						<Icon name="forward" size={14} />
+						<span>{label}</span>
+					</Button>
+				</div>
 			</section>
 
 			<section>
@@ -137,20 +150,22 @@
 
 				<RunManifest />
 
-				<Button class="wide" onclick={andClose(onaddworld)}>
-					<span aria-hidden="true">＋</span>
-					<span>Add environment</span>
-				</Button>
+				<div class="actions">
+					<Button size="sm" onclick={andClose(onaddworld)}>
+						<Icon name="plus" size={14} />
+						<span>Add environment</span>
+					</Button>
 
-				<Button
-					variant="accent"
-					class="wide"
-					disabled={bench.training}
-					onclick={andClose(onplaystory)}
-				>
-					<TransportIcon playing={false} size={9} />
-					<span>Play story</span>
-				</Button>
+					<Button
+						variant="accent"
+						size="sm"
+						disabled={bench.training}
+						onclick={andClose(onplaystory)}
+					>
+						<TransportIcon playing={false} size={12} />
+						<span>Play story</span>
+					</Button>
+				</div>
 			</section>
 
 			<!-- The disclaimer, at the foot of the chrome rather than floating over somebody's tank.
@@ -245,11 +260,13 @@
 		margin: 0 0 var(--sp-1);
 	}
 
-	/* Every control in the column is full-bleed: a ragged right edge in a 268px panel reads as five
-	   unrelated widgets rather than one instrument. */
-	.sidebar :global(.wide) {
+	/* The one control that takes the whole measure — see the note in the markup. */
+	.sidebar :global(.transport) {
 		width: 100%;
-		justify-content: flex-start;
+		height: 40px;
+		justify-content: center;
+		font-size: var(--fs-md);
+		letter-spacing: 0.01em;
 	}
 
 	.sidebar :global(.manifest) {
@@ -258,31 +275,38 @@
 		padding: var(--sp-3) var(--sp-4);
 	}
 
+	/* A label on the left, the control it names on the right — the shape of a settings row, and the
+	   reason nothing here has to be stretched to fill a line it does not need. */
 	.field {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
 		gap: var(--sp-3);
-		padding: 2px 0;
+		min-height: 30px;
+	}
+
+	.actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--sp-2);
 	}
 
 	.readout {
 		display: flex;
-		align-items: baseline;
-		gap: 7px;
-		margin: 0 0 var(--sp-1);
+		align-items: center;
+		gap: var(--sp-2);
+		margin: 0 0 var(--sp-2);
 		font-size: var(--fs-md);
 		color: var(--ink3);
+	}
+
+	.readout :global(.icon) {
+		color: var(--accent);
 	}
 
 	.readout b {
 		font-size: var(--fs-stat);
 		font-weight: var(--fw-semibold);
 		color: var(--ink);
-	}
-
-	.glyph {
-		align-self: center;
-		color: var(--accent);
 	}
 </style>

@@ -11,6 +11,7 @@
 -->
 <script lang="ts">
 	import Button from '../common/Button.svelte';
+	import Icon from '../common/Icon.svelte';
 	import Slider from '../common/Slider.svelte';
 	import { bench } from '$lib/state';
 	import { MAX_GENERATIONS } from '$lib/engine';
@@ -21,8 +22,11 @@
 	const describe = (generation: number) => (generation === 0 ? 'never' : `gen ${generation}`);
 </script>
 
+<!-- Sliders, not a gear: a gear is the universal sign for "app preferences", and this panel is not
+     that — it holds the knobs of the EXPERIMENT, chief among them the generation at which training
+     stops for good. -->
 <Button popovertarget="lab-settings" aria-label="lab settings" title="lab settings">
-	<span aria-hidden="true">⚙</span>
+	<Icon name="sliders" />
 </Button>
 
 <div popover id="lab-settings" class="panel" aria-labelledby="lab-settings-title">

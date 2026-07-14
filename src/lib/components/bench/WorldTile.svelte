@@ -16,6 +16,7 @@
 	import SensePill from './SensePill.svelte';
 	import Button from '../common/Button.svelte';
 	import Chip from '../common/Chip.svelte';
+	import Icon from '../common/Icon.svelte';
 	import EditableLabel from '../common/EditableLabel.svelte';
 	import { SENSES } from '../senses';
 	import { describeWorld } from './describeWorld';
@@ -58,7 +59,7 @@
 	const status = $derived(trained ? 'trained' : bench.running ? 'evolving' : 'paused');
 </script>
 
-<section class="tile" aria-label="world {index}: {config.name}">
+<section class="tile" style:--tile-accent={config.accent} aria-label="world {index}: {config.name}">
 	<header>
 		<Chip tone="accent" style="--chip-accent: {config.accent}" class="badge">{badge}</Chip>
 
@@ -86,7 +87,7 @@
 				aria-label="reset world"
 				onclick={() => bench.resetWorld(entry.id)}
 			>
-				↻
+				<Icon name="reset" size={15} />
 			</Button>
 			<Button
 				variant="icon"
@@ -95,7 +96,7 @@
 				aria-label="duplicate world"
 				onclick={() => bench.duplicateWorld(entry.id)}
 			>
-				⧉
+				<Icon name="duplicate" size={15} />
 			</Button>
 			<Button
 				variant="icon"
@@ -105,7 +106,7 @@
 				aria-label="remove world"
 				onclick={() => bench.removeWorld(entry.id)}
 			>
-				✕
+				<Icon name="close" size={15} />
 			</Button>
 		</div>
 	</header>
@@ -150,14 +151,18 @@
 	<div class="toolbar">
 		<Button
 			size="sm"
+			class="champion"
 			title="inspect the best brain alive"
 			onclick={() => bench.selectChampion(entry.id)}
 		>
-			<span aria-hidden="true">★</span>
+			<Icon name="star" size={13} />
 			<span>Champion</span>
 		</Button>
 
-		<Button size="sm" onclick={() => bench.openConditions(entry.id)}>Conditions</Button>
+		<Button size="sm" onclick={() => bench.openConditions(entry.id)}>
+			<Icon name="sliders" size={13} />
+			<span>Conditions</span>
+		</Button>
 	</div>
 
 	<TileStats {entry} />
@@ -170,6 +175,7 @@
 
 <style>
 	.tile {
+		position: relative;
 		display: flex;
 		flex-direction: column;
 		border: 1px solid var(--line);
@@ -178,11 +184,33 @@
 		box-shadow: var(--shadow);
 		overflow: hidden;
 		animation: fade-up var(--dur-slow) var(--ease) both;
-		transition: transform var(--dur) var(--ease);
+		transition:
+			transform var(--dur) var(--ease),
+			box-shadow var(--dur) var(--ease);
+	}
+
+	/*
+	 * Each environment owns a colour — the engine already assigns one, and until now only a 24px
+	 * badge ever showed it. The card's head is washed in it, so a bench of five reads as five
+	 * experiments at a glance instead of five identical white rectangles you have to read to tell
+	 * apart. It fades out well before the tank: it is a signature, not a paint job.
+	 */
+	.tile::before {
+		content: '';
+		position: absolute;
+		inset: 0 0 auto;
+		height: 120px;
+		pointer-events: none;
+		background: linear-gradient(
+			180deg,
+			color-mix(in srgb, var(--tile-accent) 9%, transparent),
+			transparent
+		);
 	}
 
 	.tile:hover {
 		transform: translateY(-2px);
+		box-shadow: var(--shadow-lift);
 	}
 
 	.status {
@@ -263,11 +291,26 @@
 		margin: 0 var(--sp-4);
 	}
 
+	/*
+	 * The card's action bar, ruled off from the readouts below it.
+	 *
+	 * Champion used to float ON the water — a button laid over the one thing on the card you are
+	 * meant to be watching, and over any fish that swam beneath it. Here it is what a media card's
+	 * actions always are: a strip directly under the media, on the tank's own measure, with the
+	 * inspect action leading and the environment's settings trailing.
+	 */
 	.toolbar {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
 		gap: var(--sp-3);
-		padding: var(--sp-4) var(--sp-5) var(--sp-2);
+		margin: var(--sp-4) var(--sp-5) 0;
+		padding-bottom: var(--sp-4);
+		border-bottom: 1px solid var(--line);
+	}
+
+	/* The one gold thing on the card, because the champion is the one gold thing in the tank. */
+	.toolbar :global(.champion) :global(.icon) {
+		color: var(--gold-ink);
 	}
 </style>

@@ -42,7 +42,7 @@ test('the bench scans clean in dark, too — contrast is per-palette, not per-la
 	// No settling wait of its own: the theme's colour TRANSITIONS register in
 	// document.getAnimations(), so the settle inside violations() covers them — axe never reads
 	// a blend that exists for a fifth of a second and belongs to neither theme.
-	await page.getByRole('button', { name: 'switch theme' }).click();
+	await page.getByRole('button', { name: /switch to (dark|light) theme/ }).click();
 	await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
 	expect(await violations(page)).toEqual([]);
 });

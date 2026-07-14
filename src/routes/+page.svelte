@@ -22,6 +22,7 @@
 	import BrainInspector from '$lib/components/inspector/BrainInspector.svelte';
 	import StoryMode from '$lib/components/story/StoryMode.svelte';
 	import FooterPill from '$lib/components/common/FooterPill.svelte';
+	import Icon from '$lib/components/common/Icon.svelte';
 	import { bench, shell, story, theme, prefersReducedMotion } from '$lib/state';
 	import { DEFAULT_WORLDS, newWorldConfig, MAX_GENERATIONS_DEFAULT } from '$lib/engine';
 	import { PREWARM_GENERATIONS } from '$lib/lab/scenario';
@@ -148,15 +149,28 @@
 			<div class="banner"><FieldNote /></div>
 
 			<main>
-				{#each bench.worlds as entry, index (entry.id)}
-					<WorldTile {entry} index={index + 1} />
-				{/each}
+				<div class="grid">
+					{#each bench.worlds as entry, index (entry.id)}
+						<WorldTile {entry} index={index + 1} />
+					{/each}
+				</div>
 
-				<!-- A row of its own, spanning every column, rather than a cell: as a cell it would take a
-				     column away from the very layout it stands next to, and a bench of one would stop
-				     being a bench of one. It stays INSIDE <main> — a button loose in a bare <div> is
-				     content no landmark owns, which is content a screen reader cannot situate. -->
-				<button class="ghost" onclick={addWorld}>+ Add environment</button>
+				<!--
+					OUTSIDE the grid, not a cell in it and not a row spanning it.
+
+					It was a cell that spanned every column — and that is what broke the sizing. `auto-fit`
+					only collapses a track when NOTHING occupies it; a full-width item occupies them all, so
+					the empty tracks stayed open and a bench of one painted its single card in a 380px track
+					with the rest of the row left blank. The card never grew, and the layout never centred.
+					Out here it cannot hold a track open, so one world really is one wide, centred card.
+
+					It stays inside <main> all the same: a button loose in a bare <div> is content no
+					landmark owns, which is content a screen reader cannot situate (the axe `region` rule).
+				-->
+				<button class="ghost" onclick={addWorld}>
+					<Icon name="plus" size={15} />
+					<span>Add environment</span>
+				</button>
 			</main>
 		</div>
 	</div>
@@ -208,9 +222,17 @@
 	}
 
 	main {
+		display: flex;
+		flex-direction: column;
+		gap: var(--sp-7);
+	}
+
+	.grid {
 		display: grid;
 		/* min(380px, 100%): the card minimum yields when the CONTAINER is the narrower party, so a
-		   phone gets one fitted column instead of a 380px track and a horizontal scrollbar. */
+		   phone gets one fitted column instead of a 380px track and a horizontal scrollbar.
+		   `auto-fit` (not auto-fill) is load-bearing: it COLLAPSES the tracks nothing sits in, which
+		   is what lets two cards fill a three-card measure instead of huddling at the left. */
 		grid-template-columns: repeat(auto-fit, minmax(min(380px, 100%), 1fr));
 		gap: var(--sp-7);
 		align-content: start;
@@ -218,7 +240,10 @@
 
 	/* The one card that holds nothing: an empty slot inviting a new experiment. */
 	.ghost {
-		grid-column: 1 / -1; /* its own row, under the cards, however many columns there are */
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: var(--sp-3);
 		min-height: 64px;
 		border: 1.5px dashed var(--line);
 		border-radius: var(--radius-card);

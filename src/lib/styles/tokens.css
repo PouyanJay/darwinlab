@@ -98,12 +98,23 @@
 	--z-footer: 90;
 
 	/* ---- colour (light — "sunlit") ----------------------------------------------------------- */
+	/*
+	 * The light theme used to be one flat beige with white cards on it — evenly lit, no depth, and
+	 * nothing to look at. It is a LAB now: a warm paper ground, light falling across it from the top
+	 * (indigo one side, gold the other, the two accents this product already owns), and the surface
+	 * ruled like a lab notebook. The gradient is what stops a 2000px page from being one dead colour;
+	 * the rule is what makes it a surface rather than a void.
+	 */
 	--bgfx:
-		radial-gradient(1200px at 18% -8%, rgba(79, 86, 211, 0.06), transparent 60%),
-		radial-gradient(1000px at 92% -4%, rgba(232, 96, 76, 0.05), transparent 55%), #efede5;
+		radial-gradient(900px at 12% -10%, rgba(79, 86, 211, 0.1), transparent 62%),
+		radial-gradient(760px at 88% -6%, rgba(216, 161, 58, 0.11), transparent 58%),
+		linear-gradient(180deg, #f8f7f3 0%, #f1efe8 55%, #eae7dc 100%);
+	/* The ruled surface: a faint grid, painted UNDER everything by `body::before`. */
+	--grid-line: rgba(29, 34, 48, 0.045);
+	--grid-size: 26px;
 	--panel: #ffffff;
-	--panel2: #faf9f4;
-	--glass: rgba(248, 246, 240, 0.85);
+	--panel2: #f7f6f1;
+	--glass: rgba(250, 249, 245, 0.82);
 	--ink: #1d2230;
 	/* The two muted inks are tuned to hold WCAG AA (4.5:1) on --panel AND --panel2 — the Phase 9
 	   axe gate. Fade them further and the captions drop below what small text is allowed to be. */
@@ -118,7 +129,10 @@
 	   they fall to ~3:1. Small text uses these instead — same hue, AA contrast. (World accents,
 	   which are runtime values, get the same treatment via color-mix toward --ink at the point of
 	   use.) */
-	--danger-ink: #c9432f;
+	/* Deepened from #c9432f when --panel2 warmed up: on the new surface it measured 4.48:1, which is
+	   under AA by two hundredths and was caught by the axe gate, exactly as the note above predicts.
+	   Retuned to 4.92:1 on --panel2 (5.33:1 on --panel) — move either surface again and re-measure. */
+	--danger-ink: #c03d2a;
 	--gold-ink: #8a651c;
 	/* The brain viz only — see ThemePalette in render/theme.ts for why the two signs need colours
 	   of their own rather than reusing accent/danger. */
@@ -131,7 +145,13 @@
 	--accentink: #ffffff;
 
 	/* ---- elevation & effects ----------------------------------------------------------------- */
-	--shadow: 0 1px 2px rgba(25, 30, 50, 0.05), 0 14px 40px -14px rgba(25, 30, 50, 0.14);
+	/* Shadows are tinted with the accent's hue rather than neutral grey: a grey shadow on a warm
+	   ground reads as dirt under the card, a hue-matched one reads as light around it. */
+	--shadow:
+		0 1px 2px rgba(40, 44, 90, 0.04), 0 2px 6px -2px rgba(40, 44, 90, 0.06),
+		0 16px 40px -16px rgba(40, 44, 90, 0.18);
+	/* The lift a card takes on hover — the same light, from a little further away. */
+	--shadow-lift: 0 2px 4px rgba(40, 44, 90, 0.05), 0 20px 50px -18px rgba(40, 44, 90, 0.26);
 	--shadow-pill: 0 4px 16px -6px rgba(20, 25, 45, 0.25);
 	/* The lift under the chosen segment of a segmented control. */
 	--shadow-segment: 0 1px 4px rgba(20, 24, 40, 0.18);
@@ -153,6 +173,8 @@
 	--bgfx:
 		radial-gradient(1200px at 18% -8%, rgba(255, 45, 156, 0.07), transparent 60%),
 		radial-gradient(1000px at 92% -4%, rgba(138, 90, 216, 0.06), transparent 55%), #08080b;
+	/* The same ruled surface, at the strength near-black can carry — any more and it is a cage. */
+	--grid-line: rgba(255, 255, 255, 0.028);
 	--panel: #131318;
 	--panel2: #0e0e13;
 	--glass: rgba(17, 17, 23, 0.86);
@@ -181,6 +203,7 @@
 	/* Every shadow is re-tuned for dark: a navy-tinted light-theme shadow reads as grey haze on a
 	   near-black panel, not as depth. */
 	--shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 14px 40px -14px rgba(0, 0, 0, 0.6);
+	--shadow-lift: 0 2px 4px rgba(0, 0, 0, 0.45), 0 22px 50px -18px rgba(0, 0, 0, 0.75);
 	--shadow-pill: 0 4px 16px -6px rgba(0, 0, 0, 0.5);
 	--shadow-segment: 0 1px 4px rgba(0, 0, 0, 0.55);
 	--shadow-drawer: 0 24px 60px -18px rgba(0, 0, 0, 0.6);
