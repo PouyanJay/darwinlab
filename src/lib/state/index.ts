@@ -8,5 +8,6 @@ export * from './story.svelte';
 export * from './playback.svelte';
 export * from './painters';
 export * from './theme.svelte';
+export * from './shell.svelte';
 export * from './motion.svelte';
 export * from './evals.svelte';

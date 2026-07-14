@@ -1,15 +1,20 @@
 <!--
   The bench page — the app's only screen.
 
-  Five worlds open side by side, each one sense further along the ladder (README §8), all prewarmed
-  so the bench opens already competent and the learning curves have something to say. Reading left
-  to right IS the argument: survival leaps when a brain learns which WAY the threat is, and then
-  stops leaping no matter how many more senses you bolt on.
+  A shell in three parts: the top bar says what this is, the sidebar is everything you can do to it,
+  and the bench is the experiment itself — one card per environment, each a living population with
+  its own controls and its own evidence.
+
+  The cards are SIZED, not stretched. A tank has a shape (the world is 640×400), and a card stretched
+  to whatever a monitor happens to be wide paints a letterbox of empty water around it. So the grid
+  runs at most three across, the cards keep their width, and a bench of one gives that one card the
+  room — the layout follows the experiment, not the window.
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import TopBar from '$lib/components/topbar/TopBar.svelte';
 	import TurboPill from '$lib/components/topbar/TurboPill.svelte';
+	import Sidebar from '$lib/components/shell/Sidebar.svelte';
 	import FieldNote from '$lib/components/bench/FieldNote.svelte';
 	import FirstRunHint from '$lib/components/bench/FirstRunHint.svelte';
 	import WorldTile from '$lib/components/bench/WorldTile.svelte';
@@ -17,7 +22,7 @@
 	import BrainInspector from '$lib/components/inspector/BrainInspector.svelte';
 	import StoryMode from '$lib/components/story/StoryMode.svelte';
 	import FooterPill from '$lib/components/common/FooterPill.svelte';
-	import { bench, story, theme, prefersReducedMotion } from '$lib/state';
+	import { bench, shell, story, theme, prefersReducedMotion } from '$lib/state';
 	import { DEFAULT_WORLDS, newWorldConfig, MAX_GENERATIONS_DEFAULT } from '$lib/engine';
 	import { PREWARM_GENERATIONS } from '$lib/lab/scenario';
 
@@ -32,12 +37,16 @@
 	});
 
 	onMount(() => {
+		const stopWatchingViewport = shell.init();
 		bench.init({
 			configs: DEFAULT_WORLDS,
 			prewarmGenerations: PREWARM_GENERATIONS,
 			maxGenerations: MAX_GENERATIONS_DEFAULT
 		});
-		return () => bench.destroy();
+		return () => {
+			bench.destroy();
+			stopWatchingViewport();
+		};
 	});
 
 	/** The lowest "World N" nobody is using — so removing a world can't make two share a name. */
@@ -51,6 +60,20 @@
 	function addWorld() {
 		bench.addWorld(newWorldConfig(nextWorldName(), bench.nextAccent()));
 	}
+
+	/**
+	 * How wide the bench is allowed to run, and how wide a card is inside it.
+	 *
+	 * Three across is the ceiling because a fourth card makes every tank too small to watch a fish in
+	 * — and watching is the entire point. Below the ceiling the cards do NOT divide the window between
+	 * them; they take the width their contents deserve and the bench centres what is left. A single
+	 * environment is therefore a big single card, not a 2000px-wide sliver of water.
+	 *
+	 * `auto-fit` then reduces the columns for real (a narrow window, or a dragged-wide sidebar) rather
+	 * than letting the cards squeeze: the cap sets the maximum, the viewport sets the actual.
+	 */
+	const columns = $derived(Math.min(3, Math.max(1, bench.worlds.length)));
+	const cardWidth = $derived(columns === 1 ? 780 : columns === 2 ? 580 : 470);
 
 	// One dialog, for whichever world asked for it. It resolves to `undefined` the instant that world
 	// is removed, so the dialog cannot outlive the thing it edits.
@@ -70,9 +93,16 @@
 	 * focusable that Space already means something to, and only claims the key on the bare page.
 	 */
 	const SPACE_IS_SPOKEN_FOR =
-		'button, input, textarea, select, a, [role="radio"], [contenteditable]';
+		'button, input, textarea, select, a, [role="radio"], [role="separator"], [contenteditable]';
 
 	function onkeydown(event: KeyboardEvent) {
+		// Esc shuts the control panel where it is an overlay — the same key that closes every other
+		// thing this app puts over the bench.
+		if (event.key === 'Escape' && shell.narrow && shell.overlayOpen && !story.active) {
+			shell.closeOverlay();
+			return;
+		}
+
 		if (event.key !== ' ') return;
 		if (story.active) return; // the film has its own transport, and it owns the keyboard
 		const target = event.target as HTMLElement | null;
@@ -88,20 +118,29 @@
 <!-- inert while a film is playing: the bench is behind a full-screen takeover, and a keyboard user
      must not be able to Tab onto controls they cannot see and remove a world mid-presentation. -->
 <div class="app" inert={story.active}>
-	<TopBar onaddworld={addWorld} onplaystory={() => bench.playStory()} />
+	<TopBar />
 	<TurboPill />
 
-	<div class="banner">
-		<FieldNote />
+	<div class="shell">
+		<Sidebar onaddworld={addWorld} onplaystory={() => bench.playStory()} />
+
+		<!-- One measure for the whole column: the note, the cards and the empty slot share an edge. -->
+		<div class="bench" style:--columns={columns} style:--card="{cardWidth}px">
+			<div class="banner"><FieldNote /></div>
+
+			<main>
+				{#each bench.worlds as entry, index (entry.id)}
+					<WorldTile {entry} index={index + 1} />
+				{/each}
+			</main>
+
+			<!-- Below the grid rather than inside it: as a cell it would take a column from the very
+			     layout it is standing next to, and a bench of one would stop being a bench of one. -->
+			<div class="add">
+				<button class="ghost" onclick={addWorld}>＋ Add environment</button>
+			</div>
+		</div>
 	</div>
-
-	<main>
-		{#each bench.worlds as entry, index (entry.id)}
-			<WorldTile {entry} index={index + 1} />
-		{/each}
-
-		<button class="ghost" onclick={addWorld}>+ Add environment</button>
-	</main>
 
 	{#if editing}
 		<ConditionsModal entry={editing} onclose={() => bench.closeConditions()} />
@@ -126,40 +165,59 @@
 		min-height: 100vh;
 	}
 
-	.banner {
-		margin: var(--sp-6) var(--sp-8) 0;
+	.shell {
+		flex: 1;
+		display: flex;
+		align-items: stretch;
+	}
+
+	.bench {
+		flex: 1;
+		min-width: 0; /* the grid may shrink; it must never push the sidebar off its width */
+		display: flex;
+		flex-direction: column;
+		gap: var(--sp-7);
+		padding: var(--sp-6) var(--sp-7) 78px; /* the footer pill sits in that bottom margin */
+	}
+
+	.banner,
+	main,
+	.add {
+		width: 100%;
+		/* The cap, in one line: N cards and the gaps between them. Everything else is centring. */
+		max-width: calc(var(--columns) * var(--card) + (var(--columns) - 1) * var(--sp-7));
+		margin-inline: auto;
 	}
 
 	main {
-		flex: 1;
 		display: grid;
-		/* min(450px, 100%): the tile minimum yields when the CONTAINER is the narrower party,
-		   so a phone gets one fitted column instead of a 450px track and a horizontal scrollbar. */
-		grid-template-columns: repeat(auto-fit, minmax(min(450px, 100%), 1fr));
+		/* min(380px, 100%): the card minimum yields when the CONTAINER is the narrower party, so a
+		   phone gets one fitted column instead of a 380px track and a horizontal scrollbar. */
+		grid-template-columns: repeat(auto-fit, minmax(min(380px, 100%), 1fr));
 		gap: var(--sp-7);
 		align-content: start;
-		padding: var(--sp-7) var(--sp-8) 78px; /* the footer pill sits in that bottom margin */
 	}
 
 	/* The one card that holds nothing: an empty slot inviting a new experiment. */
 	.ghost {
-		min-height: 240px;
-		display: grid;
-		place-items: center;
+		width: 100%;
+		min-height: 64px;
 		border: 1.5px dashed var(--line);
 		border-radius: var(--radius-card);
 		background: transparent;
 		color: var(--ink3);
-		font-size: 13px;
+		font-size: var(--fs-body);
 		font-weight: var(--fw-semibold);
 		cursor: pointer;
 		transition:
 			color var(--dur) var(--ease),
-			border-color var(--dur) var(--ease);
+			border-color var(--dur) var(--ease),
+			background var(--dur) var(--ease);
 	}
 
 	.ghost:hover {
 		border-color: var(--accent);
+		background: var(--panel);
 		color: var(--accent);
 	}
 </style>
