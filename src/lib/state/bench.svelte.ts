@@ -161,6 +161,11 @@ class BenchStore {
 	get turboTarget(): number | null {
 		return this.playback.turboTarget;
 	}
+	/** Is a fast-forward burst under way? Playback already knows; every caller asking
+	 *  `turboTarget !== null` for itself is the same question spelled a second way. */
+	get training(): boolean {
+		return this.playback.training;
+	}
 	get maxGenerations(): number {
 		return this.#maxGenerations;
 	}

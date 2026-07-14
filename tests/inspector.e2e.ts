@@ -30,7 +30,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 test('★ Champion opens a live mind, and the bench keeps running behind it', async ({ page }) => {
-	await tile(page, 4).getByRole('button', { name: '★ Champion' }).click(); // "Full senses"
+	await tile(page, 4).getByRole('button', { name: 'Champion' }).click(); // "Full senses"
 
 	await expect(inspector(page)).toBeVisible();
 	await expect(inspector(page)).toContainText('one real evolved brain in “Full senses”');
@@ -44,7 +44,7 @@ test('★ Champion opens a live mind, and the bench keeps running behind it', as
 });
 
 test('the panel is alive: the numbers move because the fish is thinking', async ({ page }) => {
-	await tile(page, 4).getByRole('button', { name: '★ Champion' }).click();
+	await tile(page, 4).getByRole('button', { name: 'Champion' }).click();
 
 	const lived = () =>
 		inspector(page)
@@ -57,7 +57,7 @@ test('the panel is alive: the numbers move because the fish is thinking', async 
 });
 
 test('ABLATION: cutting the closing-speed neuron really changes the brain', async ({ page }) => {
-	await tile(page, 4).getByRole('button', { name: '★ Champion' }).click(); // Full senses — the only world with closing speed on
+	await tile(page, 4).getByRole('button', { name: 'Champion' }).click(); // Full senses — the only world with closing speed on
 	await expect(inspector(page)).toContainText('closing speed');
 
 	// Pause: the brain canvas animates its signal pulses every frame, so against a running sim its
@@ -106,7 +106,7 @@ test('the ladder reads the senses the world actually gives the brain', async ({ 
 	] as const;
 
 	for (const [index, reads] of rungs) {
-		await tile(page, index).getByRole('button', { name: '★ Champion' }).click();
+		await tile(page, index).getByRole('button', { name: 'Champion' }).click();
 		await expect(inspector(page)).toContainText(reads);
 		await page.keyboard.press('Escape');
 	}
@@ -221,7 +221,7 @@ test('the bench outlives a watched fish: it dies, the drawer closes, and the sim
 });
 
 test('Esc closes the inspector', async ({ page }) => {
-	await tile(page, 2).getByRole('button', { name: '★ Champion' }).click();
+	await tile(page, 2).getByRole('button', { name: 'Champion' }).click();
 	await expect(inspector(page)).toBeVisible();
 
 	await page.keyboard.press('Escape');

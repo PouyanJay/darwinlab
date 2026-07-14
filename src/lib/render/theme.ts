@@ -69,7 +69,10 @@ export const THEMES: Record<ThemeName, ThemePalette> = {
 		shadow: 'rgba(30,45,35,.09)'
 	},
 	dark: {
-		tankEdge: 'rgba(255,45,156,.42)',
+		// Softened from the reference's .42: a 2px magenta rim at nearly half opacity read as a neon
+		// sign around every tank, and five of them lit the page instead of the experiment. The tank
+		// is a container, not a light source — this is the line that says where the water ends.
+		tankEdge: 'rgba(255,45,156,.24)',
 		ray: '255,45,156',
 		dust: 'rgba(255,255,255,.22)',
 		fish: '#f2f2f7',

@@ -537,9 +537,10 @@ export function drawWorld(
 	ctx.fillStyle = grads.sheen;
 	ctx.fillRect(0, 0, c.bw, 30);
 
-	// god-rays (light, cinematic only)
+	// god-rays (light, cinematic only) — dialled back from the reference's .38 for the same reason as
+	// the dust: light in the water is set dressing, and it was reading as loudly as the creatures.
 	if (theme === 'light' && rich && !rm) {
-		ctx.globalAlpha = 0.38;
+		ctx.globalAlpha = 0.28;
 		for (let i = 0; i < 3; i++) {
 			const rx = c.bw * (0.16 + i * 0.3) + Math.sin(w.t * 0.13 + i * 2.1) * c.bw * 0.06;
 			const wd = c.bw * 0.1;
@@ -569,7 +570,9 @@ export function drawWorld(
 			const drift = rm ? 0 : w.t;
 			const dy = (((d.y * c.bh + drift * d.s) % c.bh) + c.bh) % c.bh;
 			const dx = d.x * c.bw + (rm ? 0 : Math.sin(w.t * 0.4 + d.p) * 6);
-			ctx.globalAlpha = 0.25 + (rm ? 0 : Math.sin(w.t * 0.8 + d.p) * 0.15);
+			// Quieter than the reference (.25 ± .15). The motes are atmosphere; at full strength they
+			// twinkle hard enough to compete with the fish, which are the thing being watched.
+			ctx.globalAlpha = 0.18 + (rm ? 0 : Math.sin(w.t * 0.8 + d.p) * 0.1);
 			ctx.beginPath();
 			ctx.arc(dx, dy, d.r, 0, TAU);
 			ctx.fill();

@@ -109,6 +109,25 @@ textarea,
 	}
 }
 
+@keyframes fade-in {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+/* The control panel arriving over a phone's bench — off the edge it is docked to. */
+@keyframes slide-in-left {
+	from {
+		transform: translateX(-100%);
+	}
+	to {
+		transform: none;
+	}
+}
+
 @keyframes slide-in-right {
 	from {
 		transform: translateX(26px);

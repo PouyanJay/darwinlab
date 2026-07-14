@@ -80,7 +80,16 @@
 	 */
 	--topbar-height: 62px;
 
+	/* What the sidebar leaves behind when it is shut: wide enough for a 44px touch target and the
+	   1px seam either side of it. */
+	--rail-width: 56px;
+
 	/* ---- layering --------------------------------------------------------------------------- */
+	/* The sidebar sits UNDER the top bar (it starts below it and never reaches it), and the whole
+	   sidebar stack sits under every overlay the bench can raise. */
+	--z-sidebar: 20;
+	--z-sidebar-scrim: 24;
+	--z-sidebar-overlay: 25;
 	--z-topbar: 30;
 	--z-story: 50;
 	--z-drawer: 60;

@@ -1,9 +1,10 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { flushSync } from 'svelte';
 import { render } from 'vitest-browser-svelte';
 import { page } from 'vitest/browser';
 import FirstRunHint from './FirstRunHint.svelte';
-import { bench } from '$lib/state';
+import { bench, shell } from '$lib/state';
+import { stubViewport } from '$lib/state/testkit';
 
 const HINT_STORAGE_KEY = 'darwinlab:hint-dismissed';
 
@@ -16,6 +17,7 @@ beforeEach(() => localStorage.removeItem(HINT_STORAGE_KEY));
 afterEach(() => {
 	localStorage.removeItem(HINT_STORAGE_KEY);
 	bench.selection = null;
+	vi.restoreAllMocks();
 });
 
 const hint = () => page.getByText('click any fish to open its mind');
@@ -38,6 +40,32 @@ describe('FirstRunHint', () => {
 		localStorage.setItem(HINT_STORAGE_KEY, 'true');
 		render(FirstRunHint);
 		await expect.element(hint()).not.toBeInTheDocument();
+	});
+
+	it('stands down while the phone control panel covers the bench', async () => {
+		/*
+		 * The hint points at fish. On a phone the control panel is an OVERLAY, so while it is open
+		 * there are no fish on screen to point at — and the hint, pinned above everything, would print
+		 * itself straight across the open panel.
+		 *
+		 * Driven through the REAL store (a stubbed viewport, then a real toggle), because the flag it
+		 * obeys is a `$state`-backed getter: mock the getter and you replace it with a plain function,
+		 * which reads correctly, re-renders never, and passes this test for the wrong reason.
+		 */
+		const viewport = stubViewport(true);
+		render(FirstRunHint);
+		await expect.element(hint()).toBeVisible(); // it really was on screen first
+
+		shell.toggle(); // open the panel over the bench
+		flushSync();
+
+		await expect.element(hint()).not.toBeInTheDocument();
+
+		shell.closeOverlay();
+		flushSync();
+
+		await expect.element(hint()).toBeVisible(); // and it comes back with the bench
+		viewport.restore();
 	});
 
 	it('retires itself the moment the user opens a mind on their own', async () => {

@@ -6,7 +6,7 @@
   mind on their own — at which point the hint's job is done and repeating it would be nagging.
 -->
 <script lang="ts">
-	import { bench, story } from '$lib/state';
+	import { bench, shell, story } from '$lib/state';
 
 	const HINT_STORAGE_KEY = 'darwinlab:hint-dismissed';
 
@@ -26,7 +26,9 @@
 </script>
 
 <!-- an <aside>, so this floating line lives in a landmark (the axe `region` rule) -->
-{#if !dismissed && !story.active}
+<!-- Gone while a film plays, and gone while the phone's control panel covers the bench: the hint
+     points at fish that are not on screen either way. -->
+{#if !dismissed && !story.active && !shell.overlaying}
 	<aside class="hint" aria-label="hint">
 		<span>click any fish to open its mind</span>
 		<button type="button" aria-label="dismiss hint" onclick={dismiss}>✕</button>
@@ -36,7 +38,9 @@
 <style>
 	.hint {
 		position: fixed;
-		left: 50%;
+		/* Centred on the BENCH, not on the viewport: the sidebar holds part of the left edge, and a
+		   hint centred on the window sits visibly off-centre over the thing it is pointing at. */
+		left: calc(50% + var(--shell-gutter, 0px) / 2);
 		bottom: 14px;
 		z-index: var(--z-footer);
 		transform: translateX(-50%);

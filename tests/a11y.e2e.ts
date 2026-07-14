@@ -54,7 +54,7 @@ test('the conditions dialog scans clean', async ({ page }) => {
 });
 
 test('the inspector scans clean', async ({ page }) => {
-	await page.getByRole('button', { name: '★ Champion' }).first().click();
+	await page.getByRole('button', { name: 'Champion' }).first().click();
 	await expect(page.getByRole('dialog', { name: /fish mind/i })).toBeVisible();
 	expect(await violations(page)).toEqual([]);
 });

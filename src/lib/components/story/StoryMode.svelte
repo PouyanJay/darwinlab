@@ -14,6 +14,7 @@
 	import SensorRail from './SensorRail.svelte';
 	import StoryStats from './StoryStats.svelte';
 	import StoryTransport from './StoryTransport.svelte';
+	import { DISCLAIMER } from '../common/disclaimer';
 	import { bench, story } from '$lib/state';
 
 	const source = $derived(story.source);
@@ -96,7 +97,7 @@
 	>
 		<header>
 			<button type="button" class="exit" onclick={() => bench.exitStory()}>← Bench</button>
-			<span class="disclaimer">real neuroevolution · a teaching caricature, not biology</span>
+			<span class="disclaimer">{DISCLAIMER}</span>
 			<span class="counter">Story · scene {story.index + 1} of {story.total}</span>
 		</header>
 

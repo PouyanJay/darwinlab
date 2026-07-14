@@ -145,7 +145,7 @@ test('★ Champion selects the best brain alive, and the tank draws it', async (
 		.toBe(true); // the scene has settled
 
 	const frozen = await fingerprint();
-	await first.getByRole('button', { name: '★ Champion' }).click();
+	await first.getByRole('button', { name: 'Champion' }).click();
 
 	await expect.poll(fingerprint, { timeout: 5000 }).not.toBe(frozen);
 });

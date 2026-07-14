@@ -54,6 +54,8 @@
 	// rule would eventually disagree, and the "· trained" pill would say one thing while the
 	// real-world run row said another.
 	const trained = $derived(entry.stats.deployed);
+
+	const status = $derived(trained ? 'trained' : bench.running ? 'evolving' : 'paused');
 </script>
 
 <section class="tile" aria-label="world {index}: {config.name}">
@@ -66,7 +68,14 @@
 			onchange={(name) => bench.renameWorld(entry.id, name)}
 		/>
 
-		<Chip tabular data-testid="gen">Gen {entry.stats.gen}{trained ? ' · trained' : ''}</Chip>
+		<!-- The dot is the card's pulse: still evolving, standing still, or done training for good.
+		     It is DECORATIVE, and deliberately silent — the chip already says "· trained" in words,
+		     and whether the sim is running is what the transport button in the sidebar is for. A dot
+		     that also spoke would be the third voice saying the same thing. -->
+		<Chip tabular data-testid="gen">
+			<span class="status {status}" aria-hidden="true"></span>
+			Gen {entry.stats.gen}{trained ? ' · trained' : ''}
+		</Chip>
 
 		<!-- The destructive controls stay quiet until you are actually on this tile. -->
 		<div class="actions">
@@ -128,18 +137,27 @@
 		</div>
 	</div>
 
-	<div class="tank">
+	<!-- The tank keeps the WORLD's shape (640×400, or whatever this one was resized to). It used to be
+	     a fixed 300px-tall box that the water was letterboxed inside, so a wide card painted a margin
+	     of dead pixels around the experiment. -->
+	<div class="tank" style:--tank-aspect="{config.bw} / {config.bh}">
 		<Tank {entry} onselect={(picked) => bench.select(entry.id, picked)} />
-		<div class="champion">
-			<Button
-				variant="ghost"
-				size="sm"
-				title="inspect the best brain alive"
-				onclick={() => bench.selectChampion(entry.id)}
-			>
-				★ Champion
-			</Button>
-		</div>
+	</div>
+
+	<!-- The card's actions, on a bar of their own. Champion used to float ON the water, which put a
+	     button over the one thing on this card you are meant to be watching — and over any fish that
+	     swam beneath it. A control that obscures its own subject is in the wrong place. -->
+	<div class="toolbar">
+		<Button
+			size="sm"
+			title="inspect the best brain alive"
+			onclick={() => bench.selectChampion(entry.id)}
+		>
+			<span aria-hidden="true">★</span>
+			<span>Champion</span>
+		</Button>
+
+		<Button size="sm" onclick={() => bench.openConditions(entry.id)}>Conditions</Button>
 	</div>
 
 	<TileStats {entry} />
@@ -165,6 +183,26 @@
 
 	.tile:hover {
 		transform: translateY(-2px);
+	}
+
+	.status {
+		width: 6px;
+		height: 6px;
+		border-radius: 50%;
+		background: var(--ink3);
+	}
+
+	/* A generation is running: the dot breathes. It is the only motion on the card's chrome, and it
+	   stops the instant the sim does — which is how you tell a paused bench from a stalled one. */
+	.status.evolving {
+		background: var(--accent);
+		animation: pulse 1.6s var(--ease) infinite; /* the app's one pulse rate — see Drawer, SensorRail */
+	}
+
+	/* Training is over for good. Gold, like the champion — this population is what is left. */
+	.status.trained {
+		background: var(--gold);
+		animation: none;
 	}
 
 	header {
@@ -221,22 +259,15 @@
 	}
 
 	.tank {
-		position: relative;
-		height: 300px;
-		margin: 0 9px;
+		aspect-ratio: var(--tank-aspect);
+		margin: 0 var(--sp-4);
 	}
 
-	.champion {
-		position: absolute;
-		left: 14px;
-		bottom: 10px;
-	}
-
-	/* Glass, so the tank reads through it — it floats ON the water, it is not a hole in it. */
-	.champion :global(button) {
-		border-radius: var(--radius-pill);
-		background: var(--glass);
-		backdrop-filter: blur(8px);
-		font-size: var(--fs-xs);
+	.toolbar {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--sp-3);
+		padding: var(--sp-4) var(--sp-5) var(--sp-2);
 	}
 </style>

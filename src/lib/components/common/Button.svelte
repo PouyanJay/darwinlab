@@ -26,11 +26,15 @@
 		size = 'md',
 		tone = 'default',
 		type = 'button',
+		class: extra,
 		...rest
 	}: Props = $props();
 </script>
 
-<button {type} class={['btn', variant, size, tone]} {...rest}>
+<!-- `class` is pulled out of the rest props and MERGED, not spread. Spread, it would land after the
+     variant classes and replace them wholesale — a caller adding a layout class (`.wide`) would
+     silently strip the button of its own styling. -->
+<button {type} class={['btn', variant, size, tone, extra]} {...rest}>
 	{@render children()}
 </button>
 
