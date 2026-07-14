@@ -23,6 +23,30 @@ body {
 	-moz-osx-font-smoothing: grayscale;
 }
 
+/*
+ * The lab notebook's ruling: a faint grid across the whole ground, behind every panel.
+ *
+ * It is the cheapest possible way to stop a large page reading as one dead field of colour — the eye
+ * gets a scale to measure the cards against, and the surface becomes a surface. Fixed, so it is the
+ * paper the bench sits on rather than a pattern that swims when the page scrolls, and `pointer-events:
+ * none` so it can never take a click meant for anything above it.
+ */
+body::before {
+	content: '';
+	position: fixed;
+	inset: 0;
+	/* Behind the content, not merely under it in the DOM: a POSITIONED element paints above ordinary
+	   in-flow content at the same level, so at z-index 0 this grid would rule lines across the cards. */
+	z-index: -1;
+	pointer-events: none;
+	background-image:
+		linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+		linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+	background-size: var(--grid-size, 26px) var(--grid-size, 26px);
+	/* Fade it out down the page: strongest where the light falls, gone by the fold. */
+	mask-image: linear-gradient(to bottom, #000 0%, rgba(0, 0, 0, 0.35) 55%, transparent 100%);
+}
+
 /* A modal dialog makes the page behind it inert, so it must not scroll behind it either. Scoped to
    [open] so it can never leave the page stuck once the dialog closes. */
 body:has(dialog[open]) {
