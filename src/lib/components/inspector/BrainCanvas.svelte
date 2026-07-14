@@ -44,7 +44,7 @@
 		 * published mind (which does use the shown world). One panel was looking at the clone and the
 		 * other at the population; only one of them said so.
 		 */
-		const world = bench.shown(entry.id);
+		const world = bench.shownOrNull(entry.id);
 		if (!world) return;
 		drawBrain(ctx, width, height, {
 			senses: world.cfg.senses,

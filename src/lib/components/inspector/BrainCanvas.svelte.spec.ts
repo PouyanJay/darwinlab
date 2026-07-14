@@ -35,6 +35,27 @@ function paintedPixels(canvas: HTMLCanvasElement): number {
 }
 
 describe('BrainCanvas', () => {
+	it('survives its world being torn out from under it — a painter must never throw', () => {
+		/*
+		 * CI caught this and this machine did not. A canvas can be asked to repaint outside the sim
+		 * loop — a ResizeObserver fires, a DPR change lands — and that can happen in the same frame the
+		 * world it was drawing was removed. Reaching for the world through a throwing accessor turned
+		 * that into an unhandled error inside a platform callback, and a throw on this exact path once
+		 * killed the sim loop's timer chain and froze the entire bench (the note at the top of the
+		 * component is about that incident).
+		 */
+		bench.init({ configs: [DEFAULT_WORLDS[0]], prewarmGenerations: 0, maxGenerations: 0 });
+		const entry = bench.worlds[0];
+		render(BrainCanvas, { entry });
+		flushSync();
+
+		bench.destroy(); // the world is gone; the component has not been told yet
+
+		// The paint path must have a safe answer, not an exception.
+		expect(bench.shownOrNull(entry.id)).toBeNull();
+		expect(() => bench.shown(entry.id)).toThrow(); // …while the CALLER path still refuses loudly
+	});
+
 	it("draws the champion clone's real weights, not an empty scaffold", async () => {
 		bench.init({ configs: [DEFAULT_WORLDS[4]], prewarmGenerations: 0, maxGenerations: 0 });
 		const entry = bench.worlds[0];

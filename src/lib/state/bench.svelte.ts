@@ -338,9 +338,28 @@ class BenchStore {
 
 	/** What a card is SHOWING — a staged trial, an exhibit, or (usually) the real run. */
 	shown(id: string): World {
+		const world = this.shownOrNull(id);
+		if (!world) throw new Error(`bench: no world with id "${id}"`);
+		return world;
+	}
+
+	/**
+	 * The same answer, but `null` instead of a throw when the world is gone.
+	 *
+	 * PAINTERS MUST USE THIS ONE. A canvas can be asked to repaint outside the sim loop — a
+	 * ResizeObserver fires, a DPR change lands — and it can happen in the same frame the world it was
+	 * drawing was removed. `shown()` throws there, by design, because a store method called with a
+	 * dead id is a caller bug. A PAINTER, though, is not a caller: it is a callback the platform can
+	 * run whenever it likes, and a throw inside one killed the sim loop's timer chain once already
+	 * (see the note in BrainCanvas). CI caught exactly that: the component outlived a torn-down bench
+	 * by one repaint. So the paint path asks a question that has a safe answer.
+	 */
+	shownOrNull(id: string): World | null {
+		const entry = this.find(id);
+		if (!entry) return null;
 		const assay = this.#assays.get(id);
 		if (assay) return assay.trial.world;
-		return this.#exhibitWorlds.get(id) ?? this.entry(id).world;
+		return this.#exhibitWorlds.get(id) ?? entry.world;
 	}
 
 	exhibitMode(id: string): ExhibitMode {
