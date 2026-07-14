@@ -128,18 +128,27 @@
 		</div>
 	</div>
 
-	<div class="tank">
+	<!-- The tank keeps the WORLD's shape (640×400, or whatever this one was resized to). It used to be
+	     a fixed 300px-tall box that the water was letterboxed inside, so a wide card painted a margin
+	     of dead pixels around the experiment. -->
+	<div class="tank" style:--tank-aspect="{config.bw} / {config.bh}">
 		<Tank {entry} onselect={(picked) => bench.select(entry.id, picked)} />
-		<div class="champion">
-			<Button
-				variant="ghost"
-				size="sm"
-				title="inspect the best brain alive"
-				onclick={() => bench.selectChampion(entry.id)}
-			>
-				★ Champion
-			</Button>
-		</div>
+	</div>
+
+	<!-- The card's actions, on a bar of their own. Champion used to float ON the water, which put a
+	     button over the one thing on this card you are meant to be watching — and over any fish that
+	     swam beneath it. A control that obscures its own subject is in the wrong place. -->
+	<div class="toolbar">
+		<Button
+			size="sm"
+			title="inspect the best brain alive"
+			onclick={() => bench.selectChampion(entry.id)}
+		>
+			<span aria-hidden="true">★</span>
+			<span>Champion</span>
+		</Button>
+
+		<Button size="sm" onclick={() => bench.openConditions(entry.id)}>Conditions</Button>
 	</div>
 
 	<TileStats {entry} />
@@ -221,22 +230,15 @@
 	}
 
 	.tank {
-		position: relative;
-		height: 300px;
-		margin: 0 9px;
+		aspect-ratio: var(--tank-aspect);
+		margin: 0 var(--sp-4);
 	}
 
-	.champion {
-		position: absolute;
-		left: 14px;
-		bottom: 10px;
-	}
-
-	/* Glass, so the tank reads through it — it floats ON the water, it is not a hole in it. */
-	.champion :global(button) {
-		border-radius: var(--radius-pill);
-		background: var(--glass);
-		backdrop-filter: blur(8px);
-		font-size: var(--fs-xs);
+	.toolbar {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--sp-3);
+		padding: var(--sp-4) var(--sp-5) var(--sp-2);
 	}
 </style>
