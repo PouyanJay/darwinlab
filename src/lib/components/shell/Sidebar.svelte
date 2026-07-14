@@ -22,6 +22,7 @@
 	import SidebarRail from './SidebarRail.svelte';
 	import SidebarResizer from './SidebarResizer.svelte';
 	import { trainTarget, trainLabel } from './train';
+	import { DISCLAIMER } from '../common/disclaimer';
 	import { bench, shell, SPEEDS } from '$lib/state';
 
 	interface Props {
@@ -147,6 +148,10 @@
 					<span>Play story</span>
 				</Button>
 			</section>
+
+			<!-- The disclaimer, at the foot of the chrome rather than floating over somebody's tank.
+			     FooterPill shows the same line as a pill whenever this column is shut. -->
+			<p class="disclaimer">{DISCLAIMER}</p>
 		</div>
 
 		<!-- Docked only: there is nothing to resize when the panel is floating over the page. -->
@@ -212,6 +217,15 @@
 	.title {
 		font-size: var(--fs-sm);
 		font-weight: var(--fw-semibold);
+		color: var(--ink3);
+	}
+
+	/* Pushed to the bottom of the column, however tall the column is. */
+	.disclaimer {
+		margin: auto 0 0;
+		padding-top: var(--sp-6);
+		font-size: var(--fs-xs);
+		line-height: var(--leading-body);
 		color: var(--ink3);
 	}
 
