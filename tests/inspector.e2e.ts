@@ -190,6 +190,11 @@ test('the bench outlives a watched fish: it dies, the drawer closes, and the sim
 	 * tank frozen. So: watch a fish by hand, let nature take it, and demand both silence in the
 	 * console and a bench that is still moving afterwards.
 	 */
+	// This one test waits on the SIMULATION's clock, not the wall's (see the note below), so it gets a
+	// budget the 30s default cannot give it. Raised here rather than in the config: every other test
+	// in the suite should still fail fast, and a global bump would hide a real hang in any of them.
+	test.setTimeout(90_000);
+
 	const frameErrors: string[] = [];
 	page.on('pageerror', (error) => frameErrors.push(String(error)));
 
@@ -200,10 +205,19 @@ test('the bench outlives a watched fish: it dies, the drawer closes, and the sim
 	await page.keyboard.press('ArrowRight');
 	await expect(inspector(page)).toBeVisible();
 
-	// Hold the selection until the fish stops existing. Two sharks hunt from frame one and a
-	// training generation lasts 10 sim-seconds, so one of the two release paths — eaten, or
-	// generation turnover — arrives well inside this window. Both run through the crash tick.
-	await expect(inspector(page)).toBeHidden({ timeout: 20_000 });
+	/*
+	 * Hold the selection until the fish stops existing. Sharks hunt from frame one and a training
+	 * generation lasts 10 SIM-seconds, so one of the two release paths — eaten, or generation
+	 * turnover — is guaranteed. Both run through the crash tick, which is the point.
+	 *
+	 * The window is generous because it is wall-clock time spent waiting on SIM time, and the two are
+	 * not the same clock: the loop advances the simulation as fast as the machine lets it, so a
+	 * contended CI box (several Playwright workers, software rendering, five live tanks) can take two
+	 * or three wall-seconds to buy one sim-second. At 20s this passed locally in 8–24s and failed on
+	 * CI — a test that was really measuring the runner's spare CPU. 60s bounds the SLOWEST honest run
+	 * without ever passing a bench that has genuinely frozen: a frozen bench never releases at all.
+	 */
+	await expect(inspector(page)).toBeHidden({ timeout: 60_000 });
 
 	expect(frameErrors, 'a frame threw when the watched fish stopped existing').toEqual([]);
 
