@@ -14,6 +14,7 @@
 -->
 <script lang="ts">
 	import Button from '../common/Button.svelte';
+	import Icon from '../common/Icon.svelte';
 	import TransportIcon from '../common/TransportIcon.svelte';
 	import { trainTarget, trainLabel } from './train';
 	import { bench, shell, SPEEDS } from '$lib/state';
@@ -44,7 +45,7 @@
 		title="expand the controls"
 		onclick={() => shell.toggle()}
 	>
-		<span aria-hidden="true">»</span>
+		<Icon name="chevron-right" />
 	</Button>
 
 	{#if !shell.open}
@@ -76,7 +77,7 @@
 			disabled={bench.training}
 			onclick={() => bench.trainTo(trainTarget(bench.generationsEvolved, bench.maxGenerations))}
 		>
-			<span aria-hidden="true">⏩</span>
+			<Icon name="forward" />
 		</Button>
 
 		<span class="divider" aria-hidden="true"></span>
@@ -87,7 +88,7 @@
 			title="add environment"
 			onclick={onaddworld}
 		>
-			<span aria-hidden="true">＋</span>
+			<Icon name="plus" />
 		</Button>
 
 		<Button
