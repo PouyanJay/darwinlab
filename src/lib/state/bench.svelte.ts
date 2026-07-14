@@ -38,7 +38,19 @@ import {
 	PERSISTENCE_DEFAULTS,
 	MAX_GENERATIONS
 } from '../engine';
-import { seededRng, championGenome, makeExhibit, exhibitSpent, bottleneck } from '../engine';
+import {
+	seededRng,
+	championGenome,
+	makeExhibit,
+	exhibitSpent,
+	bottleneck,
+	makeTrial,
+	stepTrial,
+	assayBearings,
+	runPopulationAssay,
+	ASSAY_BEARINGS
+} from '../engine';
+import type { Trial, PopulationAssay } from '../engine';
 import type { World, WorldConfig, Senses, Fish, Predator, NumericCondition } from '../engine';
 import { configHash, manifest } from '../lab/run';
 import type { Rng } from '../engine';
@@ -60,6 +72,15 @@ export { WorldStats, WorldConfigView, MindView, type WorldEntry };
  * generation. Neither one breeds, scores, or writes to a curve — see engine/exhibit.ts.
  */
 export type ExhibitMode = 'off' | 'frozen' | 'live';
+
+/** An assay in flight: the bearings still to walk, the trial on screen, and what has been scored. */
+interface RunningAssay {
+	genome: Float64Array;
+	seed: number;
+	bearings: number[];
+	index: number;
+	trial: Trial;
+}
 
 export type { Speed };
 
@@ -158,6 +179,20 @@ class BenchStore {
 	#exhibitWorlds = new Map<string, World>();
 	/** The generation each live exhibit was last cloned at, so it re-clones exactly once per turn. */
 	#exhibitGen = new Map<string, number>();
+	/**
+	 * The assay each world is RUNNING, if any — the staged trials, played in the tank.
+	 *
+	 * The trials are the engine's (engine/assay.ts), stepped one frame at a time by the tick instead
+	 * of run to completion in a loop. That is the only difference between what you watch and what the
+	 * harness scores: same setup, same steps, same scoring, one of them merely slowed to human speed.
+	 * A "visual mode" with a private simulation of its own would be a demo wearing a measurement's
+	 * clothes, and the picture would stop being evidence for the number printed beside it.
+	 */
+	#assays = new Map<string, RunningAssay>();
+	/** The finished verdicts, per world — reactive, because the card prints them. */
+	#assayResults = $state<Record<string, PopulationAssay>>({});
+	/** Which bearing each running assay is on, so the card can say "3 of 12". */
+	#assayProgress = $state<Record<string, number>>({});
 	/**
 	 * Generations at which a world was deliberately bottlenecked — kept so the curve can MARK them.
 	 * An intervention that is not recorded is a lie by omission.
@@ -283,8 +318,10 @@ class BenchStore {
 		this.requestPaint();
 	}
 
-	/** What a card is SHOWING — the exhibit while one is up, the real run otherwise. */
+	/** What a card is SHOWING — a staged trial, an exhibit, or (usually) the real run. */
 	shown(id: string): World {
+		const assay = this.#assays.get(id);
+		if (assay) return assay.trial.world;
 		return this.#exhibitWorlds.get(id) ?? this.entry(id).world;
 	}
 
@@ -295,6 +332,92 @@ class BenchStore {
 	/** The generations at which this world was bottlenecked. The curve marks them. */
 	interventionsOf(id: string): number[] {
 		return this.#interventions[id] ?? [];
+	}
+
+	/*
+	 * Both of these read the REACTIVE record, never the Map the trials live in.
+	 *
+	 * The Map is a plain field — the trial inside it is a world, mutated 60×/s, and proxying that would
+	 * be as ruinous here as anywhere else in this store. But a component that asked the Map "is an
+	 * assay running?" would be asking a question nothing ever wakes it from: the panel rendered its
+	 * idle state and stayed there while twelve trials played out behind it. The reactive record is what
+	 * the UI is allowed to see.
+	 */
+
+	/** Is this world running a staged assay right now? */
+	assayRunning(id: string): boolean {
+		return this.#assayProgress[id] !== undefined;
+	}
+
+	/** How far through the bearings it is — for "trial 3 of 12". */
+	assayProgress(id: string): { index: number; total: number } | null {
+		const index = this.#assayProgress[id];
+		if (index === undefined) return null;
+		return { index: index + 1, total: ASSAY_BEARINGS };
+	}
+
+	/** The last verdict this world produced, or null if it has never been asked. */
+	assayResult(id: string): PopulationAssay | null {
+		return this.#assayResults[id] ?? null;
+	}
+
+	/**
+	 * Ask this world's best brain the same question from every direction.
+	 *
+	 * Takes over the tank — one fish, one shark, staged — because that IS the experiment: a free-
+	 * running tank cannot be asked anything on demand. The run underneath is HELD while it happens,
+	 * exactly as a frozen exhibit holds it, so an answer never costs the experiment a generation.
+	 */
+	runAssay(id: string): boolean {
+		const entry = this.entry(id);
+		const genome = championGenome(entry.world);
+		if (!genome) return false; // nothing has been judged yet — there is no brain to question
+
+		this.#closeExhibit(id); // one thing in a tank at a time
+		if (this.selection?.worldId === id) this.clearSelection();
+
+		const seed = entry.world.gen + 1;
+
+		/*
+		 * THE MEASUREMENT is the whole population's, and it is taken here, at once, headlessly.
+		 *
+		 * One brain answers about ten scoreable bearings, and ten coin flips carry an error bar of some
+		 * sixteen percentage points — the same champion measured 50% one run and 60% the next while
+		 * nothing about it had changed. A few hundred decisions across every living brain is an
+		 * instrument; ten is an anecdote with a percent sign.
+		 */
+		const genomes = entry.world.fish.map((f) => f.genome);
+		this.#assayResults = {
+			...this.#assayResults,
+			[id]: runPopulationAssay(entry.world.cfg, genomes.length ? genomes : [genome], { seed })
+		};
+
+		/*
+		 * THE MOVIE is the champion's: a tank can only show one fish, so it shows the best one, walking
+		 * the same bearings the population was just asked about. It is the illustration. The number
+		 * beside it is the measurement, and the card says which is which.
+		 */
+		const bearings = assayBearings();
+		this.#assays.set(id, {
+			genome,
+			seed,
+			bearings,
+			index: 0,
+			trial: makeTrial(entry.world.cfg, genome, bearings[0], { seed })
+		});
+		this.#assayProgress = { ...this.#assayProgress, [id]: 0 };
+		this.requestPaint();
+		return true;
+	}
+
+	/** Abandon a running assay and give the tank back. Any completed trials are discarded. */
+	stopAssay(id: string): void {
+		if (!this.#assays.delete(id)) return;
+		const progress = { ...this.#assayProgress };
+		delete progress[id];
+		this.#assayProgress = progress;
+		if (this.selection?.worldId === id) this.clearSelection();
+		this.requestPaint();
 	}
 
 	/**
@@ -368,6 +491,41 @@ class BenchStore {
 		}
 	}
 
+	/**
+	 * Play a staged assay forward — the SAME trials the harness runs, one frame at a time.
+	 *
+	 * When a trial ends it is scored and the next bearing is set up, so the tank walks all the way
+	 * round the fish. When the last one ends the verdict is published and the tank goes back to its
+	 * population. Nothing here writes to the world it is asking about.
+	 */
+	#stepAssay(id: string, assay: RunningAssay, steps: number, dt: number): void {
+		const entry = this.find(id);
+		if (!entry) {
+			this.#assays.delete(id);
+			return;
+		}
+
+		for (let i = 0; i < steps; i++) {
+			if (!stepTrial(assay.trial, dt)) continue;
+
+			// This bearing has been shown. Move round. (Nothing is SCORED here — the verdict was
+			// measured across the whole population when the assay was started; this is the film of it.)
+			assay.index++;
+
+			if (assay.index >= assay.bearings.length) {
+				this.stopAssay(id);
+				return;
+			}
+
+			// The selection cannot follow a fish into the next trial — that fish no longer exists.
+			if (this.selection?.worldId === id) this.clearSelection();
+			assay.trial = makeTrial(entry.world.cfg, assay.genome, assay.bearings[assay.index], {
+				seed: assay.seed
+			});
+			this.#assayProgress = { ...this.#assayProgress, [id]: assay.index };
+		}
+	}
+
 	/** Re-clone an exhibit from its world's CURRENT champion (a live exhibit at a generation turn). */
 	#rebuildExhibit(id: string): void {
 		const entry = this.find(id);
@@ -402,8 +560,9 @@ class BenchStore {
 	trainTo(gen: number): void {
 		// A training burst fast-forwards every real run — which would advance a world whose exhibit
 		// promised to hold it still, and would leave every other exhibit showing a champion that has
-		// been superseded a hundred generations ago. So a burst closes the exhibits rather than
-		// quietly invalidating them.
+		// been superseded a hundred generations ago. So a burst closes the exhibits, and abandons any
+		// assay in flight, rather than quietly invalidating them.
+		for (const id of [...this.#assays.keys()]) this.stopAssay(id);
 		this.closeExhibits();
 		if (gen > this.generationsEvolved) this.playback.requestTraining(gen);
 	}
@@ -451,6 +610,7 @@ class BenchStore {
 	}
 
 	removeWorld(id: string): void {
+		this.stopAssay(id);
 		this.#closeExhibit(id); // nothing may outlive the world it was cloned from
 		this.#setWorlds(this.worlds.filter((entry) => entry.id !== id));
 		// Anything pointing INTO the world that just went away has to go with it, now — not on the
@@ -461,7 +621,8 @@ class BenchStore {
 
 	/** Restart evolution from random brains. */
 	resetWorld(id: string): void {
-		// The champion on show was the champion of a run that no longer exists.
+		// The brain on show — on a pedestal or under interrogation — belonged to a run that is gone.
+		this.stopAssay(id);
 		this.#closeExhibit(id);
 		// the result described a population that no longer exists — keeping it would be a lie
 		evals.forget(id);
@@ -480,7 +641,8 @@ class BenchStore {
 
 	/** Apply live config edits without wiping learning. */
 	applyConfig(id: string): void {
-		// The conditions the exhibit was swimming in have changed underneath it.
+		// The conditions the exhibit — or the assay — was staged in have changed underneath it.
+		this.stopAssay(id);
 		this.#closeExhibit(id);
 		engineApplyCfg(this.entry(id).world);
 		this.#publishConfig(id);
@@ -805,13 +967,16 @@ class BenchStore {
 			for (const entry of this.worlds) {
 				const mode = this.exhibitMode(entry.id);
 				const exhibit = this.#exhibitWorlds.get(entry.id);
+				const assay = this.#assays.get(entry.id);
 
-				// FROZEN is the whole promise of the sealed exhibit: the real run does not advance one
-				// step while you are looking at the clones, so switching the exhibit off puts you back
-				// exactly where you were. Only the exhibit's own water moves.
-				if (mode !== 'frozen') {
+				// An assay HOLDS the run, exactly as a frozen exhibit does: asking a question must never
+				// cost the experiment a generation. FROZEN is the same promise — the real run does not
+				// advance one step while you are looking at the clones, so switching the exhibit off puts
+				// you back exactly where you were.
+				if (!assay && mode !== 'frozen') {
 					for (let i = 0; i < steps; i++) stepWorld(entry.world, dt);
 				}
+				if (assay) this.#stepAssay(entry.id, assay, steps, dt);
 				if (exhibit) {
 					for (let i = 0; i < steps; i++) stepWorld(exhibit, dt);
 

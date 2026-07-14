@@ -10,6 +10,7 @@
 -->
 <script lang="ts">
 	import Tank from './Tank.svelte';
+	import AssayPanel from './AssayPanel.svelte';
 	import ExhibitControl from './ExhibitControl.svelte';
 	import LensStrip from './LensStrip.svelte';
 	import TileStats from './TileStats.svelte';
@@ -177,6 +178,8 @@
 	</div>
 
 	<TileStats {entry} />
+	<!-- Stage the question instead of waiting for the ocean to ask it. -->
+	<AssayPanel {entry} />
 	<EvalPanel {entry} />
 	<!-- On the CARD, because the answer belongs to the environment: a channel is worth exactly what
 	     ITS OWN conditions make it worth, and a matrix run in some other card's tank answers a
