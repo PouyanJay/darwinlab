@@ -339,13 +339,17 @@ function updatePredators(w: World, dt: number, frust: number, catchR: number): v
 		const best = p._tgt;
 		const bd = p._td ?? 1e9;
 		const ps = c.predSpeed;
+		const darts = c.lunge ?? true; // the strike; off, the shark only cruises and eats on contact
 		if (best) {
 			const commit = c.lungeCommit ?? false;
 			// lunge state machine: cruise → aim (telegraphed wind-up) → lunge (fast strike)
 			// ferocity only exists for committed strikes: faster, shorter-telegraphed lunges
 			// that position alone can no longer dodge — feeling them COMING is the edge.
 			const ferocity = commit ? (c.lungeFerocity ?? 1) : 1;
-			if (p.lunge <= 0 && p.aim > 0) {
+			if (!darts) {
+				// No strike: the aim/lunge machine never arms, so the shark below stays in its cruise
+				// branch (p.lunge and p.aim are both 0) and simply chases at cruise speed.
+			} else if (p.lunge <= 0 && p.aim > 0) {
 				p.aim -= dt;
 				if (p.aim <= 0) {
 					p.lunge = 0.4;
@@ -479,13 +483,16 @@ function updatePrey(w: World, dt: number): void {
 		f.heading += out.turn * MAXTURN * agility * dt;
 		// stamina (optional): sprinting above 60% thrust drains the reserve, cruising below
 		// refills it, and an empty tank halves top speed. Sprint-always loses; bolting wins.
-		let speedCap = MAXSPEED;
+		// The agent's top speed — editable, defaulting to the reference's 176 (see cfg.maxSpeed). It is
+		// the other half of the predator-speed crossover: whether fleeing escapes or only delays.
+		const topSpeed = c.maxSpeed ?? MAXSPEED;
+		let speedCap = topSpeed;
 		if (c.stamina ?? false) {
 			const reserve = f.stamina ?? 1;
 			const next =
 				out.thrust > 0.6 ? reserve - (out.thrust - 0.6) * 0.85 * dt : reserve + 0.28 * dt;
 			f.stamina = clamp(next, 0, 1);
-			if (f.stamina <= 0.02) speedCap = MAXSPEED * 0.55;
+			if (f.stamina <= 0.02) speedCap = topSpeed * 0.55;
 		}
 		const target = out.thrust * speedCap;
 		const dvx = Math.cos(f.heading) * target;

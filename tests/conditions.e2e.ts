@@ -26,6 +26,16 @@ const dialog = (page: Page) => page.getByRole('dialog', { name: 'Conditions' });
 const field = (page: Page, name: string | RegExp) => dialog(page).getByRole('textbox', { name });
 const slider = (page: Page, name: RegExp) => dialog(page).getByRole('slider', { name });
 
+/**
+ * The conditions are grouped into three tabs — Environment, Agents, Adversary — and a field only
+ * exists once its group is showing. Every test opens the group it needs.
+ */
+const group = (page: Page, name: 'Environment' | 'Agents' | 'Adversary') =>
+	dialog(page)
+		.getByRole('radiogroup', { name: /which part of the experiment/i })
+		.getByRole('radio', { name })
+		.click();
+
 test.beforeEach(async ({ page }) => {
 	await gotoApp(page);
 	await waitForPrewarm(page);
@@ -39,8 +49,10 @@ test('THE POINT: an edit changes the world and the world keeps what it learned',
 	const before = await tile(page, 2).getByTestId('gen').innerText();
 	expect(before).toBe('Gen 15');
 
-	await dialog(page).getByRole('button', { name: 'more predators' }).click();
-	await dialog(page).getByRole('button', { name: 'more prey' }).click();
+	await group(page, 'Adversary');
+	await dialog(page).getByRole('button', { name: 'more sharks' }).click();
+	await group(page, 'Agents');
+	await dialog(page).getByRole('button', { name: 'more fish' }).click();
 
 	// the tile answers immediately…
 	await expect.poll(() => meta(page, 2)).toContain('22 prey · 4 sharks'); // the bench runs 3
@@ -92,26 +104,31 @@ test('the edit reaches the SIMULATION, not just the tile that describes it', asy
 		.toBe(true); // frozen
 	const frozen = await fingerprint();
 
+	await group(page, 'Environment');
 	await slider(page, /container height/i).fill('820');
 
 	await expect.poll(fingerprint, { timeout: 5000 }).not.toBe(frozen);
 });
 
 test('every field writes through: sliders, senses, name, accent', async ({ page }) => {
-	await slider(page, /predator speed/i).fill('1.45');
+	await group(page, 'Adversary');
+	await slider(page, /cruise speed/i).fill('1.45');
 	await expect(dialog(page).getByText('1.45×', { exact: true })).toBeVisible(); // read back
 	await expect.poll(() => meta(page, 2)).toContain('1.45×'); // and the tile chip carries it
 
 	// a sense checkbox is the same live ablation the tile pill performs
+	await group(page, 'Agents');
 	await dialog(page).getByRole('checkbox', { name: /walls/i }).check();
 	await expect(tile(page, 2).getByRole('button', { name: 'walls', exact: true })).toHaveAttribute(
 		'aria-pressed',
 		'true'
 	);
 
+	// the name is identity, not a condition — it stays visible above the group selector
 	await field(page, /world name/i).fill('Direction (control)');
 	await expect(tile(page, 2)).toHaveAttribute('aria-label', 'world 3: Direction (control)');
 
+	await group(page, 'Environment');
 	await slider(page, /container width/i).fill('900');
 	// NB: this proves the chip was told, not that the tank was resized — the chip renders from the
 	// store's mirror of cfg. The test above is the one that proves the water itself changed shape.
@@ -131,12 +148,15 @@ test('it is a real modal: Esc closes it, and it traps focus while open', async (
 });
 
 test('closing and reopening shows the world as it now is, not as it was', async ({ page }) => {
-	await dialog(page).getByRole('button', { name: 'more prey' }).click();
+	await group(page, 'Agents');
+	await dialog(page).getByRole('button', { name: 'more fish' }).click();
 	await dialog(page).getByRole('button', { name: 'close' }).click();
 	await expect(dialog(page)).toBeHidden();
 
 	await tile(page, 2).getByRole('button', { name: 'Conditions' }).click();
 
-	const prey = dialog(page).getByRole('group', { name: 'Prey' }).getByRole('status');
-	await expect(prey).toHaveText('22'); // it reads the world, it does not keep a copy of it
+	// it reads the world, it does not keep a copy of it — reopen and the Agents group shows 22
+	await group(page, 'Agents');
+	const count = dialog(page).getByRole('group', { name: 'Fish' }).getByRole('status');
+	await expect(count).toHaveText('22');
 });

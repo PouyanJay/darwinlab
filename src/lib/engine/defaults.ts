@@ -175,6 +175,9 @@ export const WORLD_LIMITS = {
 	bw: { min: 320, max: 1300, step: 10 },
 	bh: { min: 220, max: 860, step: 10 },
 	predSpeed: { min: 0.4, max: 1.8, step: 0.05 },
+	/* The agent's top speed. Centred on the reference's 176 so the default world is unchanged, with
+	   headroom either side to drive the crossover against the predator's cruise. */
+	maxSpeed: { min: 80, max: 300, step: 4 },
 	vision: { min: 120, max: 280, step: 5 },
 	mutation: { min: 0, max: 0.2, step: 0.005 },
 	/** Persistence params — only meaningful while the hunger ramp is switched ON. */

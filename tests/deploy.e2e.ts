@@ -41,11 +41,16 @@ async function deployAt(page: Page, generation: number) {
 async function makeTheRunEnd(page: Page, index: number) {
 	await tile(page, index).getByRole('button', { name: 'Conditions' }).click();
 	const conditions = page.getByRole('dialog', { name: 'Conditions' });
+	// speed and count both live in the Adversary group now
+	await conditions
+		.getByRole('radiogroup', { name: /which part of the experiment/i })
+		.getByRole('radio', { name: 'Adversary' })
+		.click();
 	for (let i = 0; i < 3; i++) {
-		await conditions.getByRole('button', { name: 'more predators' }).click(); // 3 → 6, the cap
+		await conditions.getByRole('button', { name: 'more sharks' }).click(); // 3 → 6
 	}
 	// 1.8× → a 360 px/s cruise against a fish's 176: no fish can simply run away any more
-	await conditions.getByRole('slider', { name: /predator speed/i }).fill('1.8');
+	await conditions.getByRole('slider', { name: /cruise speed/i }).fill('1.8');
 	await page.keyboard.press('Escape');
 	await expect(conditions).toBeHidden();
 }

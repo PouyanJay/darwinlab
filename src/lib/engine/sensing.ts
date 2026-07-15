@@ -82,7 +82,9 @@ export function senseInputs(w: Pick<World, 'cfg' | 'preds'>, f: Fish): SenseResu
 
 	// slot 8 — own speed, normalized by the fish's own top speed (so 1 = flat out).
 	// Ablated like any other sense: off feeds 0, the neuron stays, the shape never changes.
-	if (nin > 8 && S.speed) x[8] = clamp(Math.hypot(f.vx, f.vy) / MAXSPEED, 0, 1);
+	// Normalised by the agent's OWN top speed, not the constant: in a world where the fish max out at
+	// 250, a fish going 250 must read 1.0, not 250/176.
+	if (nin > 8 && S.speed) x[8] = clamp(Math.hypot(f.vx, f.vy) / (w.cfg.maxSpeed ?? MAXSPEED), 0, 1);
 
 	return { x, np, dist: np ? nd : Infinity, inVis, dirDeg, closing, wallFront: wF };
 }

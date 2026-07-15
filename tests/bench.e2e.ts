@@ -181,7 +181,11 @@ test('an environment that has been edited says so on its face', async ({ page })
 
 	await tile3.getByRole('button', { name: 'Conditions' }).click();
 	const conditions = page.getByRole('dialog', { name: 'Conditions' });
-	await conditions.getByRole('button', { name: 'more predators' }).click();
+	await conditions
+		.getByRole('radiogroup', { name: /which part of the experiment/i })
+		.getByRole('radio', { name: 'Adversary' })
+		.click();
+	await conditions.getByRole('button', { name: 'more sharks' }).click();
 	await page.keyboard.press('Escape');
 
 	await expect(tile3.getByText('▲ 1 override')).toBeVisible();
