@@ -22,7 +22,7 @@
 
 import { TAU } from '../engine';
 import type { PolicyMap } from '../engine';
-import { THEMES, type ThemeName } from './theme';
+import { THEMES, type ThemeName, type ThemePalette } from './theme';
 
 /** The live adversary, already resolved into the agent's own frame (what the disc is drawn in). */
 export interface EscapeMarker {
@@ -70,25 +70,26 @@ function canvasAngle(bearing: number): number {
 	return bearing - Math.PI / 2;
 }
 
-export function drawEscapeMap(
+/** The disc's placement on the canvas — shared by every layer below. */
+interface Disc {
+	cx: number;
+	cy: number;
+	radius: number;
+}
+
+/** The cells: one annular sector per (bearing, distance) sample, coloured by the policy there. */
+function drawPolicyCells(
 	ctx: CanvasRenderingContext2D,
-	W: number,
-	H: number,
-	{ map, marker, t, theme, reducedMotion = false }: DrawEscapeMapOpts
+	{ cx, cy, radius }: Disc,
+	map: PolicyMap,
+	theme: ThemeName
 ): void {
 	const th = THEMES[theme];
-	ctx.clearRect(0, 0, W, H);
-
-	const cx = W / 2;
-	const cy = H / 2;
-	const radius = Math.min(W, H) / 2 - 18; // room for the ahead/right/behind/left labels
-
 	const LEFT = hexToRgb(th.excite); // cool — turns left  (turn < 0)
 	const RIGHT = hexToRgb(th.inhibit); // warm — turns right (turn ≥ 0)
 	const NEUTRAL = tripletToRgb(th.lensIdle); // no strong steer
 	const bg: Rgb = theme === 'light' ? [247, 247, 242] : [18, 18, 25];
 
-	// --- the cells: an annular sector per (bearing, distance) sample ---
 	const { bearings, radii, samples } = map;
 	for (let b = 0; b < bearings; b++) {
 		// Sectors are centred on the sampled bearing (the sample sits at 2π·b/bearings).
@@ -113,8 +114,14 @@ export function drawEscapeMap(
 			ctx.fill();
 		}
 	}
+}
 
-	// --- distance rings + the outer vision edge ---
+/** Three faint distance rings out to the vision edge. */
+function drawDistanceRings(
+	ctx: CanvasRenderingContext2D,
+	{ cx, cy, radius }: Disc,
+	th: ThemePalette
+): void {
 	ctx.strokeStyle = th.inkSoft;
 	ctx.globalAlpha = 0.18;
 	ctx.lineWidth = 1;
@@ -124,27 +131,41 @@ export function drawEscapeMap(
 		ctx.stroke();
 	}
 	ctx.globalAlpha = 1;
+}
 
-	// --- the live adversary: where the real shark sits on this map, right now ---
-	if (marker) {
-		const R = radius * Math.max(0, Math.min(1, marker.dist01));
-		const mx = cx + Math.sin(marker.bearing) * R;
-		const my = cy - Math.cos(marker.bearing) * R;
-		const ping = reducedMotion ? 0 : (Math.sin(t * 3) + 1) * 0.5; // gentle 0..1 breathe
-		ctx.strokeStyle = th.threat;
-		ctx.globalAlpha = 0.5 + 0.4 * (1 - ping);
-		ctx.lineWidth = 1.5;
-		ctx.beginPath();
-		ctx.arc(mx, my, 6 + ping * 3, 0, TAU);
-		ctx.stroke();
-		ctx.globalAlpha = 1;
-		ctx.fillStyle = th.threat;
-		ctx.beginPath();
-		ctx.arc(mx, my, 3, 0, TAU);
-		ctx.fill();
-	}
+/** Where the real adversary sits on the map right now — a gently breathing ring and dot. */
+function drawLiveMarker(
+	ctx: CanvasRenderingContext2D,
+	{ cx, cy, radius }: Disc,
+	marker: EscapeMarker,
+	th: ThemePalette,
+	t: number,
+	reducedMotion: boolean
+): void {
+	const R = radius * Math.max(0, Math.min(1, marker.dist01));
+	const mx = cx + Math.sin(marker.bearing) * R;
+	const my = cy - Math.cos(marker.bearing) * R;
+	const ping = reducedMotion ? 0 : (Math.sin(t * 3) + 1) * 0.5; // gentle 0..1 breathe
+	ctx.strokeStyle = th.threat;
+	ctx.globalAlpha = 0.5 + 0.4 * (1 - ping);
+	ctx.lineWidth = 1.5;
+	ctx.beginPath();
+	ctx.arc(mx, my, 6 + ping * 3, 0, TAU);
+	ctx.stroke();
+	ctx.globalAlpha = 1;
+	ctx.fillStyle = th.threat;
+	ctx.beginPath();
+	ctx.arc(mx, my, 3, 0, TAU);
+	ctx.fill();
+}
 
-	// --- the agent at the centre, a small glyph facing up ---
+/** The agent at the centre, a small glyph facing up (the disc's frame of reference). */
+function drawAgentGlyph(
+	ctx: CanvasRenderingContext2D,
+	{ cx, cy }: Disc,
+	theme: ThemeName,
+	th: ThemePalette
+): void {
 	ctx.fillStyle = theme === 'light' ? '#fff' : '#1a1a22';
 	ctx.strokeStyle = th.ink;
 	ctx.globalAlpha = 0.9;
@@ -157,8 +178,14 @@ export function drawEscapeMap(
 	ctx.fill();
 	ctx.stroke();
 	ctx.globalAlpha = 1;
+}
 
-	// --- frame labels: the agent's own reference (top = ahead) ---
+/** The agent's own reference frame around the rim: ahead / right / behind / left. */
+function drawFrameLabels(
+	ctx: CanvasRenderingContext2D,
+	{ cx, cy, radius }: Disc,
+	th: ThemePalette
+): void {
 	ctx.fillStyle = th.inkSoft;
 	ctx.globalAlpha = 0.72;
 	ctx.font = '500 9px Inter, sans-serif';
@@ -173,4 +200,21 @@ export function drawEscapeMap(
 	ctx.globalAlpha = 1;
 	ctx.textAlign = 'left';
 	ctx.textBaseline = 'alphabetic';
+}
+
+export function drawEscapeMap(
+	ctx: CanvasRenderingContext2D,
+	W: number,
+	H: number,
+	{ map, marker, t, theme, reducedMotion = false }: DrawEscapeMapOpts
+): void {
+	const th = THEMES[theme];
+	ctx.clearRect(0, 0, W, H);
+	const disc: Disc = { cx: W / 2, cy: H / 2, radius: Math.min(W, H) / 2 - 18 }; // rim room for labels
+
+	drawPolicyCells(ctx, disc, map, theme);
+	drawDistanceRings(ctx, disc, th);
+	if (marker) drawLiveMarker(ctx, disc, marker, th, t, reducedMotion);
+	drawAgentGlyph(ctx, disc, theme, th);
+	drawFrameLabels(ctx, disc, th);
 }

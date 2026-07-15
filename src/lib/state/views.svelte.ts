@@ -210,7 +210,10 @@ export class EscapeMapView {
 		}
 		const c = world.cfg;
 		const s = c.senses;
-		const sig = `${c.vision}|${c.predSpeed}|${c.brainInputs ?? ''}|${s.dist}${s.dir}${s.closing}${s.walls}${s.speed ?? false}`;
+		// Everything the sweep depends on: vision (radius scale), predator speed (the closing pose),
+		// brain width, the tank size (the canonical agent sits at its centre, which feeds the wall
+		// rays), and which senses gate which inputs. Miss one and a live edit leaves a stale map.
+		const sig = `${c.vision}|${c.predSpeed}|${c.brainInputs ?? ''}|${c.bw}x${c.bh}|${s.dist}${s.dir}${s.closing}${s.walls}${s.speed ?? false}`;
 		if (fish.genome === this.#genome && sig === this.#sig) return;
 		this.#genome = fish.genome;
 		this.#sig = sig;

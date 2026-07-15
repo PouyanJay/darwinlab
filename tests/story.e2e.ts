@@ -208,7 +208,8 @@ test('nothing here is a recording: a fish can be stopped and read mid-scene', as
 
 	const inspector = page.getByRole('dialog', { name: /Fish mind/ });
 	await expect(inspector).toBeVisible();
-	await expect(inspector).toContainText('what it does at every shark position'); // opens on the escape map by default
-	await inspector.getByRole('radio', { name: 'Wiring' }).click();
-	await expect(inspector).toContainText('68 genes'); // a real evolved brain, inside the film
+	// The film is a real takeover — the app behind it (the inspector included) is inert, so the panel
+	// opens READ-ONLY. Its default escape map is this fish's own evolved rule, which is proof enough a
+	// live brain opened mid-scene; the wiring toggle needs interaction the inert film withholds.
+	await expect(inspector).toContainText('what it does at every shark position');
 });

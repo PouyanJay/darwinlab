@@ -31,6 +31,13 @@ export const PROBE_BEARINGS = 48;
 export const PROBE_RADII = 16;
 /** Below this spread in every output, the policy doesn't depend on adversary position → flat. */
 const FLAT_EPS = 1e-9;
+/**
+ * The adversary's cruise speed at `predSpeed = 1`, px/s — the honest "bearing down at cruise" pose.
+ * Mirrors the cruise cap in world.ts (`200 * ps * frust`); kept in step BY HAND because the project
+ * deliberately keeps predator-internal constants inline at their world.ts call sites, verbatim (see
+ * constants.ts). If that cruise cap is ever retuned, this must move with it.
+ */
+const ADVERSARY_CRUISE = 200;
 
 /** One cell: the motor response the brain gives to an adversary at a given bearing/distance. */
 export interface PolicySample {
@@ -116,7 +123,7 @@ function adversaryAt(cfg: WorldConfig, agent: Fish, bearing: number, distance: n
 	const ang = agent.heading + bearing;
 	const px = agent.x + Math.cos(ang) * distance;
 	const py = agent.y + Math.sin(ang) * distance;
-	const cruise = 200 * cfg.predSpeed;
+	const cruise = ADVERSARY_CRUISE * cfg.predSpeed;
 	const ux = (agent.x - px) / (distance || 1);
 	const uy = (agent.y - py) / (distance || 1);
 	return {
@@ -148,10 +155,10 @@ export function probePolicy(cfg: WorldConfig, genome: Genome, opts: ProbeOptions
 	const agent = canonicalAgent(cfg, genome);
 
 	const samples = new Array<PolicySample>(bearings * radii);
-	let tMin = Infinity;
-	let tMax = -Infinity;
-	let hMin = Infinity;
-	let hMax = -Infinity;
+	let turnMin = Infinity;
+	let turnMax = -Infinity;
+	let thrustMin = Infinity;
+	let thrustMax = -Infinity;
 
 	for (let b = 0; b < bearings; b++) {
 		const bearing = (2 * Math.PI * b) / bearings;
@@ -161,21 +168,21 @@ export function probePolicy(cfg: WorldConfig, genome: Genome, opts: ProbeOptions
 			const distance = (vision * (r + 0.5)) / radii;
 			const s = samplePolicyAt(cfg, agent, adversaryAt(cfg, agent, bearing, distance));
 			samples[b * radii + r] = s;
-			if (s.turn < tMin) tMin = s.turn;
-			if (s.turn > tMax) tMax = s.turn;
-			if (s.thrust < hMin) hMin = s.thrust;
-			if (s.thrust > hMax) hMax = s.thrust;
+			if (s.turn < turnMin) turnMin = s.turn;
+			if (s.turn > turnMax) turnMax = s.turn;
+			if (s.thrust < thrustMin) thrustMin = s.thrust;
+			if (s.thrust > thrustMax) thrustMax = s.thrust;
 		}
 	}
 
-	const flat = tMax - tMin <= FLAT_EPS && hMax - hMin <= FLAT_EPS;
+	const flat = turnMax - turnMin <= FLAT_EPS && thrustMax - thrustMin <= FLAT_EPS;
 	return {
 		bearings,
 		radii,
 		vision,
 		samples,
 		flat,
-		turnRange: [tMin, tMax],
-		thrustRange: [hMin, hMax]
+		turnRange: [turnMin, turnMax],
+		thrustRange: [thrustMin, thrustMax]
 	};
 }
