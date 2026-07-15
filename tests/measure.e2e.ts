@@ -80,7 +80,11 @@ test("THE ABLATION MATRIX is PER CARD: it runs in that environment's own conditi
 	 */
 	await tile.getByRole('button', { name: 'Conditions' }).click();
 	const conditions = page.getByRole('dialog', { name: 'Conditions' });
-	await conditions.getByRole('slider', { name: /predator speed/i }).fill('1.4');
+	await conditions
+		.getByRole('radiogroup', { name: /which part of the experiment/i })
+		.getByRole('radio', { name: 'Adversary' })
+		.click();
+	await conditions.getByRole('slider', { name: /cruise speed/i }).fill('1.4');
 	await page.keyboard.press('Escape');
 
 	await expect(matrix.getByTestId('ablation-stale')).toBeVisible();

@@ -734,6 +734,17 @@ class BenchStore {
 		this.#publishConfig(id);
 	}
 
+	/**
+	 * Does the adversary DART? On is the reference strike; off, it only pursues at cruise and eats on
+	 * contact. Live, like every other condition — the population meets the change where it stands.
+	 */
+	setLunge(id: string, on: boolean): void {
+		const { world } = this.entry(id);
+		world.cfg.lunge = on;
+		engineApplyCfg(world);
+		this.#publishConfig(id);
+	}
+
 	/** The world's colour. A label, like the name — nothing about the simulation changes. */
 	setAccent(id: string, accent: string): void {
 		this.entry(id).world.cfg.accent = accent;

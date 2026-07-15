@@ -110,6 +110,27 @@ export interface WorldConfig {
 	 * Only meaningful with lungeCommit on.
 	 */
 	lungeFerocity?: number;
+	/**
+	 * The agent's own top speed, px/s. Reference = MAXSPEED (176), and this is left UNSET on every
+	 * reference world so the fidelity gate stays bit-exact — `cfg.maxSpeed ?? MAXSPEED` resolves to
+	 * the same 176 the ported reference hardcodes.
+	 *
+	 * It is the OTHER half of the most consequential number on the bench. The predator cruises at
+	 * 200 × predSpeed; whether a correct escape gets away or merely delays the end is decided by how
+	 * that cruise compares to THIS. Editable, so the crossover is a thing you can drive rather than a
+	 * constant you have to accept.
+	 */
+	maxSpeed?: number;
+	/**
+	 * Does the adversary DART — the cruise → aim → lunge strike? Reference = true (the strike is the
+	 * predator's whole game). Off, it only pursues at cruise and eats whatever it catches up to.
+	 *
+	 * A real ablation of the adversary: it asks what the strike is worth. And it has an honest edge —
+	 * a cruise-only shark below the agent's top speed can never run a good swimmer down, so with this
+	 * off, a slow predator, and no hunger ramp, nothing dies and selection has nothing to sort. That
+	 * is not a bug; it is the answer to "what does the dart buy?", and the UI says so.
+	 */
+	lunge?: boolean;
 }
 
 export interface Fish {

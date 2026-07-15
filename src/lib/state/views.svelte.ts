@@ -189,6 +189,10 @@ export class WorldConfigView {
 	bw = $state(0);
 	bh = $state(0);
 	predSpeed = $state(1);
+	/** The agent's own top speed — the other half of the predator-speed crossover. */
+	maxSpeed = $state(176);
+	/** Does the adversary dart? Off, it only pursues at cruise. */
+	lunge = $state(true);
 	/** The shark's hunger ramp — off, it is the same hunter all run long. */
 	persistence = $state(false);
 	persistRamp = $state(0.04);
@@ -207,6 +211,8 @@ export class WorldConfigView {
 		this.bw = cfg.bw;
 		this.bh = cfg.bh;
 		this.predSpeed = cfg.predSpeed;
+		this.maxSpeed = cfg.maxSpeed ?? 176; // the engine's own fallback (MAXSPEED)
+		this.lunge = cfg.lunge ?? true;
 		// the engine's own fallbacks, so the sliders read the ramp the world would actually use
 		this.persistence = cfg.persistence ?? true;
 		this.persistRamp = cfg.persistRamp ?? 0.04;

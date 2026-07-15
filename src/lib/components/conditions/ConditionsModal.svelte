@@ -4,19 +4,24 @@
   Nothing here restarts anything. Every field writes straight through to the live world: the
   generation counter keeps counting, the learning curve keeps its history, the champion stays on
   record, and the population you have spent fifteen generations breeding carries on from exactly
-  where it was. That is what makes this an instrument rather than a settings screen — you can widen
-  the tank, double the sharks, and then watch the curve answer.
+  where it was. That is what makes this an instrument rather than a settings screen.
 
-  Which is also why it says so, out loud, under the title.
+  The knobs are grouped the way the scenario is described — ENVIRONMENT, AGENTS, ADVERSARY — because
+  that is the vocabulary the whole product uses (scenario.ts), and a reader who thinks "the shark is
+  too fast" should not have to hunt for the shark's speed among the tank's dimensions and the fish's
+  senses. A selector switches between the three; identity (name, accent) stays visible above it,
+  because it is not a condition of the experiment, it is which experiment this is.
 -->
 <script lang="ts">
 	import Modal from '../common/Modal.svelte';
 	import Slider from '../common/Slider.svelte';
 	import Stepper from '../common/Stepper.svelte';
+	import Segmented from '../common/Segmented.svelte';
 	import { SENSES } from '../senses';
 	import { bench } from '$lib/state';
 	import type { WorldEntry } from '$lib/state';
 	import { ACCENTS, ACCENT_NAMES, WORLD_LIMITS } from '$lib/engine';
+	import { SCENARIO } from '$lib/lab/scenario';
 
 	interface Props {
 		entry: WorldEntry;
@@ -37,13 +42,35 @@
 	const jaw = (value: number) => `up to ${14 + value} px`;
 
 	/**
-	 * The line that tells you what the speed slider is really doing. A fish tops out at MAXSPEED
-	 * (176 px/s) and the shark cruises at 200 × predSpeed, so the crossing point is ~0.88 — and it
-	 * is the most consequential number on the bench: above it no fish can outrun the shark, so
-	 * knowing which way to flee buys a delay and never an escape, and every sense stops paying.
+	 * The crossover, now with BOTH sides editable. The adversary cruises at 200 × predSpeed; the agent
+	 * tops out at maxSpeed. Whether a correct escape gets away or merely delays the end is decided
+	 * here, and it is the most consequential comparison on the bench — so it is stated in whichever
+	 * group you are looking at the two halves from.
 	 */
 	const cruise = $derived(Math.round(200 * config.predSpeed));
-	const outruns = $derived(cruise > 176);
+	const outruns = $derived(cruise > config.maxSpeed);
+
+	type Group = 'environment' | 'agents' | 'adversary';
+	let group = $state<Group>('environment');
+
+	// Titled with the scenario's own words: "Environment (tank)", "Agents (fish)", "Adversary (shark)".
+	const GROUPS: { value: Group; label: string }[] = [
+		{ value: 'environment', label: 'Environment' },
+		{ value: 'agents', label: 'Agents' },
+		{ value: 'adversary', label: 'Adversary' }
+	];
+	const subject = $derived(
+		group === 'environment'
+			? SCENARIO.environment.one
+			: group === 'agents'
+				? SCENARIO.agent.many
+				: SCENARIO.adversary.many
+	);
+
+	/** The scenario's own words, capitalised for a field label — "Fish", "Sharks". */
+	const cap = (word: string) => word[0].toUpperCase() + word.slice(1);
+	const agentNoun = cap(SCENARIO.agent.many);
+	const adversaryNoun = cap(SCENARIO.adversary.many);
 </script>
 
 <Modal
@@ -62,156 +89,218 @@
 		/>
 	</label>
 
-	<label class="field">
-		<span class="field-label">Story caption</span>
-		<textarea
-			rows="2"
-			placeholder="the narration shown when this world is on screen in story mode"
-			value={config.caption}
-			oninput={(event) => bench.setCaption(id, event.currentTarget.value)}></textarea>
-	</label>
-
-	<div class="pair">
-		<Stepper
-			label="Prey"
-			value={config.prey}
-			{...WORLD_LIMITS.prey}
-			onchange={(value) => bench.setCondition(id, 'prey', value)}
+	<div class="group-select">
+		<Segmented
+			label="which part of the experiment to edit"
+			options={GROUPS}
+			value={group}
+			onchange={(next) => (group = next)}
 		/>
-		<Stepper
-			label="Predators"
-			value={config.preds}
-			{...WORLD_LIMITS.preds}
-			onchange={(value) => bench.setCondition(id, 'preds', value)}
-		/>
+		<span class="subject">the {subject}</span>
 	</div>
 
-	<div class="sliders">
-		<Slider
-			label="Container width"
-			value={config.bw}
-			{...WORLD_LIMITS.bw}
-			format={px}
-			onchange={(value) => bench.setCondition(id, 'bw', value)}
-		/>
-		<Slider
-			label="Container height"
-			value={config.bh}
-			{...WORLD_LIMITS.bh}
-			format={px}
-			onchange={(value) => bench.setCondition(id, 'bh', value)}
-		/>
-		<Slider
-			label="Predator speed"
-			hint={outruns ? '(the shark outruns the fish)' : '(a fish can outrun the shark)'}
-			value={config.predSpeed}
-			{...WORLD_LIMITS.predSpeed}
-			format={times}
-			tone="danger"
-			onchange={(value) => bench.setCondition(id, 'predSpeed', value)}
-		/>
-		<!-- The single most consequential number on the bench, said plainly: above a 176 px/s cruise
-		     no fish can get away, so knowing WHICH WAY to flee buys a delay and never an escape —
-		     and every sense stops paying for itself. Drag it across the line and watch. -->
-		<p class="speed-note" class:warn={outruns}>
-			{cruise} px/s against a fish's 176.
-			{#if outruns}
-				Nothing can outswim it, so fleeing correctly only delays the end — this is the setting under
-				which no sense pays.
-			{:else}
-				A fish that flees the right way can actually get away, which is what makes its senses worth
-				having.
-			{/if}
-		</p>
-		<Slider
-			label="Prey vision range"
-			value={config.vision}
-			{...WORLD_LIMITS.vision}
-			format={px}
-			onchange={(value) => bench.setCondition(id, 'vision', value)}
-		/>
-		<Slider
-			label="Mutation rate"
-			hint="(genetic drift per birth)"
-			value={config.mutation}
-			{...WORLD_LIMITS.mutation}
-			format={rate}
-			onchange={(value) => bench.setCondition(id, 'mutation', value)}
-		/>
-	</div>
-
-	<!-- The hunger ramp. OFF by default, and that is a product decision, not a default that
-	     happened: with it on, the shark gets faster and wider-jawed until it kills, so no fish is
-	     ever allowed to look safe and a population that genuinely learned looks exactly like one
-	     that did not. Off, the shark is the same hunter all run long — and evolved evasion finally
-	     reads on screen. Switch it on and the three knobs beneath it say how hard it escalates. -->
-	<fieldset class="persistence">
-		<legend class="field-label">Predator persistence — the hunger ramp</legend>
-
-		<label class="sense">
-			<input
-				type="checkbox"
-				checked={config.persistence}
-				onchange={(event) => bench.setPersistence(id, event.currentTarget.checked)}
+	{#if group === 'environment'}
+		<div class="sliders">
+			<Slider
+				label="Container width"
+				value={config.bw}
+				{...WORLD_LIMITS.bw}
+				format={px}
+				onchange={(value) => bench.setCondition(id, 'bw', value)}
 			/>
-			<span>
-				<b>Escalate while hungry</b>
-				<span class="description">
-					The longer the shark goes without a kill, the faster it swims and the wider it bites — so
-					no stalemate lasts forever, and no fish stays safe. Off, it hunts the same all run long,
-					which is the only way a population that has genuinely learned can look it.
-				</span>
-			</span>
+			<Slider
+				label="Container height"
+				value={config.bh}
+				{...WORLD_LIMITS.bh}
+				format={px}
+				onchange={(value) => bench.setCondition(id, 'bh', value)}
+			/>
+		</div>
+
+		<label class="field">
+			<span class="field-label">Story caption</span>
+			<textarea
+				rows="2"
+				placeholder="the narration shown when this world is on screen in story mode"
+				value={config.caption}
+				oninput={(event) => bench.setCaption(id, event.currentTarget.value)}></textarea>
 		</label>
+	{:else if group === 'agents'}
+		<div class="pair">
+			<Stepper
+				label={agentNoun}
+				value={config.prey}
+				{...WORLD_LIMITS.prey}
+				onchange={(value) => bench.setCondition(id, 'prey', value)}
+			/>
+		</div>
 
-		{#if config.persistence}
-			<div class="sliders">
-				<Slider
-					label="Ramp"
-					hint="(how fast hunger builds)"
-					value={config.persistRamp}
-					{...WORLD_LIMITS.persistRamp}
-					format={perSecond}
-					tone="danger"
-					onchange={(value) => bench.setCondition(id, 'persistRamp', value)}
-				/>
-				<Slider
-					label="Top speed when starving"
-					value={config.persistMaxBoost}
-					{...WORLD_LIMITS.persistMaxBoost}
-					format={boost}
-					tone="danger"
-					onchange={(value) => bench.setCondition(id, 'persistMaxBoost', value)}
-				/>
-				<Slider
-					label="Widest bite"
-					hint="(catch radius, from 14 px)"
-					value={config.persistMaxJaw}
-					{...WORLD_LIMITS.persistMaxJaw}
-					format={jaw}
-					tone="danger"
-					onchange={(value) => bench.setCondition(id, 'persistMaxJaw', value)}
-				/>
-			</div>
-		{/if}
-	</fieldset>
+		<div class="sliders">
+			<Slider
+				label="Top speed"
+				hint={outruns
+					? '(slower than the adversary cruises)'
+					: '(faster than the adversary cruises)'}
+				value={config.maxSpeed}
+				{...WORLD_LIMITS.maxSpeed}
+				format={px}
+				onchange={(value) => bench.setCondition(id, 'maxSpeed', value)}
+			/>
+			<!-- The single most consequential comparison on the bench: is the agent faster than the
+			     adversary's cruise? Below the line, a correct escape only delays the end, and every
+			     sense stops paying for itself. Both halves are editable now — drag either across it. -->
+			<p class="speed-note" class:warn={outruns}>
+				Tops out at {config.maxSpeed} px/s; the adversary cruises at {cruise}.
+				{#if outruns}
+					It cannot outrun the cruise, so fleeing correctly only delays the end — the setting under
+					which no sense pays.
+				{:else}
+					It can outrun the cruise, so fleeing the right way actually escapes — which is what makes
+					its senses worth having.
+				{/if}
+			</p>
+			<Slider
+				label="Vision range"
+				hint="(how far it can sense the adversary)"
+				value={config.vision}
+				{...WORLD_LIMITS.vision}
+				format={px}
+				onchange={(value) => bench.setCondition(id, 'vision', value)}
+			/>
+			<Slider
+				label="Mutation rate"
+				hint="(genetic drift per birth)"
+				value={config.mutation}
+				{...WORLD_LIMITS.mutation}
+				format={rate}
+				onchange={(value) => bench.setCondition(id, 'mutation', value)}
+			/>
+		</div>
 
-	<fieldset class="senses">
-		<legend class="field-label">Senses — the brain's input neurons</legend>
-		{#each SENSES as sense (sense.key)}
+		<fieldset class="senses">
+			<legend class="field-label">Senses — the brain's input neurons</legend>
+			{#each SENSES as sense (sense.key)}
+				<label class="sense">
+					<input
+						type="checkbox"
+						checked={config.senses[sense.key]}
+						onchange={(event) => bench.setSense(id, sense.key, event.currentTarget.checked)}
+					/>
+					<span>
+						<b>{sense.name}</b>
+						<span class="description">{sense.description}</span>
+					</span>
+				</label>
+			{/each}
+		</fieldset>
+	{:else}
+		<div class="pair">
+			<Stepper
+				label={adversaryNoun}
+				value={config.preds}
+				{...WORLD_LIMITS.preds}
+				onchange={(value) => bench.setCondition(id, 'preds', value)}
+			/>
+		</div>
+
+		<div class="sliders">
+			<Slider
+				label="Cruise speed"
+				hint={outruns ? '(faster than the agent)' : '(slower than the agent)'}
+				value={config.predSpeed}
+				{...WORLD_LIMITS.predSpeed}
+				format={times}
+				tone="danger"
+				onchange={(value) => bench.setCondition(id, 'predSpeed', value)}
+			/>
+			<p class="speed-note" class:warn={outruns}>
+				Cruises at {cruise} px/s; the agent tops out at {config.maxSpeed}.
+				{#if outruns}
+					Nothing can outswim it — this is the setting under which no sense pays.
+				{:else}
+					A well-evolved agent can escape it, which is what gives its senses something to earn.
+				{/if}
+			</p>
+		</div>
+
+		<!-- The dart — the cruise → aim → lunge strike. Off, the adversary only pursues at cruise and
+		     eats what it catches up to. It is a real ablation, and it has an honest edge stated on it:
+		     a cruise-only adversary below the agent's speed can never run a good one down. -->
+		<fieldset class="toggle">
 			<label class="sense">
 				<input
 					type="checkbox"
-					checked={config.senses[sense.key]}
-					onchange={(event) => bench.setSense(id, sense.key, event.currentTarget.checked)}
+					checked={config.lunge}
+					onchange={(event) => bench.setLunge(id, event.currentTarget.checked)}
 				/>
 				<span>
-					<b>{sense.name}</b>
-					<span class="description">{sense.description}</span>
+					<b>Darts at its target</b>
+					<span class="description">
+						The strike: it winds up, then lunges — a burst several times its cruise speed, and where
+						most of the killing comes from. Off, it only chases at cruise and eats whatever it
+						reaches: a far weaker hunter. Measured on an evolved bearing world, the strike catches
+						most of a generation while the cruise alone lets a good share get away — so a
+						well-evolved agent that could never dodge the lunge can simply outlast the chase. That
+						is the answer to "what does the strike buy?", not a bug.
+					</span>
 				</span>
 			</label>
-		{/each}
-	</fieldset>
+		</fieldset>
+
+		<!-- The hunger ramp. OFF by default, and that is a product decision: with it on, the adversary
+		     gets faster and wider-jawed until it kills, so no agent is ever allowed to look safe. Off,
+		     it is the same hunter all run long — and evolved evasion finally reads on screen. -->
+		<fieldset class="persistence">
+			<legend class="field-label">Persistence — the hunger ramp</legend>
+
+			<label class="sense">
+				<input
+					type="checkbox"
+					checked={config.persistence}
+					onchange={(event) => bench.setPersistence(id, event.currentTarget.checked)}
+				/>
+				<span>
+					<b>Escalate while hungry</b>
+					<span class="description">
+						The longer it goes without a kill, the faster it swims and the wider it bites — so no
+						stalemate lasts forever, and nothing stays safe. Off, it hunts the same all run long,
+						which is the only way a population that has genuinely learned can look it.
+					</span>
+				</span>
+			</label>
+
+			{#if config.persistence}
+				<div class="sliders indented">
+					<Slider
+						label="Ramp"
+						hint="(how fast hunger builds)"
+						value={config.persistRamp}
+						{...WORLD_LIMITS.persistRamp}
+						format={perSecond}
+						tone="danger"
+						onchange={(value) => bench.setCondition(id, 'persistRamp', value)}
+					/>
+					<Slider
+						label="Top speed when starving"
+						value={config.persistMaxBoost}
+						{...WORLD_LIMITS.persistMaxBoost}
+						format={boost}
+						tone="danger"
+						onchange={(value) => bench.setCondition(id, 'persistMaxBoost', value)}
+					/>
+					<Slider
+						label="Widest bite"
+						hint="(catch radius, from 14 px)"
+						value={config.persistMaxJaw}
+						{...WORLD_LIMITS.persistMaxJaw}
+						format={jaw}
+						tone="danger"
+						onchange={(value) => bench.setCondition(id, 'persistMaxJaw', value)}
+					/>
+				</div>
+			{/if}
+		</fieldset>
+	{/if}
 
 	<fieldset class="accents">
 		<legend class="field-label">Accent</legend>
@@ -259,6 +348,19 @@
 		border-color: var(--accent);
 	}
 
+	/* The selector that switches the three groups — with a quiet reminder of what each one IS. */
+	.group-select {
+		display: flex;
+		align-items: center;
+		gap: var(--sp-4);
+		margin-top: var(--sp-6);
+	}
+
+	.subject {
+		font-size: var(--fs-sm);
+		color: var(--ink3);
+	}
+
 	.pair {
 		display: grid;
 		grid-template-columns: 1fr 1fr;
@@ -296,11 +398,15 @@
 		margin-bottom: var(--sp-3);
 	}
 
+	.toggle {
+		margin-top: var(--sp-6);
+	}
+
 	.persistence {
 		display: flex;
 		flex-direction: column;
 		gap: var(--sp-4);
-		margin-top: var(--sp-5);
+		margin-top: var(--sp-6);
 	}
 
 	.persistence legend {
@@ -308,8 +414,8 @@
 	}
 
 	/* The ramp's own knobs sit indented under the switch that turns them on, so it reads as one
-	   decision with its dials rather than four unrelated controls. */
-	.persistence .sliders {
+	   decision with its dials rather than three unrelated controls. */
+	.sliders.indented {
 		margin: 0 0 0 26px;
 		padding-left: var(--sp-5);
 		border-left: 2px solid var(--line);
@@ -321,7 +427,7 @@
 		color: var(--ink3);
 	}
 
-	/* The one setting that decides whether ANY sense can pay — say so when it crosses the line. */
+	/* The one comparison that decides whether ANY sense can pay — say so when it crosses the line. */
 	.speed-note.warn {
 		color: var(--danger-ink);
 	}
