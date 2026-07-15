@@ -11,6 +11,7 @@
 	import EscapeMap from './EscapeMap.svelte';
 	import BrainCanvas from './BrainCanvas.svelte';
 	import type { WorldEntry } from '$lib/state';
+	import { SCENARIO } from '$lib/lab/scenario';
 
 	interface Props {
 		entry: WorldEntry;
@@ -20,8 +21,10 @@
 
 	type View = 'strategy' | 'wiring';
 	let view = $state<View>('strategy');
+	// The RULE segment takes the scenario's name ("Escape map"); "Wiring" is the network graph, which
+	// is scenario-independent, so it stays generic.
 	const options = [
-		{ value: 'strategy' as const, label: 'Escape map' },
+		{ value: 'strategy' as const, label: SCENARIO.policyMap.name },
 		{ value: 'wiring' as const, label: 'Wiring' }
 	];
 </script>

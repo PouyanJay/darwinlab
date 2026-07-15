@@ -47,6 +47,16 @@ export interface Scenario {
 	/** What "return" means here — the scalar selection maximises. */
 	objective: string;
 	observations: ObservationBinding[];
+	/**
+	 * The POLICY MAP — the agent's policy swept over the adversary's relative position and painted as
+	 * one readable disc. Generic across scenarios (a maze lab would sweep the goal's position instead);
+	 * these are the words THIS scenario gives it. `name` titles the panel and its toggle segment.
+	 */
+	policyMap: {
+		name: string;
+		/** The one-line description under the heading, in this scenario's terms. */
+		caption: string;
+	};
 }
 
 /**
@@ -84,7 +94,11 @@ export const PREDATOR_PREY: Scenario = {
 			binding: 'how fast it is gaining'
 		},
 		{ key: 'walls', short: 'walls', generic: 'boundary rays', binding: 'how near the glass is' }
-	]
+	],
+	policyMap: {
+		name: 'Escape map',
+		caption: 'what it does at every shark position'
+	}
 };
 
 /** The scenario the bench is currently pointed at. One today; a registry when there are more. */

@@ -16,12 +16,19 @@
 	import { drawEscapeMap, type EscapeMarker } from '$lib/render';
 	import { bench, theme, prefersReducedMotion } from '$lib/state';
 	import type { WorldEntry } from '$lib/state';
+	import { SCENARIO } from '$lib/lab/scenario';
 
 	interface Props {
 		entry: WorldEntry;
 	}
 
 	let { entry }: Props = $props();
+
+	// The scenario's own words — "shark", "fish", "Escape map" — so a maze lab reuses this panel
+	// with only scenario.ts changed (the sandbox pattern from Phase 12).
+	const agent = SCENARIO.agent.one;
+	const adversary = SCENARIO.adversary.one;
+	const policyMap = SCENARIO.policyMap;
 
 	// 'always': the map rides on top of the bench AND a playing scene alike, like the brain canvas.
 	const register = (render: () => void) => bench.painters.add(render, 'always');
@@ -59,33 +66,34 @@
 </script>
 
 <div class="head">
-	<span class="field-label">The escape rule: what it does at every shark position</span>
+	<span class="field-label">{policyMap.name}: {policyMap.caption}</span>
 </div>
 
 <div class="disc" class:flat>
 	<Canvas
 		{paint}
 		{register}
-		label="A polar map of this fish's evolved policy. The fish is at the centre facing up; each point
-		around it is a possible shark position (angle = bearing, distance from centre = range). The
-		colour is which way the fish steers there — cool turns left, warm turns right — and the
-		brightness is how hard it accelerates. A red ring marks where the shark actually is now."
+		label="A polar map of this {agent}'s evolved policy. The {agent} is at the centre facing up; each
+		point around it is a possible {adversary} position (angle = bearing, distance from centre =
+		range). The colour is which way the {agent} steers there — cool turns left, warm turns right —
+		and the brightness is how hard it accelerates. A red ring marks where the {adversary} actually
+		is now."
 	/>
 	{#if flat}
-		<p class="ignores">This fish ignores where the shark is.</p>
+		<p class="ignores">This {agent} ignores where the {adversary} is.</p>
 	{/if}
 </div>
 
 <div class="caveat">
-	Varies the shark's <b>bearing</b> and <b>distance</b> only; closing rate and wall pressure are held
-	fixed, so a fish that reads just those senses shows flat here.
+	Varies the {adversary}'s <b>bearing</b> and <b>distance</b> only; closing rate and wall pressure
+	are held fixed, so a {agent} that reads just those senses shows flat here.
 </div>
 
 <div class="legend">
 	<span><span class="swatch left"></span>turns left</span>
 	<span><span class="swatch right"></span>turns right</span>
 	<span>bright = bolts</span>
-	<span><span class="dot"></span>shark now</span>
+	<span><span class="dot"></span>{adversary} now</span>
 </div>
 
 <style>

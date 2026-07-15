@@ -35,7 +35,7 @@ test('★ Champion opens a live mind, and the bench keeps running behind it', as
 	await expect(inspector(page)).toBeVisible();
 	await expect(inspector(page)).toContainText('one real evolved brain in “Full senses”');
 	// It opens on the readable policy — the escape map — by default...
-	await expect(inspector(page)).toContainText('The escape rule');
+	await expect(inspector(page)).toContainText('what it does at every shark position');
 	// ...and this fish's real 68 weights are one toggle away.
 	await inspector(page).getByRole('radio', { name: 'Wiring' }).click();
 	await expect(inspector(page)).toContainText('68 genes');
