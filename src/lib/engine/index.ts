@@ -18,6 +18,7 @@ export * from './types';
 export * from './network';
 export * from './genetics';
 export * from './sensing';
+export * from './probe';
 export * from './flee';
 export * from './world';
 export * from './exhibit';
