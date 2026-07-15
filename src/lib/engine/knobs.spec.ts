@@ -58,35 +58,31 @@ describe('the dart (lunge)', () => {
 	// Its own timeout: this test evolves several worlds AND runs long bouts, so under full-suite
 	// contention it drifts past the 5s default — which is a timeout dressed as a failure, not a real
 	// one (the values are deterministic and hugely separated). See CLAUDE.md on CPU-heavy tests.
-	it(
-		'is where most of the killing comes from — off, far more of a good population survives',
-		() => {
-			/*
-			 * The honest finding the UI states, and it corrected my first guess. A cruise-only shark is
-			 * NOT toothless: interception, cornering and imperfect fleeing still catch a good share of an
-			 * evolved generation. But the STRIKE catches nearly all of it. So the true claim is not
-			 * "nothing dies" — it is "the dart is doing most of the killing".
-			 *
-			 * Measured, 5 seeds: dart-on survival averages ~6%, dart-off ~28%. That is a ~5× gap, so
-			 * two seeds are plenty to pin the RELATIONSHIP without turning the test into a CPU hog.
-			 */
-			const survivors = (lunge: boolean, seed: number) => {
-				const w = makeWorld({ ...DIRECTION, lunge } as WorldConfig, undefined, seededRng(seed));
-				while (w.gen < 40) stepWorld(w, 1 / 60);
-				w.maxGen = 1;
-				w.gen = 1;
-				const start = w.fish.length;
-				for (let i = 0; i < 20 * 60; i++) stepWorld(w, 1 / 60);
-				return w.fish.length / start;
-			};
+	it('is where most of the killing comes from — off, far more of a good population survives', () => {
+		/*
+		 * The honest finding the UI states, and it corrected my first guess. A cruise-only shark is
+		 * NOT toothless: interception, cornering and imperfect fleeing still catch a good share of an
+		 * evolved generation. But the STRIKE catches nearly all of it. So the true claim is not
+		 * "nothing dies" — it is "the dart is doing most of the killing".
+		 *
+		 * Measured, 5 seeds: dart-on survival averages ~6%, dart-off ~28%. That is a ~5× gap, so
+		 * two seeds are plenty to pin the RELATIONSHIP without turning the test into a CPU hog.
+		 */
+		const survivors = (lunge: boolean, seed: number) => {
+			const w = makeWorld({ ...DIRECTION, lunge } as WorldConfig, undefined, seededRng(seed));
+			while (w.gen < 40) stepWorld(w, 1 / 60);
+			w.maxGen = 1;
+			w.gen = 1;
+			const start = w.fish.length;
+			for (let i = 0; i < 20 * 60; i++) stepWorld(w, 1 / 60);
+			return w.fish.length / start;
+		};
 
-			const mean = (lunge: boolean) => [1, 2].reduce((sum, s) => sum + survivors(lunge, s), 0) / 2;
-			const withDart = mean(true);
-			const withoutDart = mean(false);
+		const mean = (lunge: boolean) => [1, 2].reduce((sum, s) => sum + survivors(lunge, s), 0) / 2;
+		const withDart = mean(true);
+		const withoutDart = mean(false);
 
-			expect(withDart).toBeLessThan(0.35); // the strike catches most of a generation
-			expect(withoutDart).toBeGreaterThan(withDart * 1.6); // the dart is doing most of the killing
-		},
-		20_000
-	);
+		expect(withDart).toBeLessThan(0.35); // the strike catches most of a generation
+		expect(withoutDart).toBeGreaterThan(withDart * 1.6); // the dart is doing most of the killing
+	}, 20_000);
 });
