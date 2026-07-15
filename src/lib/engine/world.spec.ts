@@ -214,6 +214,41 @@ describe('applyCfg', () => {
 	});
 });
 
+describe('confusion — isolation-hunting (the reason a school pays)', () => {
+	/**
+	 * Lay a tight cluster right next to the shark and one lone straggler farther away, then take a
+	 * single tick so `assignPredatorTargets` runs on the layout we placed. With the confusion effect
+	 * on, the shark must pass over the nearer crowd for the exposed fish; off, it takes the nearest.
+	 * Positions are pinned by hand (makeWorld randomises), and predators trimmed to one.
+	 */
+	function stagedWorld(confusion: boolean): World {
+		const w = makeWorld(cfg({ preds: 1, prey: 5, confusion }), undefined, seededRng(1));
+		applyCfg(w); // trim the gen-0 double predators to the one this test reasons about
+		const p = w.preds[0];
+		p.x = 100;
+		p.y = 60;
+		const [lone, ...cluster] = w.fish;
+		lone.x = 300; // far, but utterly alone
+		lone.y = 60;
+		cluster.forEach((f, i) => {
+			f.x = 100 + (i - 1) * 8; // four bodies packed around (100,100), ~40px from the shark
+			f.y = 100;
+		});
+		stepWorld(w, dt);
+		return w;
+	}
+
+	it('passes over the near crowd for the isolated straggler', () => {
+		const w = stagedWorld(true);
+		expect(w.preds[0]._tgt).toBe(w.fish[0]); // the lone fish, though it is the FARTHEST
+	});
+
+	it('SABOTAGE: with confusion off, the same shark takes the nearest (crowded) fish', () => {
+		const w = stagedWorld(false);
+		expect(w.preds[0]._tgt).not.toBe(w.fish[0]); // nearest-unclaimed — a cluster fish
+	});
+});
+
 describe('resetWorld', () => {
 	it('returns to a fresh generation 0 with cleared learning', () => {
 		const w = makeWorld(cfg(), undefined, seededRng(1));

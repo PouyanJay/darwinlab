@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
 	NIN,
 	NIN_WITH_SPEED,
+	NIN_WITH_SHOAL,
 	NHID,
 	NOUT,
 	GLEN,
@@ -27,9 +28,10 @@ describe('network architecture', () => {
 	});
 
 	it('labels the inputs and their gating sense correctly', () => {
-		// Nine slots exist, but only the first eight belong to the REFERENCE brain — the ninth
-		// is proprioception, and only a 9-input world ever reads it.
-		expect(IN_LABELS).toHaveLength(NIN_WITH_SPEED);
+		// Fourteen slots exist, but only the first eight belong to the REFERENCE brain: slot 8 is
+		// proprioception (9-input worlds), slots 9–13 are the shoal sense (14-input worlds). Each is
+		// read only by a world whose brains carry it.
+		expect(IN_LABELS).toHaveLength(NIN_WITH_SHOAL);
 		expect(IN_SENSE).toEqual([
 			null,
 			'dist',
@@ -39,8 +41,14 @@ describe('network architecture', () => {
 			'walls',
 			'walls',
 			'walls',
-			'speed'
+			'speed',
+			'cohesion',
+			'cohesion',
+			'cohesion',
+			'align',
+			'align'
 		]);
+		expect(IN_SENSE[NIN_WITH_SPEED - 1]).toBe('speed'); // the proprioceptive slot sits at 8
 		expect(IN_LABELS.slice(0, NIN)).not.toContain('own speed');
 		expect(OUT_LABELS).toEqual(['turn', 'thrust']);
 	});

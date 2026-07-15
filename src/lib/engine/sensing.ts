@@ -11,11 +11,20 @@
  */
 
 import { clamp } from './math';
-import { CLOSING_NORM, WALL_RAY_NORM, MAXSPEED } from './constants';
+import {
+	CLOSING_NORM,
+	WALL_RAY_NORM,
+	MAXSPEED,
+	SOCIAL_RADIUS,
+	SHOAL_DENSITY_NORM
+} from './constants';
 import { NIN } from './network';
 import type { World, Fish, Predator, SenseResult } from './types';
 
-export function senseInputs(w: Pick<World, 'cfg' | 'preds'>, f: Fish): SenseResult {
+export function senseInputs(
+	w: Pick<World, 'cfg' | 'preds'> & { fish?: Fish[] },
+	f: Fish
+): SenseResult {
 	const c = w.cfg;
 	const S = c.senses;
 
@@ -85,6 +94,46 @@ export function senseInputs(w: Pick<World, 'cfg' | 'preds'>, f: Fish): SenseResu
 	// Normalised by the agent's OWN top speed, not the constant: in a world where the fish max out at
 	// 250, a fish going 250 must read 1.0, not 250/176.
 	if (nin > 8 && S.speed) x[8] = clamp(Math.hypot(f.vx, f.vy) / (w.cfg.maxSpeed ?? MAXSPEED), 0, 1);
+
+	// slots 9–13 — the SHOAL sense (cohesion + alignment). Unlike every slot above, it is about
+	// OTHER FISH, not the predator: a single scan of the neighbours within `socialRadius` yields
+	// how crowded it is (density), which way their centre-of-mass lies (cohesion), and which way
+	// they are collectively pointing (alignment). Ablated like the rest — off feeds 0. The bearings
+	// are relative to the fish's own heading (sin/cos), the same encoding the direction sense uses,
+	// so the network reads "turn toward the group" the same way it reads "turn away from the shark".
+	// Absent `w.fish` (staged single-fish trials — the flee assay) there is no shoal, so 0 is right.
+	if (nin > 8 && (S.cohesion || S.align) && w.fish) {
+		const R = c.socialRadius ?? SOCIAL_RADIUS;
+		let n = 0;
+		let sx = 0;
+		let sy = 0;
+		let hx = 0;
+		let hy = 0;
+		for (const o of w.fish) {
+			if (o === f) continue;
+			const dx = o.x - f.x;
+			const dy = o.y - f.y;
+			if (Math.hypot(dx, dy) >= R) continue;
+			n++;
+			sx += dx;
+			sy += dy;
+			hx += Math.cos(o.heading);
+			hy += Math.sin(o.heading);
+		}
+		if (n > 0) {
+			if (S.cohesion) {
+				x[9] = clamp(n / SHOAL_DENSITY_NORM, 0, 1);
+				const com = Math.atan2(sy, sx) - f.heading;
+				x[10] = Math.sin(com);
+				x[11] = Math.cos(com);
+			}
+			if (S.align) {
+				const mean = Math.atan2(hy, hx) - f.heading;
+				x[12] = Math.sin(mean);
+				x[13] = Math.cos(mean);
+			}
+		}
+	}
 
 	return { x, np, dist: np ? nd : Infinity, inVis, dirDeg, closing, wallFront: wF };
 }

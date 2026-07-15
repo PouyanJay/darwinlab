@@ -30,6 +30,18 @@ export interface Senses {
 	 * in an 8-input world this flag has nothing to gate. Reference worlds never have it.
 	 */
 	speed?: boolean;
+	/**
+	 * COHESION — the shoal. A sense of OTHER FISH, not the predator: how many neighbours are
+	 * near (density) and which way their centre-of-mass lies. It is the lever cohesion needs —
+	 * a brain can only steer TOWARD a group it can feel. Slots 9–11, present only in worlds
+	 * whose brains carry them (`brainInputs: 14`). Reference worlds never have it.
+	 */
+	cohesion?: boolean;
+	/**
+	 * ALIGNMENT — the mean heading of nearby neighbours. What turns a clump into a school: a
+	 * fish that can feel which way its shoal is pointing can swim AS ONE with it. Slots 12–13.
+	 */
+	align?: boolean;
 }
 
 /** Per-world configuration (the Conditions schema, README §7 / spec §16). */
@@ -131,6 +143,24 @@ export interface WorldConfig {
 	 * is not a bug; it is the answer to "what does the dart buy?", and the UI says so.
 	 */
 	lunge?: boolean;
+
+	// ---- schooling (Phase 14) — all optional, all default OFF so reference worlds and the
+	//      fidelity gate are untouched (a disabled mechanic draws no randomness and changes no slot) ----
+	/**
+	 * THE CONFUSION EFFECT — the reason to group. When on, a shark's strike degrades the more
+	 * prey are packed around its target: the wind-up telegraphs longer (it hesitates) and the
+	 * committed lunge vector jitters (it mis-strikes). A crowded target is a hard target, so a
+	 * fish in a swarm genuinely out-survives a loner — and grouping can finally pay. Reference =
+	 * off (the shark singles out any fish, crowd or no crowd, so grouping buys nothing). Nothing
+	 * about flocking is programmed: this only makes it PAY. Whether schools then evolve is measured.
+	 */
+	confusion?: boolean;
+	/** Radius around the target that counts as its crowd. Reference-irrelevant; default 45px. */
+	confusionRadius?: number;
+	/** How hard a full crowd degrades the strike, 0..1. Default 1. Only meaningful with confusion on. */
+	confusionStrength?: number;
+	/** Radius the shoal sense (cohesion/align) summarises neighbours over. Default 70px. */
+	socialRadius?: number;
 }
 
 export interface Fish {

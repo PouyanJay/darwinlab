@@ -21,7 +21,13 @@ import {
 	CURVE_SMOOTH_PREV,
 	CURVE_SMOOTH_RAW,
 	CURVE_MAX_POINTS,
-	DECAY_SAMPLE_INTERVAL
+	DECAY_SAMPLE_INTERVAL,
+	CONFUSION_RADIUS,
+	CONFUSION_CROWD_CAP,
+	CONFUSION_MAX_JITTER,
+	CONFUSION_TELEGRAPH_K,
+	CONFUSION_CATCH_SHRINK,
+	ISOLATION_WEIGHT
 } from './constants';
 import { makeGenome, forward, NIN } from './network';
 import { cloneGenome, breed } from './genetics';
@@ -314,13 +320,36 @@ const claimedScratch = new Set<Fish>();
  * Give each shark a DISTINCT target (greedy nearest-unclaimed) so they spread across the
  * population instead of dogpiling one fish. If everything is claimed, fall back to the
  * nearest overall.
+ *
+ * ISOLATION-HUNTING (confusion on): a fish's targeting score is its distance PLUS a penalty for how
+ * crowded it is, so the shark passes over a surrounded fish for the exposed one. This is the whole
+ * reason a school pays — the interior is the safe place — and it is a bias, not a rule: `_td` stays
+ * the true distance (the strike still arms on real range), and the least-crowded fish is always
+ * targetable, so a group is never uncatchable. Off (default), score = distance and this is the
+ * reference's exact nearest-unclaimed pick (no crowd scan, bit-exact).
  */
 function assignPredatorTargets(w: World): void {
 	const claimed = claimedScratch;
 	claimed.clear();
+	const confuse = w.cfg.confusion ?? false;
+	const R = w.cfg.confusionRadius ?? CONFUSION_RADIUS;
+	const iso = ISOLATION_WEIGHT * (w.cfg.confusionStrength ?? 1);
 	for (const p of w.preds) {
-		let { best, bd } = nearestFish(w.fish, p, claimed);
+		let best: Fish | null = null;
+		let bestScore = Infinity;
+		let bd = 1e9;
+		for (const f of w.fish) {
+			if (claimed.has(f)) continue;
+			const d = Math.hypot(f.x - p.x, f.y - p.y);
+			const score = confuse ? d + crowdAround(f, w.fish, R) * iso : d;
+			if (score < bestScore) {
+				bestScore = score;
+				best = f;
+				bd = d;
+			}
+		}
 		if (!best) {
+			// everything claimed — take the nearest overall so a shark never idles mid-hunt
 			({ best, bd } = nearestFish(w.fish, p, null));
 		} else {
 			claimed.add(best);
@@ -328,6 +357,23 @@ function assignPredatorTargets(w: World): void {
 		p._tgt = best;
 		p._td = bd;
 	}
+}
+
+/**
+ * THE CONFUSION EFFECT — how crowded the shark's target is, 0 (a loner) to 1 (a full swarm).
+ *
+ * This is the only thing that makes grouping pay: nothing rewards a fish for schooling, but a
+ * crowded target is one the shark strikes late and wide (see updatePredators). The count excludes
+ * the target itself and saturates at CONFUSION_CROWD_CAP. Nothing about flocking is programmed here
+ * — this makes a swarm SAFER; whether swarms then evolve is what the bench measures.
+ */
+function crowdAround(target: Fish, fish: Fish[], radius: number): number {
+	let n = 0;
+	for (const o of fish) {
+		if (o === target) continue;
+		if (Math.hypot(o.x - target.x, o.y - target.y) < radius) n++;
+	}
+	return Math.min(1, n / CONFUSION_CROWD_CAP);
 }
 
 /** Predator physics: the cruise → aim → lunge state machine, interception, and eating. */
@@ -346,6 +392,14 @@ function updatePredators(w: World, dt: number, frust: number, catchR: number): v
 			// ferocity only exists for committed strikes: faster, shorter-telegraphed lunges
 			// that position alone can no longer dodge — feeling them COMING is the edge.
 			const ferocity = commit ? (c.lungeFerocity ?? 1) : 1;
+			// THE CONFUSION EFFECT (default 0): how packed this target is, scaled by strength. It
+			// arrives two ways below — a longer telegraph when the aim arms (the shark hesitates)
+			// and angular error on the committed lunge vector (it mis-strikes). Off, the shark
+			// singles out any fish crowd or no crowd, and grouping buys nothing.
+			const conf = c.confusion
+				? (c.confusionStrength ?? 1) *
+					crowdAround(best, w.fish, c.confusionRadius ?? CONFUSION_RADIUS)
+				: 0;
 			if (!darts) {
 				// No strike: the aim/lunge machine never arms, so the shark below stays in its cruise
 				// branch (p.lunge and p.aim are both 0) and simply chases at cruise speed.
@@ -363,12 +417,25 @@ function updatePredators(w: World, dt: number, frust: number, catchR: number): v
 						const lx = best.x + best.vx * lead;
 						const ly = best.y + best.vy * lead;
 						const ld = Math.hypot(lx - p.x, ly - p.y) || 1;
-						p._lockx = (lx - p.x) / ld;
-						p._locky = (ly - p.y) / ld;
+						let vx = (lx - p.x) / ld;
+						let vy = (ly - p.y) / ld;
+						// a crowded target throws the strike off: rotate the locked vector by an error
+						// that grows with the crowd. The rng draw is gated on conf > 0 (confusion on),
+						// so a reference world draws nothing here and stays bit-exact.
+						if (conf > 0) {
+							const jit = (w.rng() * 2 - 1) * conf * CONFUSION_MAX_JITTER;
+							const cs = Math.cos(jit);
+							const sn = Math.sin(jit);
+							[vx, vy] = [vx * cs - vy * sn, vx * sn + vy * cs];
+						}
+						p._lockx = vx;
+						p._locky = vy;
 					}
 				}
 			} else if (p.lunge <= 0 && p.cool <= 0 && bd < 135) {
-				p.aim = commit ? 0.3 / Math.max(1, ferocity) : 0.3;
+				// a crowd makes the shark hesitate: the telegraph stretches with the confusion factor.
+				const aim = commit ? 0.3 / Math.max(1, ferocity) : 0.3;
+				p.aim = aim * (1 + conf * CONFUSION_TELEGRAPH_K);
 			}
 			let dirx: number;
 			let diry: number;
@@ -453,7 +520,16 @@ function updatePredators(w: World, dt: number, frust: number, catchR: number): v
 		// eating: permanent elimination in both modes
 		for (let i = w.fish.length - 1; i >= 0; i--) {
 			const f = w.fish[i];
-			if (Math.hypot(f.x - p.x, f.y - p.y) < catchR) {
+			// THE SELFISH HERD: a fish packed among neighbours is hard to grab even on contact, so
+			// the catch radius shrinks with ITS OWN crowd — the interior of a school is safe, a lone
+			// or edge fish is not. This is the gradient that makes grouping pay. Off (default), every
+			// fish is caught at the same 14px and grouping buys nothing.
+			let cr = catchR;
+			if (c.confusion) {
+				const crowd = crowdAround(f, w.fish, c.confusionRadius ?? CONFUSION_RADIUS);
+				cr = catchR * (1 - (c.confusionStrength ?? 1) * crowd * CONFUSION_CATCH_SHRINK);
+			}
+			if (Math.hypot(f.x - p.x, f.y - p.y) < cr) {
 				if (w.selFish === f) {
 					w.selFish = null;
 					w.sense = null;

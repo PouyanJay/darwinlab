@@ -8,6 +8,8 @@
  * Input slots (a disabled sense feeds 0 → a true ablation, see sensing.ts):
  *   0 bias · 1 distance · 2 dir→x · 3 dir→y · 4 closing · 5 wall L · 6 wall F · 7 wall R
  *   8 own speed  ← the PROPRIOCEPTIVE slot, present only in 9-input worlds
+ *   9 shoal density · 10 shoal→x · 11 shoal→y  ← COHESION, present only in 14-input worlds
+ *   12 align→x · 13 align→y  ← ALIGNMENT (the mean heading of nearby neighbours)
  *
  * WHY THE INPUT COUNT IS DERIVED FROM THE GENOME, not a global constant: the reference
  * engine's brain has exactly 8 inputs and 68 weights, and the fidelity gate asserts our
@@ -25,6 +27,8 @@ import type { Genome, ForwardResult, Senses } from './types';
 export const NIN = 8;
 /** With the proprioceptive slot: the fish can feel its own speed. */
 export const NIN_WITH_SPEED = 9;
+/** With the shoal sense (cohesion slots 9–11 + alignment slots 12–13): the fish can feel its shoal. */
+export const NIN_WITH_SHOAL = 14;
 export const NHID = 6;
 export const NOUT = 2;
 
@@ -49,7 +53,12 @@ export const IN_LABELS = [
 	'wall L',
 	'wall F',
 	'wall R',
-	'own speed'
+	'own speed',
+	'shoal density',
+	'shoal → x',
+	'shoal → y',
+	'align → x',
+	'align → y'
 ];
 /** Which sense gates each input slot (null = ungated, always on). */
 export const IN_SENSE: (keyof Senses | null)[] = [
@@ -61,7 +70,12 @@ export const IN_SENSE: (keyof Senses | null)[] = [
 	'walls',
 	'walls',
 	'walls',
-	'speed'
+	'speed',
+	'cohesion',
+	'cohesion',
+	'cohesion',
+	'align',
+	'align'
 ];
 export const OUT_LABELS = ['turn', 'thrust'];
 
