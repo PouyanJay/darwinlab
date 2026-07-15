@@ -13,7 +13,7 @@
 <script lang="ts">
 	import Drawer from '../common/Drawer.svelte';
 	import SenseBars from './SenseBars.svelte';
-	import BrainCanvas from './BrainCanvas.svelte';
+	import BrainView from './BrainView.svelte';
 	import MotorOutputs from './MotorOutputs.svelte';
 	import AblationCard from './AblationCard.svelte';
 	import IntelligenceLadder from './IntelligenceLadder.svelte';
@@ -70,7 +70,7 @@
 			<div class="bars"><SenseBars {entry} /></div>
 		</div>
 
-		<div class="section"><BrainCanvas {entry} /></div>
+		<div class="section"><BrainView {entry} /></div>
 
 		<div class="section">
 			<div class="field-label">Motor outputs</div>

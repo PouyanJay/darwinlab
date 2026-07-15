@@ -208,5 +208,7 @@ test('nothing here is a recording: a fish can be stopped and read mid-scene', as
 
 	const inspector = page.getByRole('dialog', { name: /Fish mind/ });
 	await expect(inspector).toBeVisible();
+	await expect(inspector).toContainText('The escape rule'); // opens on the escape map by default
+	await inspector.getByRole('radio', { name: 'Wiring' }).click();
 	await expect(inspector).toContainText('68 genes'); // a real evolved brain, inside the film
 });

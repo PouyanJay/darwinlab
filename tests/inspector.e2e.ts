@@ -34,6 +34,10 @@ test('★ Champion opens a live mind, and the bench keeps running behind it', as
 
 	await expect(inspector(page)).toBeVisible();
 	await expect(inspector(page)).toContainText('one real evolved brain in “Full senses”');
+	// It opens on the readable policy — the escape map — by default...
+	await expect(inspector(page)).toContainText('The escape rule');
+	// ...and this fish's real 68 weights are one toggle away.
+	await inspector(page).getByRole('radio', { name: 'Wiring' }).click();
 	await expect(inspector(page)).toContainText('68 genes');
 
 	// NOT a modal: you inspect a brain while watching it swim, so the bench behind stays live and
@@ -59,6 +63,9 @@ test('the panel is alive: the numbers move because the fish is thinking', async 
 test('ABLATION: cutting the closing-speed neuron really changes the brain', async ({ page }) => {
 	await tile(page, 4).getByRole('button', { name: 'Champion' }).click(); // Full senses — the only world with closing speed on
 	await expect(inspector(page)).toContainText('closing speed');
+
+	// The fingerprint reads the WIRING view, so switch to it (the panel opens on the escape map).
+	await inspector(page).getByRole('radio', { name: 'Wiring' }).click();
 
 	// Pause: the brain canvas animates its signal pulses every frame, so against a running sim its
 	// pixels would change regardless and this test would prove nothing.
