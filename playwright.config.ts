@@ -4,6 +4,16 @@ export default defineConfig({
 	webServer: { command: 'npm run build && npm run preview', port: 4173 },
 	testMatch: '**/*.e2e.{ts,js}',
 	/*
+	 * ONE WORKER ON CI. Nearly every test here drives the real sim loop — a visibility-safe timer
+	 * stepping five live tanks — and parallel workers on a 2-vCPU runner starve each other's loops. A
+	 * starved loop advances the world too slowly, so a DIFFERENT timing assertion misses on each run
+	 * (a story stuck a generation behind, an arrow-walk landing before a creature spawned). That is the
+	 * exact "different test fails each run under contention" pattern CLAUDE.md warns about, and it is
+	 * why there are no retries: a flake retried into green is a flake nobody fixes. Serial on CI is
+	 * slower and deterministic. Local stays parallel for a fast iteration loop.
+	 */
+	workers: process.env.CI ? 1 : undefined,
+	/*
 	 * Two projects, and the second waits for the first.
 	 *
 	 * The measurement tests (n-seed evaluation, ablation matrix) burn real CPU — they replicate
