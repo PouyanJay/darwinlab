@@ -35,7 +35,11 @@ test('opens on the first scene: the world that was given nothing', async ({ page
 	// remains of one", and the bench's Blind drift is typically down to a third by now.
 	await expect(story(page).getByTestId('story-alive')).toHaveText(/^(1[89]|20)$/);
 	await expect(story(page)).toContainText('/ 20'); // …out of the full generation
-	await expect(story(page)).toContainText('Gen 15'); // …bred to the generation the bench reached
+	// …bred to AT LEAST the generation the prewarm reached (15). Not an exact 15: Blind drift's
+	// population collapses, and a generation ends the instant its last fish is eaten — so by the time
+	// the film rolls this world may already have churned a generation or two past the prewarm target.
+	// A slow CI runner made that visible; the claim is "the bench's real generation, not gen 0".
+	await expect(story(page)).toContainText(/Gen (1[5-9]|[2-9]\d)/);
 });
 
 test('the rail tags the sense each scene ADDS — the reason the scenes are in this order', async ({
