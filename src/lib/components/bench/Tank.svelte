@@ -106,6 +106,6 @@
 	onhover={hover}
 	onleave={leave}
 	{onkeydown}
-	label="{entry.config.name} tank — {entry.stats.alive} prey alive, generation {entry.stats
-		.gen}. Click a creature — or focus the tank and use the arrow keys — to inspect its brain."
+	label="{entry.config.name} tank, {entry.stats.alive} prey alive, generation {entry.stats
+		.gen}. Click a creature, or focus the tank and use the arrow keys, to inspect its brain."
 />

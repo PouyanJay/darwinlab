@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { makeWorld, stepWorld, seededRng, DEFAULT_WORLDS } from './index';
-import { championGenome, makeExhibit, exhibitSpent, bottleneck } from './exhibit';
+import { championGenome, makeExhibit, exhibitSpent } from './exhibit';
 import type { World } from './types';
 
 /**
@@ -133,42 +133,5 @@ describe('makeExhibit', () => {
 
 		exhibit.fish = []; // the sharks got the last one
 		expect(exhibitSpent(exhibit)).toBe(true); // …and nothing will bring it back: the store re-clones
-	});
-});
-
-describe('bottleneck', () => {
-	it('replaces the population with the champion — and KEEPS the run', () => {
-		const w = evolved(4);
-		const champion = Array.from(championGenome(w)!);
-		const gen = w.gen;
-		const curve = [...w.lifeCurve];
-
-		const at = bottleneck(w);
-
-		expect(at).toBe(gen); // it reports where it struck, so the curve can be marked
-		expect(w.gen).toBe(gen); // the run did not restart…
-		expect(w.lifeCurve).toEqual(curve); // …and it did not lose its history
-		expect(w.fish).toHaveLength(cfg.prey);
-		for (const f of w.fish) expect(Array.from(f.genome)).toEqual(champion); // all one lineage now
-	});
-
-	it('leaves evolution able to carry on from the clones', () => {
-		const w = evolved(4);
-		bottleneck(w);
-		const gen = w.gen;
-
-		// A generation here is 30 sim-seconds (DEFAULT_WORLDS), not the engine's bare 10.
-		for (let i = 0; i < 35 * 60; i++) stepWorld(w, 1 / 60);
-
-		expect(w.gen).toBeGreaterThan(gen); // generations still turn — this is not a frozen tank
-		expect(w.lifeCurve.length).toBeGreaterThan(0);
-	});
-
-	it('refuses on a world with no champion, rather than enshrining a random fish', () => {
-		const fresh = makeWorld(cfg, undefined, seededRng(1));
-		// Nothing has earned anything yet. A bottleneck here would make a random brain the ancestor of
-		// every fish that ever swims in this world — on no evidence whatsoever.
-		expect(bottleneck(fresh)).toBeNull();
-		expect(fresh.fish).toHaveLength(cfg.prey); // and the population is left exactly as it was
 	});
 });

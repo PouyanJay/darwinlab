@@ -11,12 +11,10 @@
  * WHAT IT IS NOT. It is not evolution. Nothing in an exhibit breeds, is selected, is scored, or
  * writes to a learning curve. It is a copy of a genome put in water so you can look at it, and the
  * run it was copied from is not touched by the looking.
- *
- * The bottleneck below is the exception, and it is deliberately the loud one — see its own note.
  */
 
 import { cloneGenome } from './genetics';
-import { makeWorld, makeFish, applyCfg } from './world';
+import { makeWorld, applyCfg } from './world';
 import { defaultRng, type Rng } from './rng';
 import type { Genome, World } from './types';
 
@@ -81,41 +79,4 @@ export function makeExhibit(w: World, genome: Genome, rng: Rng = defaultRng): Wo
 /** Has this exhibit run itself out? (Everything eaten — nothing will respawn, by design.) */
 export function exhibitSpent(exhibit: World): boolean {
 	return exhibit.fish.length === 0;
-}
-
-/**
- * THE CLONAL BOTTLENECK — the one mode here that is an intervention rather than a view.
- *
- * It replaces the living population with copies of the champion and lets evolution carry on from
- * there. That is a real event with real consequences: variation collapses to zero, every subsequent
- * generation is descended from one individual, and the run's curve records what happened next. It is
- * genuinely interesting — it is a founder effect, and you can watch diversity rebuild from mutation
- * alone — but it is NOT undoable, and the run afterwards is a different run.
- *
- * So it returns the generation it struck at, and the caller is expected to mark it: an intervention
- * that is not recorded is a lie by omission, and a learning curve with an unmarked cliff in it is
- * exactly the kind of chart this product exists to argue against.
- */
-export function bottleneck(w: World): number | null {
-	const genome = championGenome(w);
-	if (!genome) return null;
-
-	// The generation is respawned FROM THE CHAMPION — same gen, same curve, same history. What
-	// changes is who is in the water, which is the whole point of the intervention.
-	w.fish = [];
-	w.roster = [];
-	w.eaten = 0;
-	w.genT = 0;
-	w.bursts = [];
-	w.selFish = null;
-	w.sense = null;
-	w.hover = null;
-	w.championFish = null;
-
-	for (let i = 0; i < w.cfg.prey; i++) {
-		const f = makeFish(w.cfg, cloneGenome(genome), w.rng);
-		w.fish.push(f);
-		w.roster.push(f);
-	}
-	return w.gen;
 }

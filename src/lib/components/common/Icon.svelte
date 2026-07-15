@@ -28,7 +28,6 @@
 		| 'chevron-right'
 		| 'episodes'
 		| 'flask'
-		| 'bottleneck'
 		| 'compass';
 
 	interface Props {
@@ -106,9 +105,6 @@
 	{:else if name === 'compass'}
 		<circle cx="12" cy="12" r="9" />
 		<path d="M15.5 8.5l-2.1 5-5 2.1 2.1-5z" />
-	{:else if name === 'bottleneck'}
-		<!-- a funnel: a whole population goes in, one lineage comes out -->
-		<path d="M3.5 4.5h17l-6.5 7.5v7l-4 2.5v-9.5z" />
 	{:else if name === 'flask'}
 		<path
 			d="M9.5 3.5h5M10.5 3.5v6L5.8 17a2.4 2.4 0 0 0 2 3.5h8.4a2.4 2.4 0 0 0 2-3.5l-4.7-7.5v-6"

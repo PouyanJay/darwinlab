@@ -80,7 +80,7 @@
 
 		{#if stale}
 			<p class="warn" data-testid="eval-stale">
-				The configuration changed since this was measured — it is no longer an answer to the
+				The configuration changed since this was measured, so it is no longer an answer to the
 				question you are now asking. <button onclick={() => evals.run(entry.id, cfg)}>
 					Re-evaluate
 				</button>

@@ -80,7 +80,7 @@ export const DEFAULT_WORLDS: WorldConfig[] = [
 		...SHOWCASE_OCEAN,
 		senses: { dist: true, dir: false, closing: false, walls: false },
 		caption:
-			'One input: how close danger is. They learn to bolt when it nears — but blind to direction, half of them bolt straight into the jaws. It barely beats sensing nothing at all.'
+			'One input: how close danger is. They learn to bolt when it nears, but blind to direction, half of them bolt straight into the jaws. It barely beats sensing nothing at all.'
 	},
 	{
 		name: 'Direction',
@@ -89,7 +89,7 @@ export const DEFAULT_WORLDS: WorldConfig[] = [
 		...SHOWCASE_OCEAN,
 		senses: { dist: true, dir: true, closing: false, walls: false },
 		caption:
-			'Add the direction it is coming from, and they finally flee the right way — and because this shark is slower than they are, fleeing the right way now means getting away. The biggest single jump on the bench.'
+			'Add the direction it is coming from, and they finally flee the right way. And because this shark is slower than they are, fleeing the right way now means getting away. The biggest single jump on the bench.'
 	},
 	{
 		name: 'Corner-wise',
@@ -98,7 +98,7 @@ export const DEFAULT_WORLDS: WorldConfig[] = [
 		...SHOWCASE_OCEAN,
 		senses: { dist: true, dir: true, closing: false, walls: true },
 		caption:
-			'These fish have no instinct to avoid walls — nothing here does. Give them wall sensors and they learn to stop cornering themselves, which is where a fleeing fish otherwise dies.'
+			'These fish have no instinct to avoid walls; nothing here does. Give them wall sensors and they learn to stop cornering themselves, which is where a fleeing fish otherwise dies.'
 	},
 	{
 		name: 'Full senses',
@@ -107,7 +107,7 @@ export const DEFAULT_WORLDS: WorldConfig[] = [
 		...SHOWCASE_OCEAN,
 		senses: { dist: true, dir: true, closing: true, walls: true },
 		caption:
-			'Everything switched on, closing speed included: they feel the lunge coming and cut away early, and the shark — committed to its strike — sails right past. The top of the ladder, and it had to be earned one danger at a time.'
+			'Everything switched on, closing speed included: they feel the lunge coming and cut away early, and the shark, committed to its strike, sails right past. The top of the ladder, and it had to be earned one danger at a time.'
 	}
 ];
 

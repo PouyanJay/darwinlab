@@ -80,21 +80,7 @@ export function drawCurve(
 	H: number,
 	curve: number[],
 	accent: string,
-	theme: ThemeName,
-	/**
-	 * Where the run was deliberately INTERVENED IN — today, a clonal bottleneck — as INDICES into
-	 * `curve`, not as generation numbers.
-	 *
-	 * Indices, because the series scrolls: it shift()s once it passes CURVE_MAX_POINTS, so generation
-	 * 40 is not point 40 for long. Resolving a generation to a point needs to know which generation
-	 * the series now starts at, and only the caller knows that. A painter that guessed would draw the
-	 * mark in the wrong place — which is worse than not drawing it, because a mark in the wrong place
-	 * is a claim about a generation that did not have one.
-	 *
-	 * They are marked at all because a curve that drops off a cliff and does not say why is exactly
-	 * the kind of chart this product exists to argue against.
-	 */
-	marks: number[] = []
+	theme: ThemeName
 ): void {
 	drawSparkline(ctx, W, H, curve, theme, {
 		color: accent,
@@ -102,24 +88,6 @@ export function drawCurve(
 		baselineAlpha: 0.18,
 		fillAlpha: 0.13
 	});
-
-	if (!marks.length || curve.length < 2) return;
-
-	// A dashed gold rule where the population was replaced by hand. Gold, because that is the
-	// champion's colour, and a bottleneck is the moment the champion became everybody.
-	ctx.save();
-	ctx.strokeStyle = THEMES[theme].gold;
-	ctx.lineWidth = 1;
-	ctx.setLineDash([2, 2]);
-	for (const index of marks) {
-		if (index < 0 || index >= curve.length) continue; // scrolled off the left edge — say nothing
-		const x = 1 + (index / (curve.length - 1)) * (W - 2);
-		ctx.beginPath();
-		ctx.moveTo(x, 1);
-		ctx.lineTo(x, H - 1);
-		ctx.stroke();
-	}
-	ctx.restore();
 }
 
 /** Real-world population decay: fraction of the deployed batch still alive, over time. */

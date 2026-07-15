@@ -45,7 +45,7 @@
 			The bench keeps evolving forever. Nothing is ever deployed, which is what you want while you
 			are still changing the experiment.
 		{:else}
-			At generation {limit}, training stops for good. No more generations, no more respawns — the
+			At generation {limit}, training stops for good. No more generations, no more respawns. The
 			population that is in the water is the one that has to survive, and you watch how long it
 			lasts.
 		{/if}

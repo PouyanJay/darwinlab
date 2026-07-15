@@ -89,7 +89,7 @@
 
 				{#if stale}
 					<p class="warn" data-testid="ablation-stale">
-						The conditions changed since this was measured — a channel is worth what ITS environment
+						The conditions changed since this was measured. A channel is worth what ITS environment
 						makes it worth, so these numbers no longer describe this one.
 					</p>
 				{/if}

@@ -7,13 +7,13 @@
   looking at. Giving the shark a brain is a different lab, and a much noisier one.
 -->
 <p class="body">
-	This shark has <b>no brain — deliberately.</b> It follows three fixed rules: find the nearest
-	fish, accelerate toward it, lunge when close. It never evolves. A steady, predictable threat is
-	what lets the <b>prey's</b> evolved intelligence stand out.
+	This shark has <b>no brain, deliberately.</b> It follows three fixed rules: find the nearest fish,
+	accelerate toward it, lunge when close. It never evolves. A steady, predictable threat is what
+	lets the <b>prey's</b> evolved intelligence stand out.
 </p>
 
 <p class="teaser">
-	A later lab hands the predator a brain too — and starts a coevolutionary arms race.
+	A later lab hands the predator a brain too, and starts a coevolutionary arms race.
 </p>
 
 <style>

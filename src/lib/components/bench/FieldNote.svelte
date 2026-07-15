@@ -29,7 +29,7 @@
 	const METHOD = [
 		{ term: 'policy', fact: '8→6→2 MLP · 68 evolved params · no memory' },
 		{ term: 'selection', fact: 'fitness = seconds survived · elitism + tournament + crossover' },
-		{ term: 'ablation', fact: 'a cut channel feeds 0 — the network shape never changes' },
+		{ term: 'ablation', fact: 'a cut channel feeds 0, so the network shape never changes' },
 		{ term: 'evidence', fact: 'each tank is ONE run; use Evaluate for n-seed means ± sd' }
 	];
 </script>
@@ -38,7 +38,7 @@
 	<details open>
 		<summary>
 			<span class="badge" aria-hidden="true"><Icon name="flask" size={15} /></span>
-			<span class="eyebrow">The finding</span>
+			<span class="eyebrow">What you're watching</span>
 			<span class="fold" aria-hidden="true"><Icon name="chevron-right" size={14} /></span>
 		</summary>
 
@@ -46,14 +46,16 @@
 			<!-- The claim leads, its reasoning sits beside it. One column of prose across a 1400px
 			     panel leaves half the panel empty and still runs the eye off the end of every line. -->
 			<div class="argument">
-				<h2>An observation channel is worth exactly what the environment makes it worth.</h2>
+				<h2>Behaviour that evolved, not behaviour that was coded.</h2>
 
 				<p>
-					Range to the adversary buys almost nothing — it never says <i>which way</i> to go. Bearing is
-					the leap. Boundary rays and closing rate pay only because this environment holds a hazard each
-					of them alone can solve. Take the hazard away — raise the adversary's speed past what an agent
-					can swim, and fleeing correctly stops being an escape — and the ladder collapses: an input the
-					world ignores is noise a policy must overcome, and mutation charges rent on it every episode.
+					Every fish has a tiny neural network for a brain, and nothing about how it swims is
+					written down. The sharks cull the ones that flee badly, generation after generation, until
+					what is left is real evolved behaviour. The lab asks one question: <b
+						>which senses actually help?</b
+					>
+					And a sense is worth only what the environment makes it worth. Give the fish a danger that bearing
+					alone can solve and bearing pays; take it away and no sense does.
 				</p>
 			</div>
 

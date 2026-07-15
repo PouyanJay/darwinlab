@@ -59,7 +59,7 @@
 	<header>
 		<span class="field-label">Flee assay</span>
 		<span class="blurb">
-			drop a shark at every bearing and see which way the best brain turns — a coin gets 50%
+			drop a shark at every bearing and see which way the best brain turns. A coin gets 50%
 		</span>
 
 		{#if running}
@@ -69,6 +69,18 @@
 				<Icon name="compass" size={13} />
 				<span>{result ? 'Run again' : 'Run assay'}</span>
 			</Button>
+			{#if result}
+				<!-- Put the verdict away and collapse the panel back to its button. -->
+				<Button
+					variant="icon"
+					size="sm"
+					aria-label="clear the assay result"
+					title="clear the result"
+					onclick={() => bench.clearAssayResult(entry.id)}
+				>
+					<Icon name="close" size={14} />
+				</Button>
+			{/if}
 		{/if}
 	</header>
 
@@ -78,7 +90,7 @@
 		<!-- What you are watching is the CHAMPION walking the same bearings the population was measured
 		     on. The number is the population's; this is the film of one brain doing it. -->
 		<p class="progress" role="status">
-			Watching the best brain — trial <b class="tabular">{progress.index}</b> of
+			Watching the best brain, trial <b class="tabular">{progress.index}</b> of
 			<b class="tabular">{progress.total}</b>. The run is held while it answers.
 		</p>
 	{/if}
@@ -94,7 +106,7 @@
 					{paint}
 					{register}
 					label={accuracy === null
-						? 'the assay compass — no bearing produced an answer'
+						? 'the assay compass: no bearing produced an answer'
 						: `the assay compass: the fish turned towards escape at ${Math.round(accuracy * 100)}% of the bearings it was asked about, out of ${result.asked}`}
 				/>
 			</div>

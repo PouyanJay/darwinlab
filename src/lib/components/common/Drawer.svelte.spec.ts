@@ -10,7 +10,7 @@ const inspector = async (open: boolean, onclose = vi.fn()) => {
 	const { rerender } = render(Drawer, {
 		open,
 		onclose,
-		title: 'Fish mind — live',
+		title: 'Fish mind, live',
 		subtitle: 'one real evolved brain in “Direction”',
 		live: true,
 		children: text('the brain')
@@ -25,7 +25,7 @@ describe('Drawer', () => {
 		expect(document.querySelector('[role="dialog"]')).toBeNull();
 
 		await rerender({ open: true });
-		expect(page.getByRole('dialog', { name: 'Fish mind — live' }).element()).toBeTruthy();
+		expect(page.getByRole('dialog', { name: 'Fish mind, live' }).element()).toBeTruthy();
 	});
 
 	it('leaves the bench behind it live — it is a panel, not a modal', async () => {

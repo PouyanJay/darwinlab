@@ -71,7 +71,7 @@ test('ABLATION: cutting the closing-speed neuron really changes the brain', asyn
 		.toBe(true);
 	const wired = await brainprint(page);
 
-	await inspector(page).getByRole('button', { name: 'Ablate — cut closing speed' }).click();
+	await inspector(page).getByRole('button', { name: 'Ablate: cut closing speed' }).click();
 
 	// the input node dims and its edges go dead — the picture must change
 	await expect.poll(() => brainprint(page), { timeout: 5000 }).not.toBe(wired);
@@ -175,7 +175,7 @@ test('clicking the shark says there is no brain, by design', async ({ page }) =>
 	}
 
 	await expect(panel).toBeVisible();
-	await expect(panel).toContainText('no brain — deliberately');
+	await expect(panel).toContainText('no brain, deliberately');
 	await expect(panel).toContainText('coevolutionary arms race');
 });
 

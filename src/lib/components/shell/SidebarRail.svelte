@@ -63,8 +63,8 @@
 		<Button
 			variant="icon"
 			class="speed tabular"
-			aria-label="simulation speed — {speed.label}, press to change"
-			title="speed — {speed.label}"
+			aria-label="simulation speed: {speed.label}, press to change"
+			title="speed: {speed.label}"
 			onclick={cycleSpeed}
 		>
 			{speed.label}
