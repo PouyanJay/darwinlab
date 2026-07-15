@@ -58,11 +58,18 @@ import { subSteps, turboSlice } from '../sim/loop';
 import { DetailGovernor } from '../sim/governor';
 import { Playback, type Speed } from './playback.svelte';
 import { PainterRegistry } from './painters';
-import { WorldStats, WorldConfigView, MindView, makeEntry, type WorldEntry } from './views.svelte';
+import {
+	WorldStats,
+	WorldConfigView,
+	MindView,
+	EscapeMapView,
+	makeEntry,
+	type WorldEntry
+} from './views.svelte';
 import { story } from './story.svelte';
 import { evals } from './evals.svelte';
 
-export { WorldStats, WorldConfigView, MindView, type WorldEntry };
+export { WorldStats, WorldConfigView, MindView, EscapeMapView, type WorldEntry };
 
 /**
  * What a card is showing in place of its own population.
@@ -138,6 +145,9 @@ class BenchStore {
 	conditionsWorldId = $state<string | null>(null);
 	/** What the selected fish is thinking, refreshed every frame while a fish is selected. */
 	readonly mind = new MindView();
+	/** The selected fish's escape map — its policy over adversary positions. Memoised; recomputes
+	 *  only when the genome or a map-shaping condition changes. */
+	readonly escape = new EscapeMapView();
 
 	readonly playback = new Playback();
 	readonly painters = new PainterRegistry();
@@ -1127,6 +1137,7 @@ class BenchStore {
 
 	#syncMind(world: World): void {
 		if (world.sense) this.mind.syncFrom(world.sense);
+		this.escape.syncFrom(world); // memoised: real work only when the genome/conditions change
 	}
 
 	#id(): string {
@@ -1154,6 +1165,11 @@ class BenchStore {
 	#publishConfig(id: string): void {
 		const entry = this.entry(id);
 		entry.config.syncFrom(entry.world.cfg);
+		// A sense cut or a resized tank reshapes the selected fish's escape map — refresh it now so
+		// the edit is visible while paused, too (memoised, so a label-only edit does no work).
+		if (this.selection?.type === 'fish' && this.selection.worldId === id) {
+			this.escape.syncFrom(this.shown(id));
+		}
 		this.requestPaint(); // a condition edit must be visible while paused, too
 	}
 

@@ -16,8 +16,8 @@
  * what lets the UI claim to be showing the simulation rather than an illustration of it.
  */
 
-import { fleeError } from '../engine';
-import type { World, WorldConfig, Senses, SenseSnapshot } from '../engine';
+import { fleeError, probePolicy } from '../engine';
+import type { World, WorldConfig, Senses, SenseSnapshot, Genome, PolicyMap } from '../engine';
 
 /** Cheap reactive snapshot of one world, refreshed once per frame for the UI to bind to. */
 export class WorldStats {
@@ -178,6 +178,53 @@ export class MindView {
 		this.wallInput = sense.nw;
 		this.turn = sense.turn;
 		this.thrust = sense.thrust;
+	}
+}
+
+/**
+ * The selected fish's ESCAPE MAP — its evolved policy swept over every adversary position.
+ *
+ * A companion to MindView: that projects what the fish senses THIS frame; this projects the whole
+ * rule the brain learned, read straight off its genome by `probePolicy`. The sweep is ~768 forward
+ * passes, so it is MEMOISED — `syncFrom` recomputes only when the genome or the conditions that
+ * shape the map (senses, vision, predator speed, brain width) actually change. That lets the same
+ * per-frame seam that republishes the mind drive this too, at near-zero cost while the fish and its
+ * world hold still, and refresh the instant a sense is cut or the tank resized.
+ */
+export class EscapeMapView {
+	/**
+	 * The swept policy for the selected fish, or null when nothing is selected. Raw on purpose: a
+	 * plain data grid the canvas reads, with nothing inside it for DOM reactivity to track.
+	 */
+	map = $state.raw<PolicyMap | null>(null);
+
+	#genome: Genome | null = null;
+	#sig = '';
+
+	/** Recompute the map iff the selected fish, or a condition that shapes it, has changed. */
+	syncFrom(world: World): void {
+		const fish = world.selFish;
+		if (!fish) {
+			this.clear();
+			return;
+		}
+		const c = world.cfg;
+		const s = c.senses;
+		// Everything the sweep depends on: vision (radius scale), predator speed (the closing pose),
+		// brain width, the tank size (the canonical agent sits at its centre, which feeds the wall
+		// rays), and which senses gate which inputs. Miss one and a live edit leaves a stale map.
+		const sig = `${c.vision}|${c.predSpeed}|${c.brainInputs ?? ''}|${c.bw}x${c.bh}|${s.dist}${s.dir}${s.closing}${s.walls}${s.speed ?? false}`;
+		if (fish.genome === this.#genome && sig === this.#sig) return;
+		this.#genome = fish.genome;
+		this.#sig = sig;
+		this.map = probePolicy(c, fish.genome);
+	}
+
+	clear(): void {
+		if (this.map === null) return; // already clear — and #genome/#sig were reset with it
+		this.map = null;
+		this.#genome = null;
+		this.#sig = '';
 	}
 }
 
