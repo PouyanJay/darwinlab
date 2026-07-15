@@ -123,12 +123,12 @@
 			<Chip
 				tone="accent"
 				style="--chip-accent: {config.accent}"
-				title="overrides vs the launched baseline — {diffText}"
+				title="overrides vs the launched baseline: {diffText}"
 			>
 				▲ {diffKeys.length} override{diffKeys.length > 1 ? 's' : ''}
 			</Chip>
 		{/if}
-		<div class="senses" role="group" aria-label="observation space — the policy's input channels">
+		<div class="senses" role="group" aria-label="observation space: the policy's input channels">
 			{#each SENSES as sense (sense.key)}
 				<SensePill
 					label={sense.short}

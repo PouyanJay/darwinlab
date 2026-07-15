@@ -236,6 +236,10 @@
 		grid-template-columns: repeat(auto-fit, minmax(min(380px, 100%), 1fr));
 		gap: var(--sp-7);
 		align-content: start;
+		/* Each card takes its OWN height. Without this, grid rows stretch every card to the tallest in
+		   the row, so opening one card's assay or ablation matrix dragged its silent neighbours taller
+		   with it — a card should answer for its own content and nobody else's. */
+		align-items: start;
 	}
 
 	/* The one card that holds nothing: an empty slot inviting a new experiment. */

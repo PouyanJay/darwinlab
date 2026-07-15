@@ -27,6 +27,16 @@ export class WorldStats {
 	/** Smoothed survival rate of the latest generation, 0–100. */
 	survivalPct = $state(0);
 	championFitness = $state(0);
+	/**
+	 * The best survival time of the LAST COMPLETED generation, seconds — what the population knows now.
+	 *
+	 * NOT `champion.fitness`, which is the all-time elite and SATURATES: fitness is seconds survived,
+	 * the generation caps it, and the elite only re-crowns on a strictly greater score — so once any
+	 * fish survives a full generation the champion's time is stuck at the generation length forever.
+	 * The inspector showed that stuck number (always 30.0s). `best` is re-crowned every generation, so
+	 * it moves, and in a world whose best fish genuinely lasts the whole generation, 30 is the truth.
+	 */
+	bestFitness = $state(0);
 	deployed = $state(false);
 	deployT = $state(0);
 	halfLife = $state<number | null>(null);
@@ -119,6 +129,7 @@ export class WorldStats {
 			: world.fish.length / Math.max(1, world.cfg.prey);
 		this.survivalPct = Math.round(survival * 100);
 		this.championFitness = world.champion?.fitness ?? 0;
+		this.bestFitness = world.best?.fitness ?? world.champion?.fitness ?? 0;
 		this.deployed = world._deployed;
 		this.deployT = world.deployT;
 		this.halfLife = world.halfLife;

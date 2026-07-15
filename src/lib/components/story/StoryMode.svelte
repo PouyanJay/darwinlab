@@ -125,7 +125,7 @@
 				<span class="number">{number}</span>
 				<div>
 					<h1>{source.config.name}</h1>
-					<p>{source.config.caption || '—'}</p>
+					<p>{source.config.caption || '…'}</p>
 				</div>
 			</div>
 

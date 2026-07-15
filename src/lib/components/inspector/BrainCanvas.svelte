@@ -57,7 +57,7 @@
 </script>
 
 <div class="head">
-	<span class="field-label">The brain — real evolved weights</span>
+	<span class="field-label">The brain: real evolved weights</span>
 	<span class="genes tabular">{GLEN} genes</span>
 </div>
 

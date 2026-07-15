@@ -50,3 +50,23 @@ test('the assay can be stopped, and gives the tank back', async ({ page }) => {
 	await expect(card.getByText(/Watching the best brain/)).toBeHidden();
 	await expect(card.getByRole('button', { name: /Run assay|Run again/ })).toBeVisible();
 });
+
+test('a finished result can be cleared, collapsing the panel back to its button', async ({
+	page
+}) => {
+	const card = tile(page, 2);
+	const verdict = card.getByTestId('turn-accuracy');
+
+	await card.getByRole('button', { name: 'Run assay' }).click();
+	await expect(verdict).toBeVisible({ timeout: 60_000 }); // the verdict lands immediately
+
+	// Stop the champion's demonstration film first; the verdict stays on screen after it ends.
+	await card.getByRole('button', { name: 'Stop' }).click();
+	await expect(verdict).toBeVisible();
+
+	await card.getByRole('button', { name: 'clear the assay result' }).click();
+
+	// gone — the panel is just its button again, so a card does not carry a stale answer forever
+	await expect(verdict).toBeHidden();
+	await expect(card.getByRole('button', { name: 'Run assay' })).toBeVisible();
+});

@@ -29,14 +29,14 @@
 	let { selection, entry }: Props = $props();
 
 	const fish = $derived(selection.type === 'fish');
-	const title = $derived(fish ? 'Fish mind — live' : 'Shark — no brain');
+	const title = $derived(fish ? 'Fish mind, live' : 'Shark, no brain');
 	const subtitle = $derived(
 		fish ? `one real evolved brain in “${entry.config.name}”` : 'a rule-based hunter, on purpose'
 	);
 
-	const champion = $derived(
-		entry.stats.championFitness ? `${entry.stats.championFitness.toFixed(1)}s` : '—'
-	);
+	// The best time of the last generation, not the all-time elite: the elite saturates at the
+	// generation length and sat stuck at 30.0s (see WorldStats.bestFitness).
+	const best = $derived(entry.stats.bestFitness ? `${entry.stats.bestFitness.toFixed(1)}s` : '—');
 </script>
 
 <!-- takeFocus: a selection made by the tank's keyboard walk keeps the walker's focus — a click
@@ -60,8 +60,8 @@
 				<b class="tabular" aria-labelledby="stat-generation">{entry.stats.gen}</b>
 			</div>
 			<div class="stat">
-				<span class="eyebrow" id="stat-champion">champion</span>
-				<b class="tabular gold" aria-labelledby="stat-champion">{champion}</b>
+				<span class="eyebrow" id="stat-champion">best this gen</span>
+				<b class="tabular gold" aria-labelledby="stat-champion">{best}</b>
 			</div>
 		</div>
 

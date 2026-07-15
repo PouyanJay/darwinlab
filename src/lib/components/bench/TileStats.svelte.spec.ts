@@ -72,7 +72,7 @@ describe('TileStats — what a screen reader hears about the run', () => {
 
 	it('announces the start of the run — without the ticking seconds', () => {
 		render(TileStats, { entry: entryWith({ deployed: true, deployT: 8.6, alive: 17 }) });
-		expect(spoken()).toBe('Direction: deployed — the real-world run has started');
+		expect(spoken()).toBe('Direction: deployed. The real-world run has started');
 	});
 
 	it('announces the half-life the moment it latches, and holds that phrase', () => {

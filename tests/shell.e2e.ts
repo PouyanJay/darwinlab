@@ -32,7 +32,7 @@ test('collapsing leaves the run controls behind, not a hole', async ({ page }) =
 	// The rail is the whole point of the collapse: mid-experiment you are still pausing and
 	// fast-forwarding, and a control you must re-open a panel to press is a control you stop using.
 	await expect(page.getByRole('button', { name: 'Pause' })).toBeVisible();
-	await expect(page.getByRole('button', { name: /Train to gen/ })).toBeVisible();
+	await expect(page.getByRole('button', { name: /Train/ })).toBeVisible();
 	await expect(page.getByRole('button', { name: /simulation speed/ })).toBeVisible();
 
 	// …and it really is collapsed: the panel's own controls are gone, not merely narrower.
@@ -79,5 +79,5 @@ test('a collapse is remembered too — the bench opens the way you left it', asy
 	// Still on the rail, and still the run controls — this is the state that was saved.
 	await expect(rail(page)).toBeVisible();
 	await expect(page.getByRole('radio', { name: '1×' })).toBeHidden();
-	await expect(page.getByRole('button', { name: /Train to gen/ })).toBeVisible();
+	await expect(page.getByRole('button', { name: /Train/ })).toBeVisible();
 });

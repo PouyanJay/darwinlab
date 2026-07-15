@@ -28,10 +28,10 @@
 	<p class="claim">“It looks like it predicts the attack.”</p>
 	<p class="body">
 		Cut the closing-speed input neuron. If prediction really lived there, the early dodge should
-		collapse — then the line reheals as evolution routes around the loss.
+		collapse, then the line reheals as evolution routes around the loss.
 	</p>
 	<Button variant="primary" size="sm" onclick={() => bench.toggleSense(entry.id, 'closing')}>
-		{wired ? 'Ablate — cut closing speed' : 'Restore closing speed'}
+		{wired ? 'Ablate: cut closing speed' : 'Restore closing speed'}
 	</Button>
 </div>
 

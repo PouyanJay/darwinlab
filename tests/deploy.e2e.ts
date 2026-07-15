@@ -61,7 +61,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 test('the bench opens with a training horizon, and the Train button names it', async ({ page }) => {
-	await expect(page.getByRole('button', { name: /Train to gen 150/ })).toBeVisible();
+	await expect(page.getByRole('button', { name: /Train to the end/ })).toBeVisible();
 
 	// nothing is deployed yet — there are 135 generations still to go
 	expect(await deployment(page, 2)).toBe('after training');
@@ -79,9 +79,9 @@ test('THE SECOND ACT: train to the horizon, and the population has to survive on
 	test.setTimeout(240_000);
 	await makeTheRunEnd(page, 2); // the default bench has no guarantee of extinction — see the helper
 	await deployAt(page, 20);
-	await expect(page.getByRole('button', { name: /Train to gen 20/ })).toBeVisible();
+	await expect(page.getByRole('button', { name: /Train to the end/ })).toBeVisible();
 
-	await page.getByRole('button', { name: /Train to gen 20/ }).click();
+	await page.getByRole('button', { name: /Train to the end/ }).click();
 	await expect(page.getByTestId('turbo')).toBeHidden({ timeout: 120_000 });
 
 	// training is over, and the tile says so rather than leaving it to be inferred
@@ -131,7 +131,7 @@ test('the generation stops climbing once a world is deployed', async ({ page }) 
 	test.setTimeout(240_000);
 	await makeTheRunEnd(page, 2); // the default bench has no guarantee of extinction — see the helper
 	await deployAt(page, 20);
-	await page.getByRole('button', { name: /Train to gen 20/ }).click();
+	await page.getByRole('button', { name: /Train to the end/ }).click();
 	await expect(page.getByTestId('turbo')).toBeHidden({ timeout: 120_000 });
 	await expect(tile(page, 2).getByTestId('gen')).toHaveText('Gen 20 · trained');
 
@@ -152,7 +152,7 @@ test('the generation stops climbing once a world is deployed', async ({ page }) 
 
 test('resetting a deployed world puts it back to evolving, cleanly', async ({ page }) => {
 	await deployAt(page, 20);
-	await page.getByRole('button', { name: /Train to gen 20/ }).click();
+	await page.getByRole('button', { name: /Train to the end/ }).click();
 	await expect(page.getByTestId('turbo')).toBeHidden({ timeout: 120_000 });
 	await expect(tile(page, 2).getByTestId('gen')).toHaveText('Gen 20 · trained');
 

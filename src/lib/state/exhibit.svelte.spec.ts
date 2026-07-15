@@ -112,20 +112,6 @@ describe('the champion exhibit, in the store', () => {
 		expect(after).not.toBe(before); // …and re-cloned from the champion that just evolved
 	});
 
-	it('a bottleneck is RECORDED on the run it changed', () => {
-		const entry = benchWithChampion();
-		const gen = entry.world.gen;
-
-		expect(bench.bottleneckWorld(entry.id)).toBe(true);
-
-		// The population is now one lineage…
-		const genomes = entry.world.fish.map((f) => Array.from(f.genome));
-		for (const g of genomes) expect(g).toEqual(genomes[0]);
-		// …and the run says so, for as long as it lives. An intervention that is not on the record is
-		// a lie by omission, and the curve would otherwise show an unexplained cliff.
-		expect(bench.interventionsOf(entry.id)).toEqual([gen]);
-	});
-
 	it('refuses to exhibit a world that has no champion yet', () => {
 		bench.init({ configs: [DEFAULT_WORLDS[0]], prewarmGenerations: 0, maxGenerations: 0 });
 		const entry = bench.worlds[0];

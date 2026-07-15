@@ -22,7 +22,7 @@
 
 <div class="field-label">Intelligence ladder</div>
 
-<div class="rungs" role="img" aria-label="intelligence ladder: rung {rung} of 6 — {RUNGS[rung]}">
+<div class="rungs" role="img" aria-label="intelligence ladder: rung {rung} of 6, {RUNGS[rung]}">
 	{#each RUNGS as label, index (label)}
 		<span
 			class="rung"
@@ -34,7 +34,7 @@
 </div>
 
 <p class="caption">
-	rung {rung} · {RUNGS[rung]} —
+	rung {rung} · {RUNGS[rung]}
 	<span class="quiet">
 		what evolved here is real, but it is a 2D caricature: fixed generations and an explicit survival
 		goal, unlike real evolution.

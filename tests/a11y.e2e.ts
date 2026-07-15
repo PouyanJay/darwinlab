@@ -61,7 +61,8 @@ test('the inspector scans clean', async ({ page }) => {
 
 test('lab settings scans clean', async ({ page }) => {
 	await page.getByRole('button', { name: 'lab settings' }).click();
-	await expect(page.getByText('Deploy at')).toBeVisible();
+	// Scoped to the popover: the sidebar also has a "Deploy at gen" field, and an unscoped match hits both.
+	await expect(page.locator('#lab-settings').getByText('Deploy at', { exact: true })).toBeVisible();
 	expect(await violations(page)).toEqual([]);
 });
 

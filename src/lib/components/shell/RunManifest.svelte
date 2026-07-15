@@ -43,7 +43,7 @@
 		draft = seed === null ? '' : String(seed);
 		open = true;
 	}}
-	aria-label="run manifest — seed and configuration"
+	aria-label="run manifest: seed and configuration"
 	data-testid="run-manifest"
 >
 	<span class="key">run</span>
@@ -82,7 +82,7 @@
 			<input
 				type="text"
 				inputmode="numeric"
-				placeholder="unseeded — this run cannot be reproduced"
+				placeholder="unseeded: this run cannot be reproduced"
 				bind:value={draft}
 				aria-label="seed"
 			/>

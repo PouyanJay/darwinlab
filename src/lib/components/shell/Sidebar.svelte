@@ -25,6 +25,7 @@
 	import { trainTarget, trainLabel } from './train';
 	import { DISCLAIMER } from '../common/disclaimer';
 	import { bench, shell, SPEEDS } from '$lib/state';
+	import { MAX_GENERATIONS } from '$lib/engine';
 	import type { Lens } from '$lib/render';
 
 	/** The lenses the bench offers. One list, so the control and the store cannot disagree. */
@@ -105,25 +106,23 @@
 			</header>
 
 			<section>
-				<h2 class="field-label">Run</h2>
-
-				<p class="readout">
-					<Icon name="episodes" size={14} />
-					<b class="tabular" data-testid="generations">{bench.generationsEvolved}</b>
-					<span>episodes</span>
-				</p>
+				<div class="section-head">
+					<h2 class="field-label">Run</h2>
+					<p class="readout">
+						<Icon name="episodes" size={13} />
+						<b class="tabular" data-testid="generations">{bench.generationsEvolved}</b>
+						<span>episodes</span>
+					</p>
+				</div>
 
 				<!--
-					ONE full-width button in the column, and it is the transport — the thing you press most,
-					and the only one that earns the whole measure. The rest are sized to what they say.
-
-					Four stacked full-bleed buttons read as a stack of slabs: nothing is more important than
-					anything else, and every label floats in a field of its own empty space. A control panel
-					is a hierarchy, not a list.
+					ONE full-width button in the column, and it is the transport: the thing you press most,
+					and the only one that earns the whole measure. The rest are sized to what they say, on
+					label-left / control-right rows, so the panel reads as a hierarchy rather than a stack of
+					equal slabs.
 
 					No aria-label on a button that carries visible text: an aria-label REPLACES the label a
-					sighted user reads with a different one AT hears — the mismatch WCAG's "label in name" is
-					about. Only the glyph-only buttons (the rail's) get one.
+					sighted user reads with a different one AT hears. Only the glyph-only buttons get one.
 				-->
 				<Button variant="primary" class="transport" onclick={() => bench.togglePlay()}>
 					<TransportIcon playing={bench.running} />
@@ -132,8 +131,7 @@
 
 				<div class="field">
 					<!-- Decorative: the Segmented control carries its own accessible name ("simulation
-					     speed"), so this word is for the eye. Wiring it up as a second label would have a
-					     screen reader announce the group twice. -->
+					     speed"). Wiring it up as a second label would announce the group twice. -->
 					<span class="field-label" aria-hidden="true">Speed</span>
 					<Segmented
 						label="simulation speed"
@@ -144,10 +142,37 @@
 				</div>
 
 				<div class="field">
-					<span class="field-label" aria-hidden="true">Fast-forward</span>
-					<Button size="sm" disabled={bench.training} onclick={() => bench.trainTo(target)}>
+					<label class="field-label" for="deploy-gen">Deploy at gen</label>
+					<input
+						id="deploy-gen"
+						class="num"
+						type="number"
+						inputmode="numeric"
+						min={MAX_GENERATIONS.min}
+						max={MAX_GENERATIONS.max}
+						value={bench.maxGenerations}
+						onchange={(event) => bench.setMaxGenerations(Number(event.currentTarget.value))}
+					/>
+				</div>
+
+				<div class="row-buttons">
+					<Button
+						size="sm"
+						class="grow"
+						disabled={bench.training}
+						onclick={() => bench.trainTo(target)}
+					>
 						<Icon name="forward" size={14} />
 						<span>{label}</span>
+					</Button>
+					<Button
+						variant="icon"
+						size="sm"
+						aria-label="reset every world to random brains"
+						title="reset every world to random brains"
+						onclick={() => bench.resetAll()}
+					>
+						<Icon name="reset" size={15} />
 					</Button>
 				</div>
 			</section>
@@ -161,18 +186,20 @@
 			<section>
 				<h2 class="field-label">Lens</h2>
 
-				<Segmented
-					label="tank lens"
-					options={LENSES}
-					value={bench.lens}
-					onchange={(lens) => bench.setLens(lens)}
-				/>
+				<div class="field">
+					<span class="field-label" aria-hidden="true">Colour by</span>
+					<Segmented
+						label="tank lens"
+						options={LENSES}
+						value={bench.lens}
+						onchange={(lens) => bench.setLens(lens)}
+					/>
+				</div>
 
 				{#if bench.lens === 'flee'}
 					<p class="lens-note">
-						Every fish is painted by how wrong its escape is <b>right now</b> — away from the shark
-						at one end, into its mouth at the other. Grey is <b>no reading</b>: nothing in vision,
-						or too slow to be going anywhere.
+						Each fish is painted by how wrong its escape is: away from the shark at one end, into
+						its mouth at the other. Grey means no reading.
 					</p>
 				{/if}
 			</section>
@@ -323,6 +350,42 @@
 		gap: var(--sp-2);
 	}
 
+	/* The section title and its readout share a line — the count sits with the label it belongs to. */
+	.section-head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+	}
+
+	.row-buttons {
+		display: flex;
+		gap: var(--sp-2);
+	}
+
+	.sidebar :global(.grow) {
+		flex: 1;
+		justify-content: center;
+	}
+
+	/* A compact number field, sized to a few digits and right-aligned so the value reads as a value. */
+	.num {
+		width: 68px;
+		padding: var(--sp-2) var(--sp-3);
+		border: 1px solid var(--line);
+		border-radius: var(--radius-sm);
+		background: var(--panel2);
+		color: var(--ink);
+		font-size: var(--fs-md);
+		font-weight: var(--fw-semibold);
+		font-variant-numeric: tabular-nums;
+		text-align: right;
+	}
+
+	.num:focus {
+		outline: none;
+		border-color: var(--accent);
+	}
+
 	.lens-note {
 		margin: var(--sp-1) 0 0;
 		font-size: var(--fs-sm);
@@ -330,17 +393,12 @@
 		color: var(--ink3);
 	}
 
-	.lens-note b {
-		font-weight: var(--fw-semibold);
-		color: var(--ink2);
-	}
-
 	.readout {
 		display: flex;
 		align-items: center;
-		gap: var(--sp-2);
-		margin: 0 0 var(--sp-2);
-		font-size: var(--fs-md);
+		gap: 5px;
+		margin: 0;
+		font-size: var(--fs-sm);
 		color: var(--ink3);
 	}
 

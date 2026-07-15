@@ -43,7 +43,6 @@ import {
 	championGenome,
 	makeExhibit,
 	exhibitSpent,
-	bottleneck,
 	makeTrial,
 	stepTrial,
 	assayBearings,
@@ -193,11 +192,6 @@ class BenchStore {
 	#assayResults = $state<Record<string, PopulationAssay>>({});
 	/** Which bearing each running assay is on, so the card can say "3 of 12". */
 	#assayProgress = $state<Record<string, number>>({});
-	/**
-	 * Generations at which a world was deliberately bottlenecked — kept so the curve can MARK them.
-	 * An intervention that is not recorded is a lie by omission.
-	 */
-	#interventions = $state<Record<string, number[]>>({});
 	/** One repaint owed outside the sim advancing — set by every method that changes pixels. */
 	#needsPaint = false;
 	/**
@@ -309,8 +303,8 @@ class BenchStore {
 		 * EVERYTHING keyed by world id, or it leaks into the next bench.
 		 *
 		 * Ids are handed out from #nextId, which resets to 0 above — so the world called `w1` in the
-		 * next bench is a different world with the same name, and a stale exhibit, assay or bottleneck
-		 * mark left behind here would attach itself to it. The tank would show clones of a brain from a
+		 * next bench is a different world with the same name, and a stale exhibit or assay left
+		 * behind here would attach itself to it. The tank would show clones of a brain from a
 		 * run that no longer exists. (Found by two tests failing in a way that depended on the ORDER
 		 * they ran in, which is the smell this rule exists to catch.)
 		 */
@@ -320,7 +314,6 @@ class BenchStore {
 		this.#exhibits = {};
 		this.#assayProgress = {};
 		this.#assayResults = {};
-		this.#interventions = {};
 		this.#lens = 'none';
 	}
 
@@ -364,11 +357,6 @@ class BenchStore {
 
 	exhibitMode(id: string): ExhibitMode {
 		return this.#exhibits[id] ?? 'off';
-	}
-
-	/** The generations at which this world was bottlenecked. The curve marks them. */
-	interventionsOf(id: string): number[] {
-		return this.#interventions[id] ?? [];
 	}
 
 	/*
@@ -447,6 +435,15 @@ class BenchStore {
 		return true;
 	}
 
+	/** Put a finished assay's verdict away — the panel collapses back to just its button. */
+	clearAssayResult(id: string): void {
+		if (this.#assayResults[id] === undefined) return;
+		const next = { ...this.#assayResults };
+		delete next[id];
+		this.#assayResults = next;
+		this.requestPaint();
+	}
+
 	/** Abandon a running assay and give the tank back. Any completed trials are discarded. */
 	stopAssay(id: string): void {
 		if (!this.#assays.delete(id)) return;
@@ -482,32 +479,6 @@ class BenchStore {
 		this.#exhibitWorlds.set(id, makeExhibit(entry.world, genome, this.#exhibitRng(entry.world)));
 		this.#exhibitGen.set(id, entry.world.gen);
 		this.#exhibits = { ...this.#exhibits, [id]: mode };
-		this.requestPaint();
-		return true;
-	}
-
-	/**
-	 * THE CLONAL BOTTLENECK. Not a view — an intervention, and the only control in this group that
-	 * changes the run. Every fish becomes a copy of the champion and evolution carries on from there,
-	 * so variation collapses and the whole future of the run descends from one individual.
-	 *
-	 * It is RECORDED (see #interventions): the curve marks the generation it struck at, because a
-	 * learning curve with an unexplained cliff in it is exactly the sort of chart this lab exists to
-	 * argue against.
-	 */
-	bottleneckWorld(id: string): boolean {
-		const entry = this.entry(id);
-		this.#closeExhibit(id); // you cannot bottleneck a run you are not looking at
-		if (this.selection?.worldId === id) this.clearSelection();
-
-		const gen = bottleneck(entry.world);
-		if (gen === null) return false;
-
-		this.#interventions = {
-			...this.#interventions,
-			[id]: [...(this.#interventions[id] ?? []), gen]
-		};
-		entry.stats.syncFrom(entry.world);
 		this.requestPaint();
 		return true;
 	}
@@ -666,13 +637,19 @@ class BenchStore {
 
 	/** Restart evolution from random brains. */
 	resetWorld(id: string): void {
-		// The brain on show — on a pedestal or under interrogation — belonged to a run that is gone.
+		// The brain on show (on a pedestal or under interrogation) belonged to a run that is gone.
 		this.stopAssay(id);
 		this.#closeExhibit(id);
-		// the result described a population that no longer exists — keeping it would be a lie
+		// the result described a population that no longer exists, so keeping it would be a lie
 		evals.forget(id);
 		engineResetWorld(this.entry(id).world);
 		this.requestPaint();
+	}
+
+	/** Restart every world from random brains — the whole bench back to generation zero. */
+	resetAll(): void {
+		for (const entry of this.worlds) this.resetWorld(entry.id);
+		this.generationsEvolved = 0;
 	}
 
 	/**

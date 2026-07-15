@@ -14,5 +14,7 @@ export function trainTarget(generationsEvolved: number, maxGenerations: number):
 }
 
 export function trainLabel(maxGenerations: number): string {
-	return maxGenerations ? `Train to gen ${maxGenerations}` : `Train +${TRAIN_BURST} gens`;
+	// "to the end" when there is a deploy generation (training stops there for good), a fixed burst
+	// otherwise. The end IS the deploy generation, so the button names the thing, not the number.
+	return maxGenerations ? 'Train to the end' : `Train +${TRAIN_BURST} gens`;
 }

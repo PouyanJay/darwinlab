@@ -150,13 +150,11 @@
 			     adversary's cruise? Below the line, a correct escape only delays the end, and every
 			     sense stops paying for itself. Both halves are editable now — drag either across it. -->
 			<p class="speed-note" class:warn={outruns}>
-				Tops out at {config.maxSpeed} px/s; the adversary cruises at {cruise}.
+				{config.maxSpeed} px/s vs the adversary's {cruise} cruise.
 				{#if outruns}
-					It cannot outrun the cruise, so fleeing correctly only delays the end — the setting under
-					which no sense pays.
+					Slower than the cruise: fleeing only delays the end, and no sense pays.
 				{:else}
-					It can outrun the cruise, so fleeing the right way actually escapes — which is what makes
-					its senses worth having.
+					Faster than the cruise: fleeing can escape, so the senses can pay.
 				{/if}
 			</p>
 			<Slider
@@ -178,7 +176,7 @@
 		</div>
 
 		<fieldset class="senses">
-			<legend class="field-label">Senses — the brain's input neurons</legend>
+			<legend class="field-label">Senses: the brain's input neurons</legend>
 			{#each SENSES as sense (sense.key)}
 				<label class="sense">
 					<input
@@ -214,11 +212,11 @@
 				onchange={(value) => bench.setCondition(id, 'predSpeed', value)}
 			/>
 			<p class="speed-note" class:warn={outruns}>
-				Cruises at {cruise} px/s; the agent tops out at {config.maxSpeed}.
+				{cruise} px/s vs the agent's {config.maxSpeed} top speed.
 				{#if outruns}
-					Nothing can outswim it — this is the setting under which no sense pays.
+					Faster than the agent: nothing escapes, and no sense pays.
 				{:else}
-					A well-evolved agent can escape it, which is what gives its senses something to earn.
+					Slower than the agent: a good swimmer escapes, so the senses can pay.
 				{/if}
 			</p>
 		</div>
@@ -236,10 +234,10 @@
 				<span>
 					<b>Darts at its target</b>
 					<span class="description">
-						The strike: it winds up, then lunges — a burst several times its cruise speed, and where
+						The strike: it winds up, then lunges, a burst several times its cruise speed, and where
 						most of the killing comes from. Off, it only chases at cruise and eats whatever it
 						reaches: a far weaker hunter. Measured on an evolved bearing world, the strike catches
-						most of a generation while the cruise alone lets a good share get away — so a
+						most of a generation while the cruise alone lets a good share get away, so a
 						well-evolved agent that could never dodge the lunge can simply outlast the chase. That
 						is the answer to "what does the strike buy?", not a bug.
 					</span>
@@ -251,7 +249,7 @@
 		     gets faster and wider-jawed until it kills, so no agent is ever allowed to look safe. Off,
 		     it is the same hunter all run long — and evolved evasion finally reads on screen. -->
 		<fieldset class="persistence">
-			<legend class="field-label">Persistence — the hunger ramp</legend>
+			<legend class="field-label">Persistence: the hunger ramp</legend>
 
 			<label class="sense">
 				<input
@@ -262,9 +260,9 @@
 				<span>
 					<b>Escalate while hungry</b>
 					<span class="description">
-						The longer it goes without a kill, the faster it swims and the wider it bites — so no
-						stalemate lasts forever, and nothing stays safe. Off, it hunts the same all run long,
-						which is the only way a population that has genuinely learned can look it.
+						The longer it goes without a kill, the faster it swims and the wider it bites, so no
+						stalemate lasts. Off, it hunts the same all run long, which is the only way evolved
+						evasion can look safe.
 					</span>
 				</span>
 			</label>

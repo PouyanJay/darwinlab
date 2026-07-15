@@ -130,7 +130,7 @@ describe('ConditionsModal', () => {
 		await openGroup('Adversary');
 		const speed = page.getByRole('slider', { name: /cruise speed/i }).element();
 
-		await expect.element(page.getByText(/something to earn/i)).toBeInTheDocument();
+		await expect.element(page.getByText(/the senses can pay/i)).toBeInTheDocument();
 
 		(speed as HTMLInputElement).value = '1.4';
 		speed.dispatchEvent(new Event('input', { bubbles: true }));
