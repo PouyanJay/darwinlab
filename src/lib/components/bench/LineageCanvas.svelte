@@ -15,8 +15,9 @@
 	import WorldTile from './WorldTile.svelte';
 	import Button from '../common/Button.svelte';
 	import Icon from '../common/Icon.svelte';
+	import type { WorldEntry } from '$lib/state';
 	import { bench, canvas, prefersReducedMotion } from '$lib/state';
-	import { NODE_W, edgePath } from '$lib/lab/lineage';
+	import { NODE_W, ESTIMATED_NODE_H, CANVAS_PAD, edgePath } from '$lib/lab/lineage';
 
 	interface Props {
 		/** Add a fresh root world — the canvas offers it in its own corner, not only the sidebar. */
@@ -106,14 +107,8 @@
 		canvas.zoomAt(rect.width / 2, rect.height / 2, factor);
 	}
 
-	/** Frame the whole tree in the viewport — the "recenter" action. */
-	function recenter() {
-		const rect = container.getBoundingClientRect();
-		const worlds = bench.worlds;
-		if (!worlds.length) {
-			canvas.reset();
-			return;
-		}
+	/** The tree's bounding box in canvas coordinates — each node's footprint, measured or estimated. */
+	function treeBounds(worlds: WorldEntry[]) {
 		let minX = Infinity;
 		let minY = Infinity;
 		let maxX = -Infinity;
@@ -122,8 +117,19 @@
 			minX = Math.min(minX, entry.lineage.x);
 			minY = Math.min(minY, entry.lineage.y);
 			maxX = Math.max(maxX, entry.lineage.x + NODE_W);
-			maxY = Math.max(maxY, entry.lineage.y + (heights[entry.id] ?? 460));
+			maxY = Math.max(maxY, entry.lineage.y + (heights[entry.id] ?? ESTIMATED_NODE_H));
 		}
+		return { minX, minY, maxX, maxY };
+	}
+
+	/** Frame the whole tree in the viewport — the "recenter" action. */
+	function recenter() {
+		const rect = container.getBoundingClientRect();
+		if (!bench.worlds.length) {
+			canvas.reset();
+			return;
+		}
+		const { minX, minY, maxX, maxY } = treeBounds(bench.worlds);
 		canvas.fitBox(minX, minY, maxX, maxY, rect.width, rect.height);
 	}
 
@@ -144,35 +150,24 @@
 	 */
 	function frameInitial() {
 		const rect = container.getBoundingClientRect();
-		const worlds = bench.worlds;
-		if (!worlds.length) {
+		if (!bench.worlds.length) {
 			canvas.reset();
 			return;
 		}
-		let minX = Infinity;
-		let minY = Infinity;
-		let maxX = -Infinity;
-		let maxY = -Infinity;
-		for (const entry of worlds) {
-			minX = Math.min(minX, entry.lineage.x);
-			minY = Math.min(minY, entry.lineage.y);
-			maxX = Math.max(maxX, entry.lineage.x + NODE_W);
-			maxY = Math.max(maxY, entry.lineage.y + (heights[entry.id] ?? 460));
-		}
-		const pad = 90;
+		const { minX, minY, maxX, maxY } = treeBounds(bench.worlds);
 		const fit = Math.min(
-			(rect.width - 2 * pad) / (maxX - minX || 1),
-			(rect.height - 2 * pad) / (maxY - minY || 1)
+			(rect.width - 2 * CANVAS_PAD) / (maxX - minX || 1),
+			(rect.height - 2 * CANVAS_PAD) / (maxY - minY || 1)
 		);
 		// 0.18 is the phone/desktop divide: a laptop frames five roots at ~0.3 and gets the whole tree;
 		// only a genuinely tiny viewport (a phone at ~0.07) drops below it and opens focused on one node.
 		if (fit >= 0.18) {
 			canvas.fitBox(minX, minY, maxX, maxY, rect.width, rect.height);
 		} else {
-			const first = worlds[0];
+			const first = bench.worlds[0];
 			canvas.centerOn(
 				first.lineage.x + NODE_W / 2,
-				first.lineage.y + (heights[first.id] ?? 460) / 2,
+				first.lineage.y + (heights[first.id] ?? ESTIMATED_NODE_H) / 2,
 				rect.width,
 				rect.height,
 				Math.min(0.85, (rect.width - 40) / NODE_W)

@@ -651,23 +651,8 @@ class BenchStore {
 	 */
 	branchWorld(id: string): string {
 		const parent = this.entry(id);
+		const child = this.#forkFrom(parent, '⑃');
 
-		const cfg = structuredClone(parent.world.cfg);
-		cfg.name = this.#uniqueName(`${cfg.name} ⑃`);
-		// carry the evolved brains across so the branch starts exactly where the parent is now
-		const genomes = parent.world.roster.map((fish) => cloneGenome(fish.genome));
-		const world = makeWorld(cfg, genomes);
-		world.gen = parent.world.gen;
-		world.curve = parent.world.curve.slice();
-		world.champion = parent.world.champion
-			? {
-					genome: cloneGenome(parent.world.champion.genome),
-					fitness: parent.world.champion.fitness,
-					gen: parent.world.champion.gen
-				}
-			: null;
-
-		const child = this.#wrap(world);
 		child.lineage.parentId = id;
 		// Fan successive branches out sideways so siblings don't stack on one vertical line.
 		const sibling = parent.lineage.childIds.length;
@@ -684,9 +669,21 @@ class BenchStore {
 		const index = this.worlds.findIndex((entry) => entry.id === id);
 		const source = assertEntry(this.worlds[index], id);
 
+		const copy = this.#forkFrom(source, 'copy');
+		copy.lineage.x = source.lineage.x + NODE_STAGGER_X;
+		copy.lineage.y = source.lineage.y + BRANCH_DROP;
+		this.#setWorlds([...this.worlds.slice(0, index + 1), copy, ...this.worlds.slice(index + 1)]);
+	}
+
+	/**
+	 * A wrapped new world that starts EXACTLY where `source` is: its config, its evolved genomes
+	 * (cloned, not shared), and its generation / survival curve / champion carried across. The shared
+	 * heart of both fork paths — branch (wires a lineage edge) and duplicate (a free-standing copy) —
+	 * so the carry-over rule lives in one place. Does not touch the source, nor place the new node.
+	 */
+	#forkFrom(source: WorldEntry, nameSuffix: string): WorldEntry {
 		const cfg = structuredClone(source.world.cfg);
-		cfg.name = this.#uniqueName(`${cfg.name} copy`);
-		// carry the evolved brains across so the copy starts where the original is
+		cfg.name = this.#uniqueName(`${cfg.name} ${nameSuffix}`);
 		const genomes = source.world.roster.map((fish) => cloneGenome(fish.genome));
 		const world = makeWorld(cfg, genomes);
 		world.gen = source.world.gen;
@@ -698,11 +695,7 @@ class BenchStore {
 					gen: source.world.champion.gen
 				}
 			: null;
-
-		const copy = this.#wrap(world);
-		copy.lineage.x = source.lineage.x + NODE_STAGGER_X;
-		copy.lineage.y = source.lineage.y + BRANCH_DROP;
-		this.#setWorlds([...this.worlds.slice(0, index + 1), copy, ...this.worlds.slice(index + 1)]);
+		return this.#wrap(world);
 	}
 
 	removeWorld(id: string): void {

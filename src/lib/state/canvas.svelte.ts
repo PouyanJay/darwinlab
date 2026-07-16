@@ -10,7 +10,7 @@
  * the camera touches no genome, fitness, or curve.
  */
 
-import { clampScale } from '../lab/lineage';
+import { clampScale, CANVAS_PAD } from '../lab/lineage';
 
 class LineageCanvasStore {
 	/** The pan offset, in screen pixels. */
@@ -55,7 +55,7 @@ class LineageCanvasStore {
 		maxY: number,
 		viewW: number,
 		viewH: number,
-		pad = 90
+		pad = CANVAS_PAD
 	): void {
 		const bw = Math.max(1, maxX - minX);
 		const bh = Math.max(1, maxY - minY);

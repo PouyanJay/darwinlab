@@ -295,6 +295,8 @@ describe('bench store — lineage & branch', () => {
 	it('fans successive siblings sideways so they do not stack on one line', () => {
 		init(1);
 		const parent = bench.worlds[0];
+		// branchWorld opens the child's Conditions; close it between forks just to model the real flow
+		// (the dialog state doesn't affect branching — this is housekeeping, not a precondition).
 		const a = bench.find(bench.branchWorld(parent.id))!;
 		bench.closeConditions();
 		const b = bench.find(bench.branchWorld(parent.id))!;

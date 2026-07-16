@@ -9,6 +9,11 @@
 
 /** A world node's fixed width in canvas units. Height is natural (the node is as tall as it needs). */
 export const NODE_W = 468;
+/** Assumed node height before a node has been measured (its first paint) — used only by the framing
+ *  maths as a fallback, replaced by the real `clientHeight` the moment it is known. */
+export const ESTIMATED_NODE_H = 460;
+/** Breathing room, in screen px, left around the tree when the camera frames it. */
+export const CANVAS_PAD = 90;
 /** Horizontal gap between root siblings when the bench first lays them out in a row. */
 export const NODE_GAP_X = 84;
 /** How far below a parent a freshly branched child drops — clear of a compact node (~650px tall),
