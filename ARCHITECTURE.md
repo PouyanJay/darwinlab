@@ -24,9 +24,13 @@ UI (components)  →  state stores  →  engine functions  →  world state
 src/
 ├─ lib/
 │  ├─ engine/     Pure neuroevolution science. NO Svelte/DOM imports, ever.
-│  │              network (8→6→2 tanh), genetics (GA), sensing, world step, predator AI,
+│  │              network (8→6→2 tanh, or wider when a world carries extra senses), genetics
+│  │              (GA), sensing, world step, predator AI, flocking order params (flock.ts),
 │  │              seeded rng, story beats. Constants are empirically tuned — re-measure
-│  │              (npm run bench:survival) before changing any of them.
+│  │              (npm run bench:survival / bench:schooling) before changing any of them.
+│  │              Every extra sense (proprioception, the shoal senses) and every predator knob
+│  │              (persistence, the confusion effect) is OPTIONAL and defaults to reference
+│  │              behaviour, which is what keeps the bit-exact fidelity gate green.
 │  ├─ render/     Pure canvas painters: drawWorld, drawBrain, drawCurve, hit-testing (pick),
 │  │              theme palettes (kept in sync with the CSS tokens). State in, pixels out.
 │  ├─ harness/    The honesty gates: the bit-exact fidelity spec against reference/engine2.js,
@@ -66,6 +70,12 @@ component is writing `entry.world.x = ...`, the fix is a new store method.
    sweeps pin the honest finding — Direction is the only sense that clearly pays, extras
    don't stack. A nightly CI job re-measures and fails if any world drifts >5pp off its
    measured baseline.
+3. **Schooling** (`npm run bench:schooling`): a 2×2 ablation that measures whether flocking
+   evolves, scored by the shoal sense's MARGINAL effect (sense-on vs sense-off at equal ocean)
+   and by training-life — controls that separate evolved grouping from the artifact of a
+   confusion effect simply keeping more fish alive. It confirms schooling both evolves AND
+   pays under predator attention (a shark that loses its lock in a dense swarm), and does not
+   under the mechanics that came before it. The Shoal exhibit runs this experiment live.
 
 ## Non-negotiable constraints
 

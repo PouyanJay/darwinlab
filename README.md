@@ -29,6 +29,27 @@ awareness. The result — measured headlessly over many seeded runs, not eyeball
 The lab refuses to fake a clean "more senses → smarter" ladder, because that isn't what
 happens. A nightly CI job re-measures the sweep and fails if the finding drifts.
 
+## Schooling — a sense that _does_ pay
+
+The sense ladder shows inputs that don't earn their keep. **The Shoal exhibit shows one that
+does** — and the contrast is the whole point: _a sense is worth exactly what the world makes it
+worth._
+
+Switch the bench to **The Shoal** and two tanks run the same dangerous ocean and the same brain,
+differing only in whether the fish can sense each other. Give the predator a **confusion effect**
+— it can hold only one target, and loses its lock (then mills, distracted) when that fish is
+buried in a dense crowd — and schooling **evolves on its own**. Nobody writes the flocking; it
+appears because it works. Measured as the shoal sense's marginal effect (sense-on vs sense-off at
+the same ocean, over many seeded runs), fish that can feel their neighbours pack **~20px tighter
+and survive ~4s longer per generation**. Toggle the shoal pill off and the school comes apart.
+
+The honest caveats stay: **cohesion** (tight grouping) is the robust signal; **alignment** is
+weaker and lineage-variable, and the readout says so. And it only pays because the shark is fast
+enough that fleeing alone can't save you — slow the shark down and grouping stops mattering,
+exactly as the thesis predicts.
+
+![The Shoal exhibit: Alone vs The Shoal, the density field, and the live school readout](docs/shoal-dark.webp)
+
 ## What you can do
 
 ![Dark theme bench](docs/bench-dark.webp)
@@ -43,8 +64,10 @@ happens. A nightly CI job re-measures the sweep and fails if the finding drifts.
 - **Train, then deploy**: after the training horizon, evolution stops — no more respawns. The
   population the lab bred has to survive on its own, and you watch it decay (half-life
   included). Natural selection with the selection turned off.
-- **Play the story**: a narrated five-scene film of the whole argument, made of live
-  simulations, not recordings.
+- **Switch exhibits**: the sense ladder, or **The Shoal** — where an evolved swarm forms on its
+  own and you can break it by switching off the sense that built it.
+- **Play the story**: a narrated film of the whole argument, made of live simulations, not
+  recordings.
 
 ![Brain inspector: one real evolved mind, live](docs/inspector.webp)
 
