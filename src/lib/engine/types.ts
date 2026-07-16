@@ -110,12 +110,14 @@ export interface WorldConfig {
 	 */
 	brainInputs?: number;
 	/**
-	 * How many HIDDEN neurons the brain has. Reference = 6 (NHID). More capacity to combine inputs —
-	 * but also more weights to tune, so a bigger brain needs more generations to converge and is not
-	 * automatically better (measured: at a fixed budget it can do WORSE). A world's brain shape is
-	 * fixed at creation. Left unset on reference worlds so the fidelity gate stays bit-exact.
+	 * The brain's HIDDEN LAYERS. A single number or a one-element array is one hidden layer of that
+	 * many neurons (reference = 6); a longer array is a DEEP brain — `[16, 8]` is two hidden layers of
+	 * 16 then 8. More neurons/layers give more capacity to combine inputs, but also more weights to
+	 * tune, so a bigger brain needs more generations to converge and is not automatically better
+	 * (measured: at a fixed budget it can do WORSE). A world's brain shape is fixed at creation. Left
+	 * unset on reference worlds so the fidelity gate stays bit-exact.
 	 */
-	brainHidden?: number;
+	brainHidden?: number | number[];
 	/**
 	 * Stamina: sprinting drains a reserve that only refills while cruising; an empty tank
 	 * halves top speed. Makes "always sprint" a losing strategy, so BOLTING — calm until
@@ -272,11 +274,15 @@ export interface Transform {
 	oy: number;
 }
 
-/** Result of `forward` — a brain's motor output plus its hidden/output activations. */
+/**
+ * Result of `forward` — a brain's motor output plus its hidden/output activations.
+ * `h` is PER HIDDEN LAYER (h[l][j] = neuron j of layer l), so a single-hidden-layer brain has
+ * `h.length === 1` and a deeper one has one entry per layer — the brain viz reads it column by column.
+ */
 export interface ForwardResult {
 	turn: number;
 	thrust: number;
-	h: number[];
+	h: number[][];
 	o: [number, number];
 }
 
@@ -294,7 +300,8 @@ export interface SenseResult {
 /** Live snapshot of the selected fish's mind, rebuilt each step for the inspector. */
 export interface SenseSnapshot {
 	x: number[];
-	h: number[];
+	/** Hidden activations, per layer (see ForwardResult.h). */
+	h: number[][];
 	genome: Genome;
 	d: number;
 	dirDeg: number;

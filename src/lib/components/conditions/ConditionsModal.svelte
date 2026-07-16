@@ -20,7 +20,7 @@
 	import { sensesFor } from '../senses';
 	import { bench } from '$lib/state';
 	import type { WorldEntry } from '$lib/state';
-	import { ACCENTS, ACCENT_NAMES, WORLD_LIMITS } from '$lib/engine';
+	import { ACCENTS, ACCENT_NAMES, WORLD_LIMITS, BRAIN_MAX_LAYERS } from '$lib/engine';
 	import { SCENARIO } from '$lib/lab/scenario';
 
 	interface Props {
@@ -71,6 +71,20 @@
 	const cap = (word: string) => word[0].toUpperCase() + word.slice(1);
 	const agentNoun = cap(SCENARIO.agent.many);
 	const adversaryNoun = cap(SCENARIO.adversary.many);
+
+	// The brain's hidden-layer architecture. Every edit resets the world (the genome shape changes),
+	// so these route through setBrainLayers, not the live setCondition path.
+	const setLayer = (i: number, n: number) => {
+		const next = [...config.brainHidden];
+		next[i] = n;
+		bench.setBrainLayers(id, next);
+	};
+	const addLayer = () => bench.setBrainLayers(id, [...config.brainHidden, 6]);
+	const removeLayer = (i: number) =>
+		bench.setBrainLayers(
+			id,
+			config.brainHidden.filter((_, j) => j !== i)
+		);
 </script>
 
 <Modal
@@ -181,15 +195,42 @@
 				format={(v) => `${v}s`}
 				onchange={(value) => bench.setCondition(id, 'genDuration', value)}
 			/>
-			<Slider
-				label="Brain capacity"
-				hint="(hidden neurons — changing it restarts evolution)"
-				value={config.brainHidden}
-				{...WORLD_LIMITS.brainHidden}
-				format={(v) => `${v}`}
-				onchange={(value) => bench.setCondition(id, 'brainHidden', value)}
-			/>
 		</div>
+
+		<!-- The brain's architecture: one stepper per hidden layer, plus add/remove. A deeper or wider
+		     brain has more capacity but more weights to tune, so it is not automatically better — and
+		     changing the shape restarts evolution (the genome is rebuilt at the new wiring). -->
+		<fieldset class="persistence">
+			<legend class="field-label">Brain: hidden layers</legend>
+			<div class="layers">
+				{#each config.brainHidden as neurons, i (i)}
+					<div class="layer-row">
+						<Stepper
+							label="Layer {i + 1}"
+							value={neurons}
+							{...WORLD_LIMITS.brainHidden}
+							onchange={(value) => setLayer(i, value)}
+						/>
+						{#if config.brainHidden.length > 1}
+							<button
+								type="button"
+								class="layer-remove"
+								aria-label="remove hidden layer {i + 1}"
+								onclick={() => removeLayer(i)}>Remove</button
+							>
+						{/if}
+					</div>
+				{/each}
+				{#if config.brainHidden.length < BRAIN_MAX_LAYERS}
+					<button type="button" class="add-layer" onclick={addLayer}>+ Add a hidden layer</button>
+				{/if}
+			</div>
+			<p class="description">
+				Neurons per hidden layer — the brain's capacity and depth. More is not automatically better:
+				a bigger brain has more weights to tune, so it needs more generations to converge. Changing
+				the shape restarts evolution.
+			</p>
+		</fieldset>
 
 		<!-- Schooling as a config option on ANY world: wire in the shoal senses and give the adversary
 		     the confusion effect that makes grouping pay. Restarts evolution (the brain gains slots). -->
@@ -461,6 +502,48 @@
 
 	.persistence legend {
 		margin-bottom: var(--sp-3);
+	}
+
+	.layers {
+		display: flex;
+		flex-direction: column;
+		gap: var(--sp-3);
+	}
+
+	.layer-row {
+		display: flex;
+		align-items: center;
+		gap: var(--sp-3);
+	}
+
+	.layer-remove,
+	.add-layer {
+		border: 1px solid var(--line);
+		border-radius: var(--radius-pill);
+		background: transparent;
+		color: var(--ink3);
+		font-size: var(--fs-sm);
+		font-weight: var(--fw-semibold);
+		padding: 4px 12px;
+		cursor: pointer;
+		transition:
+			color var(--dur) var(--ease),
+			border-color var(--dur) var(--ease);
+	}
+
+	.layer-remove:hover,
+	.add-layer:hover {
+		color: var(--danger-ink);
+		border-color: var(--danger-ink);
+	}
+
+	.add-layer {
+		align-self: flex-start;
+	}
+
+	.add-layer:hover {
+		color: var(--accent);
+		border-color: var(--accent);
 	}
 
 	/* The ramp's own knobs sit indented under the switch that turns them on, so it reads as one

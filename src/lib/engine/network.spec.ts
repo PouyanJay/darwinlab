@@ -13,8 +13,8 @@ import {
 	genomeLength,
 	inputCount,
 	forward,
-	weightIH,
-	weightHO
+	edgeWeight,
+	hiddenLayers
 } from './network';
 import { seededRng } from './rng';
 
@@ -83,7 +83,8 @@ describe('brain shape (the reference brain, and the one that feels its own speed
 		expect(inputCount(g, 16)).toBe(14);
 
 		const out = forward(g, new Array<number>(14).fill(0.3), 16);
-		expect(out.h).toHaveLength(16); // sixteen hidden activations, not six
+		expect(out.h).toHaveLength(1); // one hidden layer...
+		expect(out.h[0]).toHaveLength(16); // ...of sixteen neurons, not six
 		expect(out.turn).toBeGreaterThanOrEqual(-1);
 		expect(out.turn).toBeLessThanOrEqual(1);
 		expect(out.thrust).toBeGreaterThanOrEqual(0);
@@ -94,6 +95,39 @@ describe('brain shape (the reference brain, and the one that feels its own speed
 		expect(forward(ref, new Array<number>(8).fill(0.3))).toEqual(
 			forward(ref, new Array<number>(8).fill(0.3), 6)
 		);
+	});
+
+	it('normalises the hidden spec: undefined → the reference layer, a number → one layer, [] → reference', () => {
+		expect(hiddenLayers(undefined)).toEqual([NHID]);
+		expect(hiddenLayers(16)).toEqual([16]);
+		expect(hiddenLayers([16, 8])).toEqual([16, 8]);
+		expect(hiddenLayers([])).toEqual([NHID]);
+	});
+
+	it('supports MULTIPLE hidden layers — genome, forward and edges all read the deep shape', () => {
+		// 14 inputs, two hidden layers [16, 8]: 16*14+16 + 8*16+8 + 2*8+2 = 240 + 136 + 18 = 394
+		expect(genomeLength(14, [16, 8])).toBe(394);
+		const g = makeGenome(seededRng(5), 14, [16, 8]);
+		expect(g).toHaveLength(394);
+		expect(inputCount(g, [16, 8])).toBe(14);
+
+		const out = forward(g, new Array<number>(14).fill(0.2), [16, 8]);
+		expect(out.h).toHaveLength(2); // two hidden layers...
+		expect(out.h[0]).toHaveLength(16); // ...of 16...
+		expect(out.h[1]).toHaveLength(8); // ...then 8
+		expect(out.turn).toBeGreaterThanOrEqual(-1);
+		expect(out.turn).toBeLessThanOrEqual(1);
+		expect(out.thrust).toBeGreaterThanOrEqual(0);
+		expect(out.thrust).toBeLessThanOrEqual(1);
+
+		// edgeWeight walks the flat genome by [nin, ...hidden, nout] — transition 1 is h0→h1
+		const sizes = [14, 16, 8, NOUT];
+		g.fill(0);
+		g[0] = 1; // input 0 → hidden-layer-0 neuron 0
+		expect(edgeWeight(g, sizes, 0, 0, 0)).toBe(1);
+		const h1w = 16 * 14 + 16; // skip layer 0's weights + biases → first weight of layer 1
+		g[h1w] = 3;
+		expect(edgeWeight(g, sizes, 1, 0, 0)).toBe(3);
 	});
 });
 
@@ -118,7 +152,7 @@ describe('forward pass', () => {
 		const out = forward(g, x);
 		expect(out.turn).toBe(0);
 		expect(out.thrust).toBeCloseTo(0.5, 12); // sigmoid(0)
-		expect(out.h.every((v) => v === 0)).toBe(true);
+		expect(out.h[0].every((v) => v === 0)).toBe(true);
 		expect(out.o).toEqual([out.turn, out.thrust]);
 	});
 
@@ -129,14 +163,14 @@ describe('forward pass', () => {
 		g[weightIndexHO(0, 0)] = 2; // hidden 0 → output 0
 		const x = [1, 0, 0, 0, 0, 0, 0, 0];
 
-		// the accessors read back exactly what we set
-		expect(weightIH(g, 0, 0)).toBe(1);
-		expect(weightHO(g, 0, 0)).toBe(2);
+		// the accessor reads back exactly what we set (layer 0 = inputs→hidden, layer 1 = hidden→out)
+		expect(edgeWeight(g, [NIN, NHID, NOUT], 0, 0, 0)).toBe(1);
+		expect(edgeWeight(g, [NIN, NHID, NOUT], 1, 0, 0)).toBe(2);
 
 		const out = forward(g, x);
 		const h0 = Math.tanh(1); // bias input × weight 1, no hidden bias
-		expect(out.h[0]).toBeCloseTo(h0, 12);
-		expect(out.h.slice(1).every((v) => v === 0)).toBe(true);
+		expect(out.h[0][0]).toBeCloseTo(h0, 12);
+		expect(out.h[0].slice(1).every((v) => v === 0)).toBe(true);
 		expect(out.turn).toBeCloseTo(Math.tanh(2 * h0), 12);
 		expect(out.thrust).toBeCloseTo(0.5, 12); // output1 untouched
 	});

@@ -19,8 +19,7 @@ import {
 	IN_LABELS,
 	IN_SENSE,
 	OUT_LABELS,
-	weightIH,
-	weightHO
+	edgeWeight
 } from '../engine';
 import type { Senses, SenseSnapshot } from '../engine';
 import { THEMES, type ThemeName } from './theme';
@@ -39,7 +38,7 @@ export interface DrawBrainOpts {
 // The resting net's activations — all zero, shared and never written, so painting a fish-less
 // brain 60×/s doesn't allocate two arrays a frame.
 const SILENT_INPUTS: readonly number[] = new Array<number>(NIN).fill(0);
-const SILENT_HIDDEN: readonly number[] = new Array<number>(NHID).fill(0);
+const SILENT_HIDDEN: number[] = new Array<number>(NHID).fill(0);
 
 export function drawBrain(
 	ctx: CanvasRenderingContext2D,
@@ -64,22 +63,26 @@ export function drawBrain(
 	}
 
 	const x = sense ? sense.x : SILENT_INPUTS;
-	const h = sense ? sense.h : SILENT_HIDDEN;
+	// Hidden activations PER LAYER — a single-hidden-layer brain has one, a deep one has several.
+	// The whole network is a column stack: inputs, each hidden layer, outputs; sizes drives it all.
+	const hLayers: number[][] = sense ? sense.h : [SILENT_HIDDEN];
 	const g = sense ? sense.genome : null;
-	// The brain is as wide/deep as THIS world's brains are — the hidden count is the length of the
-	// live activation array (or NHID for the resting net), and the input count follows from it. Never
-	// a module constant: 6-, and bigger-hidden brains coexist on one bench.
-	const nhid = h.length;
-	const nin = g ? inputCount(g, nhid) : x.length;
+	const nhids = hLayers.map((layer) => layer.length);
+	const nin = g ? inputCount(g, nhids) : x.length;
+	const sizes = [nin, ...nhids, NOUT];
+	const cols = sizes.length;
 	const turn = sense ? sense.turn : 0;
 	const thrust = sense ? sense.thrust : 0;
+	const outs = [turn, thrust];
 
 	const IX = 66;
-	const HX = W / 2;
 	const OX = W - 60;
-	const iy = (i: number) => 20 + (i * (H - 34)) / (nin - 1);
-	const hy = (j: number) => 40 + (j * (H - 70)) / Math.max(1, nhid - 1);
-	const oy = (k: number) => H * 0.38 + k * H * 0.26;
+	// columns evenly spaced from inputs (left) to outputs (right); nodes evenly stacked within a column
+	const colX = (c: number) => IX + ((OX - IX) * c) / (cols - 1);
+	const nodeY = (n: number, idx: number) => (n <= 1 ? H / 2 : 20 + (idx * (H - 34)) / (n - 1));
+	// activation of the node at (column c, index idx): inputs, then each hidden layer, then outputs
+	const act = (c: number, idx: number) =>
+		c === 0 ? x[idx] : c === cols - 1 ? outs[idx] : hLayers[c - 1][idx];
 	const senseOn = (idx: number): boolean => {
 		const key = IN_SENSE[idx];
 		return key === null ? true : !!S[key];
@@ -116,13 +119,23 @@ export function drawBrain(
 	};
 
 	if (g) {
-		for (let i = 0; i < nin; i++) {
-			for (let j = 0; j < nhid; j++)
-				edge(IX, iy(i), HX, hy(j), weightIH(g, j, i, nhid), x[i], i * nhid + j);
-		}
-		for (let j = 0; j < nhid; j++) {
-			for (let k = 0; k < NOUT; k++)
-				edge(HX, hy(j), OX, oy(k), weightHO(g, k, j, nhid), h[j], 40 + j * NOUT + k);
+		// every layer-to-layer transition: from each source unit to each target unit, its real weight
+		for (let c = 0; c < cols - 1; c++) {
+			const nFrom = sizes[c];
+			const nTo = sizes[c + 1];
+			for (let from = 0; from < nFrom; from++) {
+				for (let to = 0; to < nTo; to++) {
+					edge(
+						colX(c),
+						nodeY(nFrom, from),
+						colX(c + 1),
+						nodeY(nTo, to),
+						edgeWeight(g, sizes, c, from, to),
+						act(c, from),
+						c * 97 + from * 13 + to
+					);
+				}
+			}
 		}
 	}
 
@@ -158,24 +171,28 @@ export function drawBrain(
 	};
 
 	ctx.font = '500 9px Inter, sans-serif';
+	// input nodes, with the sense that gates each (an off sense dims its node and adds "· off")
 	for (let i = 0; i < nin; i++) {
 		const on = senseOn(i);
-		node(IX, iy(i), x[i], on, 5);
+		node(IX, nodeY(nin, i), x[i], on, 5);
 		ctx.fillStyle = on ? th.ink : th.inkSoft;
 		ctx.globalAlpha = on ? 0.85 : 0.4;
 		ctx.textAlign = 'right';
-		ctx.fillText(IN_LABELS[i] + (on ? '' : ' · off'), IX - 10, iy(i) + 3);
+		ctx.fillText(IN_LABELS[i] + (on ? '' : ' · off'), IX - 10, nodeY(nin, i) + 3);
 		ctx.globalAlpha = 1;
 	}
-	for (let j = 0; j < nhid; j++) node(HX, hy(j), h[j], true, 6);
+	// hidden nodes, one column per hidden layer
+	for (let c = 1; c < cols - 1; c++) {
+		const n = sizes[c];
+		for (let j = 0; j < n; j++) node(colX(c), nodeY(n, j), hLayers[c - 1][j], true, 6);
+	}
 
 	ctx.textAlign = 'left';
-	const outs = [turn, thrust];
 	for (let k = 0; k < NOUT; k++) {
-		node(OX, oy(k), outs[k], true, 7);
+		node(OX, nodeY(NOUT, k), outs[k], true, 7);
 		ctx.fillStyle = th.ink;
 		ctx.globalAlpha = 0.85;
-		ctx.fillText(OUT_LABELS[k], OX + 11, oy(k) + 3);
+		ctx.fillText(OUT_LABELS[k], OX + 11, nodeY(NOUT, k) + 3);
 		ctx.globalAlpha = 1;
 	}
 
@@ -184,7 +201,7 @@ export function drawBrain(
 	ctx.globalAlpha = 0.55;
 	ctx.font = '500 8.5px Inter, sans-serif';
 	ctx.fillText('inputs', IX, H - 5);
-	ctx.fillText('hidden', HX, H - 5);
+	for (let c = 1; c < cols - 1; c++) ctx.fillText('hidden', colX(c), H - 5);
 	ctx.fillText('outputs', OX, H - 5);
 	ctx.globalAlpha = 1;
 	ctx.textAlign = 'left';

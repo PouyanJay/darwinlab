@@ -37,6 +37,7 @@ import {
 	WORLD_LIMITS,
 	PERSISTENCE_DEFAULTS,
 	SCHOOLING_PARAMS,
+	BRAIN_MAX_LAYERS,
 	MAX_GENERATIONS
 } from '../engine';
 import {
@@ -704,8 +705,21 @@ class BenchStore {
 		// weights no longer fit — evolution has to restart at the new shape. Every other condition is a
 		// live edit that keeps the run going (applyCfg). resetWorld also clears the exhibit/assay/eval
 		// that described the population that just went away.
-		if (key === 'brainHidden') this.resetWorld(id);
-		else engineApplyCfg(world);
+		engineApplyCfg(world);
+		this.#publishConfig(id);
+	}
+
+	/**
+	 * Set the brain's ARCHITECTURE — the hidden layers, as a list of neuron counts ([6] is the
+	 * reference single layer; [16, 8] is two hidden layers). The genome shape changes, so evolution
+	 * restarts (resetWorld): you are wiring a differently-shaped brain, not editing the one you had.
+	 * Each layer's size and the layer count are clamped to sane bounds.
+	 */
+	setBrainLayers(id: string, layers: number[]): void {
+		const { world } = this.entry(id);
+		const clean = layers.slice(0, BRAIN_MAX_LAYERS).map((n) => clamp(n, WORLD_LIMITS.brainHidden));
+		world.cfg.brainHidden = clean.length ? clean : [WORLD_LIMITS.brainHidden.min];
+		this.resetWorld(id);
 		this.#publishConfig(id);
 	}
 

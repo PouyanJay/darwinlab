@@ -21,7 +21,8 @@ import {
 	probePolicy,
 	polarization,
 	meanNearestNeighbor,
-	isSchoolingWorld
+	isSchoolingWorld,
+	hiddenLayers
 } from '../engine';
 import type { World, WorldConfig, Senses, SenseSnapshot, Genome, PolicyMap } from '../engine';
 
@@ -321,8 +322,10 @@ export class WorldConfigView {
 	mutation = $state(0);
 	/** Sim-seconds per generation (episode length). Reference 10; the showcase runs 30. */
 	genDuration = $state(30);
-	/** Hidden-neuron count — the brain's capacity. Reference 6. */
-	brainHidden = $state(6);
+	/** How many inputs the brain has (8 reference, 9 with proprioception, 14 with the shoal senses). */
+	brainInputs = $state(8);
+	/** The brain's hidden layers, as a list of neuron counts. Reference [6] (one layer of six). */
+	brainHidden = $state<number[]>([6]);
 	/** Whether the shoal senses are wired into this world's brains — the "Schooling" toggle's state. */
 	schooling = $state(false);
 	/** How hard the confusion effect bites (only meaningful while schooling is on). */
@@ -348,7 +351,8 @@ export class WorldConfigView {
 		this.vision = cfg.vision;
 		this.mutation = cfg.mutation;
 		this.genDuration = cfg.genDuration ?? 30;
-		this.brainHidden = cfg.brainHidden ?? 6;
+		this.brainInputs = cfg.brainInputs ?? 8;
+		this.brainHidden = hiddenLayers(cfg.brainHidden);
 		this.schooling = 'cohesion' in cfg.senses || 'align' in cfg.senses;
 		this.confusionStrength = cfg.confusionStrength ?? 3;
 		this.caption = cfg.caption;

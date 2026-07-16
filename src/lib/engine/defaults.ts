@@ -294,6 +294,9 @@ export const WORLD_LIMITS = {
 /** The numeric conditions a user may edit — the keys of WORLD_LIMITS. */
 export type NumericCondition = keyof typeof WORLD_LIMITS;
 
+/** Most hidden layers a brain may have in the UI — deeper is rarely better and only slows evolution. */
+export const BRAIN_MAX_LAYERS = 4;
+
 /** What the persistence params fall back to when the ramp is switched on (the reference's own). */
 export const PERSISTENCE_DEFAULTS = {
 	persistRamp: 0.04,

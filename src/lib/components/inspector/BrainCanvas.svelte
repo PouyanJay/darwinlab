@@ -14,13 +14,20 @@
 	import { drawBrain } from '$lib/render';
 	import { bench, theme, prefersReducedMotion } from '$lib/state';
 	import type { WorldEntry } from '$lib/state';
-	import { GLEN } from '$lib/engine';
+	import { genomeLength } from '$lib/engine';
 
 	interface Props {
 		entry: WorldEntry;
 	}
 
 	let { entry }: Props = $props();
+
+	// The actual gene count and shape of THIS world's brain — not the reference 8→6→2/68, since the
+	// brain's inputs and hidden layers are a per-world condition now.
+	const genes = $derived(genomeLength(entry.config.brainInputs, entry.config.brainHidden));
+	const shape = $derived(
+		[entry.config.brainInputs, ...entry.config.brainHidden, 2].join(' → ')
+	);
 
 	// 'always': the inspector rides on top of the bench AND on top of a playing scene alike.
 	const register = (render: () => void) => bench.painters.add(render, 'always');
@@ -58,15 +65,15 @@
 
 <div class="head">
 	<span class="field-label">The brain: real evolved weights</span>
-	<span class="genes tabular">{GLEN} genes</span>
+	<span class="genes tabular">{genes} genes</span>
 </div>
 
 <div class="net">
 	<Canvas
 		{paint}
 		{register}
-		label="The fish's brain: 8 inputs to 6 hidden neurons to 2 outputs, drawn from its {GLEN}
-		evolved weights. Edges that excite (+) and edges that inhibit (−) are drawn in different
+		label="The fish's brain, shaped {shape} (inputs to hidden layers to outputs), drawn from its
+		{genes} evolved weights. Edges that excite (+) and edges that inhibit (−) are drawn in different
 		colours; the thicker the edge, the stronger the weight."
 	/>
 </div>

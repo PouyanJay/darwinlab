@@ -32,21 +32,49 @@ export const NIN_WITH_SHOAL = 14;
 export const NHID = 6;
 export const NOUT = 2;
 
-/** Weight count for a brain with `nin` inputs and `nhid` hidden neurons. The reference brain: 68. */
-export function genomeLength(nin: number = NIN, nhid: number = NHID): number {
-	return nhid * nin + nhid + NOUT * nhid + NOUT;
+/**
+ * Normalise a hidden-layer spec to an array of layer sizes. `undefined` → the reference single layer;
+ * a bare number → one layer of that many neurons; an array → itself (an empty one falls back to the
+ * reference). This is the one place a world's `brainHidden` becomes a concrete network shape.
+ */
+export function hiddenLayers(hidden?: number | number[]): number[] {
+	if (hidden === undefined) return [NHID];
+	if (typeof hidden === 'number') return [hidden];
+	return hidden.length ? hidden : [NHID];
+}
+
+/** Weight count for a brain with `nin` inputs and the given hidden layers. The reference brain: 68. */
+export function genomeLength(nin: number = NIN, hidden: number | number[] = NHID): number {
+	const layers = hiddenLayers(hidden);
+	let total = 0;
+	let prev = nin;
+	for (const L of layers) {
+		total += L * prev + L; // weights (L×prev) + biases (L) for this layer
+		prev = L;
+	}
+	return total + NOUT * prev + NOUT; // the output layer
 }
 /** Genome length of the REFERENCE brain: 6*8 + 6 + 2*6 + 2 = 68. */
 export const GLEN = genomeLength(NIN);
 
 /**
  * How many inputs this genome was built for. The genome length alone is ambiguous once the hidden
- * layer can vary (L = nhid·nin + nhid + 2·nhid + 2 has two unknowns), so the caller must say how many
- * hidden neurons the brain has — which it always knows, from the world's `brainHidden`. Defaults to
- * the reference NHID, so every existing call and the fidelity gate are unchanged.
+ * shape can vary, so the caller must say what the hidden layers are — which it always knows, from the
+ * world's `brainHidden`. Defaults to the reference single layer, so every existing call and the
+ * fidelity gate are unchanged.
  */
-export function inputCount(g: Genome, nhid: number = NHID): number {
-	return (g.length - nhid - NOUT * nhid - NOUT) / nhid;
+export function inputCount(g: Genome, hidden: number | number[] = NHID): number {
+	const layers = hiddenLayers(hidden);
+	const L1 = layers[0];
+	// everything in the genome EXCEPT the first layer's input weights (L1×nin):
+	let rest = L1; // first hidden layer's biases
+	let prev = L1;
+	for (let i = 1; i < layers.length; i++) {
+		rest += layers[i] * prev + layers[i];
+		prev = layers[i];
+	}
+	rest += NOUT * prev + NOUT; // output layer
+	return (g.length - rest) / L1;
 }
 
 export const IN_LABELS = [
@@ -85,50 +113,74 @@ export const IN_SENSE: (keyof Senses | null)[] = [
 export const OUT_LABELS = ['turn', 'thrust'];
 
 /** A fresh random genome — each weight `randn() * 0.8` (gaussian init). */
-export function makeGenome(rng: Rng = defaultRng, nin: number = NIN, nhid: number = NHID): Genome {
-	const len = genomeLength(nin, nhid);
+export function makeGenome(
+	rng: Rng = defaultRng,
+	nin: number = NIN,
+	hidden: number | number[] = NHID
+): Genome {
+	const len = genomeLength(nin, hidden);
 	const g = new Float64Array(len);
 	for (let i = 0; i < len; i++) g[i] = randn(rng) * GENOME_INIT_SCALE;
 	return g;
 }
 
 /**
- * Forward pass. Returns motor outputs plus hidden/output activations for the brain viz.
- * `turn = tanh(o0)` ∈ [−1,1]; `thrust = sigmoid(o1)` ∈ [0,1].
+ * Forward pass through an arbitrary-depth MLP. Returns motor outputs plus every hidden layer's
+ * activations (`h[l][j]`) for the brain viz. `turn = tanh(o0)` ∈ [−1,1]; `thrust = sigmoid(o1)`.
  *
- * The genome's own length decides how many inputs are read, so an 8-input brain in a
- * 9-input world simply never sees the extra slot (and vice versa is impossible: a fish
- * only ever meets the input vector its world builds).
+ * The genome is a flat concatenation of, per layer, its weight matrix (neuron-major: for each neuron
+ * j, `prev` weights) followed by its biases; then the same for the output layer. For a single hidden
+ * layer this is byte-identical to the reference brain, which is what keeps the fidelity gate green.
  */
-export function forward(g: Genome, x: number[], nhid: number = NHID): ForwardResult {
-	const nin = inputCount(g, nhid);
-	const h = new Array<number>(nhid);
+export function forward(g: Genome, x: number[], hidden: number | number[] = NHID): ForwardResult {
+	const layers = hiddenLayers(hidden);
+	let prev: number[] = x;
+	let prevN = inputCount(g, hidden);
 	let p = 0;
-	for (let j = 0; j < nhid; j++) {
-		let s = 0;
-		for (let i = 0; i < nin; i++) s += g[p++] * (x[i] ?? 0);
-		h[j] = Math.tanh(s + g[nhid * nin + j]);
+	const h: number[][] = [];
+	for (const L of layers) {
+		const wStart = p;
+		p += L * prevN;
+		const bStart = p;
+		p += L;
+		const cur = new Array<number>(L);
+		for (let j = 0; j < L; j++) {
+			let s = 0;
+			for (let i = 0; i < prevN; i++) s += g[wStart + j * prevN + i] * (prev[i] ?? 0);
+			cur[j] = Math.tanh(s + g[bStart + j]);
+		}
+		h.push(cur);
+		prev = cur;
+		prevN = L;
 	}
+	const wStart = p;
+	p += NOUT * prevN;
+	const bStart = p;
 	const o = new Array<number>(NOUT);
-	let q = nhid * nin + nhid;
 	for (let k = 0; k < NOUT; k++) {
 		let s = 0;
-		for (let j = 0; j < nhid; j++) s += g[q++] * h[j];
-		s += g[nhid * nin + nhid + NOUT * nhid + k];
-		o[k] = s;
+		for (let j = 0; j < prevN; j++) s += g[wStart + k * prevN + j] * prev[j];
+		o[k] = s + g[bStart + k];
 	}
 	const turn = Math.tanh(o[0]);
 	const thrust = 1 / (1 + Math.exp(-o[1]));
 	return { turn, thrust, h, o: [turn, thrust] };
 }
 
-/** Weight from input `i` into hidden neuron `j`. */
-export function weightIH(g: Genome, j: number, i: number, nhid: number = NHID): number {
-	return g[j * inputCount(g, nhid) + i];
-}
-
-/** Weight from hidden neuron `j` into output `k`. */
-export function weightHO(g: Genome, k: number, j: number, nhid: number = NHID): number {
-	const nin = inputCount(g, nhid);
-	return g[nhid * nin + nhid + k * nhid + j];
+/**
+ * The weight from unit `from` of one layer into unit `to` of the next, for the brain viz — walking
+ * the flat genome with the full layer shape. `sizes` is [nin, ...hidden, nout]; `layer` indexes the
+ * transition (0 = inputs→first hidden). Neuron-major within a layer, weights then biases, as `forward`
+ * lays them out.
+ */
+export function edgeWeight(
+	g: Genome,
+	sizes: number[],
+	layer: number,
+	from: number,
+	to: number
+): number {
+	let p = 0;
+	for (let l = 0; l < layer; l++) p += sizes[l + 1] * sizes[l] + sizes[l + 1]; // skip earlier layers
+	return g[p + to * sizes[layer] + from];
 }
