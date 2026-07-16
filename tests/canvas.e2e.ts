@@ -53,6 +53,20 @@ test('branching wires a child BELOW its parent — an edge that was not there be
 	expect(childBox.y).toBeGreaterThan(parent.y + parent.height / 2);
 });
 
+test('duplicate makes a free-standing copy — carries the brains, but no wire into the tree', async ({
+	page
+}) => {
+	await expect(edges(page)).toHaveCount(0);
+
+	await node(page, 0).getByRole('button', { name: 'duplicate world' }).click();
+
+	// a sixth node inserted right after the source, with its brains — but the edge count stays 0,
+	// which is the whole difference from Branch: a duplicate descends from nothing.
+	await expect(nodes(page)).toHaveCount(6);
+	await expect(edges(page)).toHaveCount(0);
+	await expect(node(page, 1).locator('input')).toHaveValue('Blind drift copy');
+});
+
 test('a node is dragged by its header, and its neighbour stays put', async ({ page }) => {
 	const before = await box(page, 1); // Distance
 	const neighbourBefore = await box(page, 0); // Blind drift — must not move

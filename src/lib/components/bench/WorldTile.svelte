@@ -98,6 +98,17 @@
 			>
 				<Icon name="reset" size={15} />
 			</Button>
+			<!-- A FREE-STANDING copy: same evolved brains, but NOT wired into the tree. Branch (in the
+			     toolbar) makes a descendant; this makes an independent world for a separate line of work. -->
+			<Button
+				variant="icon"
+				size="sm"
+				title="duplicate as a standalone world (no lineage link)"
+				aria-label="duplicate world"
+				onclick={() => bench.duplicateWorld(entry.id)}
+			>
+				<Icon name="duplicate" size={15} />
+			</Button>
 			<Button
 				variant="icon"
 				size="sm"
