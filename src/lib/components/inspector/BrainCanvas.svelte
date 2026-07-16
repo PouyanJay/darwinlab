@@ -1,13 +1,14 @@
 <!--
-  The brain — 8 → 6 → 2, drawn from this fish's actual 68 evolved weights.
+  The brain — inputs → hidden layer(s) → 2, drawn from this fish's actual evolved weights. The shape
+  is a per-world condition (8→6→2 and 68 weights for the reference brain, more for a deeper one).
 
   Not a diagram of a neural network: THIS network. Edge colour is the weight's sign, thickness is
   its magnitude, and the pulses travelling along it are the live signal, |weight × activation|, this
   frame. A sense that has been cut dims its input node and sends nothing, which is what makes the
   ablation visible rather than merely asserted.
 
-  It paints from the RAW world, like the tank does — the genome is 68 floats and the signal changes
-  every frame; there is nothing here for reactivity to do.
+  It paints from the RAW world, like the tank does — the genome is a flat array of floats and the
+  signal changes every frame; there is nothing here for reactivity to do.
 -->
 <script lang="ts">
 	import Canvas from '../common/Canvas.svelte';
@@ -25,9 +26,7 @@
 	// The actual gene count and shape of THIS world's brain — not the reference 8→6→2/68, since the
 	// brain's inputs and hidden layers are a per-world condition now.
 	const genes = $derived(genomeLength(entry.config.brainInputs, entry.config.brainHidden));
-	const shape = $derived(
-		[entry.config.brainInputs, ...entry.config.brainHidden, 2].join(' → ')
-	);
+	const shape = $derived([entry.config.brainInputs, ...entry.config.brainHidden, 2].join(' → '));
 
 	// 'always': the inspector rides on top of the bench AND on top of a playing scene alike.
 	const register = (render: () => void) => bench.painters.add(render, 'always');
