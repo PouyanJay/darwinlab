@@ -121,8 +121,12 @@ export const DEFAULT_WORLDS: WorldConfig[] = [
  * (`confusionLock`): the shark holds one target and loses it — then mills, distracted — when that
  * fish is inside a dense crowd. Passive proximity can't shake a lock; only an actively-maintained
  * swarm can. Paired with the selfish herd (`confusionCatch`, a packed fish is hard to grab on
- * contact) and a strength that makes both bite, the shoal sense finally earns its keep: measured
- * marginal (sense-on vs sense-off, equal ocean) −20px nearest-neighbour and +4.2s of TRAINING life.
+ * contact) and a strength that makes both bite, the shoal sense earns its keep: measured, a
+ * sense-on population out-survives an equal sense-blind one by a couple of seconds of training life
+ * and holds a tighter school (run scripts/sweep-schooling.ts for the current margin). It is a modest,
+ * honest effect, not a dramatic bait-ball — this size of brain and predator can produce a grouping
+ * that PAYS, but not a coordinated travelling school (measured: drafting/alignment mechanics buy
+ * travel only by scattering the group, and deeper brains do worse at this evolutionary budget).
  *
  * predSpeed is above the fish's own top speed on purpose: a shark you can outswim makes fleeing a
  * complete strategy and grouping never pays (as slowing the shark collapses the sense ladder). The
@@ -140,7 +144,13 @@ export const SHOAL_OCEAN = {
 	confusionStrike: false,
 	confusionStrength: 3,
 	confusionRadius: 70,
-	socialRadius: 70
+	socialRadius: 70,
+	// Wall-avoidance is ON here (unlike the sense ladder, which turns it off so the WALLS sense has to
+	// earn its keep). The Shoal is not about the walls sense — it is about the shoal sense — and with
+	// it off a school kept piling into a corner and dying there, which taught nothing and buried the
+	// grouping signal. Measured: turning it on lifts the whole tank ~4s and tightens the school,
+	// without erasing the sense's margin (Shoal still out-survives sense-blind Alone).
+	wallInstinct: true
 } as const satisfies Partial<WorldConfig>;
 
 /** Predator + prey senses shared by both Shoal worlds; only cohesion/align differ between them. */
