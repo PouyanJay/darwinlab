@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { page } from 'vitest/browser';
 import TileStats from './TileStats.svelte';
-import { WorldStats, WorldConfigView, type WorldEntry } from '$lib/state';
+import { WorldStats, WorldConfigView, LineageView, type WorldEntry } from '$lib/state';
 import { makeWorld, DEFAULT_WORLDS } from '$lib/engine';
 
 /**
@@ -14,7 +14,13 @@ function entryWith(stats: Partial<WorldStats>): WorldEntry {
 	const world = makeWorld(structuredClone(DEFAULT_WORLDS[2]));
 	const config = new WorldConfigView();
 	config.syncFrom(world.cfg);
-	return { id: 'w1', world, stats: Object.assign(new WorldStats(), stats), config };
+	return {
+		id: 'w1',
+		world,
+		stats: Object.assign(new WorldStats(), stats),
+		config,
+		lineage: new LineageView()
+	};
 }
 
 const deployment = () => page.getByTestId('deployment').element().textContent;

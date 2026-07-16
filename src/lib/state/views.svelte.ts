@@ -362,6 +362,27 @@ export class WorldConfigView {
 	}
 }
 
+/**
+ * Where a world SITS on the lineage canvas, and who it descends from.
+ *
+ * This is view state, not science — it never touches a genome, a fitness, or the RNG. It lives here
+ * (reactive, on the entry) rather than on the raw `World` because the canvas must re-render when a
+ * node moves or a branch is drawn, and none of it changes at frame rate. `x`/`y` are the node's
+ * top-left in CANVAS coordinates; the viewport transform (canvas.svelte.ts) maps them to the screen.
+ *
+ * Only the bench store writes these — `branchWorld` sets the links, `moveWorld` sets the position,
+ * and the initial auto-layout places the roots. Components read them and call those methods; they
+ * never mutate a node's position directly (the same load-bearing rule as the rest of the store).
+ */
+export class LineageView {
+	x = $state(0);
+	y = $state(0);
+	/** The id of the world this one was branched from, or null for a root (a hand-added world). */
+	parentId = $state<string | null>(null);
+	/** The ids branched FROM this world, in the order they were spawned. */
+	childIds = $state<string[]>([]);
+}
+
 export interface WorldEntry {
 	readonly id: string;
 	/** The raw engine world — deliberately NOT reactive (see above). */
@@ -369,13 +390,15 @@ export interface WorldEntry {
 	readonly stats: WorldStats;
 	/** Reactive view of `world.cfg` — what components bind to. */
 	readonly config: WorldConfigView;
+	/** Reactive canvas placement + lineage links — see LineageView. */
+	readonly lineage: LineageView;
 }
 
-/** Build the pair of projections a world needs, already synced to it. */
+/** Build the projections a world needs, already synced to it. */
 export function makeEntry(id: string, world: World): WorldEntry {
 	const stats = new WorldStats();
 	const config = new WorldConfigView();
 	stats.syncFrom(world);
 	config.syncFrom(world.cfg);
-	return { id, world, stats, config };
+	return { id, world, stats, config, lineage: new LineageView() };
 }
