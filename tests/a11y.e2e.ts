@@ -14,13 +14,22 @@ const violations = async (page: Page) => {
 	// Let entrance animations LAND first: axe reads computed colours, and text caught mid fade-up
 	// sits at partial opacity — a contrast failure that exists for a quarter of a second and
 	// belongs to no real state. Infinite animations (status dots) are excluded or this never ends.
-	await page.evaluate(() =>
-		Promise.all(
-			document
-				.getAnimations()
-				.filter((a) => (a.effect?.getTiming().iterations ?? 1) !== Infinity)
-				.map((a) => a.finished.catch(() => {}))
-		)
+	//
+	// The wait is CAPPED, because "wait for every finite animation to finish" is not safe on its own:
+	// after a theme toggle a transition can be left in a state whose `.finished` never resolves (seen
+	// hanging on CI), and one stuck promise would hang the whole scan. A theme transition is well under
+	// a second, so 2s of settle is plenty, and the cap means a stuck animation can never wedge it.
+	await page.evaluate(
+		() =>
+			Promise.race([
+				Promise.all(
+					document
+						.getAnimations()
+						.filter((a) => (a.effect?.getTiming().iterations ?? 1) !== Infinity)
+						.map((a) => a.finished.catch(() => {}))
+				),
+				new Promise((resolve) => setTimeout(resolve, 2000))
+			]) as Promise<unknown>
 	);
 	const results = await new AxeBuilder({ page }).analyze();
 	// One line per violation, so a failure names the rule and the damage without spelunking.
