@@ -1,21 +1,18 @@
 <!--
   The bench page — the app's only screen.
 
-  A shell in three parts: the top bar says what this is, the sidebar is everything you can do to it,
-  and the bench is the experiment itself — one card per environment, each a living population with
+  It opens on the INTRO: the product's claim and method, full-screen, which the first interaction
+  fades away to reveal the platform already running underneath. Behind it, a shell in three parts:
+  the top bar says what this is, the sidebar is everything you can do to it, and the bench is the
+  experiment itself — the lineage canvas, one node per environment, each a living population with
   its own controls and its own evidence.
-
-  The cards are SIZED, not stretched. A tank has a shape (the world is 640×400), and a card stretched
-  to whatever a monitor happens to be wide paints a letterbox of empty water around it. So the grid
-  runs at most three across, the cards keep their width, and a bench of one gives that one card the
-  room — the layout follows the experiment, not the window.
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import TopBar from '$lib/components/topbar/TopBar.svelte';
 	import TurboPill from '$lib/components/topbar/TurboPill.svelte';
 	import Sidebar from '$lib/components/shell/Sidebar.svelte';
-	import FieldNote from '$lib/components/bench/FieldNote.svelte';
+	import Intro from '$lib/components/intro/Intro.svelte';
 	import FirstRunHint from '$lib/components/bench/FirstRunHint.svelte';
 	import LineageCanvas from '$lib/components/bench/LineageCanvas.svelte';
 	import ConditionsModal from '$lib/components/conditions/ConditionsModal.svelte';
@@ -61,6 +58,10 @@
 		bench.addWorld(newWorldConfig(nextWorldName(), bench.nextAccent()));
 	}
 
+	// The intro is up until the first interaction; the platform runs (and prewarms) underneath it the
+	// whole time, so dismissing it reveals a live bench rather than starting one.
+	let entered = $state(false);
+
 	/**
 	 * How much of the left edge the sidebar is holding.
 	 *
@@ -92,6 +93,10 @@
 		'button, input, textarea, select, a, [role="radio"], [role="separator"], [contenteditable]';
 
 	function onkeydown(event: KeyboardEvent) {
+		// While the intro is up, every key belongs to it (any key is "let me in") — the page's own
+		// shortcuts stand down, or the keypress that enters the lab would also pause the sim.
+		if (!entered) return;
+
 		// Esc shuts the control panel where it is an overlay — the same key that closes every other
 		// thing this app puts over the bench.
 		if (event.key === 'Escape' && shell.narrow && shell.overlayOpen && !story.active) {
@@ -111,20 +116,17 @@
 <svelte:head><title>Darwin Lab</title></svelte:head>
 <svelte:window {onkeydown} />
 
-<!-- inert while a film is playing: the bench is behind a full-screen takeover, and a keyboard user
-     must not be able to Tab onto controls they cannot see and remove a world mid-presentation. -->
-<div class="app" inert={story.active} style:--shell-gutter={gutter}>
+<!-- inert while a full-screen takeover is up — the intro or a playing film. A keyboard user must
+     not be able to Tab onto controls they cannot see and remove a world mid-presentation. -->
+<div class="app" inert={story.active || !entered} style:--shell-gutter={gutter}>
 	<TopBar />
 	<TurboPill />
 
 	<div class="shell">
 		<Sidebar onaddworld={addWorld} onplaystory={() => bench.playStory()} />
 
-		<!-- The bench is now a spatial CANVAS, not a grid: the note sits above it, the family tree fills
-		     the rest of the height. -->
+		<!-- The bench IS the canvas: the family tree takes the full height under the top bar. -->
 		<div class="bench">
-			<div class="banner"><FieldNote /></div>
-
 			<main>
 				<LineageCanvas onaddworld={addWorld} />
 			</main>
@@ -143,9 +145,12 @@
 	<FirstRunHint />
 </div>
 
-<!-- OUTSIDE the app, deliberately: the app above is `inert` while a film plays, and a takeover that
-     lived inside the thing it suppresses would suppress itself. -->
+<!-- OUTSIDE the app, deliberately: the app above is `inert` while a takeover is up, and a takeover
+     that lived inside the thing it suppresses would suppress itself. -->
 <StoryMode />
+{#if !entered}
+	<Intro ondismiss={() => (entered = true)} />
+{/if}
 
 <style>
 	.app {
@@ -172,12 +177,7 @@
 		padding: var(--sp-4) var(--sp-5) var(--sp-5);
 	}
 
-	.banner {
-		width: 100%;
-		flex: none;
-	}
-
-	/* The canvas host fills whatever height the note leaves — the tree gets the room, not a scroll. */
+	/* The canvas host fills the whole bench — the tree gets the room, not a scroll. */
 	main {
 		flex: 1;
 		min-height: 0;

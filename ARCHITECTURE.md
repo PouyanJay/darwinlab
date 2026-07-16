@@ -49,7 +49,9 @@ src/
 │  │              rAF: rAF throttles offscreen and would freeze the sim).
 │  │              governor.ts — one-way downgrade of cinematic detail under sustained honest
 │  │              frame-time pressure (stands down during turbo training by design).
-│  ├─ components/ UI by feature: topbar, bench, conditions, inspector, story, common.
+│  ├─ components/ UI by feature: intro, topbar, bench, conditions, inspector, story, common.
+│  │              intro/Intro — the full-screen welcome (the claim + method); the first
+│  │              interaction fades it out over the already-running platform.
 │  │              bench/LineageCanvas — the pannable/zoomable plane; worlds are draggable
 │  │              nodes (WorldTile) wired parent→child by branch edges.
 │  ├─ lab/        lineage.ts — canvas geometry (node sizes, the parent→child edge curve).

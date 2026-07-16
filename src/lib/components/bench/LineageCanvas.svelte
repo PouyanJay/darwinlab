@@ -145,11 +145,11 @@
 	const MARGIN = 28;
 
 	/**
-	 * The opening frame. It opens at 100% (1:1) — the default the owner asked for — anchored on the
-	 * first node at the top-left, so a world is shown at full, readable size and the rest of the tree
-	 * is a pan (or a recenter) away. A phone too narrow for a whole node at 1:1 backs off just enough
-	 * to fit the node's width; everything wider opens at exactly 100%. Deliberately NOT re-run on every
-	 * add/branch — the camera stays where the user left it, and the recenter button re-frames the tree.
+	 * The opening frame. It opens at 100% (1:1) — the default the owner asked for — with the tree
+	 * CENTRED in the canvas, so the worlds sit in the middle of the screen at full, readable size and
+	 * the rest is a pan (or a recenter) away. A phone too narrow for a whole node at 1:1 backs off
+	 * just enough to fit the node's width; everything wider opens at exactly 100%. Deliberately NOT
+	 * re-run on every add/branch — the camera stays where the user left it; recenter re-frames.
 	 */
 	function frameInitial() {
 		const rect = container.getBoundingClientRect();
@@ -157,10 +157,11 @@
 			canvas.reset();
 			return;
 		}
-		const { minX, minY } = treeBounds(bench.worlds);
-		canvas.scale = Math.min(1, (rect.width - 2 * MARGIN) / NODE_W); // 1 on anything but a narrow phone
-		canvas.tx = MARGIN - minX * canvas.scale;
-		canvas.ty = MARGIN - minY * canvas.scale;
+		const { minX, minY, maxX, maxY } = treeBounds(bench.worlds);
+		const s = Math.min(1, (rect.width - 2 * MARGIN) / NODE_W); // 1 on anything but a narrow phone
+		canvas.scale = s;
+		canvas.tx = (rect.width - (maxX - minX) * s) / 2 - minX * s;
+		canvas.ty = (rect.height - (maxY - minY) * s) / 2 - minY * s;
 	}
 
 	onMount(() => {

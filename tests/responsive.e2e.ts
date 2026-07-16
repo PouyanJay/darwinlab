@@ -14,6 +14,13 @@ test.use({ viewport: { width: 375, height: 730 }, isMobile: true, hasTouch: true
 const overflow = (page: Page) =>
 	page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
 
+/**
+ * The node that is actually ON SCREEN. The canvas opens with the tree centred, and on a 375px phone
+ * that puts the MIDDLE world in view — the outer ones are a pan away, and a tap aimed at node 0's
+ * buttons lands outside the viewport (it did; both overlay tests hung on it).
+ */
+const visibleNode = (page: Page) => page.locator('section[aria-label^="world"]').nth(2);
+
 test.beforeEach(async ({ page }) => {
 	await gotoApp(page);
 	await waitForPrewarm(page);
@@ -56,7 +63,7 @@ test('the control panel opens over the bench, with the full controls on it', asy
 });
 
 test('the conditions dialog becomes a full-screen sheet', async ({ page }) => {
-	await page.getByRole('button', { name: 'Conditions' }).first().tap();
+	await visibleNode(page).getByRole('button', { name: 'Conditions' }).tap();
 	const dialog = page.getByRole('dialog', { name: /conditions/i });
 	await expect(dialog).toBeVisible();
 
@@ -70,7 +77,7 @@ test('the conditions dialog becomes a full-screen sheet', async ({ page }) => {
 });
 
 test('the inspector becomes a full-width overlay', async ({ page }) => {
-	await page.getByRole('button', { name: 'Champion' }).first().tap();
+	await visibleNode(page).getByRole('button', { name: 'Champion' }).tap();
 	const drawer = page.getByRole('dialog', { name: /fish mind/i });
 	await expect(drawer).toBeVisible();
 

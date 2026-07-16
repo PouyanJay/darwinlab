@@ -96,6 +96,8 @@
 	--z-modal: 70;
 	--z-turbo: 80;
 	--z-footer: 90;
+	/* The welcome screen sits over EVERYTHING — pills, turbo, the lot — until the first interaction. */
+	--z-intro: 100;
 
 	/* ---- colour (light — "sunlit") ----------------------------------------------------------- */
 	/*

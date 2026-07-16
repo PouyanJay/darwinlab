@@ -49,6 +49,16 @@ test('the bench scans clean', async ({ page }) => {
 	expect(await violations(page)).toEqual([]);
 });
 
+test('the intro scans clean', async ({ page }) => {
+	// A fresh page, NOT gotoApp: that helper enters the lab, and the surface under test here is the
+	// welcome screen itself, before anyone has touched anything.
+	const fresh = await page.context().newPage();
+	await fresh.goto('.');
+	await expect(fresh.getByTestId('intro')).toBeVisible();
+	expect(await violations(fresh)).toEqual([]);
+	await fresh.close();
+});
+
 test('the bench scans clean in light, too — contrast is per-palette, not per-layout', async ({
 	page
 }) => {
