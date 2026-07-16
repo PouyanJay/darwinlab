@@ -4,7 +4,7 @@ import { page } from 'vitest/browser';
 import SensePill from './SensePill.svelte';
 
 const pill = (on: boolean, onclick = vi.fn()) => {
-	render(SensePill, { label: 'dir', name: 'Direction', on, accent: '#0e9488', onclick });
+	render(SensePill, { label: 'dir', name: 'Direction', on, onclick });
 	return { onclick, button: page.getByRole('button', { name: 'dir' }) };
 };
 

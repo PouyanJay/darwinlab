@@ -190,14 +190,16 @@
 		color: var(--ink3);
 	}
 
-	/* A channel earns its keep, or it does not. Both are findings; both are said. */
+	/* A channel earns its keep, or it does not. Both are findings; both are said — and both are
+	   STATS, so they read in the world's accent like every other number on the card (weight carries
+	   the pays/taxes distinction). --tile-accent cascades from the WorldTile root. */
 	.pays {
-		color: var(--accentink);
+		color: color-mix(in srgb, var(--tile-accent) 60%, var(--ink));
 		font-weight: var(--fw-semibold);
 	}
 
 	.taxes {
-		color: var(--danger-ink);
+		color: color-mix(in srgb, var(--tile-accent) 60%, var(--ink));
 	}
 
 	.empty,

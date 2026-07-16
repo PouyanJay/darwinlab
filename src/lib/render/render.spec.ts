@@ -220,8 +220,8 @@ describe('drawCurve / drawDecay', () => {
 		expect(() => drawCurve(mockCtx(), 200, 34, [], '#4f56d3', 'light')).not.toThrow();
 		expect(() => drawCurve(mockCtx(), 200, 34, [0.2], '#4f56d3', 'light')).not.toThrow();
 		expect(() => drawCurve(mockCtx(), 200, 34, [0.2, 0.4, 0.6], '#4f56d3', 'dark')).not.toThrow();
-		expect(() => drawDecay(mockCtx(), 200, 30, [], 'light')).not.toThrow();
-		expect(() => drawDecay(mockCtx(), 200, 30, [1, 0.6, 0.2, 0], 'dark')).not.toThrow();
+		expect(() => drawDecay(mockCtx(), 200, 30, [], '#4f56d3', 'light')).not.toThrow();
+		expect(() => drawDecay(mockCtx(), 200, 30, [1, 0.6, 0.2, 0], '#4f56d3', 'dark')).not.toThrow();
 	});
 });
 

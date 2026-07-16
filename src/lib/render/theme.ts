@@ -110,9 +110,10 @@ export const THEMES: Record<ThemeName, ThemePalette> = {
 		tankEdge: 'rgba(255,255,255,.14)',
 		ray: '235,238,245',
 		dust: 'rgba(255,255,255,.22)',
-		fish: '#e7e8ec',
-		fishBelly: '#a7a9b2',
-		fishTrail: '231,232,236',
+		// Blue, like the light theme's fish — brightened for the black water (light's #4f56d3 sinks).
+		fish: '#6d7cf0',
+		fishBelly: '#b3bbf7',
+		fishTrail: '109,124,240',
 		// The shark is the one thing that MEANS danger, so it keeps the danger red (mirrors --danger),
 		// same as the light theme — the only strong colour in the tank.
 		pred: '#ec6a54',

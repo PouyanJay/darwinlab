@@ -70,7 +70,9 @@
 	<header data-drag-handle>
 		<span class="grip" aria-hidden="true"><Icon name="grip" size={15} /></span>
 
-		<Chip tone="accent" style="--chip-accent: {config.accent}" class="badge">{badge}</Chip>
+		<!-- Neutral, whatever the world's accent is: the node chrome stays grey — the accent belongs
+		     to the graphs and stats below. -->
+		<Chip class="badge">{badge}</Chip>
 
 		<EditableLabel
 			value={config.name}
@@ -128,11 +130,7 @@
 			<!-- What this environment is, said as a DIFF from the bench it launched with. "Same as the
 			     baseline except three adversaries" is the sentence a reader actually needs, and a card
 			     that cannot say it is a picture rather than an experiment. -->
-			<Chip
-				tone="accent"
-				style="--chip-accent: {config.accent}"
-				title="overrides vs the launched baseline: {diffText}"
-			>
+			<Chip title="overrides vs the launched baseline: {diffText}">
 				▲ {diffKeys.length} override{diffKeys.length > 1 ? 's' : ''}
 			</Chip>
 		{/if}
@@ -142,7 +140,6 @@
 					label={sense.short}
 					name={sense.name}
 					on={!!config.senses[sense.key]}
-					accent={config.accent}
 					onclick={() => bench.toggleSense(entry.id, sense.key)}
 				/>
 			{/each}
@@ -231,24 +228,9 @@
 			box-shadow var(--dur) var(--ease);
 	}
 
-	/*
-	 * Each environment owns a colour — the engine already assigns one, and until now only a 24px
-	 * badge ever showed it. The card's head is washed in it, so a bench of five reads as five
-	 * experiments at a glance instead of five identical white rectangles you have to read to tell
-	 * apart. It fades out well before the tank: it is a signature, not a paint job.
-	 */
-	.tile::before {
-		content: '';
-		position: absolute;
-		inset: 0 0 auto;
-		height: 120px;
-		pointer-events: none;
-		background: linear-gradient(
-			180deg,
-			color-mix(in srgb, var(--tile-accent) 9%, transparent),
-			transparent
-		);
-	}
+	/* The box stays GREY whatever the world's accent is — no header wash, no tint. The accent shows
+	   only in the graphs and stat numbers below (via --tile-accent, set on the section above), so
+	   the environments tell apart by their charts, not by a paint job on the chrome. */
 
 	.tile:hover {
 		transform: translateY(-2px);

@@ -173,8 +173,7 @@
 		min-height: 0;
 		display: flex;
 		flex-direction: column;
-		gap: var(--sp-4);
-		padding: var(--sp-4) var(--sp-5) var(--sp-5);
+		/* No padding: the canvas IS the bench, edge to edge — not a card sitting on a layer. */
 	}
 
 	/* The canvas host fills the whole bench — the tree gets the room, not a scroll. */

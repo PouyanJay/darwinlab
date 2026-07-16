@@ -64,8 +64,8 @@
 
 	const paintDecay = paintOnChange(
 		() =>
-			`${entry.world.decay.length}|${entry.world.decay.at(0)}|${entry.world.decay.at(-1)}|${theme.name}`,
-		(ctx, width, height) => drawDecay(ctx, width, height, entry.world.decay, theme.name)
+			`${entry.world.decay.length}|${entry.world.decay.at(0)}|${entry.world.decay.at(-1)}|${accent}|${theme.name}`,
+		(ctx, width, height) => drawDecay(ctx, width, height, entry.world.decay, accent, theme.name)
 	);
 
 	// The emergence curve — the school's spacing tightening across generations, drawn so it RISES
@@ -219,7 +219,9 @@
 
 	.eaten {
 		font-size: var(--fs-sm);
-		color: var(--danger-ink); /* danger AS TEXT — see tokens.css */
+		/* The world's accent, run toward the ink for AA — the accent owns the card's stat colour.
+		   (--tile-accent cascades from the WorldTile root.) */
+		color: color-mix(in srgb, var(--tile-accent) 60%, var(--ink));
 	}
 
 	.curve {
@@ -257,7 +259,8 @@
 		font-weight: var(--fw-semibold);
 		letter-spacing: var(--tracking-wide);
 		text-transform: uppercase;
-		color: var(--danger-ink); /* danger AS TEXT — see tokens.css */
+		/* Accent, not danger: it labels a chart, and the accent owns the card's charts and stats. */
+		color: color-mix(in srgb, var(--tile-accent) 60%, var(--ink));
 	}
 
 	.deploy-stat div + div {

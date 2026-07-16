@@ -249,9 +249,8 @@
 		flex: 1;
 		min-height: 0;
 		overflow: hidden;
-		border: 1px solid var(--line);
-		border-radius: var(--radius-card);
-		/* A plain, flat plane — pure black in dark. No ruled dots, no wash. */
+		/* FULL BLEED: no border, no radius — the plane runs to the edges of the bench, not a card
+		   sitting on a layer. A plain, flat surface — pure black in dark. */
 		background: var(--canvas-bg);
 		cursor: grab;
 		touch-action: none;
@@ -318,14 +317,15 @@
 		z-index: 2;
 	}
 
+	/* The same pill as "Add environment" across the way — one family of floating canvas controls. */
 	.controls {
 		right: var(--sp-4);
 		display: flex;
 		align-items: center;
 		gap: 2px;
-		padding: 3px;
+		padding: 4px var(--sp-2);
 		border: 1px solid var(--line);
-		border-radius: var(--radius-md);
+		border-radius: var(--radius-pill);
 		background: var(--glass);
 		backdrop-filter: blur(var(--blur-glass));
 		box-shadow: var(--shadow-pill);

@@ -114,16 +114,18 @@ export function drawSchoolCurve(
 	});
 }
 
-/** Real-world population decay: fraction of the deployed batch still alive, over time. */
+/** Real-world population decay: fraction of the deployed batch still alive, over time.
+ *  In the WORLD'S accent, like every other chart on the card — the accent owns the graphs. */
 export function drawDecay(
 	ctx: CanvasRenderingContext2D,
 	W: number,
 	H: number,
 	decay: number[],
+	accent: string,
 	theme: ThemeName
 ): void {
 	drawSparkline(ctx, W, H, decay, theme, {
-		color: THEMES[theme].threat,
+		color: accent,
 		map: (v) => H - 2 - clamp(v, 0, 1) * (H - 4),
 		baselineAlpha: 0.16,
 		fillAlpha: 0.12

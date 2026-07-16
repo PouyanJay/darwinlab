@@ -74,6 +74,42 @@
 			<span class="tag">agent sandbox</span>
 		</header>
 
+		<!--
+			The chase — the product, wordless: a shark following a blue prey fish, looping on a wander
+			path in the intro's open right half. SMIL animateMotion, no JS: both swimmers ride the SAME
+			path, the shark started a beat later, so it is forever ~1.2s behind the fish it hunts.
+			Decorative (aria-hidden), and STILL under reduced motion — the pair is shown parked instead.
+		-->
+		<svg class="chase" viewBox="0 0 600 600" aria-hidden="true">
+			<path
+				id="intro-chase"
+				d="M 300 90 C 500 130, 530 300, 400 380 C 300 440, 140 420, 110 300 C 85 190, 160 70, 300 90 Z"
+				fill="none"
+			/>
+			<!-- the prey: blue, like the fish in the tanks -->
+			<g class="prey" transform={duration === 0 ? 'translate(200 430) rotate(188)' : undefined}>
+				<path
+					d="M16 0 C10 -6 -4 -7 -12 0 C-4 7 10 6 16 0 Z M-11 0 L-19 -6 C-16.5 -2 -16.5 2 -19 6 Z"
+				/>
+				{#if duration > 0}
+					<animateMotion dur="16s" repeatCount="indefinite" rotate="auto">
+						<mpath href="#intro-chase" />
+					</animateMotion>
+				{/if}
+			</g>
+			<!-- the predator: the danger red it wears in the water -->
+			<g class="pred" transform={duration === 0 ? 'translate(330 412) rotate(192)' : undefined}>
+				<path
+					d="M34 0 C22 -10 -8 -11 -22 -3 L-36 -12 C-31 -4 -31 4 -36 12 L-22 3 C-8 11 22 10 34 0 Z"
+				/>
+				{#if duration > 0}
+					<animateMotion dur="16s" repeatCount="indefinite" rotate="auto" begin="-14.8s">
+						<mpath href="#intro-chase" />
+					</animateMotion>
+				{/if}
+			</g>
+		</svg>
+
 		<div class="stage">
 			<h1>Behaviour that evolved,<br />not behaviour that was coded.</h1>
 
@@ -122,6 +158,32 @@
 		display: flex;
 		align-items: center;
 		gap: var(--sp-3);
+	}
+
+	/* The chase lives in the intro's open right half, vertically centred, behind nothing. It only
+	   appears where there is genuinely room for it beside the text. */
+	.chase {
+		position: absolute;
+		top: 50%;
+		right: clamp(16px, 7vw, 140px);
+		width: min(560px, 36vw);
+		height: auto;
+		transform: translateY(-50%);
+		pointer-events: none;
+	}
+
+	@media (max-width: 1100px) {
+		.chase {
+			display: none;
+		}
+	}
+
+	.prey path {
+		fill: var(--excite); /* the tank's fish blue, in whichever theme */
+	}
+
+	.pred path {
+		fill: var(--danger); /* the shark's own red */
 	}
 
 	.name {
