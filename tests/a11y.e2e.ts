@@ -28,6 +28,10 @@ const violations = async (page: Page) => {
 };
 
 test.beforeEach(async ({ page }) => {
+	// An axe scan of the whole bench is heavy now — the canvas plus every node's folded analysis
+	// panels are a large DOM — and a CI runner is far slower than a dev machine. The default 30s was
+	// enough locally but tipped over on CI for the theme-toggle scan; give these scans real headroom.
+	test.setTimeout(60_000);
 	await gotoApp(page);
 	await waitForPrewarm(page);
 });
