@@ -1,5 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { DEFAULT_WORLDS, SHOWCASE_OCEAN, ACCENTS, ACCENT_NAMES, newWorldConfig } from './defaults';
+import {
+	DEFAULT_WORLDS,
+	SHOWCASE_OCEAN,
+	SHOAL_WORLDS,
+	ACCENTS,
+	ACCENT_NAMES,
+	newWorldConfig
+} from './defaults';
+import { MAXSPEED } from './constants';
 
 describe('DEFAULT_WORLDS (the sense ladder)', () => {
 	it('has five worlds that add one sense at a time, in the order the MEASUREMENTS say they pay', () => {
@@ -59,6 +67,55 @@ describe('DEFAULT_WORLDS (the sense ladder)', () => {
 		// ~0.88 it simply runs every fish down, and no amount of sensing can buy an escape.
 		for (const w of DEFAULT_WORLDS) {
 			expect(200 * w.predSpeed).toBeLessThan(176);
+		}
+	});
+});
+
+describe('SHOAL_WORLDS (the schooling ablation)', () => {
+	const [alone, shoal] = SHOAL_WORLDS;
+
+	it('is Alone vs The Shoal, differing ONLY in the shoal sense (a true ablation)', () => {
+		expect(alone.name).toBe('Alone');
+		expect(shoal.name).toBe('The Shoal');
+		// same 14-input brain in both — the sense is ablated by feeding 0, never by reshaping
+		expect(alone.brainInputs).toBe(14);
+		expect(shoal.brainInputs).toBe(14);
+		// identical predator senses; the ONLY difference is cohesion + align
+		expect(alone.senses).toEqual({
+			dist: true,
+			dir: true,
+			closing: true,
+			walls: true,
+			cohesion: false,
+			align: false
+		});
+		expect(shoal.senses).toEqual({
+			dist: true,
+			dir: true,
+			closing: true,
+			walls: true,
+			cohesion: true,
+			align: true
+		});
+	});
+
+	it('carries the MEASURED winning mechanic (lock + catch), not the ones that failed', () => {
+		for (const w of SHOAL_WORLDS) {
+			expect(w.confusion).toBe(true);
+			expect(w.confusionLock).toBe(true); // predator attention — what makes it PAY
+			expect(w.confusionCatch).toBe(true); // the selfish herd
+			expect(w.confusionIsolate).toBe(false); // measured: adds nothing on top
+			expect(w.confusionStrike).toBe(false); // measured: dilutes the effect
+			expect(w.confusionStrength).toBeGreaterThanOrEqual(2); // below ~2 it does not bite
+		}
+	});
+
+	it('runs a shark you CANNOT outswim, so grouping is a real strategy not a delay', () => {
+		// unlike the sense ladder (shark slower than the fish), the Shoal ocean's shark cruises
+		// FASTER than the fish's top speed — fleeing alone cannot save you, so the swarm has to.
+		for (const w of SHOAL_WORLDS) {
+			expect(200 * w.predSpeed).toBeGreaterThan(MAXSPEED);
+			expect(w.caption.length).toBeGreaterThan(0);
 		}
 	});
 });

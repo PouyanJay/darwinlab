@@ -112,6 +112,69 @@ export const DEFAULT_WORLDS: WorldConfig[] = [
 ];
 
 /**
+ * THE SHOAL OCEAN — where grouping is a survival strategy, not decoration.
+ *
+ * Everything about schooling behind these knobs was MEASURED, not assumed (scripts/sweep-schooling.ts,
+ * committed evidence). The long version: making a crowded fish merely harder to single out or to grab
+ * makes fish CLUSTER, but the shoal sense never paid for itself — the benefit is captured passively,
+ * so packing tighter added no fitness (the lab's own thesis). What flips it is PREDATOR ATTENTION
+ * (`confusionLock`): the shark holds one target and loses it — then mills, distracted — when that
+ * fish is inside a dense crowd. Passive proximity can't shake a lock; only an actively-maintained
+ * swarm can. Paired with the selfish herd (`confusionCatch`, a packed fish is hard to grab on
+ * contact) and a strength that makes both bite, the shoal sense finally earns its keep: measured
+ * marginal (sense-on vs sense-off, equal ocean) −20px nearest-neighbour and +4.2s of TRAINING life.
+ *
+ * predSpeed is above the fish's own top speed on purpose: a shark you can outswim makes fleeing a
+ * complete strategy and grouping never pays (as slowing the shark collapses the sense ladder). The
+ * other confusion sub-mechanisms are off because they were measured to add nothing (isolation) or to
+ * DILUTE the effect (strike degradation) on top of lock+catch.
+ */
+export const SHOAL_OCEAN = {
+	...SHOWCASE_OCEAN,
+	predSpeed: 1.05,
+	brainInputs: 14,
+	confusion: true,
+	confusionLock: true,
+	confusionCatch: true,
+	confusionIsolate: false,
+	confusionStrike: false,
+	confusionStrength: 3,
+	confusionRadius: 70,
+	socialRadius: 70
+} as const satisfies Partial<WorldConfig>;
+
+/** Predator + prey senses shared by both Shoal worlds; only cohesion/align differ between them. */
+const SHOAL_SENSES = { dist: true, dir: true, closing: true, walls: true } as const;
+
+/**
+ * The Shoal exhibit — one ablation, run live: the SAME dangerous ocean and the SAME 14-input brain,
+ * differing only in whether the fish can sense each other. "Alone" fish have the shoal slots fed 0;
+ * "The Shoal" fish can feel their neighbours, and evolve to use them. Captions carry the honest
+ * finding and must not be softened into "grouping always wins" — it wins HERE, because this ocean
+ * makes it pay.
+ */
+export const SHOAL_WORLDS: WorldConfig[] = [
+	{
+		name: 'Alone',
+		accent: '#64748b',
+		...TANK,
+		...SHOAL_OCEAN,
+		senses: { ...SHOAL_SENSES, cohesion: false, align: false },
+		caption:
+			'These fish sense the shark but not each other. They scatter, and a lone fish is a caught fish: the shark locks on and runs it down with nothing to break its focus. Selection has no way to build a crowd.'
+	},
+	{
+		name: 'The Shoal',
+		accent: '#8a5ad8',
+		...TANK,
+		...SHOAL_OCEAN,
+		senses: { ...SHOAL_SENSES, cohesion: true, align: true },
+		caption:
+			'Give the same fish a sense of their neighbours and a swarm appears on its own — nobody wrote the flocking. Packed together they overwhelm the hunter: it loses its target in the crowd and mills, and the ones buried in the ball are hard to seize. Grouping is not decoration here; it is why they are alive.'
+	}
+];
+
+/**
  * The world a fresh "+ Add world" starts from: the standard tank, every sense switched on, and no
  * story caption yet. It is a factory, not a constant, so two new worlds can never end up sharing
  * one `senses` object. New worlds are born in the default ocean, the one where senses pay.
