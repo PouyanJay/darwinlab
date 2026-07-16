@@ -1,6 +1,7 @@
 /**
- * Sensing — builds the fixed 8-slot input vector for a fish's brain. Faithful port of
- * engine2.js `senseInputs`.
+ * Sensing — builds a fish brain's input vector: 8 slots (the reference brain), 9 with
+ * proprioception, or 14 with the shoal senses, per the world's `brainInputs`. Faithful port of
+ * engine2.js `senseInputs`, extended one optional slot-group at a time.
  *
  * THE ABLATION RULE: a disabled sense feeds 0 into its input slot. The neuron still
  * exists; it just receives nothing — so toggling a sense off is a true ablation, not a
@@ -95,45 +96,52 @@ export function senseInputs(
 	// 250, a fish going 250 must read 1.0, not 250/176.
 	if (nin > 8 && S.speed) x[8] = clamp(Math.hypot(f.vx, f.vy) / (w.cfg.maxSpeed ?? MAXSPEED), 0, 1);
 
-	// slots 9–13 — the SHOAL sense (cohesion + alignment). Unlike every slot above, it is about
-	// OTHER FISH, not the predator: a single scan of the neighbours within `socialRadius` yields
-	// how crowded it is (density), which way their centre-of-mass lies (cohesion), and which way
-	// they are collectively pointing (alignment). Ablated like the rest — off feeds 0. The bearings
-	// are relative to the fish's own heading (sin/cos), the same encoding the direction sense uses,
-	// so the network reads "turn toward the group" the same way it reads "turn away from the shark".
-	// Absent `w.fish` (staged single-fish trials — the flee assay) there is no shoal, so 0 is right.
-	if (nin > 8 && (S.cohesion || S.align) && w.fish) {
-		const R = c.socialRadius ?? SOCIAL_RADIUS;
-		let n = 0;
-		let sx = 0;
-		let sy = 0;
-		let hx = 0;
-		let hy = 0;
-		for (const o of w.fish) {
-			if (o === f) continue;
-			const dx = o.x - f.x;
-			const dy = o.y - f.y;
-			if (Math.hypot(dx, dy) >= R) continue;
-			n++;
-			sx += dx;
-			sy += dy;
-			hx += Math.cos(o.heading);
-			hy += Math.sin(o.heading);
-		}
-		if (n > 0) {
-			if (S.cohesion) {
-				x[9] = clamp(n / SHOAL_DENSITY_NORM, 0, 1);
-				const com = Math.atan2(sy, sx) - f.heading;
-				x[10] = Math.sin(com);
-				x[11] = Math.cos(com);
-			}
-			if (S.align) {
-				const mean = Math.atan2(hy, hx) - f.heading;
-				x[12] = Math.sin(mean);
-				x[13] = Math.cos(mean);
-			}
-		}
-	}
+	// slots 9–13 — the shoal sense, filled by senseShoal (kept out of line, like the wall-ray block
+	// would be if it were newer, so senseInputs reads as one slot-group after another).
+	if (nin > 8 && (S.cohesion || S.align)) senseShoal(w, f, x);
 
 	return { x, np, dist: np ? nd : Infinity, inVis, dirDeg, closing, wallFront: wF };
+}
+
+/**
+ * The SHOAL sense (cohesion + alignment), slots 9–13. Unlike every predator sense it is about OTHER
+ * FISH: a single scan of the neighbours within `socialRadius` yields how crowded it is (density),
+ * which way their centre-of-mass lies (cohesion), and which way they are collectively pointing
+ * (alignment). Bearings are relative to the fish's own heading (sin/cos), the same encoding the
+ * direction sense uses, so the network reads "turn toward the group" the way it reads "flee the
+ * shark". Ablated like the rest — a slot whose sense is off keeps its 0. Absent `w.fish` (staged
+ * single-fish trials — the flee assay) there is no shoal, so the slots stay 0, which is right.
+ */
+function senseShoal(w: Pick<World, 'cfg'> & { fish?: Fish[] }, f: Fish, x: number[]): void {
+	if (!w.fish) return;
+	const S = w.cfg.senses;
+	const R = w.cfg.socialRadius ?? SOCIAL_RADIUS;
+	let n = 0;
+	let sx = 0;
+	let sy = 0;
+	let hx = 0;
+	let hy = 0;
+	for (const o of w.fish) {
+		if (o === f) continue;
+		const dx = o.x - f.x;
+		const dy = o.y - f.y;
+		if (Math.hypot(dx, dy) >= R) continue;
+		n++;
+		sx += dx;
+		sy += dy;
+		hx += Math.cos(o.heading);
+		hy += Math.sin(o.heading);
+	}
+	if (n === 0) return;
+	if (S.cohesion) {
+		x[9] = clamp(n / SHOAL_DENSITY_NORM, 0, 1);
+		const com = Math.atan2(sy, sx) - f.heading;
+		x[10] = Math.sin(com);
+		x[11] = Math.cos(com);
+	}
+	if (S.align) {
+		const mean = Math.atan2(hy, hx) - f.heading;
+		x[12] = Math.sin(mean);
+		x[13] = Math.cos(mean);
+	}
 }

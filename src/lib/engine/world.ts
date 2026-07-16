@@ -37,8 +37,12 @@ import { senseInputs } from './sensing';
 import { meanNearestNeighbor } from './flock';
 import type { World, WorldConfig, Fish, Predator, Genome } from './types';
 
-/** Whether a world's brains carry the shoal senses — gates the (optional) emergence-curve recording. */
-function isSchoolingWorld(cfg: WorldConfig): boolean {
+/**
+ * Whether a world's brains carry the shoal senses — declared, on OR off. The one place this
+ * question is answered: the emergence-curve recording here, the live readout in WorldStats, and the
+ * density field in drawWorld all import it, so a third shoal sense would only ever be added once.
+ */
+export function isSchoolingWorld(cfg: WorldConfig): boolean {
 	return 'cohesion' in cfg.senses || 'align' in cfg.senses;
 }
 /** Seconds between nearest-neighbour samples for the emergence curve (cheaper than every tick). */
@@ -356,6 +360,25 @@ const claimedScratch = new Set<Fish>();
  * targetable, so a group is never uncatchable. Off (default), score = distance and this is the
  * reference's exact nearest-unclaimed pick (no crowd scan, bit-exact).
  */
+/**
+ * PREDATOR ATTENTION targeting: a locked shark HOLDS its target across ticks (so a dense swarm can
+ * later shake it — see updatePredators) rather than re-picking the nearest every frame; a distracted
+ * one (just lost a lock in a crowd) holds none and mills. Returns true when the target is settled for
+ * this tick and the caller should skip re-acquisition.
+ */
+function retainLock(p: Predator, w: World): boolean {
+	if ((p._distract ?? 0) > 0) {
+		p._tgt = null;
+		p._td = 1e9;
+		return true;
+	}
+	if (p._tgt && w.fish.includes(p._tgt)) {
+		p._td = Math.hypot(p._tgt.x - p.x, p._tgt.y - p.y);
+		return true;
+	}
+	return false;
+}
+
 function assignPredatorTargets(w: World): void {
 	const claimed = claimedScratch;
 	claimed.clear();
@@ -363,22 +386,11 @@ function assignPredatorTargets(w: World): void {
 	const lockOn = (w.cfg.confusion ?? false) && (w.cfg.confusionLock ?? false);
 	const R = w.cfg.confusionRadius ?? CONFUSION_RADIUS;
 	const cap = w.cfg.confusionCrowdCap ?? CONFUSION_CROWD_CAP;
-	const iso = ISOLATION_WEIGHT * (w.cfg.confusionStrength ?? 1);
+	const isolationPenalty = ISOLATION_WEIGHT * (w.cfg.confusionStrength ?? 1);
 	for (const p of w.preds) {
-		// PREDATOR ATTENTION: a locked shark HOLDS its target across ticks (so a dense swarm can
-		// later shake it — see updatePredators), rather than re-picking the nearest every frame.
-		// A distracted shark (just lost a lock in a crowd) holds none and mills.
-		if (lockOn) {
-			if ((p._distract ?? 0) > 0) {
-				p._tgt = null;
-				p._td = 1e9;
-				continue;
-			}
-			if (p._tgt && w.fish.includes(p._tgt)) {
-				p._td = Math.hypot(p._tgt.x - p.x, p._tgt.y - p.y);
-				continue;
-			}
-		}
+		// A locked shark that still has a valid target keeps it (or mills, if distracted); only when
+		// it needs a fresh one does it run the acquisition below.
+		if (lockOn && retainLock(p, w)) continue;
 		let best: Fish | null = null;
 		let bestScore = Infinity;
 		let bd = 1e9;
@@ -387,7 +399,7 @@ function assignPredatorTargets(w: World): void {
 			// acquires independently, so two may share a target — the swarm still shakes each.
 			if (!lockOn && claimed.has(f)) continue;
 			const d = Math.hypot(f.x - p.x, f.y - p.y);
-			const score = confuse ? d + crowdAround(f, w.fish, R, cap) * iso : d;
+			const score = confuse ? d + crowdAround(f, w.fish, R, cap) * isolationPenalty : d;
 			if (score < bestScore) {
 				bestScore = score;
 				best = f;
@@ -422,36 +434,82 @@ function crowdAround(target: Fish, fish: Fish[], radius: number, cap: number): n
 	return Math.min(1, n / cap);
 }
 
+/** The confusion sub-mechanisms, each named and gated so a reference world runs none of them (and
+ *  so draws no extra randomness — the two that roll rng, lock-loss and jitter, only fire on the
+ *  worlds that opt in, which is what keeps the fidelity gate bit-exact). `strength`/`R`/`cap` are
+ *  resolved once by the caller (updatePredators) and threaded through. */
+
+/** PREDATOR ATTENTION: age the shark's distraction, then roll for lock-loss — the denser the crowd
+ *  around the LOCKED target, the likelier it loses the fish and mills. A fish that dives into a swarm
+ *  when chased shakes the hunter; a loner never does. */
+function applyPredatorAttention(
+	p: Predator,
+	w: World,
+	dt: number,
+	R: number,
+	cap: number,
+	strength: number
+): void {
+	p._distract = Math.max(0, (p._distract ?? 0) - dt);
+	if (!p._tgt) return;
+	const crowd = crowdAround(p._tgt, w.fish, R, cap);
+	if (crowd > 0 && w.rng() < strength * crowd * LOCK_LOSS_RATE * dt) {
+		p._tgt = null;
+		p._td = 1e9;
+		p._distract = DISTRACT_TIME;
+		p.aim = 0;
+		p.lunge = 0; // abort any strike mid-swarm
+	}
+}
+
+/** STRIKE DEGRADATION factor (0 unless the world opts in): how packed the target is, scaled by
+ *  strength. Feeds a longer telegraph and a jittered lunge vector below. */
+function confusionFactor(target: Fish, w: World, R: number, cap: number, strength: number): number {
+	const c = w.cfg;
+	if (!((c.confusion ?? false) && (c.confusionStrike ?? true))) return 0;
+	return strength * crowdAround(target, w.fish, R, cap);
+}
+
+/** Rotate a unit lunge vector by an angular error that grows with the confusion factor — a crowded
+ *  target throws the committed strike off. */
+function jitterVector(vx: number, vy: number, conf: number, rng: () => number): [number, number] {
+	const jit = (rng() * 2 - 1) * conf * CONFUSION_MAX_JITTER;
+	const cs = Math.cos(jit);
+	const sn = Math.sin(jit);
+	return [vx * cs - vy * sn, vx * sn + vy * cs];
+}
+
+/** THE SELFISH HERD: a fish packed among neighbours is hard to grab even on contact, so its catch
+ *  radius shrinks with its own crowd (floored at 5%, so a swarm is very safe but never immortal).
+ *  Off (default), every fish is caught at the same base radius. */
+function catchRadiusFor(
+	f: Fish,
+	w: World,
+	catchR: number,
+	R: number,
+	cap: number,
+	strength: number
+): number {
+	const c = w.cfg;
+	if (!(c.confusion && (c.confusionCatch ?? true))) return catchR;
+	const crowd = crowdAround(f, w.fish, R, cap);
+	return Math.max(catchR * 0.05, catchR * (1 - strength * crowd * CONFUSION_CATCH_SHRINK));
+}
+
 /** Predator physics: the cruise → aim → lunge state machine, interception, and eating. */
 function updatePredators(w: World, dt: number, frust: number, catchR: number): void {
 	const c = w.cfg;
+	// Confusion knobs, resolved once (the reference leaves them unset, so these are their defaults
+	// and cost nothing): the crowd radius, the saturation count, and the strength that scales every
+	// sub-mechanism. `lockOn` gates predator attention, the one that rewrites targeting each tick.
+	const R = c.confusionRadius ?? CONFUSION_RADIUS;
+	const cap = c.confusionCrowdCap ?? CONFUSION_CROWD_CAP;
+	const strength = c.confusionStrength ?? 1;
 	const lockOn = (c.confusion ?? false) && (c.confusionLock ?? false);
 	for (const p of w.preds) {
 		p.cool = Math.max(0, p.cool - dt);
 		p.lunge = Math.max(0, p.lunge - dt);
-		// PREDATOR ATTENTION: age the distraction, then roll for lock-loss — the denser the crowd
-		// around the LOCKED target, the more likely the shark loses it and mills (a bare rng draw
-		// gated on confusionLock, so no other world's draw stream shifts). A fish that dives into a
-		// swarm when chased shakes the hunter; a loner never does. This is the pathway that can make
-		// ACTIVE tight schooling pay, where static clustering did not.
-		if (lockOn) {
-			p._distract = Math.max(0, (p._distract ?? 0) - dt);
-			if (p._tgt) {
-				const crowd = crowdAround(
-					p._tgt,
-					w.fish,
-					c.confusionRadius ?? CONFUSION_RADIUS,
-					c.confusionCrowdCap ?? CONFUSION_CROWD_CAP
-				);
-				if (crowd > 0 && w.rng() < (c.confusionStrength ?? 1) * crowd * LOCK_LOSS_RATE * dt) {
-					p._tgt = null;
-					p._td = 1e9;
-					p._distract = DISTRACT_TIME;
-					p.aim = 0;
-					p.lunge = 0; // abort any strike mid-swarm
-				}
-			}
-		}
+		if (lockOn) applyPredatorAttention(p, w, dt, R, cap, strength);
 		const best = p._tgt;
 		const bd = p._td ?? 1e9;
 		const ps = c.predSpeed;
@@ -462,20 +520,9 @@ function updatePredators(w: World, dt: number, frust: number, catchR: number): v
 			// ferocity only exists for committed strikes: faster, shorter-telegraphed lunges
 			// that position alone can no longer dodge — feeling them COMING is the edge.
 			const ferocity = commit ? (c.lungeFerocity ?? 1) : 1;
-			// THE CONFUSION EFFECT (default 0): how packed this target is, scaled by strength. It
-			// arrives two ways below — a longer telegraph when the aim arms (the shark hesitates)
-			// and angular error on the committed lunge vector (it mis-strikes). Off, the shark
-			// singles out any fish crowd or no crowd, and grouping buys nothing.
-			const conf =
-				(c.confusion ?? false) && (c.confusionStrike ?? true)
-					? (c.confusionStrength ?? 1) *
-						crowdAround(
-							best,
-							w.fish,
-							c.confusionRadius ?? CONFUSION_RADIUS,
-							c.confusionCrowdCap ?? CONFUSION_CROWD_CAP
-						)
-					: 0;
+			// STRIKE DEGRADATION: how packed the target is (0 off the confusion path). It arrives two
+			// ways below — a longer telegraph when the aim arms, and a jittered committed lunge vector.
+			const conf = confusionFactor(best, w, R, cap, strength);
 			if (!darts) {
 				// No strike: the aim/lunge machine never arms, so the shark below stays in its cruise
 				// branch (p.lunge and p.aim are both 0) and simply chases at cruise speed.
@@ -495,15 +542,9 @@ function updatePredators(w: World, dt: number, frust: number, catchR: number): v
 						const ld = Math.hypot(lx - p.x, ly - p.y) || 1;
 						let vx = (lx - p.x) / ld;
 						let vy = (ly - p.y) / ld;
-						// a crowded target throws the strike off: rotate the locked vector by an error
-						// that grows with the crowd. The rng draw is gated on conf > 0 (confusion on),
-						// so a reference world draws nothing here and stays bit-exact.
-						if (conf > 0) {
-							const jit = (w.rng() * 2 - 1) * conf * CONFUSION_MAX_JITTER;
-							const cs = Math.cos(jit);
-							const sn = Math.sin(jit);
-							[vx, vy] = [vx * cs - vy * sn, vx * sn + vy * cs];
-						}
+						// a crowded target throws the strike off; the rng draw is gated on conf > 0, so a
+						// reference world draws nothing here and stays bit-exact.
+						if (conf > 0) [vx, vy] = jitterVector(vx, vy, conf, w.rng);
 						p._lockx = vx;
 						p._locky = vy;
 					}
@@ -593,29 +634,11 @@ function updatePredators(w: World, dt: number, frust: number, catchR: number): v
 			if (p.trail.length > 14) p.trail.shift();
 			p.trailT = 0.05;
 		}
-		// eating: permanent elimination in both modes
+		// eating: permanent elimination in both modes. The selfish-herd catch shrink (crowded fish
+		// harder to grab) lives in catchRadiusFor; off the confusion path it returns catchR unchanged.
 		for (let i = w.fish.length - 1; i >= 0; i--) {
 			const f = w.fish[i];
-			// THE SELFISH HERD: a fish packed among neighbours is hard to grab even on contact, so
-			// the catch radius shrinks with ITS OWN crowd — the interior of a school is safe, a lone
-			// or edge fish is not. This is the gradient that makes grouping pay. Off (default), every
-			// fish is caught at the same 14px and grouping buys nothing.
-			let cr = catchR;
-			if (c.confusion && (c.confusionCatch ?? true)) {
-				const crowd = crowdAround(
-					f,
-					w.fish,
-					c.confusionRadius ?? CONFUSION_RADIUS,
-					c.confusionCrowdCap ?? CONFUSION_CROWD_CAP
-				);
-				// floor at 5% of the base radius: a deeply-packed fish is very hard to grab, never
-				// impossible (there is always an edge to pick off), so confusionStrength can be pushed
-				// above 1 to sharpen the selfish-herd gradient without minting an immortal school.
-				cr = Math.max(
-					catchR * 0.05,
-					catchR * (1 - (c.confusionStrength ?? 1) * crowd * CONFUSION_CATCH_SHRINK)
-				);
-			}
+			const cr = catchRadiusFor(f, w, catchR, R, cap, strength);
 			if (Math.hypot(f.x - p.x, f.y - p.y) < cr) {
 				if (w.selFish === f) {
 					w.selFish = null;

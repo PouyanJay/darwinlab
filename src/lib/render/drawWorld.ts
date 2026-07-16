@@ -7,7 +7,7 @@
  * (see pick.ts) can invert it.
  */
 
-import { TAU, fleeError } from '../engine';
+import { TAU, fleeError, isSchoolingWorld, SOCIAL_RADIUS } from '../engine';
 import type { World, Fish, Predator } from '../engine';
 import { THEMES, type ThemeName, type ThemePalette, type DrawWorldOpts } from './theme';
 
@@ -181,11 +181,10 @@ function drawSchoolField(
 	ctx: CanvasRenderingContext2D,
 	accent: string | undefined
 ): void {
-	const s = w.cfg.senses;
-	if (!accent || !('cohesion' in s || 'align' in s) || w.fish.length < 2) return;
+	if (!accent || !isSchoolingWorld(w.cfg) || w.fish.length < 2) return;
 	const [r, g, b] = hexToRgb(accent);
 	// a touch under the sense radius, so it takes a real cluster (not two passing fish) to light up
-	const R = (w.cfg.socialRadius ?? 70) * 0.6;
+	const R = (w.cfg.socialRadius ?? SOCIAL_RADIUS) * 0.6;
 	const glow = ctx.createRadialGradient(0, 0, 0, 0, 0, R);
 	glow.addColorStop(0, `rgba(${r},${g},${b},0.16)`);
 	glow.addColorStop(1, `rgba(${r},${g},${b},0)`);

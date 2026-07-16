@@ -21,7 +21,7 @@ import {
 	polarization,
 	meanNearestNeighbor
 } from '../engine';
-import type { Fish, Genome, WorldConfig } from '../engine';
+import type { Fish, Genome, World, WorldConfig } from '../engine';
 
 const DT = 1 / 60;
 
@@ -51,13 +51,24 @@ export function measureSchool(
 	w.gen = 1;
 	applyCfg(w);
 
-	const steps = Math.round(seconds / DT);
+	const { lifespans, polSum, polN, nndSum, nndN } = runBout(w, Math.round(seconds / DT), seconds);
+	const lives = [...lifespans.values()];
+	return {
+		polarization: polN ? polSum / polN : 0,
+		nnd: nndN ? nndSum / nndN : NaN,
+		meanLife: lives.reduce((a, b) => a + b, 0) / lives.length,
+		aliveAtEnd: w.fish.length
+	};
+}
+
+/** Step a frozen world `steps` times, sampling φ and NND each tick and recording each fish's
+ *  lifespan when it is eaten. The measurement loop, split out of measureSchool's setup/summarize. */
+function runBout(w: World, steps: number, seconds: number) {
 	const lifespans = new Map<Fish, number>(w.fish.map((f) => [f, seconds]));
 	let polSum = 0;
 	let polN = 0;
 	let nndSum = 0;
 	let nndN = 0;
-
 	for (let s = 0; s < steps; s++) {
 		const before = [...w.fish];
 		stepWorld(w, DT);
@@ -72,14 +83,7 @@ export function measureSchool(
 			nndN++;
 		}
 	}
-
-	const lives = [...lifespans.values()];
-	return {
-		polarization: polN ? polSum / polN : 0,
-		nnd: nndN ? nndSum / nndN : NaN,
-		meanLife: lives.reduce((a, b) => a + b, 0) / lives.length,
-		aliveAtEnd: w.fish.length
-	};
+	return { lifespans, polSum, polN, nndSum, nndN };
 }
 
 /** Mean of `measureSchool` across seeds. */

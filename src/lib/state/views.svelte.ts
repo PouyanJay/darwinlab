@@ -16,7 +16,13 @@
  * what lets the UI claim to be showing the simulation rather than an illustration of it.
  */
 
-import { fleeError, probePolicy, polarization, meanNearestNeighbor } from '../engine';
+import {
+	fleeError,
+	probePolicy,
+	polarization,
+	meanNearestNeighbor,
+	isSchoolingWorld
+} from '../engine';
 import type { World, WorldConfig, Senses, SenseSnapshot, Genome, PolicyMap } from '../engine';
 
 /** Cheap reactive snapshot of one world, refreshed once per frame for the UI to bind to. */
@@ -65,6 +71,9 @@ export class WorldStats {
 	/** ~4-second half-life at 60fps: long enough to ride across a generation reset, short enough to
 	 *  track a population that is still tightening as it evolves. */
 	static readonly SCHOOL_DECAY = 0.997;
+	/** ~1s of tank-time (in decayed samples) before publishing, so the first reading is a mean, not
+	 *  a single frame. Mirrors the flee lens's own LENS_MIN_SAMPLES gate. */
+	static readonly SCHOOL_MIN_SAMPLES = 60;
 	#nndSum = 0;
 	#nndN = 0;
 	#alignSum = 0;
@@ -166,8 +175,7 @@ export class WorldStats {
 		// A schooling world is one whose brains CARRY the shoal senses — declared, on or off. "Alone"
 		// has them ablated to false, but the spacing/alignment readout is exactly the comparison we
 		// want beside "The Shoal", so it must show on both. Ladder worlds never declare them.
-		const s = world.cfg.senses;
-		this.schooling = 'cohesion' in s || 'align' in s;
+		this.schooling = isSchoolingWorld(world.cfg);
 		if (!this.schooling) {
 			this.#nndSum = this.#nndN = this.#alignSum = this.#alignN = 0;
 			this.schoolNND = null;
@@ -183,9 +191,10 @@ export class WorldStats {
 		this.#alignSum = this.#alignSum * d + polarization(world.fish);
 		this.#alignN = this.#alignN * d + 1;
 		// ~1s of tank-time before publishing, so the first reading is a mean and not a single frame.
-		this.schoolNND = this.#nndN >= 60 ? Math.round(this.#nndSum / this.#nndN) : null;
+		const min = WorldStats.SCHOOL_MIN_SAMPLES;
+		this.schoolNND = this.#nndN >= min ? Math.round(this.#nndSum / this.#nndN) : null;
 		this.schoolAlignPct =
-			this.#alignN >= 60 ? Math.round((this.#alignSum / this.#alignN) * 100) : 0;
+			this.#alignN >= min ? Math.round((this.#alignSum / this.#alignN) * 100) : 0;
 	}
 }
 

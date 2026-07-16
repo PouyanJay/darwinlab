@@ -300,6 +300,50 @@ describe('confusion — predator attention / lock-loss (what makes ACTIVE school
 	});
 });
 
+describe('confusion — the selfish herd (confusionCatch)', () => {
+	/**
+	 * Pack a population into a tight ball in a small tank and let one shark hunt it for two seconds,
+	 * with the catch shrink cranked. A fish buried among neighbours is hard to grab even on contact,
+	 * so far fewer are eaten than in the SAME seeded run with the shrink off — the comparison is the
+	 * guard: strip the mechanic (make catchRadiusFor return the base radius) and the two runs become
+	 * identical. Only the catch mechanic differs; a staged single contact is a degenerate edge (a
+	 * zero-velocity shark on a fish never resolves), so this drives the real hunt instead.
+	 */
+	function eatenInCrowd(catchShrink: boolean): number {
+		const w = makeWorld(
+			cfg({
+				preds: 1,
+				prey: 12,
+				bw: 200,
+				bh: 200,
+				predSpeed: 0.6,
+				persistence: false,
+				confusion: true,
+				confusionCatch: catchShrink,
+				confusionIsolate: false,
+				confusionStrike: false,
+				confusionLock: false,
+				confusionStrength: 5
+			}),
+			undefined,
+			seededRng(9)
+		);
+		w.maxGen = 1;
+		w.gen = 1;
+		applyCfg(w); // frozen population, one shark
+		w.fish.forEach((f, i) => {
+			f.x = 100 + (i % 4) * 5; // a tight ball in a small tank, so the crowd is real
+			f.y = 100 + Math.floor(i / 4) * 5;
+		});
+		for (let s = 0; s < 120 && w.fish.length > 0; s++) stepWorld(w, dt);
+		return w.eaten;
+	}
+
+	it('a packed crowd loses far fewer fish than the same run without the catch shrink', () => {
+		expect(eatenInCrowd(true)).toBeLessThan(eatenInCrowd(false));
+	});
+});
+
 describe('the emergence curve (schoolCurve)', () => {
 	const schoolingCfg = () =>
 		cfg({

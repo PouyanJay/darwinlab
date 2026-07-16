@@ -37,7 +37,9 @@ test('the switcher swaps the bench to Alone vs The Shoal and back', async ({ pag
 	// a schooling world declares the shoal senses whether they are ablated on or off
 	const nnd = page.getByTestId('school-nnd');
 	await expect(nnd).toHaveCount(2);
-	await expect(nnd.first()).toContainText('px apart');
+	// a real spacing reached the DOM — not just the static "px apart" label sitting on a "—"
+	// placeholder (which would mean the running-mean readout regressed and never warmed up)
+	await expect(nnd.first()).toHaveText(/\d+px apart/);
 
 	// back to the ladder: five worlds again, and no schooling chrome survives the switch
 	await exhibit(page, 'Sense ladder').click();

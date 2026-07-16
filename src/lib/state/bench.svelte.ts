@@ -312,22 +312,27 @@ class BenchStore {
 		this.#nextId = 0;
 		this.#accentCursor = 0;
 
-		/*
-		 * EVERYTHING keyed by world id, or it leaks into the next bench.
-		 *
-		 * Ids are handed out from #nextId, which resets to 0 above — so the world called `w1` in the
-		 * next bench is a different world with the same name, and a stale exhibit or assay left
-		 * behind here would attach itself to it. The tank would show clones of a brain from a
-		 * run that no longer exists. (Found by two tests failing in a way that depended on the ORDER
-		 * they ran in, which is the smell this rule exists to catch.)
-		 */
+		this.#resetExhibitKeyedState();
+		this.#lens = 'none';
+	}
+
+	/*
+	 * EVERYTHING keyed by world id, cleared — or it leaks into the next bench.
+	 *
+	 * Ids are handed out from #nextId, which the callers reset to 0 — so the world called `w1` in the
+	 * next bench is a different world with the same name, and a stale exhibit or assay left behind
+	 * would attach itself to it. The tank would show clones of a brain from a run that no longer
+	 * exists. (Found by two tests failing in a way that depended on the ORDER they ran in.) Both
+	 * `destroy` (tearing the bench down) and `loadExhibit` (swapping one bench for another) go through
+	 * this same door — the trap has two of them.
+	 */
+	#resetExhibitKeyedState(): void {
 		this.#exhibitWorlds.clear();
 		this.#exhibitGen.clear();
 		this.#assays.clear();
 		this.#exhibits = {};
 		this.#assayProgress = {};
 		this.#assayResults = {};
-		this.#lens = 'none';
 	}
 
 	// ---- controls (delegated) ----
@@ -930,7 +935,7 @@ class BenchStore {
 	 *
 	 * Everything keyed by world id must go with them, or the next `w1` inherits the last one's exhibit
 	 * or assay — the ids restart at 0, so a stale entry re-attaches to a different world (the trap
-	 * `destroy` exists to close, and this is the other door into it).
+	 * `#resetExhibitKeyedState` exists to close, and this is the other door into it).
 	 */
 	loadExhibit(exhibit: Exhibit): void {
 		this.activeExhibitId = exhibit.id;
@@ -939,12 +944,7 @@ class BenchStore {
 		this.selection = null;
 		this.conditionsWorldId = null;
 		this.#nextId = 0;
-		this.#exhibitWorlds.clear();
-		this.#exhibitGen.clear();
-		this.#assays.clear();
-		this.#exhibits = {};
-		this.#assayProgress = {};
-		this.#assayResults = {};
+		this.#resetExhibitKeyedState();
 		this.init({
 			configs: exhibit.configs,
 			prewarmGenerations: exhibit.prewarmGenerations,
