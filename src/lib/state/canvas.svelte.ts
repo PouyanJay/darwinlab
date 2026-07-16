@@ -65,14 +65,6 @@ class LineageCanvasStore {
 		this.ty = (viewH - bh * s) / 2 - minY * s;
 	}
 
-	/** Put a canvas point at the centre of the viewport, at a given scale — used to open focused on one
-	 *  node when the whole tree is too big to frame legibly (a phone). */
-	centerOn(cx: number, cy: number, viewW: number, viewH: number, scale: number): void {
-		this.scale = clampScale(scale);
-		this.tx = viewW / 2 - cx * this.scale;
-		this.ty = viewH / 2 - cy * this.scale;
-	}
-
 	/** Back to origin, 1:1 — used when a fresh bench is loaded and there is nothing to frame yet. */
 	reset(): void {
 		this.tx = 0;

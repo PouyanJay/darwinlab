@@ -80,28 +80,9 @@
 		overflow: hidden;
 		border: 1px solid var(--line);
 		border-radius: var(--radius-panel);
+		/* A plain panel — no wash. (It used to carry a two-corner accent+gold gradient.) */
 		background: var(--panel);
 		box-shadow: var(--shadow);
-	}
-
-	/* The light this whole product is lit by, landing on the one panel that speaks for it. */
-	.note::before {
-		content: '';
-		position: absolute;
-		inset: 0 0 auto;
-		height: 100%;
-		pointer-events: none;
-		background:
-			radial-gradient(
-				620px at 0% 0%,
-				color-mix(in srgb, var(--accent) 8%, transparent),
-				transparent 70%
-			),
-			radial-gradient(
-				520px at 100% 0%,
-				color-mix(in srgb, var(--gold) 9%, transparent),
-				transparent 68%
-			);
 	}
 
 	summary {

@@ -114,6 +114,8 @@
 	--grid-size: 26px;
 	--panel: #ffffff;
 	--panel2: #f7f6f1;
+	/* The lineage canvas board — a plain, faintly recessed warm neutral (no ruled dots). */
+	--canvas-bg: #e9e6de;
 	--glass: rgba(250, 249, 245, 0.82);
 	--ink: #1d2230;
 	/* The two muted inks are tuned to hold WCAG AA (4.5:1) on --panel AND --panel2 — the Phase 9
@@ -182,7 +184,10 @@
 	 * meaning (danger/the shark, the brain's excite/inhibit signs, the flee-lens ramp). The ground is
 	 * a flat cool near-black lit from the top by a NEUTRAL wash — depth without a coloured glow.
 	 */
-	--bgfx: radial-gradient(1100px at 50% -12%, rgba(255, 255, 255, 0.022), transparent 60%), #0e0f12;
+	/* Plain, no wash: a flat near-black page. */
+	--bgfx: #0e0f12;
+	/* The lineage canvas board — pure black, as dark as the theme goes. */
+	--canvas-bg: #000000;
 	/* The same ruled surface, at the strength near-black can carry — any more and it is a cage. */
 	--grid-line: rgba(255, 255, 255, 0.028);
 	--panel: #16181c;

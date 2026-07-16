@@ -17,7 +17,7 @@
 	import Icon from '../common/Icon.svelte';
 	import type { WorldEntry } from '$lib/state';
 	import { bench, canvas, prefersReducedMotion } from '$lib/state';
-	import { NODE_W, ESTIMATED_NODE_H, CANVAS_PAD, edgePath } from '$lib/lab/lineage';
+	import { NODE_W, ESTIMATED_NODE_H, edgePath } from '$lib/lab/lineage';
 
 	interface Props {
 		/** Add a fresh root world — the canvas offers it in its own corner, not only the sidebar. */
@@ -141,12 +141,15 @@
 		return () => el.removeEventListener('wheel', onwheel);
 	});
 
+	/** A small inset so the first node isn't jammed against the canvas edge on open. */
+	const MARGIN = 28;
+
 	/**
-	 * The opening frame, once the nodes have measured their heights. On a roomy screen it frames the
-	 * whole tree (recenter). On a phone, fitting five nodes into 375px shrinks each to an unreadable,
-	 * untappable sliver — so below a legible scale it instead opens focused on the first node, and the
-	 * rest is a pan away. Deliberately NOT re-run on every add/branch: the camera stays where the user
-	 * left it, and the recenter button is how they re-frame.
+	 * The opening frame. It opens at 100% (1:1) — the default the owner asked for — anchored on the
+	 * first node at the top-left, so a world is shown at full, readable size and the rest of the tree
+	 * is a pan (or a recenter) away. A phone too narrow for a whole node at 1:1 backs off just enough
+	 * to fit the node's width; everything wider opens at exactly 100%. Deliberately NOT re-run on every
+	 * add/branch — the camera stays where the user left it, and the recenter button re-frames the tree.
 	 */
 	function frameInitial() {
 		const rect = container.getBoundingClientRect();
@@ -154,25 +157,10 @@
 			canvas.reset();
 			return;
 		}
-		const { minX, minY, maxX, maxY } = treeBounds(bench.worlds);
-		const fit = Math.min(
-			(rect.width - 2 * CANVAS_PAD) / (maxX - minX || 1),
-			(rect.height - 2 * CANVAS_PAD) / (maxY - minY || 1)
-		);
-		// 0.18 is the phone/desktop divide: a laptop frames five roots at ~0.3 and gets the whole tree;
-		// only a genuinely tiny viewport (a phone at ~0.07) drops below it and opens focused on one node.
-		if (fit >= 0.18) {
-			canvas.fitBox(minX, minY, maxX, maxY, rect.width, rect.height);
-		} else {
-			const first = bench.worlds[0];
-			canvas.centerOn(
-				first.lineage.x + NODE_W / 2,
-				first.lineage.y + (heights[first.id] ?? ESTIMATED_NODE_H) / 2,
-				rect.width,
-				rect.height,
-				Math.min(0.85, (rect.width - 40) / NODE_W)
-			);
-		}
+		const { minX, minY } = treeBounds(bench.worlds);
+		canvas.scale = Math.min(1, (rect.width - 2 * MARGIN) / NODE_W); // 1 on anything but a narrow phone
+		canvas.tx = MARGIN - minX * canvas.scale;
+		canvas.ty = MARGIN - minY * canvas.scale;
 	}
 
 	onMount(() => {
@@ -204,8 +192,6 @@
 	bind:this={container}
 	role="group"
 	aria-label="lineage canvas — worlds as draggable nodes; drag to pan, scroll to zoom"
-	style:background-size="{18 * canvas.scale}px {18 * canvas.scale}px"
-	style:background-position="{canvas.tx}px {canvas.ty}px"
 	{onpointerdown}
 	{onpointermove}
 	onpointerup={endDrag}
@@ -264,10 +250,8 @@
 		overflow: hidden;
 		border: 1px solid var(--line);
 		border-radius: var(--radius-card);
-		background-color: var(--panel2);
-		/* The infinite plane's ruled surface — dots that PAN and ZOOM with the camera, so a drag has
-		   something to move against and the space reads as continuous rather than a static panel. */
-		background-image: radial-gradient(circle, var(--line) 1.1px, transparent 1.1px);
+		/* A plain, flat plane — pure black in dark. No ruled dots, no wash. */
+		background: var(--canvas-bg);
 		cursor: grab;
 		touch-action: none;
 	}
