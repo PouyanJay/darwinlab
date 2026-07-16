@@ -63,7 +63,10 @@
 </script>
 
 <section class="tile" style:--tile-accent={config.accent} aria-label="world {index}: {config.name}">
-	<header>
+	<!-- The header doubles as the node's DRAG HANDLE on the lineage canvas: grab it anywhere that
+	     isn't the name or an action button and the whole world slides. The canvas reads this attribute
+	     to know a press here means "move the node", not "pan the plane". -->
+	<header data-drag-handle>
 		<Chip tone="accent" style="--chip-accent: {config.accent}" class="badge">{badge}</Chip>
 
 		<EditableLabel
@@ -91,15 +94,6 @@
 				onclick={() => bench.resetWorld(entry.id)}
 			>
 				<Icon name="reset" size={15} />
-			</Button>
-			<Button
-				variant="icon"
-				size="sm"
-				title="duplicate world"
-				aria-label="duplicate world"
-				onclick={() => bench.duplicateWorld(entry.id)}
-			>
-				<Icon name="duplicate" size={15} />
 			</Button>
 			<Button
 				variant="icon"
@@ -171,6 +165,14 @@
 			<span>Champion</span>
 		</Button>
 
+		<!-- The headline action of the lineage canvas: fork a child that inherits these brains. It sits
+		     with the primary actions, not among the destructive header icons, because it is the move the
+		     canvas exists to make. -->
+		<Button size="sm" class="branch-btn" onclick={() => bench.branchWorld(entry.id)}>
+			<Icon name="branch" size={13} />
+			<span>Branch</span>
+		</Button>
+
 		<Button size="sm" onclick={() => bench.openConditions(entry.id)}>
 			<Icon name="sliders" size={13} />
 			<span>Conditions</span>
@@ -178,13 +180,25 @@
 	</div>
 
 	<TileStats {entry} />
-	<!-- Stage the question instead of waiting for the ocean to ask it. -->
-	<AssayPanel {entry} />
-	<EvalPanel {entry} />
-	<!-- On the CARD, because the answer belongs to the environment: a channel is worth exactly what
-	     ITS OWN conditions make it worth, and a matrix run in some other card's tank answers a
-	     question nobody asked. -->
-	<AblationMatrix {entry} />
+
+	<!-- The heavy evidence panels fold away by default: on the canvas a node has to stay compact
+	     enough to see its neighbours, and this is the analysis you open when a node has your attention,
+	     not the thing you read at a glance. Open, it grows the node; the edges follow. -->
+	<details class="analysis">
+		<summary>
+			<Icon name="chevron-right" size={14} />
+			<span>Analysis &amp; assays</span>
+		</summary>
+		<div class="analysis-body">
+			<!-- Stage the question instead of waiting for the ocean to ask it. -->
+			<AssayPanel {entry} />
+			<EvalPanel {entry} />
+			<!-- On the CARD, because the answer belongs to the environment: a channel is worth exactly
+			     what ITS OWN conditions make it worth, and a matrix run in some other card's tank answers
+			     a question nobody asked. -->
+			<AblationMatrix {entry} />
+		</div>
+	</details>
 </section>
 
 <style>
@@ -252,6 +266,10 @@
 		align-items: center;
 		gap: 9px;
 		padding: var(--sp-4) var(--sp-5) 7px;
+		/* The header is the node's drag handle on the canvas — grab it to move the world. The name and
+		   the action buttons keep their own cursors, so this only shows on the empty header space. */
+		cursor: grab;
+		touch-action: none;
 	}
 
 	/* The name field is the only thing here that should take the slack. */
@@ -326,5 +344,47 @@
 	/* The one gold thing on the card, because the champion is the one gold thing in the tank. */
 	.toolbar :global(.champion) :global(.icon) {
 		color: var(--gold-ink);
+	}
+
+	/*
+	 * The folded evidence. A native <details>, so it holds its own open state and is keyboard- and
+	 * screen-reader-operable for free — the summary is a real disclosure button.
+	 */
+	.analysis {
+		border-top: 1px solid var(--line);
+	}
+
+	.analysis > summary {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		padding: var(--sp-3) var(--sp-5);
+		cursor: pointer;
+		list-style: none;
+		font-size: var(--fs-sm);
+		font-weight: var(--fw-medium);
+		color: var(--ink3);
+		user-select: none;
+	}
+
+	.analysis > summary::-webkit-details-marker {
+		display: none;
+	}
+
+	.analysis > summary :global(.icon) {
+		transition: transform var(--dur-fast) var(--ease);
+	}
+
+	.analysis[open] > summary :global(.icon) {
+		transform: rotate(90deg);
+	}
+
+	.analysis > summary:hover {
+		color: var(--ink);
+	}
+
+	.analysis-body {
+		display: flex;
+		flex-direction: column;
 	}
 </style>

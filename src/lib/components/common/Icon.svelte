@@ -28,7 +28,10 @@
 		| 'chevron-right'
 		| 'episodes'
 		| 'flask'
-		| 'compass';
+		| 'compass'
+		| 'branch'
+		| 'minus'
+		| 'crosshair';
 
 	interface Props {
 		name: IconName;
@@ -110,6 +113,17 @@
 			d="M9.5 3.5h5M10.5 3.5v6L5.8 17a2.4 2.4 0 0 0 2 3.5h8.4a2.4 2.4 0 0 0 2-3.5l-4.7-7.5v-6"
 		/>
 		<path d="M8 14.5h8" />
+	{:else if name === 'branch'}
+		<!-- a lineage fork: a trunk that splits off to a branched child -->
+		<line x1="6" y1="3" x2="6" y2="15" />
+		<circle cx="6" cy="18" r="2.6" />
+		<circle cx="18" cy="6" r="2.6" />
+		<path d="M18 8.6a9 9 0 0 1-9 9" />
+	{:else if name === 'minus'}
+		<path d="M5.5 12h13" />
+	{:else if name === 'crosshair'}
+		<circle cx="12" cy="12" r="7.5" />
+		<path d="M12 1.5v3.5M12 19v3.5M1.5 12h3.5M19 12h3.5" />
 	{/if}
 </svg>
 

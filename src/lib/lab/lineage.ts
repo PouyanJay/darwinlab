@@ -11,8 +11,9 @@
 export const NODE_W = 468;
 /** Horizontal gap between root siblings when the bench first lays them out in a row. */
 export const NODE_GAP_X = 84;
-/** How far below a parent a freshly branched child drops (a compact node clears ~520px). */
-export const BRANCH_DROP = 560;
+/** How far below a parent a freshly branched child drops — clear of a compact node (~650px tall),
+ *  so the wire between them has room and reads as "descends from" rather than overlapping it. */
+export const BRANCH_DROP = 720;
 /** Sideways offset per additional child, so siblings fan out instead of stacking on one line. */
 export const NODE_STAGGER_X = 264;
 

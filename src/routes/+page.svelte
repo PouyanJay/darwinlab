@@ -17,12 +17,11 @@
 	import Sidebar from '$lib/components/shell/Sidebar.svelte';
 	import FieldNote from '$lib/components/bench/FieldNote.svelte';
 	import FirstRunHint from '$lib/components/bench/FirstRunHint.svelte';
-	import WorldTile from '$lib/components/bench/WorldTile.svelte';
+	import LineageCanvas from '$lib/components/bench/LineageCanvas.svelte';
 	import ConditionsModal from '$lib/components/conditions/ConditionsModal.svelte';
 	import BrainInspector from '$lib/components/inspector/BrainInspector.svelte';
 	import StoryMode from '$lib/components/story/StoryMode.svelte';
 	import FooterPill from '$lib/components/common/FooterPill.svelte';
-	import Icon from '$lib/components/common/Icon.svelte';
 	import { bench, shell, story, theme, prefersReducedMotion } from '$lib/state';
 	import { DEFAULT_WORLDS, newWorldConfig, MAX_GENERATIONS_DEFAULT } from '$lib/engine';
 	import { PREWARM_GENERATIONS } from '$lib/lab/scenario';
@@ -61,29 +60,6 @@
 	function addWorld() {
 		bench.addWorld(newWorldConfig(nextWorldName(), bench.nextAccent()));
 	}
-
-	/**
-	 * How wide the bench is allowed to run, and how wide a card is inside it.
-	 *
-	 * Three across is the ceiling because a fourth card makes every tank too small to watch a fish in
-	 * — and watching is the entire point. Below the ceiling the cards do NOT divide the window between
-	 * them; they take the width their contents deserve and the bench centres what is left. A single
-	 * environment is therefore a big single card, not a 2000px-wide sliver of water.
-	 *
-	 * `auto-fit` then reduces the columns for real (a narrow window, or a dragged-wide sidebar) rather
-	 * than letting the cards squeeze: the cap sets the maximum, the viewport sets the actual.
-	 */
-	const MAX_COLUMNS = 3;
-
-	/**
-	 * How wide a card is, given how many are sharing the row. Fewer environments on the bench means a
-	 * bigger tank in each — one on its own is a card you can actually watch a fish in, not a card
-	 * stretched to the width of a monitor.
-	 */
-	const CARD_WIDTH: Record<number, number> = { 1: 780, 2: 580, 3: 470 };
-
-	const columns = $derived(Math.min(MAX_COLUMNS, Math.max(1, bench.worlds.length)));
-	const cardWidth = $derived(CARD_WIDTH[columns]);
 
 	/**
 	 * How much of the left edge the sidebar is holding.
@@ -144,33 +120,13 @@
 	<div class="shell">
 		<Sidebar onaddworld={addWorld} onplaystory={() => bench.playStory()} />
 
-		<!-- One measure for the whole column: the note, the cards and the empty slot share an edge. -->
-		<div class="bench" style:--columns={columns} style:--card="{cardWidth}px">
+		<!-- The bench is now a spatial CANVAS, not a grid: the note sits above it, the family tree fills
+		     the rest of the height. -->
+		<div class="bench">
 			<div class="banner"><FieldNote /></div>
 
 			<main>
-				<div class="grid">
-					{#each bench.worlds as entry, index (entry.id)}
-						<WorldTile {entry} index={index + 1} />
-					{/each}
-				</div>
-
-				<!--
-					OUTSIDE the grid, not a cell in it and not a row spanning it.
-
-					It was a cell that spanned every column — and that is what broke the sizing. `auto-fit`
-					only collapses a track when NOTHING occupies it; a full-width item occupies them all, so
-					the empty tracks stayed open and a bench of one painted its single card in a 380px track
-					with the rest of the row left blank. The card never grew, and the layout never centred.
-					Out here it cannot hold a track open, so one world really is one wide, centred card.
-
-					It stays inside <main> all the same: a button loose in a bare <div> is content no
-					landmark owns, which is content a screen reader cannot situate (the axe `region` rule).
-				-->
-				<button class="ghost" onclick={addWorld}>
-					<Icon name="plus" size={15} />
-					<span>Add environment</span>
-				</button>
+				<LineageCanvas onaddworld={addWorld} />
 			</main>
 		</div>
 	</div>
@@ -195,7 +151,9 @@
 	.app {
 		display: flex;
 		flex-direction: column;
-		min-height: 100vh;
+		/* A canvas app is exactly the viewport tall: the tree gets a bounded height to fill rather than
+		   growing the page. (dvh so mobile browser chrome doesn't crop the low controls.) */
+		height: 100dvh;
 	}
 
 	.shell {
@@ -206,65 +164,23 @@
 
 	.bench {
 		flex: 1;
-		min-width: 0; /* the grid may shrink; it must never push the sidebar off its width */
+		min-width: 0; /* the canvas may shrink; it must never push the sidebar off its width */
+		min-height: 0;
 		display: flex;
 		flex-direction: column;
-		gap: var(--sp-7);
-		padding: var(--sp-6) var(--sp-7) 78px; /* the footer pill sits in that bottom margin */
+		gap: var(--sp-4);
+		padding: var(--sp-4) var(--sp-5) var(--sp-5);
 	}
 
-	.banner,
-	main {
+	.banner {
 		width: 100%;
-		/* The cap, in one line: N cards and the gaps between them. Everything else is centring. */
-		max-width: calc(var(--columns) * var(--card) + (var(--columns) - 1) * var(--sp-7));
-		margin-inline: auto;
+		flex: none;
 	}
 
+	/* The canvas host fills whatever height the note leaves — the tree gets the room, not a scroll. */
 	main {
+		flex: 1;
+		min-height: 0;
 		display: flex;
-		flex-direction: column;
-		gap: var(--sp-7);
-	}
-
-	.grid {
-		display: grid;
-		/* min(380px, 100%): the card minimum yields when the CONTAINER is the narrower party, so a
-		   phone gets one fitted column instead of a 380px track and a horizontal scrollbar.
-		   `auto-fit` (not auto-fill) is load-bearing: it COLLAPSES the tracks nothing sits in, which
-		   is what lets two cards fill a three-card measure instead of huddling at the left. */
-		grid-template-columns: repeat(auto-fit, minmax(min(380px, 100%), 1fr));
-		gap: var(--sp-7);
-		align-content: start;
-		/* Each card takes its OWN height. Without this, grid rows stretch every card to the tallest in
-		   the row, so opening one card's assay or ablation matrix dragged its silent neighbours taller
-		   with it — a card should answer for its own content and nobody else's. */
-		align-items: start;
-	}
-
-	/* The one card that holds nothing: an empty slot inviting a new experiment. */
-	.ghost {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		gap: var(--sp-3);
-		min-height: 64px;
-		border: 1.5px dashed var(--line);
-		border-radius: var(--radius-card);
-		background: transparent;
-		color: var(--ink3);
-		font-size: var(--fs-body);
-		font-weight: var(--fw-semibold);
-		cursor: pointer;
-		transition:
-			color var(--dur) var(--ease),
-			border-color var(--dur) var(--ease),
-			background var(--dur) var(--ease);
-	}
-
-	.ghost:hover {
-		border-color: var(--accent);
-		background: var(--panel);
-		color: var(--accent);
 	}
 </style>
