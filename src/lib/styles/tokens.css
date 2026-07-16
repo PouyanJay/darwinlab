@@ -188,8 +188,10 @@
 	--bgfx: #0e0f12;
 	/* The lineage canvas board — pure black, as dark as the theme goes. */
 	--canvas-bg: #000000;
-	/* The same ruled surface, at the strength near-black can carry — any more and it is a cage. */
-	--grid-line: rgba(255, 255, 255, 0.028);
+	/* No ruled surface in dark — transparent, so `body::before` paints nothing. The faint top-fading
+	   grid read as dots and a top "highlight" behind the panels; dark is plain now. (Light keeps its
+	   lab-notebook rule.) */
+	--grid-line: transparent;
 	--panel: #16181c;
 	--panel2: #1e2027;
 	--glass: rgba(22, 24, 28, 0.86);
