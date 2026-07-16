@@ -15,6 +15,10 @@ const caption = (page: Page) => story(page).locator('h1');
 const counter = (page: Page) => story(page).getByText(/scene \d+ of \d+/i);
 
 test.beforeEach(async ({ page }) => {
+	// Pin the film to the LIGHT palette: one test picks a fish by its colour, and the light theme's
+	// indigo fish are unmistakable where the monochrome dark theme's near-white ones are not. The film
+	// is theme-agnostic otherwise, and dark story mode is scanned for contrast over in a11y.e2e.
+	await page.addInitScript(() => localStorage.setItem('darwinlab:theme', 'light'));
 	await gotoApp(page);
 	// The prewarm must LAND before the film rolls. (The trap cost a debugging session once — the
 	// story opened over a bench that was still at generation 3.)

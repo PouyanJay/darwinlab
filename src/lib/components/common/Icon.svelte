@@ -31,7 +31,8 @@
 		| 'compass'
 		| 'branch'
 		| 'minus'
-		| 'crosshair';
+		| 'crosshair'
+		| 'grip';
 
 	interface Props {
 		name: IconName;
@@ -124,6 +125,16 @@
 	{:else if name === 'crosshair'}
 		<circle cx="12" cy="12" r="7.5" />
 		<path d="M12 1.5v3.5M12 19v3.5M1.5 12h3.5M19 12h3.5" />
+	{:else if name === 'grip'}
+		<!-- a drag handle: two columns of dots, the universal "grab me" affordance -->
+		<g fill="currentColor" stroke="none">
+			<circle cx="9" cy="6" r="1.5" />
+			<circle cx="9" cy="12" r="1.5" />
+			<circle cx="9" cy="18" r="1.5" />
+			<circle cx="15" cy="6" r="1.5" />
+			<circle cx="15" cy="12" r="1.5" />
+			<circle cx="15" cy="18" r="1.5" />
+		</g>
 	{/if}
 </svg>
 

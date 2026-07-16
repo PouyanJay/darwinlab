@@ -63,10 +63,13 @@
 </script>
 
 <section class="tile" style:--tile-accent={config.accent} aria-label="world {index}: {config.name}">
-	<!-- The header doubles as the node's DRAG HANDLE on the lineage canvas: grab it anywhere that
-	     isn't the name or an action button and the whole world slides. The canvas reads this attribute
-	     to know a press here means "move the node", not "pan the plane". -->
+	<!-- The header is the node's title bar on the lineage canvas. The grip at its start is the DRAG
+	     HANDLE — grab it (or any empty header space) and the whole world slides; the canvas reads the
+	     data-drag-handle attribute to know a press here means "move the node", not "pan the plane". The
+	     name field and the action buttons keep their own presses. -->
 	<header data-drag-handle>
+		<span class="grip" aria-hidden="true"><Icon name="grip" size={15} /></span>
+
 		<Chip tone="accent" style="--chip-accent: {config.accent}" class="badge">{badge}</Chip>
 
 		<EditableLabel
@@ -270,6 +273,21 @@
 		   the action buttons keep their own cursors, so this only shows on the empty header space. */
 		cursor: grab;
 		touch-action: none;
+	}
+
+	/* The grip: the visible "grab me" affordance at the head of the title bar, dimmed until the node
+	   is hovered so it doesn't compete with the name at rest. */
+	.grip {
+		display: flex;
+		flex: none;
+		margin-left: -2px;
+		color: var(--ink3);
+		opacity: 0.45;
+		transition: opacity var(--dur-fast) var(--ease);
+	}
+
+	.tile:hover .grip {
+		opacity: 0.9;
 	}
 
 	/* The name field is the only thing here that should take the slack. */

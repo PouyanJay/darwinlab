@@ -36,14 +36,15 @@ test('the bench scans clean', async ({ page }) => {
 	expect(await violations(page)).toEqual([]);
 });
 
-test('the bench scans clean in dark, too — contrast is per-palette, not per-layout', async ({
+test('the bench scans clean in light, too — contrast is per-palette, not per-layout', async ({
 	page
 }) => {
-	// No settling wait of its own: the theme's colour TRANSITIONS register in
-	// document.getAnimations(), so the settle inside violations() covers them — axe never reads
-	// a blend that exists for a fifth of a second and belongs to neither theme.
+	// Dark is the default (so "the bench scans clean" already covers it); switch to LIGHT and prove the
+	// other palette holds contrast too. No settling wait of its own: the theme's colour TRANSITIONS
+	// register in document.getAnimations(), so the settle inside violations() covers them — axe never
+	// reads a blend that exists for a fifth of a second and belongs to neither theme.
 	await page.getByRole('button', { name: /switch to (dark|light) theme/ }).click();
-	await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+	await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
 	expect(await violations(page)).toEqual([]);
 });
 

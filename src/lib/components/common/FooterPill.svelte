@@ -24,6 +24,9 @@
 <style>
 	.pill {
 		position: fixed;
+		/* A passive line of text: it must never intercept a press meant for the canvas beneath it (on a
+		   phone it floats over the lineage plane, and a tap on a node's button was landing on the pill). */
+		pointer-events: none;
 		/* Clear of the rail, whatever it is holding — see --shell-gutter on the page. The fallback is
 		   for anywhere this pill is rendered without the shell around it. */
 		left: calc(var(--shell-gutter, 0px) + var(--sp-6));

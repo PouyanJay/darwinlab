@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { gotoApp, waitForPrewarm } from './helpers';
+import { gotoApp, waitForPrewarm, openAnalysis } from './helpers';
 
 /**
  * The flee assay, in the real app.
@@ -19,6 +19,7 @@ test.beforeEach(async ({ page }) => {
 
 test('the assay stages the question, holds the run, and answers with an n', async ({ page }) => {
 	const card = tile(page, 2); // Direction — prewarmed, so it has a brain worth questioning
+	await openAnalysis(card);
 	const gen = await card.getByTestId('gen').innerText();
 
 	await card.getByRole('button', { name: 'Run assay' }).click();
@@ -41,6 +42,7 @@ test('the assay stages the question, holds the run, and answers with an n', asyn
 
 test('the assay can be stopped, and gives the tank back', async ({ page }) => {
 	const card = tile(page, 2);
+	await openAnalysis(card);
 
 	await card.getByRole('button', { name: 'Run assay' }).click();
 	await expect(card.getByText(/Watching the best brain/)).toBeVisible();
@@ -55,6 +57,7 @@ test('a finished result can be cleared, collapsing the panel back to its button'
 	page
 }) => {
 	const card = tile(page, 2);
+	await openAnalysis(card);
 	const verdict = card.getByTestId('turn-accuracy');
 
 	await card.getByRole('button', { name: 'Run assay' }).click();

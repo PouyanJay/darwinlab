@@ -43,15 +43,17 @@
 		if (event.button !== 0) return; // left button only; right-click is the browser's
 		const target = event.target as HTMLElement;
 		const nodeEl = target.closest('[data-node]') as HTMLElement | null;
-		const onHandle = !!target.closest('[data-drag-handle]') && !target.closest(INTERACTIVE);
+		const interactive = target.closest(INTERACTIVE);
+		const onHandle = !!target.closest('[data-drag-handle]') && !interactive;
 
 		if (nodeEl && onHandle) {
 			drag = { kind: 'node', id: nodeEl.dataset.node, lastX: event.clientX, lastY: event.clientY };
+		} else if (interactive) {
+			return; // a button/input — the floating controls, add-world, or a node's own actions
 		} else if (!nodeEl) {
-			// empty plane — pan
-			drag = { kind: 'pan', lastX: event.clientX, lastY: event.clientY };
+			drag = { kind: 'pan', lastX: event.clientX, lastY: event.clientY }; // empty plane
 		} else {
-			return; // inside a node but not on its handle — let the tank/buttons have the press
+			return; // inside a node but not on its handle — let the tank have the press
 		}
 		container.setPointerCapture(event.pointerId);
 		grabbing = true;
@@ -133,10 +135,53 @@
 		return () => el.removeEventListener('wheel', onwheel);
 	});
 
-	// Frame the launched tree once, after the nodes have measured their heights. Deliberately NOT on
-	// every add/branch — the camera stays where the user left it; the recenter button is how they ask.
+	/**
+	 * The opening frame, once the nodes have measured their heights. On a roomy screen it frames the
+	 * whole tree (recenter). On a phone, fitting five nodes into 375px shrinks each to an unreadable,
+	 * untappable sliver — so below a legible scale it instead opens focused on the first node, and the
+	 * rest is a pan away. Deliberately NOT re-run on every add/branch: the camera stays where the user
+	 * left it, and the recenter button is how they re-frame.
+	 */
+	function frameInitial() {
+		const rect = container.getBoundingClientRect();
+		const worlds = bench.worlds;
+		if (!worlds.length) {
+			canvas.reset();
+			return;
+		}
+		let minX = Infinity;
+		let minY = Infinity;
+		let maxX = -Infinity;
+		let maxY = -Infinity;
+		for (const entry of worlds) {
+			minX = Math.min(minX, entry.lineage.x);
+			minY = Math.min(minY, entry.lineage.y);
+			maxX = Math.max(maxX, entry.lineage.x + NODE_W);
+			maxY = Math.max(maxY, entry.lineage.y + (heights[entry.id] ?? 460));
+		}
+		const pad = 90;
+		const fit = Math.min(
+			(rect.width - 2 * pad) / (maxX - minX || 1),
+			(rect.height - 2 * pad) / (maxY - minY || 1)
+		);
+		// 0.18 is the phone/desktop divide: a laptop frames five roots at ~0.3 and gets the whole tree;
+		// only a genuinely tiny viewport (a phone at ~0.07) drops below it and opens focused on one node.
+		if (fit >= 0.18) {
+			canvas.fitBox(minX, minY, maxX, maxY, rect.width, rect.height);
+		} else {
+			const first = worlds[0];
+			canvas.centerOn(
+				first.lineage.x + NODE_W / 2,
+				first.lineage.y + (heights[first.id] ?? 460) / 2,
+				rect.width,
+				rect.height,
+				Math.min(0.85, (rect.width - 40) / NODE_W)
+			);
+		}
+	}
+
 	onMount(() => {
-		requestAnimationFrame(() => requestAnimationFrame(recenter));
+		requestAnimationFrame(() => requestAnimationFrame(frameInitial));
 	});
 
 	const reduced = $derived(prefersReducedMotion());
