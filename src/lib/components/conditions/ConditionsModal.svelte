@@ -17,7 +17,7 @@
 	import Slider from '../common/Slider.svelte';
 	import Stepper from '../common/Stepper.svelte';
 	import Segmented from '../common/Segmented.svelte';
-	import { SENSES } from '../senses';
+	import { sensesFor } from '../senses';
 	import { bench } from '$lib/state';
 	import type { WorldEntry } from '$lib/state';
 	import { ACCENTS, ACCENT_NAMES, WORLD_LIMITS } from '$lib/engine';
@@ -177,7 +177,7 @@
 
 		<fieldset class="senses">
 			<legend class="field-label">Senses: the brain's input neurons</legend>
-			{#each SENSES as sense (sense.key)}
+			{#each sensesFor(config.senses) as sense (sense.key)}
 				<label class="sense">
 					<input
 						type="checkbox"

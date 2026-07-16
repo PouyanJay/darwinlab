@@ -27,5 +27,15 @@ export const SENSES: readonly SenseInfo[] = [
 	{ key: 'dist', short: 'dist', name: 'Distance', description: 'detect the predator at range' },
 	{ key: 'dir', short: 'dir', name: 'Direction', description: 'know which way the threat is' },
 	{ key: 'closing', short: 'close', name: 'Closing speed', description: 'feel the lunge building' },
-	{ key: 'walls', short: 'walls', name: 'Walls', description: 'sense the container edges' }
+	{ key: 'walls', short: 'walls', name: 'Walls', description: 'sense the container edges' },
+	// The shoal senses — of OTHER FISH, not the predator. Present only on schooling worlds, so the
+	// pill row shows them only where `cfg.senses` actually carries them (see WorldTile's filter).
+	{ key: 'cohesion', short: 'shoal', name: 'Shoal', description: 'sense where the other fish are' },
+	{ key: 'align', short: 'align', name: 'Alignment', description: 'feel which way the shoal swims' }
 ];
+
+/** The senses a given world actually exposes — the four predator senses always, plus any extras
+ *  (proprioception, the shoal senses) its `cfg.senses` declares. Used to render the pill row. */
+export function sensesFor(senses: Senses): readonly SenseInfo[] {
+	return SENSES.filter((s) => s.key in senses);
+}

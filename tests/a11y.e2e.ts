@@ -71,3 +71,12 @@ test('story mode scans clean', async ({ page }) => {
 	await expect(page.getByRole('dialog', { name: 'story mode' })).toBeVisible();
 	expect(await violations(page)).toEqual([]);
 });
+
+test('the Shoal exhibit scans clean — the school readout and shoal pills are new surface', async ({
+	page
+}) => {
+	await page.getByRole('radio', { name: 'The Shoal', exact: true }).click();
+	await waitForPrewarm(page);
+	await expect(page.getByTestId('school-nnd').first()).toBeVisible();
+	expect(await violations(page)).toEqual([]);
+});

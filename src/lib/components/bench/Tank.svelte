@@ -52,7 +52,8 @@
 			detail,
 			big,
 			lens: bench.lens,
-			reducedMotion: prefersReducedMotion()
+			reducedMotion: prefersReducedMotion(),
+			accent: entry.config.accent
 		});
 	}
 

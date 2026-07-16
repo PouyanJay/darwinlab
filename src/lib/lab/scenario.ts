@@ -23,7 +23,7 @@ export interface RoleBinding {
 /** One observation channel: what the lab calls it, and what it means in this scenario. */
 export interface ObservationBinding {
 	/** The engine's sense key — the thing that is actually ablated. */
-	key: 'dist' | 'dir' | 'closing' | 'walls' | 'speed';
+	key: 'dist' | 'dir' | 'closing' | 'walls' | 'speed' | 'cohesion' | 'align';
 	/** Short label for a chip. */
 	short: string;
 	/** What the lab calls this channel, scenario-independent. */
@@ -93,7 +93,19 @@ export const PREDATOR_PREY: Scenario = {
 			generic: 'closing rate',
 			binding: 'how fast it is gaining'
 		},
-		{ key: 'walls', short: 'walls', generic: 'boundary rays', binding: 'how near the glass is' }
+		{ key: 'walls', short: 'walls', generic: 'boundary rays', binding: 'how near the glass is' },
+		{
+			key: 'cohesion',
+			short: 'shoal',
+			generic: 'neighbour field',
+			binding: 'where the other fish are'
+		},
+		{
+			key: 'align',
+			short: 'align',
+			generic: 'neighbour heading',
+			binding: 'which way the shoal points'
+		}
 	],
 	policyMap: {
 		name: 'Escape map',

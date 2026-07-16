@@ -30,6 +30,18 @@ export interface Senses {
 	 * in an 8-input world this flag has nothing to gate. Reference worlds never have it.
 	 */
 	speed?: boolean;
+	/**
+	 * COHESION — the shoal. A sense of OTHER FISH, not the predator: how many neighbours are
+	 * near (density) and which way their centre-of-mass lies. It is the lever cohesion needs —
+	 * a brain can only steer TOWARD a group it can feel. Slots 9–11, present only in worlds
+	 * whose brains carry them (`brainInputs: 14`). Reference worlds never have it.
+	 */
+	cohesion?: boolean;
+	/**
+	 * ALIGNMENT — the mean heading of nearby neighbours. What turns a clump into a school: a
+	 * fish that can feel which way its shoal is pointing can swim AS ONE with it. Slots 12–13.
+	 */
+	align?: boolean;
 }
 
 /** Per-world configuration (the Conditions schema, README §7 / spec §16). */
@@ -131,6 +143,55 @@ export interface WorldConfig {
 	 * is not a bug; it is the answer to "what does the dart buy?", and the UI says so.
 	 */
 	lunge?: boolean;
+
+	// ---- schooling (Phase 14) — all optional, all default OFF so reference worlds and the
+	//      fidelity gate are untouched (a disabled mechanic draws no randomness and changes no slot) ----
+	/**
+	 * THE CONFUSION EFFECT — the master switch for the reason to group. A crowded fish is a hard
+	 * fish to catch, so a fish in a swarm out-survives a loner and grouping can finally pay.
+	 * Reference = off (the shark treats every fish the same, so grouping buys nothing). Nothing
+	 * about flocking is programmed: this only makes it PAY. Whether schools then evolve is measured.
+	 *
+	 * The effect is delivered by up to three sub-mechanisms, each independently ablatable so their
+	 * contributions can be attributed (all default ON when confusion is on):
+	 *   confusionIsolate — target acquisition: the shark passes over a surrounded fish for the
+	 *                      exposed straggler (the interior of a school is safe).
+	 *   confusionStrike  — the strike degrades on a crowded target: longer telegraph + a jittered
+	 *                      lunge vector (it hesitates and mis-strikes).
+	 *   confusionCatch   — the selfish herd: a fish packed among neighbours is hard to grab even on
+	 *                      contact (its catch radius shrinks with its own crowd).
+	 * Measured (predSpeed 1.05, 6 seeds × 60 gens), the shoal sense earns its keep — the population
+	 * ACTIVELY schools — only with the catch/strike mechanisms in play; isolation-hunting alone did
+	 * not make the sense pay. See scripts/sweep-schooling.ts.
+	 */
+	confusion?: boolean;
+	/** Sub-mechanism: crowd-penalise target acquisition (hunt the isolated). Default on w/ confusion. */
+	confusionIsolate?: boolean;
+	/** Sub-mechanism: degrade the strike on a crowded target (telegraph + jitter). Default on. */
+	confusionStrike?: boolean;
+	/** Sub-mechanism: the selfish herd — a crowded fish is hard to grab on contact. Default on. */
+	confusionCatch?: boolean;
+	/**
+	 * Sub-mechanism: PREDATOR ATTENTION. The shark holds a persistent lock on one target and loses
+	 * it stochastically when that fish is inside a dense crowd, dropping into a distracted state
+	 * where it mills and cannot strike. Passive proximity cannot cause lock-loss — only an actively
+	 * maintained dense swarm can — so this is the one confusion pathway that should make TIGHT,
+	 * ACTIVE schooling pay where mere clustering did not. Default OFF (opt-in). Only with confusion on.
+	 */
+	confusionLock?: boolean;
+	/** Radius around a fish that counts toward its crowd. Reference-irrelevant; default 70px. */
+	confusionRadius?: number;
+	/**
+	 * Neighbours needed for FULL protection (crowd saturates at this count). Default 3 — low enough
+	 * that being near a couple of fish already protects, which means the benefit is captured PASSIVELY
+	 * and actively schooling adds little. Raise it and only a genuinely dense, actively-formed ball is
+	 * safe, so the shoal sense has to earn its keep. Only meaningful with confusion on.
+	 */
+	confusionCrowdCap?: number;
+	/** Scales the confusion effect, 0..1. Default 1. Only meaningful with confusion on. */
+	confusionStrength?: number;
+	/** Radius the shoal sense (cohesion/align) summarises neighbours over. Default 70px. */
+	socialRadius?: number;
 }
 
 export interface Fish {
@@ -168,6 +229,9 @@ export interface Predator {
 	/** Strike vector locked at lunge launch — only used when cfg.lungeCommit is on. */
 	_lockx?: number;
 	_locky?: number;
+	/** Distraction timer (s): while >0 the shark lost its lock in a swarm and mills, holding no
+	 *  target and unable to strike. Only used when cfg.confusionLock is on. */
+	_distract?: number;
 }
 
 /** Best genome ever seen in a world — preserved verbatim (elitism), or best of the last generation. */
@@ -287,6 +351,18 @@ export interface World {
 	lastSurv: number;
 	/** Latest smoothed life-curve sample (0–1). */
 	lastLife: number;
+	/**
+	 * THE EMERGENCE CURVE — mean nearest-neighbour distance (px) per generation, the number that
+	 * FALLS as a school tightens. Recorded only on worlds whose brains carry the shoal senses (it is
+	 * a time-average over each generation, accumulated in `_nndSum`/`_nndN`); empty everywhere else,
+	 * so the sense ladder and the fidelity reference never pay for it. The Shoal exhibit plots it.
+	 */
+	schoolCurve: number[];
+	/** Accumulators for the current generation's mean NND (flushed into schoolCurve at the boundary). */
+	_nndSum: number;
+	_nndN: number;
+	/** Sim-seconds since the last NND sample — the curve samples on an interval, not every tick. */
+	_schoolT: number;
 	/** Once `gen >= maxGen`, the world deploys (stops evolving). 0 = never deploy. */
 	maxGen: number;
 	_deployed: boolean;

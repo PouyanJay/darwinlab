@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { drawWorld, drawBrain, drawCurve, drawDecay, pickCreature, THEMES } from './index';
-import { makeWorld, stepWorld, seededRng, DEFAULT_WORLDS } from '../engine';
+import { makeWorld, stepWorld, seededRng, DEFAULT_WORLDS, SHOAL_WORLDS } from '../engine';
 import type { World } from '../engine';
 
 /** A no-op 2D context — enough to prove the painters run end-to-end without touching a DOM. */
@@ -268,5 +268,59 @@ describe('THEMES', () => {
 		expect(Object.keys(THEMES.light).sort()).toEqual(Object.keys(THEMES.dark).sort());
 		expect(THEMES.light.fish).toBe('#4f56d3');
 		expect(THEMES.dark.pred).toBe('#ff2d9c');
+	});
+});
+
+describe('drawWorld — the school density field', () => {
+	/** A minimal ctx that only needs to survive drawWorld and count fill() calls. */
+	function fillCountingCtx(): { ctx: CanvasRenderingContext2D; fills: () => number } {
+		let fills = 0;
+		const gradient = { addColorStop: () => {} };
+		const ctx = new Proxy(
+			{},
+			{
+				get(_t, prop) {
+					if (prop === 'createLinearGradient' || prop === 'createRadialGradient')
+						return () => gradient;
+					if (prop === 'measureText') return () => ({ width: 20 });
+					if (prop === 'fill') return () => void fills++;
+					return () => {};
+				},
+				set: () => true
+			}
+		) as unknown as CanvasRenderingContext2D;
+		return { ctx, fills: () => fills };
+	}
+
+	/** Evolve a config a few generations so its fish have positions to crowd around. */
+	function grown(cfg: World['cfg']): World {
+		const w = makeWorld(cfg, undefined, seededRng(3));
+		for (let i = 0; i < 400; i++) stepWorld(w, 1 / 60);
+		return w;
+	}
+
+	it('paints one density blob per fish on a schooling world, and none on the sense ladder', () => {
+		const shoal = grown(SHOAL_WORLDS[1]);
+		const ladder = grown(DEFAULT_WORLDS[0]);
+
+		const withField = fillCountingCtx();
+		drawWorld(shoal, withField.ctx, 400, 300, { theme: 'light', accent: SHOAL_WORLDS[1].accent });
+
+		// the SAME world, but no accent handed in → the field cannot paint (its one guard beyond senses)
+		const noAccent = fillCountingCtx();
+		drawWorld(shoal, noAccent.ctx, 400, 300, { theme: 'light' });
+
+		// a ladder world declares no shoal senses, so an accent must change NOTHING for it
+		const ladderAccent = fillCountingCtx();
+		drawWorld(ladder, ladderAccent.ctx, 400, 300, {
+			theme: 'light',
+			accent: DEFAULT_WORLDS[0].accent
+		});
+		const ladderPlain = fillCountingCtx();
+		drawWorld(ladder, ladderPlain.ctx, 400, 300, { theme: 'light' });
+
+		// exactly one extra fill per living fish, and ONLY on a schooling world with an accent
+		expect(withField.fills() - noAccent.fills()).toBe(shoal.fish.length);
+		expect(ladderAccent.fills()).toBe(ladderPlain.fills());
 	});
 });

@@ -24,8 +24,8 @@
 	import FooterPill from '$lib/components/common/FooterPill.svelte';
 	import Icon from '$lib/components/common/Icon.svelte';
 	import { bench, shell, story, theme, prefersReducedMotion } from '$lib/state';
-	import { DEFAULT_WORLDS, newWorldConfig, MAX_GENERATIONS_DEFAULT } from '$lib/engine';
-	import { PREWARM_GENERATIONS } from '$lib/lab/scenario';
+	import { newWorldConfig } from '$lib/engine';
+	import { DEFAULT_EXHIBIT } from '$lib/lab/exhibits';
 
 	// A paused bench repaints only on demand (see bench.requestPaint) — but the palette and the
 	// reduced-motion flag change what the pixels look like WITHOUT going through the store, so
@@ -39,11 +39,7 @@
 
 	onMount(() => {
 		const stopWatchingViewport = shell.init();
-		bench.init({
-			configs: DEFAULT_WORLDS,
-			prewarmGenerations: PREWARM_GENERATIONS,
-			maxGenerations: MAX_GENERATIONS_DEFAULT
-		});
+		bench.loadExhibit(DEFAULT_EXHIBIT);
 		return () => {
 			bench.destroy();
 			stopWatchingViewport();

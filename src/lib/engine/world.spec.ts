@@ -214,6 +214,167 @@ describe('applyCfg', () => {
 	});
 });
 
+describe('confusion — isolation-hunting (the reason a school pays)', () => {
+	/**
+	 * Lay a tight cluster right next to the shark and one lone straggler farther away, then take a
+	 * single tick so `assignPredatorTargets` runs on the layout we placed. With the confusion effect
+	 * on, the shark must pass over the nearer crowd for the exposed fish; off, it takes the nearest.
+	 * Positions are pinned by hand (makeWorld randomises), and predators trimmed to one.
+	 */
+	function stagedWorld(confusion: boolean): World {
+		const w = makeWorld(cfg({ preds: 1, prey: 5, confusion }), undefined, seededRng(1));
+		applyCfg(w); // trim the gen-0 double predators to the one this test reasons about
+		const p = w.preds[0];
+		p.x = 100;
+		p.y = 60;
+		const [lone, ...cluster] = w.fish;
+		lone.x = 300; // far, but utterly alone
+		lone.y = 60;
+		cluster.forEach((f, i) => {
+			f.x = 100 + (i - 1) * 8; // four bodies packed around (100,100), ~40px from the shark
+			f.y = 100;
+		});
+		stepWorld(w, dt);
+		return w;
+	}
+
+	it('passes over the near crowd for the isolated straggler', () => {
+		const w = stagedWorld(true);
+		expect(w.preds[0]._tgt).toBe(w.fish[0]); // the lone fish, though it is the FARTHEST
+	});
+
+	it('SABOTAGE: with confusion off, the same shark takes the nearest (crowded) fish', () => {
+		const w = stagedWorld(false);
+		expect(w.preds[0]._tgt).not.toBe(w.fish[0]); // nearest-unclaimed — a cluster fish
+	});
+});
+
+describe('confusion — predator attention / lock-loss (what makes ACTIVE schooling pay)', () => {
+	/**
+	 * Pack every fish into one tight ball with the shark right on it. With lock-loss on, a shark
+	 * whose target sits in that dense crowd should be shaken off (distracted) within a beat; off, it
+	 * holds and hunts normally. confusionStrength is cranked so the (seeded) roll fires promptly, and
+	 * confusionCatch is left off so the shark's inability to CATCH can't be what ends the ball.
+	 */
+	function swarmWorld(lock: boolean): World {
+		const w = makeWorld(
+			cfg({
+				preds: 1,
+				prey: 6,
+				predSpeed: 0.3,
+				confusion: true,
+				confusionLock: lock,
+				confusionCatch: false,
+				confusionIsolate: false,
+				confusionStrike: false,
+				confusionStrength: 6
+			}),
+			undefined,
+			seededRng(4)
+		);
+		applyCfg(w); // one shark, not the gen-0 double
+		w.fish.forEach((f, i) => {
+			f.x = 300 + (i % 3) * 6; // a ~12px ball, everyone inside everyone's crowd radius
+			f.y = 200 + Math.floor(i / 3) * 6;
+		});
+		// well outside the ball and slow, so lock-loss has room to fire before the shark reaches it
+		w.preds[0].x = 400;
+		w.preds[0].y = 200;
+		return w;
+	}
+
+	function everDistracted(w: World, steps: number): boolean {
+		for (let s = 0; s < steps && w.fish.length > 0; s++) {
+			stepWorld(w, dt);
+			if ((w.preds[0]?._distract ?? 0) > 0) return true;
+		}
+		return false;
+	}
+
+	it('the shark loses its lock inside a dense swarm and mills', () => {
+		expect(everDistracted(swarmWorld(true), 90)).toBe(true);
+	});
+
+	it('SABOTAGE: with lock-loss off, the same swarm never shakes the shark', () => {
+		expect(everDistracted(swarmWorld(false), 90)).toBe(false);
+	});
+});
+
+describe('confusion — the selfish herd (confusionCatch)', () => {
+	/**
+	 * Pack a population into a tight ball in a small tank and let one shark hunt it for two seconds,
+	 * with the catch shrink cranked. A fish buried among neighbours is hard to grab even on contact,
+	 * so far fewer are eaten than in the SAME seeded run with the shrink off — the comparison is the
+	 * guard: strip the mechanic (make catchRadiusFor return the base radius) and the two runs become
+	 * identical. Only the catch mechanic differs; a staged single contact is a degenerate edge (a
+	 * zero-velocity shark on a fish never resolves), so this drives the real hunt instead.
+	 */
+	function eatenInCrowd(catchShrink: boolean): number {
+		const w = makeWorld(
+			cfg({
+				preds: 1,
+				prey: 12,
+				bw: 200,
+				bh: 200,
+				predSpeed: 0.6,
+				persistence: false,
+				confusion: true,
+				confusionCatch: catchShrink,
+				confusionIsolate: false,
+				confusionStrike: false,
+				confusionLock: false,
+				confusionStrength: 5
+			}),
+			undefined,
+			seededRng(9)
+		);
+		w.maxGen = 1;
+		w.gen = 1;
+		applyCfg(w); // frozen population, one shark
+		w.fish.forEach((f, i) => {
+			f.x = 100 + (i % 4) * 5; // a tight ball in a small tank, so the crowd is real
+			f.y = 100 + Math.floor(i / 4) * 5;
+		});
+		for (let s = 0; s < 120 && w.fish.length > 0; s++) stepWorld(w, dt);
+		return w.eaten;
+	}
+
+	it('a packed crowd loses far fewer fish than the same run without the catch shrink', () => {
+		expect(eatenInCrowd(true)).toBeLessThan(eatenInCrowd(false));
+	});
+});
+
+describe('the emergence curve (schoolCurve)', () => {
+	const schoolingCfg = () =>
+		cfg({
+			brainInputs: 14,
+			senses: { dist: true, dir: true, closing: true, walls: true, cohesion: true, align: true }
+		});
+
+	it('records a mean-spacing point per generation on a schooling world', () => {
+		const w = makeWorld(schoolingCfg(), undefined, seededRng(2));
+		stepUntilGen(w, 4);
+		// one point per completed generation, and every one a real positive distance
+		expect(w.schoolCurve.length).toBeGreaterThanOrEqual(3);
+		expect(w.schoolCurve.every((v) => v > 0 && Number.isFinite(v))).toBe(true);
+	});
+
+	it('SABOTAGE: a sense-ladder world (no shoal senses) never records one', () => {
+		const w = makeWorld(cfg(), undefined, seededRng(2)); // default senses: no cohesion/align
+		stepUntilGen(w, 4);
+		expect(w.schoolCurve).toEqual([]);
+		expect(w._nndN).toBe(0); // the accumulator never ran either
+	});
+
+	it('clears the curve on resetWorld, like every other learning record', () => {
+		const w = makeWorld(schoolingCfg(), undefined, seededRng(2));
+		stepUntilGen(w, 3);
+		expect(w.schoolCurve.length).toBeGreaterThan(0);
+		resetWorld(w);
+		expect(w.schoolCurve).toEqual([]);
+	});
+});
+
 describe('resetWorld', () => {
 	it('returns to a fresh generation 0 with cleared learning', () => {
 		const w = makeWorld(cfg(), undefined, seededRng(1));

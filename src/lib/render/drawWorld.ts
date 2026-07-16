@@ -7,7 +7,7 @@
  * (see pick.ts) can invert it.
  */
 
-import { TAU, fleeError } from '../engine';
+import { TAU, fleeError, isSchoolingWorld, SOCIAL_RADIUS } from '../engine';
 import type { World, Fish, Predator } from '../engine';
 import { THEMES, type ThemeName, type ThemePalette, type DrawWorldOpts } from './theme';
 
@@ -156,6 +156,47 @@ function sceneGradients(
 	};
 	gradientCache.set(ctx, built);
 	return built;
+}
+
+/** Parse a `#rrggbb` accent into its rgb triplet, for composing rgba() glows at draw time. */
+function hexToRgb(hex: string): [number, number, number] {
+	const n = parseInt(hex.slice(1), 16);
+	return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+/**
+ * THE SCHOOL DENSITY FIELD — the bait-ball, made legible.
+ *
+ * A live schooling population reads weakly frame-to-frame: twenty small fish are twenty small fish
+ * whether they are packed or spread. So under them we lay a soft accent-tinted blob per fish; where
+ * they crowd, the blobs overlap and the haze builds into a luminous mass, and where they scatter it
+ * stays faint. It is a rendering of DENSITY and nothing else — no physics, no sim state touched — so
+ * a tight Shoal glows and a loose Alone does not, which is exactly the comparison the exhibit is for.
+ *
+ * Painted only on worlds whose brains carry the shoal senses (declared, on or off — "Alone" is
+ * declared-off and still shows a faint field, which is the point of the pairing).
+ */
+function drawSchoolField(
+	w: World,
+	ctx: CanvasRenderingContext2D,
+	accent: string | undefined
+): void {
+	if (!accent || !isSchoolingWorld(w.cfg) || w.fish.length < 2) return;
+	const [r, g, b] = hexToRgb(accent);
+	// a touch under the sense radius, so it takes a real cluster (not two passing fish) to light up
+	const R = (w.cfg.socialRadius ?? SOCIAL_RADIUS) * 0.6;
+	const glow = ctx.createRadialGradient(0, 0, 0, 0, 0, R);
+	glow.addColorStop(0, `rgba(${r},${g},${b},0.16)`);
+	glow.addColorStop(1, `rgba(${r},${g},${b},0)`);
+	for (const f of w.fish) {
+		ctx.save();
+		ctx.translate(f.x, f.y);
+		ctx.fillStyle = glow;
+		ctx.beginPath();
+		ctx.arc(0, 0, R, 0, TAU);
+		ctx.fill();
+		ctx.restore();
+	}
 }
 
 /** Per-frame render state for one creature — bundled so the painters don't take flag arguments. */
@@ -611,6 +652,9 @@ export function drawWorld(
 		}
 		ctx.globalAlpha = 1;
 	}
+
+	// the school density field sits under everything alive — the water's mood, not a creature
+	drawSchoolField(w, ctx, opts.accent);
 
 	if (w.selFish) drawPerception(w, ctx, th, rm);
 	for (const p of w.preds) {

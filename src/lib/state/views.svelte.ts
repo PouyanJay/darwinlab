@@ -16,7 +16,13 @@
  * what lets the UI claim to be showing the simulation rather than an illustration of it.
  */
 
-import { fleeError, probePolicy } from '../engine';
+import {
+	fleeError,
+	probePolicy,
+	polarization,
+	meanNearestNeighbor,
+	isSchoolingWorld
+} from '../engine';
 import type { World, WorldConfig, Senses, SenseSnapshot, Genome, PolicyMap } from '../engine';
 
 /** Cheap reactive snapshot of one world, refreshed once per frame for the UI to bind to. */
@@ -41,6 +47,37 @@ export class WorldStats {
 	deployT = $state(0);
 	halfLife = $state<number | null>(null);
 	extinctT = $state<number | null>(null);
+
+	/**
+	 * The live school readout — only meaningful in a world whose fish can sense each other, so it is
+	 * computed ONLY there (an O(n²) neighbour scan should not run on every sense-ladder tank). In an
+	 * Alone-vs-Shoal pair these two numbers ARE the story: the same ocean, and one tank's fish pull
+	 * into a tight aligned ball while the other's stay scattered.
+	 */
+	/**
+	 * Mean nearest-neighbour distance (px) — school tightness — as a RUNNING mean, not the
+	 * instantaneous value. Every generation resets the tank to random positions, so an instantaneous
+	 * reading swings wildly across the ~30s cycle (scattered right after a reset, tight once re-formed)
+	 * and can even read the wrong way for a frame. The card must not flicker Alone tighter than the
+	 * Shoal, so both numbers decay over a few seconds of tank-time — steady, and directionally honest.
+	 * Null until enough has accumulated, or when the world is not a schooling world.
+	 */
+	schoolNND = $state<number | null>(null);
+	/** Polarization φ as a percentage (0–100), same running mean. Integer, to spare renders. */
+	schoolAlignPct = $state(0);
+	/** Whether this world's brains carry the shoal senses — the card uses it to show the readout. */
+	schooling = $state(false);
+
+	/** ~4-second half-life at 60fps: long enough to ride across a generation reset, short enough to
+	 *  track a population that is still tightening as it evolves. */
+	static readonly SCHOOL_DECAY = 0.997;
+	/** ~1s of tank-time (in decayed samples) before publishing, so the first reading is a mean, not
+	 *  a single frame. Mirrors the flee lens's own LENS_MIN_SAMPLES gate. */
+	static readonly SCHOOL_MIN_SAMPLES = 60;
+	#nndSum = 0;
+	#nndN = 0;
+	#alignSum = 0;
+	#alignN = 0;
 
 	/** Project the raw world onto this snapshot. The projection lives with the data it produces. */
 	/**
@@ -134,6 +171,30 @@ export class WorldStats {
 		this.deployT = world.deployT;
 		this.halfLife = world.halfLife;
 		this.extinctT = world.extinctT;
+
+		// A schooling world is one whose brains CARRY the shoal senses — declared, on or off. "Alone"
+		// has them ablated to false, but the spacing/alignment readout is exactly the comparison we
+		// want beside "The Shoal", so it must show on both. Ladder worlds never declare them.
+		this.schooling = isSchoolingWorld(world.cfg);
+		if (!this.schooling) {
+			this.#nndSum = this.#nndN = this.#alignSum = this.#alignN = 0;
+			this.schoolNND = null;
+			this.schoolAlignPct = 0;
+			return;
+		}
+		const d = WorldStats.SCHOOL_DECAY;
+		const nnd = meanNearestNeighbor(world.fish);
+		if (nnd !== null) {
+			this.#nndSum = this.#nndSum * d + nnd;
+			this.#nndN = this.#nndN * d + 1;
+		}
+		this.#alignSum = this.#alignSum * d + polarization(world.fish);
+		this.#alignN = this.#alignN * d + 1;
+		// ~1s of tank-time before publishing, so the first reading is a mean and not a single frame.
+		const min = WorldStats.SCHOOL_MIN_SAMPLES;
+		this.schoolNND = this.#nndN >= min ? Math.round(this.#nndSum / this.#nndN) : null;
+		this.schoolAlignPct =
+			this.#alignN >= min ? Math.round((this.#alignSum / this.#alignN) * 100) : 0;
 	}
 }
 

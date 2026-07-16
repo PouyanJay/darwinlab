@@ -52,3 +52,37 @@ export const WALL_RAY_NORM = 170;
 // ---- deployment (post-training real-world run) ----
 /** Seconds between decay-curve samples in deployed mode. */
 export const DECAY_SAMPLE_INTERVAL = 0.3;
+
+// ---- schooling (Phase 14) — these are NOT reference numbers; they only take effect when a
+//      world opts into the confusion effect / shoal sense, both default-off (see WorldConfig). ----
+/** Default radius the shoal sense summarises neighbours over (px). */
+export const SOCIAL_RADIUS = 70;
+/** Neighbour count that reads as full shoal density (x[9] = min(1, n / this)). */
+export const SHOAL_DENSITY_NORM = 8;
+/** Default radius around a shark's target that counts as its crowd (px). Matched to SOCIAL_RADIUS
+ *  so a group the fish can FEEL is a group that actually protects — otherwise a fish steers to keep
+ *  neighbours it senses at 70px while the safety only reaches 45, and grouping never pays. */
+export const CONFUSION_RADIUS = 70;
+/** Neighbour count around the target at which the confusion effect saturates. Low on purpose: a
+ *  few close bodies should already throw the strike, or crowds this tank can realistically form
+ *  (NND ~80px early) never reach saturation and the pressure is never felt. */
+export const CONFUSION_CROWD_CAP = 3;
+/** Max extra angular error (rad) added to a fully-confused committed lunge vector. */
+export const CONFUSION_MAX_JITTER = 1;
+/** How much a full crowd lengthens the strike's telegraph (aim time ×(1 + this)). */
+export const CONFUSION_TELEGRAPH_K = 1.8;
+/** ISOLATION-HUNTING: virtual px added to a fully-crowded fish's targeting score, so the shark
+ *  prefers the exposed straggler and lets a surrounded fish be. This is the confusion effect acting
+ *  on TARGET ACQUISITION — the interior of a group becomes the safe place, and since any group has
+ *  an edge, someone is always catchable (no immortal school). The gradient that pays for grouping. */
+export const ISOLATION_WEIGHT = 220;
+/** PREDATOR ATTENTION: expected lock-losses per second when the locked target is at full crowd
+ *  (scaled by crowd and confusionStrength). Higher = a swarm shakes the shark off faster. */
+export const LOCK_LOSS_RATE = 2.5;
+/** How long (s) the shark mills, target-less and unable to strike, after losing a lock in a swarm. */
+export const DISTRACT_TIME = 0.6;
+/** THE SELFISH-HERD KNOB: how far a full crowd shrinks the catch radius for a packed victim
+ *  (cr ×(1 − this) at saturation). This is what makes the INTERIOR of a school safe and a lone
+ *  or edge fish catchable — the gradient that pays for grouping. Capped below 1 so a crowd is
+ *  hard to grab, never impossible (no immortal school). */
+export const CONFUSION_CATCH_SHRINK = 0.7;

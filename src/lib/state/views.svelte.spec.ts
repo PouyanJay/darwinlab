@@ -1,14 +1,32 @@
 import { describe, it, expect } from 'vitest';
-import { EscapeMapView } from './views.svelte';
+import { EscapeMapView, WorldStats } from './views.svelte';
 import { makeGenome } from '../engine/network';
 import { seededRng } from '../engine/rng';
 import { testCfg, testFish } from '../engine/testkit';
-import type { World } from '../engine';
+import type { World, Senses } from '../engine';
 
 /** A minimal world for the view: syncFrom reads only `selFish` and `cfg`. */
 function world(over: Partial<World> & { selFish: World['selFish'] }): World {
 	return { cfg: testCfg(), ...over } as unknown as World;
 }
+
+/** A minimal world for WorldStats.syncFrom — enough fields for it not to throw. */
+function statsWorld(senses: Senses, fish: World['fish']): World {
+	return {
+		cfg: testCfg({ senses }),
+		fish,
+		eaten: 0,
+		gen: 3,
+		lifeCurve: [],
+		champion: null,
+		best: null,
+		_deployed: false,
+		deployT: 0,
+		halfLife: null,
+		extinctT: null
+	} as unknown as World;
+}
+const FULL: Senses = { dist: true, dir: true, closing: true, walls: true };
 
 describe('EscapeMapView — the memoised escape map', () => {
 	it('computes a map for the selected fish', () => {
@@ -73,5 +91,42 @@ describe('EscapeMapView — the memoised escape map', () => {
 
 		view.syncFrom(world({ selFish: fish }));
 		expect(view.map).not.toBeNull();
+	});
+});
+
+describe('WorldStats — the school readout', () => {
+	it('shows the readout only for worlds whose brains carry the shoal senses (declared, even if off)', () => {
+		const ladder = new WorldStats();
+		ladder.syncFrom(statsWorld(FULL, [testFish(), testFish({ x: 20 })]));
+		expect(ladder.schooling).toBe(false); // no shoal senses declared
+
+		const alone = new WorldStats();
+		alone.syncFrom(statsWorld({ ...FULL, cohesion: false, align: false }, [testFish()]));
+		expect(alone.schooling).toBe(true); // ablated to false, but PRESENT — the readout still compares
+	});
+
+	it('publishes a RUNNING-mean spacing (not a single noisy frame) once it warms up', () => {
+		const stats = new WorldStats();
+		const cfg = { ...FULL, cohesion: true, align: true };
+		// two fish a steady 20px apart; positions never change across frames
+		const fish = [testFish({ x: 0, y: 0 }), testFish({ x: 20, y: 0 })];
+		const w = statsWorld(cfg, fish);
+
+		stats.syncFrom(w);
+		expect(stats.schoolNND).toBeNull(); // one frame is not a mean — it withholds
+
+		for (let i = 0; i < 200; i++) stats.syncFrom(w);
+		expect(stats.schoolNND).toBe(20); // the steady gap, published once warm
+	});
+
+	it('clears the readout when pointed back at a non-schooling world (no stale number)', () => {
+		const stats = new WorldStats();
+		const shoal = statsWorld({ ...FULL, cohesion: true }, [testFish(), testFish({ x: 30 })]);
+		for (let i = 0; i < 120; i++) stats.syncFrom(shoal);
+		expect(stats.schoolNND).not.toBeNull();
+
+		stats.syncFrom(statsWorld(FULL, [testFish(), testFish({ x: 30 })]));
+		expect(stats.schooling).toBe(false);
+		expect(stats.schoolNND).toBeNull();
 	});
 });

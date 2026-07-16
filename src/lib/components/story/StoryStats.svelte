@@ -37,6 +37,18 @@
 			</p>
 		</div>
 
+		{#if entry.stats.schooling}
+			<!-- Only in the Shoal scenes: how tightly they pack. Beside the tank's own density glow,
+			     this is the number that tells the "scatter → ball" story as it happens. -->
+			<div>
+				<h2 class="eyebrow">Packed to</h2>
+				<p class="count small">
+					<b class="tabular" data-testid="story-school">{entry.stats.schoolNND ?? '—'}</b>
+					<span>px apart · {entry.stats.schoolAlignPct}% aligned</span>
+				</p>
+			</div>
+		{/if}
+
 		<div>
 			<div class="curve-head">
 				<span class="eyebrow">evolved</span>
@@ -99,6 +111,11 @@
 		font-size: var(--fs-body);
 		font-weight: var(--fw-medium);
 		color: var(--story-ink3);
+	}
+
+	/* The school line is a secondary stat, not the 50px headline the alive count is. */
+	.count.small b {
+		font-size: 30px;
 	}
 
 	.curve-head {

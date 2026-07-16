@@ -82,3 +82,69 @@ describe('senseInputs', () => {
 		expect(r.wallFront).toBeCloseTo(10, 6);
 	});
 });
+
+describe('senseInputs — the shoal sense (cohesion + alignment)', () => {
+	const shoalCfg = (over: Partial<WorldConfig> = {}) =>
+		cfg({
+			brainInputs: 14,
+			senses: { ...allSenses, cohesion: true, align: true },
+			...over
+		});
+	/** A world carrying the shoal — senseInputs reads `w.fish` for the neighbour scan. */
+	const shoalWorld = (
+		self: ReturnType<typeof fish>,
+		others: ReturnType<typeof fish>[],
+		over = {}
+	) =>
+		({ cfg: shoalCfg(over), preds: [], fish: [self, ...others] }) as Pick<
+			World,
+			'cfg' | 'preds' | 'fish'
+		>;
+
+	it('reads 0 across the shoal slots when no neighbour is within socialRadius', () => {
+		const self = fish({ x: 300, y: 200 });
+		const far = fish({ x: 300, y: 200 + 500 }); // well beyond the 70px default
+		const r = senseInputs(shoalWorld(self, [far]), self);
+		expect(r.x.slice(9, 14)).toEqual([0, 0, 0, 0, 0]);
+	});
+
+	it('density rises with the neighbour count inside the radius', () => {
+		const self = fish({ x: 300, y: 200 });
+		const near = (dx: number) => fish({ x: 300 + dx, y: 200 });
+		const one = senseInputs(shoalWorld(self, [near(20)]), self).x[9];
+		const three = senseInputs(shoalWorld(self, [near(10), near(20), near(-15)]), self).x[9];
+		expect(three).toBeGreaterThan(one);
+	});
+
+	it('cohesion points sin/cos toward the neighbours (a fish dead ahead → shoal→y = 1)', () => {
+		const self = fish({ x: 300, y: 200, heading: 0 }); // facing +x
+		const ahead = fish({ x: 340, y: 200 }); // due +x of self
+		const r = senseInputs(shoalWorld(self, [ahead]), self);
+		expect(r.x[10]).toBeCloseTo(0, 6); // sin(0)
+		expect(r.x[11]).toBeCloseTo(1, 6); // cos(0)
+	});
+
+	it('alignment reflects the neighbours’ mean heading relative to own', () => {
+		const self = fish({ x: 300, y: 200, heading: 0 });
+		const sameWay = fish({ x: 320, y: 200, heading: 0 }); // pointing the same way
+		const r = senseInputs(shoalWorld(self, [sameWay]), self);
+		expect(r.x[12]).toBeCloseTo(0, 6); // sin(0) — aligned
+		expect(r.x[13]).toBeCloseTo(1, 6); // cos(0)
+	});
+
+	it('a disabled shoal sense feeds exactly 0 even with neighbours packed in (true ablation)', () => {
+		const self = fish({ x: 300, y: 200 });
+		const near = fish({ x: 315, y: 200 });
+		const cohesionOff = senseInputs(
+			shoalWorld(self, [near], { senses: { ...allSenses, cohesion: false, align: true } }),
+			self
+		);
+		expect(cohesionOff.x.slice(9, 12)).toEqual([0, 0, 0]);
+
+		const alignOff = senseInputs(
+			shoalWorld(self, [near], { senses: { ...allSenses, cohesion: true, align: false } }),
+			self
+		);
+		expect(alignOff.x.slice(12, 14)).toEqual([0, 0]);
+	});
+});

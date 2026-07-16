@@ -52,6 +52,7 @@ import {
 import type { Trial, PopulationAssay } from '../engine';
 import type { World, WorldConfig, Senses, Fish, Predator, NumericCondition } from '../engine';
 import { configHash, manifest } from '../lab/run';
+import type { Exhibit } from '../lab/exhibits';
 import type { Rng } from '../engine';
 import type { Picked, Lens } from '../render';
 import { subSteps, turboSlice } from '../sim/loop';
@@ -143,6 +144,8 @@ class BenchStore {
 	selection = $state.raw<Selection | null>(null);
 	/** The world whose Conditions dialog is open, or null. One dialog, like one inspector. */
 	conditionsWorldId = $state<string | null>(null);
+	/** Which exhibit (world set) the bench is pointed at — drives the switcher's active state. */
+	activeExhibitId = $state<string>('senses');
 	/** What the selected fish is thinking, refreshed every frame while a fish is selected. */
 	readonly mind = new MindView();
 	/** The selected fish's escape map — its policy over adversary positions. Memoised; recomputes
@@ -309,22 +312,27 @@ class BenchStore {
 		this.#nextId = 0;
 		this.#accentCursor = 0;
 
-		/*
-		 * EVERYTHING keyed by world id, or it leaks into the next bench.
-		 *
-		 * Ids are handed out from #nextId, which resets to 0 above — so the world called `w1` in the
-		 * next bench is a different world with the same name, and a stale exhibit or assay left
-		 * behind here would attach itself to it. The tank would show clones of a brain from a
-		 * run that no longer exists. (Found by two tests failing in a way that depended on the ORDER
-		 * they ran in, which is the smell this rule exists to catch.)
-		 */
+		this.#resetExhibitKeyedState();
+		this.#lens = 'none';
+	}
+
+	/*
+	 * EVERYTHING keyed by world id, cleared — or it leaks into the next bench.
+	 *
+	 * Ids are handed out from #nextId, which the callers reset to 0 — so the world called `w1` in the
+	 * next bench is a different world with the same name, and a stale exhibit or assay left behind
+	 * would attach itself to it. The tank would show clones of a brain from a run that no longer
+	 * exists. (Found by two tests failing in a way that depended on the ORDER they ran in.) Both
+	 * `destroy` (tearing the bench down) and `loadExhibit` (swapping one bench for another) go through
+	 * this same door — the trap has two of them.
+	 */
+	#resetExhibitKeyedState(): void {
 		this.#exhibitWorlds.clear();
 		this.#exhibitGen.clear();
 		this.#assays.clear();
 		this.#exhibits = {};
 		this.#assayProgress = {};
 		this.#assayResults = {};
-		this.#lens = 'none';
 	}
 
 	// ---- controls (delegated) ----
@@ -919,6 +927,29 @@ class BenchStore {
 		this.conditionsWorldId = null;
 		this.#nextId = 0;
 		this.init({ configs, prewarmGenerations, maxGenerations, seed });
+	}
+
+	/**
+	 * Point the bench at a different EXHIBIT — a whole new roster and ocean (the sense ladder, the
+	 * Shoal). A fresh, unseeded run of a different experiment: the old worlds, brains and curves go.
+	 *
+	 * Everything keyed by world id must go with them, or the next `w1` inherits the last one's exhibit
+	 * or assay — the ids restart at 0, so a stale entry re-attaches to a different world (the trap
+	 * `#resetExhibitKeyedState` exists to close, and this is the other door into it).
+	 */
+	loadExhibit(exhibit: Exhibit): void {
+		this.activeExhibitId = exhibit.id;
+		this.playback.reset();
+		this.painters.clear();
+		this.selection = null;
+		this.conditionsWorldId = null;
+		this.#nextId = 0;
+		this.#resetExhibitKeyedState();
+		this.init({
+			configs: exhibit.configs,
+			prewarmGenerations: exhibit.prewarmGenerations,
+			maxGenerations: exhibit.maxGenerations
+		});
 	}
 
 	/**

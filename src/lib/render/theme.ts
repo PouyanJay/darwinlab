@@ -156,4 +156,10 @@ export interface DrawWorldOpts {
 	 * INJECTED (the reference read `matchMedia` at module scope; render must stay DOM-free).
 	 */
 	reducedMotion?: boolean;
+	/**
+	 * The world's accent (hex), used to tint the SCHOOL DENSITY FIELD — the soft haze that builds
+	 * where fish crowd, so a bait-ball reads as a luminous mass at a glance and scattered fish stay
+	 * faint. Only painted on schooling worlds (whose brains carry the shoal senses); elsewhere unused.
+	 */
+	accent?: string;
 }

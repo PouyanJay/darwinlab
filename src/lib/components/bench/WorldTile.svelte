@@ -21,7 +21,7 @@
 	import Chip from '../common/Chip.svelte';
 	import Icon from '../common/Icon.svelte';
 	import EditableLabel from '../common/EditableLabel.svelte';
-	import { SENSES } from '../senses';
+	import { sensesFor } from '../senses';
 	import { describeWorld } from './describeWorld';
 	import { bench } from '$lib/state';
 	import { configDiff } from '$lib/lab/run';
@@ -129,7 +129,7 @@
 			</Chip>
 		{/if}
 		<div class="senses" role="group" aria-label="observation space: the policy's input channels">
-			{#each SENSES as sense (sense.key)}
+			{#each sensesFor(config.senses) as sense (sense.key)}
 				<SensePill
 					label={sense.short}
 					name={sense.name}

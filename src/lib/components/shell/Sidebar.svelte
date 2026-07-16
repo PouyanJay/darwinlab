@@ -26,7 +26,22 @@
 	import { DISCLAIMER } from '../common/disclaimer';
 	import { bench, shell, SPEEDS } from '$lib/state';
 	import { MAX_GENERATIONS } from '$lib/engine';
+	import { EXHIBITS } from '$lib/lab/exhibits';
 	import type { Lens } from '$lib/render';
+
+	/** The exhibits the bench can be pointed at — one list, so the switcher and the store agree. */
+	const EXHIBIT_OPTIONS = EXHIBITS.map((e) => ({ value: e.id, label: e.name }));
+	const activeExhibit = $derived(EXHIBITS.find((e) => e.id === bench.activeExhibitId));
+
+	// Switching exhibits re-launches the whole bench, so on the narrow layout it shuts the panel
+	// the same way playing the story or adding a world does — the new tanks must not scroll in
+	// underneath an open overlay.
+	function switchExhibit(id: string) {
+		const exhibit = EXHIBITS.find((e) => e.id === id);
+		if (!exhibit || exhibit.id === bench.activeExhibitId) return;
+		bench.loadExhibit(exhibit);
+		shell.closeOverlay();
+	}
 
 	/** The lenses the bench offers. One list, so the control and the store cannot disagree. */
 	const LENSES: { value: Lens; label: string }[] = [
@@ -104,6 +119,22 @@
 					<Icon name="chevron-left" size={15} />
 				</Button>
 			</header>
+
+			<section>
+				<h2 class="field-label">Exhibit</h2>
+				<div class="field">
+					<span class="field-label" aria-hidden="true">Show me</span>
+					<Segmented
+						label="which experiment is on the bench"
+						options={EXHIBIT_OPTIONS}
+						value={bench.activeExhibitId}
+						onchange={(id) => switchExhibit(id)}
+					/>
+				</div>
+				{#if activeExhibit}
+					<p class="lens-note">{activeExhibit.blurb}</p>
+				{/if}
+			</section>
 
 			<section>
 				<div class="section-head">
