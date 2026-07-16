@@ -95,8 +95,9 @@ function sceneGradients(
 		sheen.addColorStop(0, 'rgba(255,255,252,.75)');
 		sheen.addColorStop(1, 'rgba(255,255,252,0)');
 	} else {
-		sheen.addColorStop(0, 'rgba(255,45,156,.07)');
-		sheen.addColorStop(1, 'rgba(255,45,156,0)');
+		// A neutral surface sheen — a faint top light on the water, no colour (monochrome dark).
+		sheen.addColorStop(0, 'rgba(255,255,255,.05)');
+		sheen.addColorStop(1, 'rgba(255,255,255,0)');
 	}
 
 	const innerVignette = ctx.createRadialGradient(
@@ -115,12 +116,8 @@ function sceneGradients(
 		innerVignette.addColorStop(1, 'rgba(0,0,0,.4)');
 	}
 
-	let darkGlow: CanvasGradient | null = null;
-	if (theme === 'dark') {
-		darkGlow = ctx.createRadialGradient(bw / 2, bh / 2, bh * 0.2, bw / 2, bh / 2, bw * 0.7);
-		darkGlow.addColorStop(0, 'rgba(255,45,156,.05)');
-		darkGlow.addColorStop(1, 'rgba(0,0,0,0)');
-	}
+	// The dark theme once had a magenta centre bloom here — pure vibe, gone with the monochrome re-skin.
+	const darkGlow: CanvasGradient | null = null;
 
 	let bigBackdrop: CanvasGradient | null = null;
 	if (big) {
@@ -129,8 +126,9 @@ function sceneGradients(
 			bigBackdrop.addColorStop(0, 'rgba(244,250,246,.16)');
 			bigBackdrop.addColorStop(1, 'rgba(244,250,246,0)');
 		} else {
-			bigBackdrop.addColorStop(0, 'rgba(255,45,156,.06)');
-			bigBackdrop.addColorStop(1, 'rgba(255,45,156,0)');
+			// A neutral halo behind the cinematic stage — depth, not a coloured glow.
+			bigBackdrop.addColorStop(0, 'rgba(235,238,245,.05)');
+			bigBackdrop.addColorStop(1, 'rgba(235,238,245,0)');
 		}
 	}
 

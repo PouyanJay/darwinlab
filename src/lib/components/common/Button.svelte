@@ -76,7 +76,6 @@
 	.accent {
 		background: var(--accent);
 		color: var(--accentink);
-		box-shadow: 0 4px 14px -4px var(--accent);
 	}
 
 	.primary:not(:disabled):hover,

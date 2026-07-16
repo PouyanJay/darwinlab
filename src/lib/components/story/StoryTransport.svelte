@@ -33,7 +33,6 @@
 			type="button"
 			class="round play"
 			style:background={accent}
-			style:box-shadow="0 6px 22px -6px {accent}"
 			aria-label={bench.running ? 'pause story' : 'play story'}
 			onclick={() => bench.togglePlay()}
 		>
