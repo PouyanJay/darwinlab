@@ -2,48 +2,51 @@ import { expect, test, type Page } from '@playwright/test';
 import { gotoApp, waitForPrewarm } from './helpers';
 
 /**
- * The Shoal exhibit, in the real app.
+ * Schooling as a per-world config, in the real app.
  *
- * The engine specs prove schooling evolves and the sweep proves it pays; the store specs prove the
- * switch clears state. What is left for the browser is the part a USER touches: that the switcher
- * really swaps the bench to Alone vs The Shoal, that only the schooling tanks carry a school readout,
- * and that switching back restores the sense ladder with no schooling chrome left behind.
+ * The engine specs prove schooling evolves and pays; the store specs prove the toggle rewires the
+ * brain. What is left for the browser is the part a USER touches: that turning "Sense the shoal" on
+ * in a world's Conditions gives that world the shoal-sense pills and the live school readout, and
+ * that turning it off takes them away again — no separate exhibit, any world can school.
  */
 
-const worlds = (page: Page) => page.locator('section[aria-label^="world"]');
-const exhibit = (page: Page, name: 'Sense ladder' | 'The Shoal') =>
-	page.getByRole('radio', { name, exact: true });
+const tile = (page: Page, i: number) => page.locator('section[aria-label^="world"]').nth(i);
+const shoalToggle = (page: Page) =>
+	page
+		.getByRole('dialog', { name: /conditions/i })
+		.getByRole('checkbox', { name: /sense the shoal/i });
 
-test.beforeEach(async ({ page }) => {
+async function openAgentsConditions(page: Page) {
+	await tile(page, 0).getByRole('button', { name: 'Conditions' }).click();
+	const dialog = page.getByRole('dialog', { name: /conditions/i });
+	await expect(dialog).toBeVisible();
+	await dialog.getByRole('radio', { name: 'Agents', exact: true }).click();
+}
+
+test('a world schools when you toggle it on in Conditions, and stops when you toggle it off', async ({
+	page
+}) => {
 	await gotoApp(page);
-	await waitForPrewarm(page); // opens on the sense ladder
-});
+	await waitForPrewarm(page);
 
-test('the switcher swaps the bench to Alone vs The Shoal and back', async ({ page }) => {
-	// opens on the sense ladder — five worlds, none of them schooling
-	await expect(worlds(page)).toHaveCount(5);
+	// no world schools to start — no school readout anywhere
 	await expect(page.getByTestId('school-nnd')).toHaveCount(0);
 
-	await exhibit(page, 'The Shoal').click();
-	await waitForPrewarm(page); // the Shoal prewarms further before its first paint
+	await openAgentsConditions(page);
+	await expect(shoalToggle(page)).not.toBeChecked();
+	await shoalToggle(page).click(); // wire the shoal senses in
+	await expect(shoalToggle(page)).toBeChecked();
+	await page.keyboard.press('Escape'); // close the dialog
 
-	const shown = worlds(page);
-	await expect(shown).toHaveCount(2);
-	// the name lives in an editable label (an input), so it is the aria-label, not text content
-	await expect(shown.nth(0)).toHaveAttribute('aria-label', /Alone/);
-	await expect(shown.nth(1)).toHaveAttribute('aria-label', /The Shoal/);
+	// that one world now carries a live spacing readout; the others still do not. (Pills read "shoal"
+	// in the DOM — uppercased only by CSS — so the readout is the robust check.)
+	await expect(page.getByTestId('school-nnd')).toHaveCount(1); // only the world we turned on
+	await expect(tile(page, 0).getByTestId('school-nnd')).toHaveText(/\d+px apart/); // a live number warms in
 
-	// both schooling tanks carry the live spacing readout (the whole Alone-vs-Shoal comparison);
-	// a schooling world declares the shoal senses whether they are ablated on or off
-	const nnd = page.getByTestId('school-nnd');
-	await expect(nnd).toHaveCount(2);
-	// a real spacing reached the DOM — not just the static "px apart" label sitting on a "—"
-	// placeholder (which would mean the running-mean readout regressed and never warmed up)
-	await expect(nnd.first()).toHaveText(/\d+px apart/);
-
-	// back to the ladder: five worlds again, and no schooling chrome survives the switch
-	await exhibit(page, 'Sense ladder').click();
-	await waitForPrewarm(page);
-	await expect(worlds(page)).toHaveCount(5);
+	// turn it back off — the schooling chrome goes with it
+	await openAgentsConditions(page);
+	await shoalToggle(page).click();
+	await expect(shoalToggle(page)).not.toBeChecked();
+	await page.keyboard.press('Escape');
 	await expect(page.getByTestId('school-nnd')).toHaveCount(0);
 });

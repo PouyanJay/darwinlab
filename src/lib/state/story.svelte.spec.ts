@@ -3,16 +3,9 @@ import { bench } from './bench.svelte';
 import { story, SCENE_SECONDS, STORY_WORLD_ID } from './story.svelte';
 import { DEFAULT_WORLDS, SHOAL_WORLDS, seededRng } from '../engine';
 
-/** The Shoal exhibit with NO prewarm — the real one evolves 55 generations, which a unit test must
- *  not sit through; the senses rail reads config, not evolved state, so gen 0 is enough to test it. */
-const SHOAL_EXHIBIT = {
-	id: 'shoal',
-	name: 'The Shoal',
-	blurb: '',
-	configs: SHOAL_WORLDS,
-	prewarmGenerations: 0,
-	maxGenerations: 0
-};
+/** Open the bench on the two schooling worlds (Alone, The Shoal) with NO prewarm — the senses rail
+ *  reads config, not evolved state, so gen 0 is enough to test it. */
+const openShoal = () => bench.init({ configs: SHOAL_WORLDS, rng: seededRng(5) });
 
 afterEach(() => {
 	story.exit();
@@ -95,8 +88,8 @@ describe('story — the scenes', () => {
 		expect(names).not.toContain('Alignment');
 	});
 
-	it('the Shoal exhibit tags the shoal senses NEW in the second scene — the "what changed"', () => {
-		bench.loadExhibit(SHOAL_EXHIBIT);
+	it('a schooling world tags the shoal senses NEW in the second scene — the "what changed"', () => {
+		openShoal();
 		bench.playStory();
 
 		story.goTo(0); // "Alone" — declares the shoal senses, but ablated off

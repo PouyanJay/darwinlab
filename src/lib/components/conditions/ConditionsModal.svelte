@@ -191,6 +191,42 @@
 			/>
 		</div>
 
+		<!-- Schooling as a config option on ANY world: wire in the shoal senses and give the adversary
+		     the confusion effect that makes grouping pay. Restarts evolution (the brain gains slots). -->
+		<fieldset class="persistence">
+			<legend class="field-label">Schooling: the shoal senses</legend>
+			<label class="sense">
+				<input
+					type="checkbox"
+					checked={config.schooling}
+					onchange={(event) => bench.setSchooling(id, event.currentTarget.checked)}
+				/>
+				<span>
+					<b>Sense the shoal</b>
+					<span class="description">
+						Wires two more inputs into the brain — where the neighbours are, and which way they
+						point — and gives the adversary a confusion effect: it loses its target in a dense swarm
+						and cannot grab a packed fish. Grouping starts to PAY, so a school can evolve. Restarts
+						evolution (the brain gains slots), and pays best against a shark you cannot outswim.
+						With it on, the two shoal pills below can be ablated like any other sense.
+					</span>
+				</span>
+			</label>
+
+			{#if config.schooling}
+				<div class="sliders indented">
+					<Slider
+						label="Confusion strength"
+						hint="(how much a crowd protects)"
+						value={config.confusionStrength}
+						{...WORLD_LIMITS.confusionStrength}
+						format={(v) => `${v}`}
+						onchange={(value) => bench.setCondition(id, 'confusionStrength', value)}
+					/>
+				</div>
+			{/if}
+		</fieldset>
+
 		<fieldset class="senses">
 			<legend class="field-label">Senses: the brain's input neurons</legend>
 			{#each sensesFor(config.senses) as sense (sense.key)}

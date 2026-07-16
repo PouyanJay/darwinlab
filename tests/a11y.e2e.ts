@@ -72,11 +72,19 @@ test('story mode scans clean', async ({ page }) => {
 	expect(await violations(page)).toEqual([]);
 });
 
-test('the Shoal exhibit scans clean — the school readout and shoal pills are new surface', async ({
+test('a schooling world scans clean — the school readout and shoal pills are new surface', async ({
 	page
 }) => {
-	await page.getByRole('radio', { name: 'The Shoal', exact: true }).click();
-	await waitForPrewarm(page);
+	// turn schooling on for the first world, then close the dialog and scan the bench
+	const dialog = page.getByRole('dialog', { name: /conditions/i });
+	await page
+		.locator('section[aria-label^="world"]')
+		.first()
+		.getByRole('button', { name: 'Conditions' })
+		.click();
+	await dialog.getByRole('radio', { name: 'Agents', exact: true }).click();
+	await dialog.getByRole('checkbox', { name: /sense the shoal/i }).click();
+	await page.keyboard.press('Escape');
 	await expect(page.getByTestId('school-nnd').first()).toBeVisible();
 	expect(await violations(page)).toEqual([]);
 });

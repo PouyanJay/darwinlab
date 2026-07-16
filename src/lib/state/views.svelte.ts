@@ -323,6 +323,10 @@ export class WorldConfigView {
 	genDuration = $state(30);
 	/** Hidden-neuron count — the brain's capacity. Reference 6. */
 	brainHidden = $state(6);
+	/** Whether the shoal senses are wired into this world's brains — the "Schooling" toggle's state. */
+	schooling = $state(false);
+	/** How hard the confusion effect bites (only meaningful while schooling is on). */
+	confusionStrength = $state(3);
 	caption = $state('');
 	senses = $state<Senses>({ dist: false, dir: false, closing: false, walls: false });
 
@@ -345,6 +349,8 @@ export class WorldConfigView {
 		this.mutation = cfg.mutation;
 		this.genDuration = cfg.genDuration ?? 30;
 		this.brainHidden = cfg.brainHidden ?? 6;
+		this.schooling = 'cohesion' in cfg.senses || 'align' in cfg.senses;
+		this.confusionStrength = cfg.confusionStrength ?? 3;
 		this.caption = cfg.caption;
 		// A fresh object, not a mutation: `senses` is $state.raw-ish in spirit — replaced wholesale,
 		// so one assignment wakes every reader exactly once.

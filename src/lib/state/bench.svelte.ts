@@ -36,6 +36,7 @@ import {
 	ACCENTS,
 	WORLD_LIMITS,
 	PERSISTENCE_DEFAULTS,
+	SCHOOLING_PARAMS,
 	MAX_GENERATIONS
 } from '../engine';
 import {
@@ -52,7 +53,6 @@ import {
 import type { Trial, PopulationAssay } from '../engine';
 import type { World, WorldConfig, Senses, Fish, Predator, NumericCondition } from '../engine';
 import { configHash, manifest } from '../lab/run';
-import type { Exhibit } from '../lab/exhibits';
 import type { Rng } from '../engine';
 import type { Picked, Lens } from '../render';
 import { subSteps, turboSlice } from '../sim/loop';
@@ -144,8 +144,6 @@ class BenchStore {
 	selection = $state.raw<Selection | null>(null);
 	/** The world whose Conditions dialog is open, or null. One dialog, like one inspector. */
 	conditionsWorldId = $state<string | null>(null);
-	/** Which exhibit (world set) the bench is pointed at — drives the switcher's active state. */
-	activeExhibitId = $state<string>('senses');
 	/** What the selected fish is thinking, refreshed every frame while a fish is selected. */
 	readonly mind = new MindView();
 	/** The selected fish's escape map — its policy over adversary positions. Memoised; recomputes
@@ -322,9 +320,8 @@ class BenchStore {
 	 * Ids are handed out from #nextId, which the callers reset to 0 — so the world called `w1` in the
 	 * next bench is a different world with the same name, and a stale exhibit or assay left behind
 	 * would attach itself to it. The tank would show clones of a brain from a run that no longer
-	 * exists. (Found by two tests failing in a way that depended on the ORDER they ran in.) Both
-	 * `destroy` (tearing the bench down) and `loadExhibit` (swapping one bench for another) go through
-	 * this same door — the trap has two of them.
+	 * exists. (Found by two tests failing in a way that depended on the ORDER they ran in.)
+	 * `destroy` calls this when tearing the bench down.
 	 */
 	#resetExhibitKeyedState(): void {
 		this.#exhibitWorlds.clear();
@@ -935,26 +932,31 @@ class BenchStore {
 	}
 
 	/**
-	 * Point the bench at a different EXHIBIT — a whole new roster and ocean (the sense ladder, the
-	 * Shoal). A fresh, unseeded run of a different experiment: the old worlds, brains and curves go.
+	 * Turn SCHOOLING on or off for one world — grouping as a config option, not a separate exhibit.
 	 *
-	 * Everything keyed by world id must go with them, or the next `w1` inherits the last one's exhibit
-	 * or assay — the ids restart at 0, so a stale entry re-attaches to a different world (the trap
-	 * `#resetExhibitKeyedState` exists to close, and this is the other door into it).
+	 * On: the world gains the confusion effect (the reason to group), the 14-slot brain that carries
+	 * the shoal senses, wall-avoidance so a school does not trap in a corner, and the cohesion/align
+	 * senses switched on. Off: back to the reference 8-slot brain with no confusion and the shoal
+	 * senses removed. Either way the brain SHAPE changes, so evolution restarts (resetWorld) — you are
+	 * asking a differently-wired brain to evolve, not editing the one you had. Everything not in the
+	 * schooling bundle (predator speed, tank, the predator senses) is left exactly as the world had it.
 	 */
-	loadExhibit(exhibit: Exhibit): void {
-		this.activeExhibitId = exhibit.id;
-		this.playback.reset();
-		this.painters.clear();
-		this.selection = null;
-		this.conditionsWorldId = null;
-		this.#nextId = 0;
-		this.#resetExhibitKeyedState();
-		this.init({
-			configs: exhibit.configs,
-			prewarmGenerations: exhibit.prewarmGenerations,
-			maxGenerations: exhibit.maxGenerations
-		});
+	setSchooling(id: string, on: boolean): void {
+		const { world } = this.entry(id);
+		const c = world.cfg;
+		if (on) {
+			Object.assign(c, SCHOOLING_PARAMS);
+			c.senses = { ...c.senses, cohesion: true, align: true };
+		} else {
+			c.brainInputs = 8;
+			c.confusion = false;
+			const next = { ...c.senses };
+			delete next.cohesion;
+			delete next.align;
+			c.senses = next;
+		}
+		this.resetWorld(id); // the brain shape changed — the run starts over at the new wiring
+		this.#publishConfig(id);
 	}
 
 	/**

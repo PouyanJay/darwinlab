@@ -153,6 +153,27 @@ export const SHOAL_OCEAN = {
 	wallInstinct: true
 } as const satisfies Partial<WorldConfig>;
 
+/**
+ * The parameter bundle the "Schooling" toggle applies to ANY world (see bench.setSchooling), so
+ * grouping is a config option rather than a separate exhibit. It carries the reason to group (the
+ * confusion effect — the shark loses its lock in a dense swarm, and a packed fish is hard to grab),
+ * the 14-slot brain that can hold the shoal senses, and wall-avoidance so a school does not trap
+ * itself in a corner and die there. Everything else (predator speed, tank, the other senses) stays
+ * the world's own — schooling just pays most against a shark you cannot outswim.
+ */
+export const SCHOOLING_PARAMS = {
+	brainInputs: 14,
+	confusion: true,
+	confusionLock: true,
+	confusionCatch: true,
+	confusionIsolate: false,
+	confusionStrike: false,
+	confusionStrength: 3,
+	confusionRadius: 70,
+	socialRadius: 70,
+	wallInstinct: true
+} as const satisfies Partial<WorldConfig>;
+
 /** Predator + prey senses shared by both Shoal worlds; only cohesion/align differ between them. */
 const SHOAL_SENSES = { dist: true, dir: true, closing: true, walls: true } as const;
 
@@ -261,6 +282,9 @@ export const WORLD_LIMITS = {
 	 *  weights to tune, so a bigger brain needs more generations and is not automatically better.
 	 *  Changing it restarts evolution (the genome shape changes). Reference 6. */
 	brainHidden: { min: 4, max: 32, step: 2 },
+	/** How hard the confusion effect bites, when schooling is on. 0 = grouping buys nothing; higher =
+	 *  a crowd is much safer. Live-editable. Only meaningful on a schooling world. */
+	confusionStrength: { min: 0, max: 6, step: 0.5 },
 	/** Persistence params — only meaningful while the hunger ramp is switched ON. */
 	persistRamp: { min: 0.01, max: 0.12, step: 0.01 },
 	persistMaxBoost: { min: 0.1, max: 1.5, step: 0.05 },
