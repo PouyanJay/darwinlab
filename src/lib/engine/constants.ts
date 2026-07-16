@@ -76,6 +76,11 @@ export const CONFUSION_TELEGRAPH_K = 1.8;
  *  on TARGET ACQUISITION — the interior of a group becomes the safe place, and since any group has
  *  an edge, someone is always catchable (no immortal school). The gradient that pays for grouping. */
 export const ISOLATION_WEIGHT = 220;
+/** PREDATOR ATTENTION: expected lock-losses per second when the locked target is at full crowd
+ *  (scaled by crowd and confusionStrength). Higher = a swarm shakes the shark off faster. */
+export const LOCK_LOSS_RATE = 2.5;
+/** How long (s) the shark mills, target-less and unable to strike, after losing a lock in a swarm. */
+export const DISTRACT_TIME = 0.6;
 /** THE SELFISH-HERD KNOB: how far a full crowd shrinks the catch radius for a packed victim
  *  (cr ×(1 − this) at saturation). This is what makes the INTERIOR of a school safe and a lone
  *  or edge fish catchable — the gradient that pays for grouping. Capped below 1 so a crowd is

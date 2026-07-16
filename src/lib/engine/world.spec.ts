@@ -249,6 +249,57 @@ describe('confusion — isolation-hunting (the reason a school pays)', () => {
 	});
 });
 
+describe('confusion — predator attention / lock-loss (what makes ACTIVE schooling pay)', () => {
+	/**
+	 * Pack every fish into one tight ball with the shark right on it. With lock-loss on, a shark
+	 * whose target sits in that dense crowd should be shaken off (distracted) within a beat; off, it
+	 * holds and hunts normally. confusionStrength is cranked so the (seeded) roll fires promptly, and
+	 * confusionCatch is left off so the shark's inability to CATCH can't be what ends the ball.
+	 */
+	function swarmWorld(lock: boolean): World {
+		const w = makeWorld(
+			cfg({
+				preds: 1,
+				prey: 6,
+				predSpeed: 0.3,
+				confusion: true,
+				confusionLock: lock,
+				confusionCatch: false,
+				confusionIsolate: false,
+				confusionStrike: false,
+				confusionStrength: 6
+			}),
+			undefined,
+			seededRng(4)
+		);
+		applyCfg(w); // one shark, not the gen-0 double
+		w.fish.forEach((f, i) => {
+			f.x = 300 + (i % 3) * 6; // a ~12px ball, everyone inside everyone's crowd radius
+			f.y = 200 + Math.floor(i / 3) * 6;
+		});
+		// well outside the ball and slow, so lock-loss has room to fire before the shark reaches it
+		w.preds[0].x = 400;
+		w.preds[0].y = 200;
+		return w;
+	}
+
+	function everDistracted(w: World, steps: number): boolean {
+		for (let s = 0; s < steps && w.fish.length > 0; s++) {
+			stepWorld(w, dt);
+			if ((w.preds[0]?._distract ?? 0) > 0) return true;
+		}
+		return false;
+	}
+
+	it('the shark loses its lock inside a dense swarm and mills', () => {
+		expect(everDistracted(swarmWorld(true), 90)).toBe(true);
+	});
+
+	it('SABOTAGE: with lock-loss off, the same swarm never shakes the shark', () => {
+		expect(everDistracted(swarmWorld(false), 90)).toBe(false);
+	});
+});
+
 describe('resetWorld', () => {
 	it('returns to a fresh generation 0 with cleared learning', () => {
 		const w = makeWorld(cfg(), undefined, seededRng(1));
