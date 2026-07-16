@@ -30,10 +30,12 @@ test('opens on the first scene: the world that was given nothing', async ({ page
 	await expect(counter(page)).toContainText('scene 1 of 5');
 
 	// The fish are the world's evolved brains — a full FRESH generation of them, not the handful of
-	// survivors the bench had. Not an exact 20, though: the sharks start hunting on frame one, and
-	// racing them for an exact count is how this test flaked. The claim is "a full tank, not the
-	// remains of one", and the bench's Blind drift is typically down to a third by now.
-	await expect(story(page).getByTestId('story-alive')).toHaveText(/^(1[89]|20)$/);
+	// survivors the bench had. Deliberately a WIDE range, not an exact 20: the scene opens with the
+	// gen-0 double predators and Blind drift dies fast, so by the time this line polls (a beat later,
+	// and a longer beat under CI load) several are already gone — an 18-20 bound flaked exactly here.
+	// The claim is only "a full tank, not the remains of one": ten-plus of twenty is well clear of the
+	// bench's Blind drift, which is down to a third or fewer by now.
+	await expect(story(page).getByTestId('story-alive')).toHaveText(/^(1[0-9]|20)$/);
 	await expect(story(page)).toContainText('/ 20'); // …out of the full generation
 	// …bred to AT LEAST the generation the prewarm reached (15). Not an exact 15: Blind drift's
 	// population collapses, and a generation ends the instant its last fish is eaten — so by the time
