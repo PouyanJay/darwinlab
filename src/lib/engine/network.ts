@@ -32,16 +32,21 @@ export const NIN_WITH_SHOAL = 14;
 export const NHID = 6;
 export const NOUT = 2;
 
-/** Weight count for a brain with `nin` inputs. The reference brain: 68. */
-export function genomeLength(nin: number = NIN): number {
-	return NHID * nin + NHID + NOUT * NHID + NOUT;
+/** Weight count for a brain with `nin` inputs and `nhid` hidden neurons. The reference brain: 68. */
+export function genomeLength(nin: number = NIN, nhid: number = NHID): number {
+	return nhid * nin + nhid + NOUT * nhid + NOUT;
 }
 /** Genome length of the REFERENCE brain: 6*8 + 6 + 2*6 + 2 = 68. */
 export const GLEN = genomeLength(NIN);
 
-/** How many inputs this genome was built for — its own length says so. */
-export function inputCount(g: Genome): number {
-	return (g.length - NHID - NOUT * NHID - NOUT) / NHID;
+/**
+ * How many inputs this genome was built for. The genome length alone is ambiguous once the hidden
+ * layer can vary (L = nhid·nin + nhid + 2·nhid + 2 has two unknowns), so the caller must say how many
+ * hidden neurons the brain has — which it always knows, from the world's `brainHidden`. Defaults to
+ * the reference NHID, so every existing call and the fidelity gate are unchanged.
+ */
+export function inputCount(g: Genome, nhid: number = NHID): number {
+	return (g.length - nhid - NOUT * nhid - NOUT) / nhid;
 }
 
 export const IN_LABELS = [
@@ -80,8 +85,8 @@ export const IN_SENSE: (keyof Senses | null)[] = [
 export const OUT_LABELS = ['turn', 'thrust'];
 
 /** A fresh random genome — each weight `randn() * 0.8` (gaussian init). */
-export function makeGenome(rng: Rng = defaultRng, nin: number = NIN): Genome {
-	const len = genomeLength(nin);
+export function makeGenome(rng: Rng = defaultRng, nin: number = NIN, nhid: number = NHID): Genome {
+	const len = genomeLength(nin, nhid);
 	const g = new Float64Array(len);
 	for (let i = 0; i < len; i++) g[i] = randn(rng) * GENOME_INIT_SCALE;
 	return g;
@@ -95,21 +100,21 @@ export function makeGenome(rng: Rng = defaultRng, nin: number = NIN): Genome {
  * 9-input world simply never sees the extra slot (and vice versa is impossible: a fish
  * only ever meets the input vector its world builds).
  */
-export function forward(g: Genome, x: number[]): ForwardResult {
-	const nin = inputCount(g);
-	const h = new Array<number>(NHID);
+export function forward(g: Genome, x: number[], nhid: number = NHID): ForwardResult {
+	const nin = inputCount(g, nhid);
+	const h = new Array<number>(nhid);
 	let p = 0;
-	for (let j = 0; j < NHID; j++) {
+	for (let j = 0; j < nhid; j++) {
 		let s = 0;
 		for (let i = 0; i < nin; i++) s += g[p++] * (x[i] ?? 0);
-		h[j] = Math.tanh(s + g[NHID * nin + j]);
+		h[j] = Math.tanh(s + g[nhid * nin + j]);
 	}
 	const o = new Array<number>(NOUT);
-	let q = NHID * nin + NHID;
+	let q = nhid * nin + nhid;
 	for (let k = 0; k < NOUT; k++) {
 		let s = 0;
-		for (let j = 0; j < NHID; j++) s += g[q++] * h[j];
-		s += g[NHID * nin + NHID + NOUT * NHID + k];
+		for (let j = 0; j < nhid; j++) s += g[q++] * h[j];
+		s += g[nhid * nin + nhid + NOUT * nhid + k];
 		o[k] = s;
 	}
 	const turn = Math.tanh(o[0]);
@@ -118,12 +123,12 @@ export function forward(g: Genome, x: number[]): ForwardResult {
 }
 
 /** Weight from input `i` into hidden neuron `j`. */
-export function weightIH(g: Genome, j: number, i: number): number {
-	return g[j * inputCount(g) + i];
+export function weightIH(g: Genome, j: number, i: number, nhid: number = NHID): number {
+	return g[j * inputCount(g, nhid) + i];
 }
 
 /** Weight from hidden neuron `j` into output `k`. */
-export function weightHO(g: Genome, k: number, j: number): number {
-	const nin = inputCount(g);
-	return g[NHID * nin + NHID + k * NHID + j];
+export function weightHO(g: Genome, k: number, j: number, nhid: number = NHID): number {
+	const nin = inputCount(g, nhid);
+	return g[nhid * nin + nhid + k * nhid + j];
 }

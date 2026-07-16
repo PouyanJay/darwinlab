@@ -319,6 +319,10 @@ export class WorldConfigView {
 	persistMaxJaw = $state(20);
 	vision = $state(0);
 	mutation = $state(0);
+	/** Sim-seconds per generation (episode length). Reference 10; the showcase runs 30. */
+	genDuration = $state(30);
+	/** Hidden-neuron count — the brain's capacity. Reference 6. */
+	brainHidden = $state(6);
 	caption = $state('');
 	senses = $state<Senses>({ dist: false, dir: false, closing: false, walls: false });
 
@@ -339,6 +343,8 @@ export class WorldConfigView {
 		this.persistMaxJaw = cfg.persistMaxJaw ?? 20;
 		this.vision = cfg.vision;
 		this.mutation = cfg.mutation;
+		this.genDuration = cfg.genDuration ?? 30;
+		this.brainHidden = cfg.brainHidden ?? 6;
 		this.caption = cfg.caption;
 		// A fresh object, not a mutation: `senses` is $state.raw-ish in spirit — replaced wholesale,
 		// so one assignment wakes every reader exactly once.

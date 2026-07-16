@@ -31,7 +31,7 @@ import {
 	LOCK_LOSS_RATE,
 	DISTRACT_TIME
 } from './constants';
-import { makeGenome, forward, NIN } from './network';
+import { makeGenome, forward, NIN, NHID } from './network';
 import { cloneGenome, breed } from './genetics';
 import { senseInputs } from './sensing';
 import { meanNearestNeighbor } from './flock';
@@ -62,7 +62,7 @@ export function makeFish(cfg: WorldConfig, genome?: Genome, rng: Rng = defaultRn
 		size: rnd(rng, 0.85, 1.15),
 		// a fresh brain is built to THIS world's shape — 8 inputs (the reference brain, 68
 		// weights) or 9, when the world lets its fish feel their own speed (74 weights)
-		genome: genome ?? makeGenome(rng, cfg.brainInputs ?? NIN),
+		genome: genome ?? makeGenome(rng, cfg.brainInputs ?? NIN, cfg.brainHidden ?? NHID),
 		fitness: 0,
 		turn: 0,
 		thrust: 0,
@@ -158,7 +158,9 @@ function spawnGeneration(w: World, genomes?: Genome[]): void {
 	w.hover = null;
 	for (let i = 0; i < c.prey; i++) {
 		const g =
-			genomes && genomes[i] ? cloneGenome(genomes[i]) : makeGenome(w.rng, c.brainInputs ?? NIN);
+			genomes && genomes[i]
+				? cloneGenome(genomes[i])
+				: makeGenome(w.rng, c.brainInputs ?? NIN, c.brainHidden ?? NHID);
 		const f = makeFish(c, g, w.rng);
 		w.fish.push(f);
 		w.roster.push(f);
@@ -663,7 +665,7 @@ function updatePrey(w: World, dt: number): void {
 	const agility = c.agility ?? 1;
 	for (const f of w.fish) {
 		const { x } = senseInputs(w, f);
-		const out = forward(f.genome, x);
+		const out = forward(f.genome, x, c.brainHidden ?? NHID);
 		f.turn = out.turn;
 		f.thrust = out.thrust;
 		f.heading += out.turn * MAXTURN * agility * dt;
@@ -750,7 +752,7 @@ export function updateSenseSnapshot(w: World): void {
 	if (!w.selFish) return;
 	const f = w.selFish;
 	const si = senseInputs(w, f);
-	const out = forward(f.genome, si.x);
+	const out = forward(f.genome, si.x, w.cfg.brainHidden ?? NHID);
 	w.sense = {
 		x: si.x,
 		h: out.h,

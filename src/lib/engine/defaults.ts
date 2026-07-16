@@ -253,6 +253,14 @@ export const WORLD_LIMITS = {
 	maxSpeed: { min: 80, max: 300, step: 4 },
 	vision: { min: 120, max: 280, step: 5 },
 	mutation: { min: 0, max: 0.2, step: 0.005 },
+	/** Sim-seconds per generation — how long each episode lasts. Longer episodes give a policy more
+	 *  time to express itself and keep selection sharpening; tunable so a run that needs more training
+	 *  can just ask for it. Live-editable (the next generation uses the new length). Reference 10. */
+	genDuration: { min: 10, max: 60, step: 5 },
+	/** Hidden neurons in the brain — its CAPACITY. More lets it combine inputs in more ways, but adds
+	 *  weights to tune, so a bigger brain needs more generations and is not automatically better.
+	 *  Changing it restarts evolution (the genome shape changes). Reference 6. */
+	brainHidden: { min: 4, max: 32, step: 2 },
 	/** Persistence params — only meaningful while the hunger ramp is switched ON. */
 	persistRamp: { min: 0.01, max: 0.12, step: 0.01 },
 	persistMaxBoost: { min: 0.1, max: 1.5, step: 0.05 },

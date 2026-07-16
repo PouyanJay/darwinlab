@@ -66,9 +66,11 @@ export function drawBrain(
 	const x = sense ? sense.x : SILENT_INPUTS;
 	const h = sense ? sense.h : SILENT_HIDDEN;
 	const g = sense ? sense.genome : null;
-	// The brain is as wide as THIS world's brains are — 8 inputs, or 9 when the fish can
-	// feel its own speed. Never a module constant: the two shapes coexist on one bench.
-	const nin = g ? inputCount(g) : x.length;
+	// The brain is as wide/deep as THIS world's brains are — the hidden count is the length of the
+	// live activation array (or NHID for the resting net), and the input count follows from it. Never
+	// a module constant: 6-, and bigger-hidden brains coexist on one bench.
+	const nhid = h.length;
+	const nin = g ? inputCount(g, nhid) : x.length;
 	const turn = sense ? sense.turn : 0;
 	const thrust = sense ? sense.thrust : 0;
 
@@ -76,7 +78,7 @@ export function drawBrain(
 	const HX = W / 2;
 	const OX = W - 60;
 	const iy = (i: number) => 20 + (i * (H - 34)) / (nin - 1);
-	const hy = (j: number) => 40 + (j * (H - 70)) / (NHID - 1);
+	const hy = (j: number) => 40 + (j * (H - 70)) / Math.max(1, nhid - 1);
 	const oy = (k: number) => H * 0.38 + k * H * 0.26;
 	const senseOn = (idx: number): boolean => {
 		const key = IN_SENSE[idx];
@@ -115,12 +117,12 @@ export function drawBrain(
 
 	if (g) {
 		for (let i = 0; i < nin; i++) {
-			for (let j = 0; j < NHID; j++)
-				edge(IX, iy(i), HX, hy(j), weightIH(g, j, i), x[i], i * NHID + j);
+			for (let j = 0; j < nhid; j++)
+				edge(IX, iy(i), HX, hy(j), weightIH(g, j, i, nhid), x[i], i * nhid + j);
 		}
-		for (let j = 0; j < NHID; j++) {
+		for (let j = 0; j < nhid; j++) {
 			for (let k = 0; k < NOUT; k++)
-				edge(HX, hy(j), OX, oy(k), weightHO(g, k, j), h[j], 40 + j * NOUT + k);
+				edge(HX, hy(j), OX, oy(k), weightHO(g, k, j, nhid), h[j], 40 + j * NOUT + k);
 		}
 	}
 
@@ -165,7 +167,7 @@ export function drawBrain(
 		ctx.fillText(IN_LABELS[i] + (on ? '' : ' · off'), IX - 10, iy(i) + 3);
 		ctx.globalAlpha = 1;
 	}
-	for (let j = 0; j < NHID; j++) node(HX, hy(j), h[j], true, 6);
+	for (let j = 0; j < nhid; j++) node(HX, hy(j), h[j], true, 6);
 
 	ctx.textAlign = 'left';
 	const outs = [turn, thrust];

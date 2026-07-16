@@ -110,6 +110,13 @@ export interface WorldConfig {
 	 */
 	brainInputs?: number;
 	/**
+	 * How many HIDDEN neurons the brain has. Reference = 6 (NHID). More capacity to combine inputs —
+	 * but also more weights to tune, so a bigger brain needs more generations to converge and is not
+	 * automatically better (measured: at a fixed budget it can do WORSE). A world's brain shape is
+	 * fixed at creation. Left unset on reference worlds so the fidelity gate stays bit-exact.
+	 */
+	brainHidden?: number;
+	/**
 	 * Stamina: sprinting drains a reserve that only refills while cruising; an empty tank
 	 * halves top speed. Makes "always sprint" a losing strategy, so BOLTING — calm until
 	 * the threat nears, then a burst — becomes the winning, visible behavior. Reference = off.

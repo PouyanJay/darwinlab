@@ -703,7 +703,12 @@ class BenchStore {
 	setCondition(id: string, key: NumericCondition, value: number): void {
 		const { world } = this.entry(id);
 		world.cfg[key] = clamp(value, WORLD_LIMITS[key]);
-		engineApplyCfg(world);
+		// Changing the brain SHAPE (its hidden-neuron count) rebuilds every genome, so the old evolved
+		// weights no longer fit — evolution has to restart at the new shape. Every other condition is a
+		// live edit that keeps the run going (applyCfg). resetWorld also clears the exhibit/assay/eval
+		// that described the population that just went away.
+		if (key === 'brainHidden') this.resetWorld(id);
+		else engineApplyCfg(world);
 		this.#publishConfig(id);
 	}
 

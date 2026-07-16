@@ -7,7 +7,7 @@
  */
 
 import { makeWorld } from './world';
-import { makeGenome } from './network';
+import { makeGenome, NIN, NHID } from './network';
 import { cloneGenome } from './genetics';
 import { type Rng, defaultRng } from './rng';
 import type { World, Genome } from './types';
@@ -20,7 +20,11 @@ export function makeStoryWorld(src: World, rng: Rng = defaultRng): World {
 	for (const f of ranked) pool.push(f.genome);
 	const genomes: Genome[] = [];
 	for (let i = 0; i < cfg.prey; i++) {
-		genomes.push(pool.length ? pool[i % pool.length] : makeGenome(rng));
+		genomes.push(
+			pool.length
+				? pool[i % pool.length]
+				: makeGenome(rng, cfg.brainInputs ?? NIN, cfg.brainHidden ?? NHID)
+		);
 	}
 	const w = makeWorld(cfg, genomes, rng);
 	w.gen = src.gen;

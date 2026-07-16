@@ -22,7 +22,7 @@
  */
 
 import { senseInputs } from './sensing';
-import { forward } from './network';
+import { forward, NHID } from './network';
 import type { WorldConfig, Fish, Predator, Genome } from './types';
 
 /** Default angular resolution — samples around the full turn. */
@@ -86,7 +86,7 @@ export interface ProbeOptions {
  */
 export function samplePolicyAt(cfg: WorldConfig, agent: Fish, adversary: Predator): PolicySample {
 	const { x } = senseInputs({ cfg, preds: [adversary] }, agent);
-	const out = forward(agent.genome, x);
+	const out = forward(agent.genome, x, cfg.brainHidden ?? NHID);
 	return { turn: out.turn, thrust: out.thrust };
 }
 

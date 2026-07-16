@@ -73,6 +73,28 @@ describe('brain shape (the reference brain, and the one that feels its own speed
 		const reference = makeGenome(seededRng(7), NIN);
 		expect(forward(reference, sprinting)).toEqual(forward(reference, quiet));
 	});
+
+	it('supports a bigger HIDDEN layer — genome, forward and weights all read the deeper shape', () => {
+		// 14 inputs, 16 hidden: 16*14 + 16 + 2*16 + 2 = 274 weights
+		expect(genomeLength(14, 16)).toBe(274);
+		const g = makeGenome(seededRng(3), 14, 16);
+		expect(g.length).toBe(274);
+		// given the hidden count, the input count is derived correctly (the length alone is ambiguous)
+		expect(inputCount(g, 16)).toBe(14);
+
+		const out = forward(g, new Array<number>(14).fill(0.3), 16);
+		expect(out.h).toHaveLength(16); // sixteen hidden activations, not six
+		expect(out.turn).toBeGreaterThanOrEqual(-1);
+		expect(out.turn).toBeLessThanOrEqual(1);
+		expect(out.thrust).toBeGreaterThanOrEqual(0);
+		expect(out.thrust).toBeLessThanOrEqual(1);
+
+		// the default NHID path is untouched — same genome, same result, which is what keeps fidelity
+		const ref = makeGenome(seededRng(3), NIN);
+		expect(forward(ref, new Array<number>(8).fill(0.3))).toEqual(
+			forward(ref, new Array<number>(8).fill(0.3), 6)
+		);
+	});
 });
 
 describe('makeGenome', () => {

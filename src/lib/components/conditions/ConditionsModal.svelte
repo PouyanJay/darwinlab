@@ -173,6 +173,22 @@
 				format={rate}
 				onchange={(value) => bench.setCondition(id, 'mutation', value)}
 			/>
+			<Slider
+				label="Episode length"
+				hint="(sim-seconds per generation — more time to learn)"
+				value={config.genDuration}
+				{...WORLD_LIMITS.genDuration}
+				format={(v) => `${v}s`}
+				onchange={(value) => bench.setCondition(id, 'genDuration', value)}
+			/>
+			<Slider
+				label="Brain capacity"
+				hint="(hidden neurons — changing it restarts evolution)"
+				value={config.brainHidden}
+				{...WORLD_LIMITS.brainHidden}
+				format={(v) => `${v}`}
+				onchange={(value) => bench.setCondition(id, 'brainHidden', value)}
+			/>
 		</div>
 
 		<fieldset class="senses">
