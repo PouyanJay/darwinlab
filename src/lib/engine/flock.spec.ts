@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { polarization, meanNearestNeighbor } from './schooling';
+import { polarization, meanNearestNeighbor } from './flock';
 
 const moving = (vx: number, vy: number) => ({ vx, vy });
 const at = (x: number, y: number) => ({ x, y });

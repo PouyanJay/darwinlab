@@ -98,6 +98,24 @@
 	</div>
 </div>
 
+{#if entry.stats.schooling}
+	<!-- Only on a schooling world: how the population is grouping RIGHT NOW. In an Alone-vs-Shoal
+	     pair these two numbers are the whole argument — same ocean, and one tank packs into a tight
+	     aligned ball while the other stays spread. Painted from the raw world (WorldStats), so it is
+	     the sim, not an illustration of it. -->
+	<div class="row school">
+		<span class="eyebrow">school</span>
+		<span class="figures">
+			<b class="tabular" data-testid="school-nnd">
+				{entry.stats.schoolNND ?? '—'}<span class="unit">px apart</span>
+			</b>
+			<b class="tabular align" data-testid="school-align">
+				{entry.stats.schoolAlignPct}<span class="unit">% aligned</span>
+			</b>
+		</span>
+	</div>
+{/if}
+
 <div class="row deploy">
 	<span class="visually-hidden" role="status">{announcement}</span>
 	<div class="deploy-stat">
@@ -124,6 +142,33 @@
 	.deploy {
 		gap: var(--sp-4);
 		padding: 0 var(--sp-5) var(--sp-5);
+	}
+
+	.school {
+		gap: var(--sp-4);
+		padding: 0 var(--sp-5) 10px;
+		align-items: baseline;
+	}
+
+	.school .eyebrow {
+		flex: none;
+	}
+
+	.school .figures {
+		display: flex;
+		gap: var(--sp-4);
+		font-size: var(--fs-body);
+		font-weight: var(--fw-semibold);
+	}
+
+	.school .align {
+		color: color-mix(in srgb, var(--accent) 60%, var(--ink));
+	}
+
+	.school .unit {
+		font-weight: var(--fw-regular);
+		color: var(--ink3);
+		margin-left: 2px;
 	}
 
 	.alive {
