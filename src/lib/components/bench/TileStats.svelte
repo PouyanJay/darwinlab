@@ -10,7 +10,7 @@
 <script lang="ts">
 	import Canvas from '../common/Canvas.svelte';
 	import { paintOnChange } from '../common/paintOnChange';
-	import { drawCurve, drawDecay } from '$lib/render';
+	import { drawCurve, drawDecay, drawSchoolCurve } from '$lib/render';
 	import { bench, theme } from '$lib/state';
 	import type { WorldEntry } from '$lib/state';
 
@@ -67,6 +67,15 @@
 			`${entry.world.decay.length}|${entry.world.decay.at(0)}|${entry.world.decay.at(-1)}|${theme.name}`,
 		(ctx, width, height) => drawDecay(ctx, width, height, entry.world.decay, theme.name)
 	);
+
+	// The emergence curve — the school's spacing tightening across generations, drawn so it RISES
+	// as the ball forms. Only a schooling world has a schoolCurve; it gains a point per generation.
+	const paintSchool = paintOnChange(
+		() =>
+			`${entry.world.schoolCurve.length}|${entry.world.schoolCurve.at(0)}|${entry.world.schoolCurve.at(-1)}|${accent}|${theme.name}`,
+		(ctx, width, height) =>
+			drawSchoolCurve(ctx, width, height, entry.world.schoolCurve, accent, theme.name)
+	);
 </script>
 
 <div class="row">
@@ -104,15 +113,30 @@
 	     aligned ball while the other stays spread. Painted from the raw world (WorldStats), so it is
 	     the sim, not an illustration of it. -->
 	<div class="row school">
-		<span class="eyebrow">school</span>
-		<span class="figures">
-			<b class="tabular" data-testid="school-nnd">
-				{entry.stats.schoolNND ?? '—'}<span class="unit">px apart</span>
-			</b>
-			<b class="tabular align" data-testid="school-align">
-				{entry.stats.schoolAlignPct}<span class="unit">% aligned</span>
-			</b>
-		</span>
+		<div class="school-nums">
+			<span class="eyebrow">school</span>
+			<span class="figures">
+				<b class="tabular" data-testid="school-nnd">
+					{entry.stats.schoolNND ?? '—'}<span class="unit">px apart</span>
+				</b>
+				<b class="tabular align" data-testid="school-align">
+					{entry.stats.schoolAlignPct}<span class="unit">% aligned</span>
+				</b>
+			</span>
+		</div>
+		<div class="curve school-curve">
+			<div class="curve-head">
+				<span class="eyebrow">tightening / gen</span>
+			</div>
+			<div class="sparkline">
+				<Canvas
+					paint={paintSchool}
+					{register}
+					label="{entry.config.name}: how tightly the school packs across {entry.stats
+						.gen} generations — the line rises as the spacing closes"
+				/>
+			</div>
+		</div>
 	</div>
 {/if}
 
@@ -145,18 +169,21 @@
 	}
 
 	.school {
-		gap: var(--sp-4);
-		padding: 0 var(--sp-5) 10px;
-		align-items: baseline;
+		gap: 12px;
+		padding: 0 var(--sp-5) 12px;
+		align-items: center;
 	}
 
-	.school .eyebrow {
-		flex: none;
+	.school-nums {
+		display: flex;
+		flex-direction: column;
+		gap: 1px;
 	}
 
 	.school .figures {
 		display: flex;
-		gap: var(--sp-4);
+		flex-direction: column;
+		gap: 1px;
 		font-size: var(--fs-body);
 		font-weight: var(--fw-semibold);
 	}
@@ -168,7 +195,12 @@
 	.school .unit {
 		font-weight: var(--fw-regular);
 		color: var(--ink3);
-		margin-left: 2px;
+		margin-left: 3px;
+	}
+
+	.school-curve {
+		flex: 1;
+		min-width: 0;
 	}
 
 	.alive {

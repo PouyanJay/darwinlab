@@ -34,7 +34,15 @@ import {
 import { makeGenome, forward, NIN } from './network';
 import { cloneGenome, breed } from './genetics';
 import { senseInputs } from './sensing';
+import { meanNearestNeighbor } from './flock';
 import type { World, WorldConfig, Fish, Predator, Genome } from './types';
+
+/** Whether a world's brains carry the shoal senses — gates the (optional) emergence-curve recording. */
+function isSchoolingWorld(cfg: WorldConfig): boolean {
+	return 'cohesion' in cfg.senses || 'align' in cfg.senses;
+}
+/** Seconds between nearest-neighbour samples for the emergence curve (cheaper than every tick). */
+const SCHOOL_SAMPLE_INTERVAL = 0.25;
 
 // ---- agents ----
 
@@ -97,6 +105,10 @@ export function makeWorld(cfg: WorldConfig, genomes?: Genome[], rng: Rng = defau
 		championFish: null,
 		lastSurv: 1,
 		lastLife: 1,
+		schoolCurve: [],
+		_nndSum: 0,
+		_nndN: 0,
+		_schoolT: 0,
 		maxGen: 0,
 		_deployed: false,
 		deployT: 0,
@@ -156,6 +168,10 @@ export function resetWorld(w: World): void {
 	w.gen = 0;
 	w.curve = [];
 	w.lifeCurve = []; // the learning curve the UI plots — a reset world has learned nothing
+	w.schoolCurve = [];
+	w._nndSum = 0;
+	w._nndN = 0;
+	w._schoolT = 0;
 	w.champion = null;
 	w.best = null;
 	w.championFish = null;
@@ -237,6 +253,16 @@ function evolve(w: World): void {
 	w.lastLife = life;
 	w.lifeCurve.push(life);
 	if (w.lifeCurve.length > CURVE_MAX_POINTS) w.lifeCurve.shift();
+
+	// THE EMERGENCE CURVE — flush this generation's mean nearest-neighbour distance (the school's
+	// tightness), then reset the accumulators. Only ever populated for schooling worlds (the
+	// accumulators stay 0 otherwise), so the sense ladder and the fidelity reference skip it.
+	if (w._nndN > 0) {
+		w.schoolCurve.push(w._nndSum / w._nndN);
+		if (w.schoolCurve.length > CURVE_MAX_POINTS) w.schoolCurve.shift();
+		w._nndSum = 0;
+		w._nndN = 0;
+	}
 	const best = ranked[0];
 	if (best && (!w.champion || best.fitness > w.champion.fitness)) {
 		w.champion = { genome: cloneGenome(best.genome), fitness: best.fitness, gen: w.gen };
@@ -760,6 +786,21 @@ export function stepWorld(w: World, dt: number): void {
 	updatePrey(w, dt);
 	updateSenseSnapshot(w);
 	ageBursts(w, dt);
+
+	// Emergence-curve sampling — schooling worlds only, on an interval. Off the training path
+	// (deployed), the population is decaying, not evolving, so there is no generation to average
+	// into; and consuming no RNG, this never touches the bit-exact reference run.
+	if (!trained && isSchoolingWorld(w.cfg)) {
+		w._schoolT += dt;
+		if (w._schoolT >= SCHOOL_SAMPLE_INTERVAL) {
+			w._schoolT = 0;
+			const nnd = meanNearestNeighbor(w.fish);
+			if (nnd !== null) {
+				w._nndSum += nnd;
+				w._nndN++;
+			}
+		}
+	}
 
 	// generation boundary (configurable length — past ~gen 30 the reference's 10s cap is
 	// saturated by every decent fish and selection stops sharpening; longer keeps the

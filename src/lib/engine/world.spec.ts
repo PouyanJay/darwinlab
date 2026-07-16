@@ -300,6 +300,37 @@ describe('confusion — predator attention / lock-loss (what makes ACTIVE school
 	});
 });
 
+describe('the emergence curve (schoolCurve)', () => {
+	const schoolingCfg = () =>
+		cfg({
+			brainInputs: 14,
+			senses: { dist: true, dir: true, closing: true, walls: true, cohesion: true, align: true }
+		});
+
+	it('records a mean-spacing point per generation on a schooling world', () => {
+		const w = makeWorld(schoolingCfg(), undefined, seededRng(2));
+		stepUntilGen(w, 4);
+		// one point per completed generation, and every one a real positive distance
+		expect(w.schoolCurve.length).toBeGreaterThanOrEqual(3);
+		expect(w.schoolCurve.every((v) => v > 0 && Number.isFinite(v))).toBe(true);
+	});
+
+	it('SABOTAGE: a sense-ladder world (no shoal senses) never records one', () => {
+		const w = makeWorld(cfg(), undefined, seededRng(2)); // default senses: no cohesion/align
+		stepUntilGen(w, 4);
+		expect(w.schoolCurve).toEqual([]);
+		expect(w._nndN).toBe(0); // the accumulator never ran either
+	});
+
+	it('clears the curve on resetWorld, like every other learning record', () => {
+		const w = makeWorld(schoolingCfg(), undefined, seededRng(2));
+		stepUntilGen(w, 3);
+		expect(w.schoolCurve.length).toBeGreaterThan(0);
+		resetWorld(w);
+		expect(w.schoolCurve).toEqual([]);
+	});
+});
+
 describe('resetWorld', () => {
 	it('returns to a fresh generation 0 with cleared learning', () => {
 		const w = makeWorld(cfg(), undefined, seededRng(1));

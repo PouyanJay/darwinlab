@@ -351,6 +351,18 @@ export interface World {
 	lastSurv: number;
 	/** Latest smoothed life-curve sample (0–1). */
 	lastLife: number;
+	/**
+	 * THE EMERGENCE CURVE — mean nearest-neighbour distance (px) per generation, the number that
+	 * FALLS as a school tightens. Recorded only on worlds whose brains carry the shoal senses (it is
+	 * a time-average over each generation, accumulated in `_nndSum`/`_nndN`); empty everywhere else,
+	 * so the sense ladder and the fidelity reference never pay for it. The Shoal exhibit plots it.
+	 */
+	schoolCurve: number[];
+	/** Accumulators for the current generation's mean NND (flushed into schoolCurve at the boundary). */
+	_nndSum: number;
+	_nndN: number;
+	/** Sim-seconds since the last NND sample — the curve samples on an interval, not every tick. */
+	_schoolT: number;
 	/** Once `gen >= maxGen`, the world deploys (stops evolving). 0 = never deploy. */
 	maxGen: number;
 	_deployed: boolean;

@@ -90,6 +90,30 @@ export function drawCurve(
 	});
 }
 
+/**
+ * The emergence curve: mean nearest-neighbour distance per generation, drawn as TIGHTNESS so the
+ * line RISES as a school forms (consistent with the learning curve, where up is the good direction).
+ * A loose population sits near the floor; a tight bait-ball climbs toward the top.
+ */
+const SCHOOL_TIGHT = 20; // px — a genuinely packed ball
+const SCHOOL_LOOSE = 120; // px — scattered across the tank
+export function drawSchoolCurve(
+	ctx: CanvasRenderingContext2D,
+	W: number,
+	H: number,
+	curve: number[],
+	accent: string,
+	theme: ThemeName
+): void {
+	drawSparkline(ctx, W, H, curve, theme, {
+		color: accent,
+		map: (nnd) =>
+			H - 2 - clamp(1 - (nnd - SCHOOL_TIGHT) / (SCHOOL_LOOSE - SCHOOL_TIGHT), 0, 1) * (H - 4),
+		baselineAlpha: 0.18,
+		fillAlpha: 0.13
+	});
+}
+
 /** Real-world population decay: fraction of the deployed batch still alive, over time. */
 export function drawDecay(
 	ctx: CanvasRenderingContext2D,
