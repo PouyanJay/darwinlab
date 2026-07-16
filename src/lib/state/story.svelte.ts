@@ -73,10 +73,13 @@ class StoryStore {
 		if (!current) return [];
 		const previous = this.#sources[this.index - 1]?.config.senses;
 
-		return SENSE_ORDER.map(({ key, name }) => ({
+		// Only the senses THIS world declares — the four predator senses always, plus the shoal senses
+		// on a schooling world. A sense a world's brains do not carry has no row (the sense ladder must
+		// not sprout two dead shoal pills, nor the Shoal scene claim a closing-speed input it lacks).
+		return SENSE_ORDER.filter(({ key }) => key in current).map(({ key, name }) => ({
 			key,
 			name,
-			// `speed` is optional on Senses (only 9-input worlds have the slot), so absent = off
+			// `speed`/`cohesion`/`align` are optional on Senses, so absent (ladder worlds) = off
 			on: !!current[key],
 			isNew: !!current[key] && !previous?.[key]
 		}));
@@ -152,7 +155,11 @@ const SENSE_ORDER: { key: keyof Senses; name: string }[] = [
 	{ key: 'dist', name: 'Distance' },
 	{ key: 'dir', name: 'Direction' },
 	{ key: 'walls', name: 'Walls' },
-	{ key: 'closing', name: 'Closing speed' }
+	{ key: 'closing', name: 'Closing speed' },
+	// The shoal senses — present only in the Shoal exhibit's scenes, where the second scene turns them
+	// on and the rail tags them NEW: the "what changed" that makes a swarm appear where none was.
+	{ key: 'cohesion', name: 'Shoal' },
+	{ key: 'align', name: 'Alignment' }
 ];
 
 export const story = new StoryStore();

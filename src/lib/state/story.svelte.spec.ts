@@ -1,7 +1,18 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { bench } from './bench.svelte';
 import { story, SCENE_SECONDS, STORY_WORLD_ID } from './story.svelte';
-import { DEFAULT_WORLDS, seededRng } from '../engine';
+import { DEFAULT_WORLDS, SHOAL_WORLDS, seededRng } from '../engine';
+
+/** The Shoal exhibit with NO prewarm — the real one evolves 55 generations, which a unit test must
+ *  not sit through; the senses rail reads config, not evolved state, so gen 0 is enough to test it. */
+const SHOAL_EXHIBIT = {
+	id: 'shoal',
+	name: 'The Shoal',
+	blurb: '',
+	configs: SHOAL_WORLDS,
+	prewarmGenerations: 0,
+	maxGenerations: 0
+};
 
 afterEach(() => {
 	story.exit();
@@ -73,6 +84,29 @@ describe('story — the scenes', () => {
 		const on = story.senses.filter((sense) => sense.on).map((sense) => sense.name);
 
 		expect(on).toEqual(['Distance', 'Direction']);
+	});
+
+	it('a sense-ladder scene never sprouts the shoal senses (they are not declared)', () => {
+		openBench();
+		bench.playStory();
+
+		const names = story.senses.map((sense) => sense.name);
+		expect(names).not.toContain('Shoal');
+		expect(names).not.toContain('Alignment');
+	});
+
+	it('the Shoal exhibit tags the shoal senses NEW in the second scene — the "what changed"', () => {
+		bench.loadExhibit(SHOAL_EXHIBIT);
+		bench.playStory();
+
+		story.goTo(0); // "Alone" — declares the shoal senses, but ablated off
+		const aloneTagged = story.senses.filter((s) => s.isNew).map((s) => s.name);
+		expect(story.senses.map((s) => s.name)).toContain('Shoal'); // present on the rail...
+		expect(aloneTagged).not.toContain('Shoal'); // ...but off, so not the "new" thing yet
+
+		story.goTo(1); // "The Shoal" — the sense turns on, and the rail says so
+		const shoalTagged = story.senses.filter((s) => s.isNew).map((s) => s.name);
+		expect(shoalTagged).toEqual(['Shoal', 'Alignment']);
 	});
 });
 
