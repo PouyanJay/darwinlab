@@ -1,13 +1,15 @@
 /**
- * Theme state. Light ("sunlit") is default; dark is the magenta re-skin.
+ * Theme state. Dark is the default; light ("sunlit") is the opt-in via the toggle.
  *
  * The theme is applied as `data-theme` on <html>, which drives the CSS custom properties in
  * `$lib/styles/tokens.css`. The canvas palettes (`THEMES` in `$lib/render/theme.ts`) are a
  * SEPARATE mirror of the same tokens and must stay in sync (CLAUDE.md conventions).
  *
  * The FIRST resolution happens in `app.html`'s inline head script, before the first paint, so a
- * dark-theme user never sees a flash of light. This store then adopts whatever that script
- * decided — the two must agree on the storage key and the fallback.
+ * light-theme user never sees a flash of dark. This store then adopts whatever that script
+ * decided — the two must agree on the storage key and the fallback. Dark is the fallback in both,
+ * unconditionally (the OS `prefers-color-scheme` does NOT downgrade us to light — a saved choice
+ * or the toggle is the only way to light).
  */
 
 import { browser } from '$app/environment';
@@ -16,18 +18,18 @@ import type { ThemeName } from '../render';
 export const THEME_STORAGE_KEY = 'darwinlab:theme';
 
 function resolve(): ThemeName {
-	if (!browser) return 'light';
+	if (!browser) return 'dark';
 	// prefer what the pre-paint script already stamped, so we never disagree with the pixels
 	const applied = document.documentElement.dataset.theme;
 	if (applied === 'light' || applied === 'dark') return applied;
 
 	const saved = localStorage.getItem(THEME_STORAGE_KEY);
 	if (saved === 'light' || saved === 'dark') return saved;
-	return matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+	return 'dark';
 }
 
 class ThemeStore {
-	name = $state<ThemeName>('light');
+	name = $state<ThemeName>('dark');
 
 	/** Adopt the theme the pre-paint script chose. */
 	init(): void {

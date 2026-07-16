@@ -2,6 +2,7 @@ import { describe, it, expect, afterEach, vi } from 'vitest';
 import { flushSync } from 'svelte';
 import { bench } from './bench.svelte';
 import { DEFAULT_WORLDS, WORLD_LIMITS, MAX_GENERATIONS, ACCENTS, seededRng } from '../engine';
+import { BRANCH_DROP } from '../lab/lineage';
 
 /**
  * Runs in the browser project (runes need the Svelte compiler). `bench` is a module-level
@@ -249,6 +250,83 @@ describe('bench store — world CRUD', () => {
 		bench.removeWorld(bench.worlds[0].id);
 		const survivor = bench.worlds[0].world.cfg.accent;
 		expect(bench.nextAccent()).not.toBe(survivor);
+	});
+});
+
+describe('bench store — lineage & branch', () => {
+	it('lays the launched worlds out as a row of unbranched roots', () => {
+		init(3);
+		const xs = bench.worlds.map((e) => e.lineage.x);
+		expect(new Set(xs).size).toBe(3); // three distinct columns, left to right
+		expect(xs[0]).toBeLessThan(xs[1]);
+		expect(xs[1]).toBeLessThan(xs[2]);
+		expect(bench.worlds.every((e) => e.lineage.y === 0)).toBe(true);
+		expect(bench.worlds.every((e) => e.lineage.parentId === null)).toBe(true);
+	});
+
+	it('branches a wired child that inherits the parent brains and generation; parent untouched', () => {
+		init(1);
+		const parent = bench.worlds[0];
+		parent.world.gen = 7;
+		const parentGenome = [...parent.world.roster[0].genome];
+
+		const childId = bench.branchWorld(parent.id);
+		const child = bench.find(childId)!;
+
+		expect(bench.worlds).toHaveLength(2);
+		expect(child.lineage.parentId).toBe(parent.id);
+		expect(parent.lineage.childIds).toContain(childId);
+		expect(child.world.gen).toBe(7); // started where the parent is, not at gen 0
+		expect([...child.world.roster[0].genome]).toEqual(parentGenome);
+		expect(child.world.roster[0].genome).not.toBe(parent.world.roster[0].genome); // cloned, not shared
+		// the parent is neither reset nor re-linked by the fork
+		expect(parent.lineage.parentId).toBeNull();
+		expect(parent.world.gen).toBe(7);
+	});
+
+	it('drops the child below its parent and opens its Conditions to change one thing', () => {
+		init(1);
+		const parent = bench.worlds[0];
+		const child = bench.find(bench.branchWorld(parent.id))!;
+		expect(child.lineage.y).toBe(parent.lineage.y + BRANCH_DROP);
+		expect(bench.conditionsWorldId).toBe(child.id); // the "change one thing" dialog is open on it
+	});
+
+	it('fans successive siblings sideways so they do not stack on one line', () => {
+		init(1);
+		const parent = bench.worlds[0];
+		// branchWorld opens the child's Conditions; close it between forks just to model the real flow
+		// (the dialog state doesn't affect branching — this is housekeeping, not a precondition).
+		const a = bench.find(bench.branchWorld(parent.id))!;
+		bench.closeConditions();
+		const b = bench.find(bench.branchWorld(parent.id))!;
+		expect(parent.lineage.childIds).toHaveLength(2);
+		expect(b.lineage.x).toBeGreaterThan(a.lineage.x);
+	});
+
+	it('moveWorld slides a node without touching the sim', () => {
+		init(1);
+		const e = bench.worlds[0];
+		const t = e.world.t;
+		bench.moveWorld(e.id, 321, 654);
+		expect(e.lineage.x).toBe(321);
+		expect(e.lineage.y).toBe(654);
+		expect(e.world.t).toBe(t); // pure view state — no genome, fitness or clock moved
+	});
+
+	it('removing a world prunes the lineage wires it touched', () => {
+		init(1);
+		const parent = bench.worlds[0];
+		const childId = bench.branchWorld(parent.id);
+		bench.closeConditions();
+		const grandId = bench.branchWorld(childId); // parent → child → grandchild
+		bench.closeConditions();
+
+		bench.removeWorld(childId);
+		// the parent no longer lists the child that is gone…
+		expect(parent.lineage.childIds).not.toContain(childId);
+		// …and the grandchild is orphaned into a root rather than pointing at a world that vanished
+		expect(bench.find(grandId)!.lineage.parentId).toBeNull();
 	});
 });
 

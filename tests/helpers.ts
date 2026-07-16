@@ -1,4 +1,4 @@
-import { expect, type Page } from '@playwright/test';
+import { expect, type Page, type Locator } from '@playwright/test';
 
 /**
  * Open the bench. "." resolves against baseURL, so the same suite passes whether the app is
@@ -19,4 +19,13 @@ export async function gotoApp(page: Page): Promise<void> {
 export async function waitForPrewarm(page: Page): Promise<void> {
 	await expect(page.getByTestId('turbo')).toBeVisible({ timeout: 30_000 });
 	await expect(page.getByTestId('turbo')).toBeHidden({ timeout: 90_000 });
+}
+
+/**
+ * Open a node's "Analysis & assays" disclosure — where the assay, evaluation and ablation matrix now
+ * live, folded away by default so a canvas node stays compact enough to see its neighbours.
+ */
+export async function openAnalysis(card: Locator): Promise<void> {
+	const summary = card.locator('details.analysis > summary');
+	if ((await card.locator('details.analysis[open]').count()) === 0) await summary.click();
 }

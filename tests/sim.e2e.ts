@@ -148,10 +148,11 @@ test('Space plays/pauses the bench — but never out from under a focused contro
 	// But Space is ALSO how a focused button is pressed. The shortcut used to preventDefault it
 	// regardless of focus, so Space on the theme toggle paused the sim instead of switching theme —
 	// a keyboard user could not operate the top bar at all. Verified to fail before the fix.
+	// (Dark is the default, so Space on the toggle flips it to light — the button, not the sim, won.)
 	await page.getByRole('button', { name: /switch to (dark|light) theme/ }).focus();
 	await page.keyboard.press(' ');
 
-	await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark'); // the button won
+	await expect(page.locator('html')).toHaveAttribute('data-theme', 'light'); // the button won
 	await expect(page.getByRole('button', { name: 'Pause' })).toBeVisible(); // the sim kept running
 });
 
@@ -187,15 +188,17 @@ test('the canvas backing store is DPR-scaled and stays crisp when resized', asyn
 test('the theme is resolved before the first paint (no flash of the wrong theme)', async ({
 	page
 }) => {
+	// Dark is the default, so the no-flash case that matters is a saved LIGHT user: switch to light,
+	// then a fresh page must already be 'light' at its very first evaluation.
 	await page.getByRole('button', { name: /switch to (dark|light) theme/ }).click();
-	await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+	await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
 
-	// On reload, data-theme must already be 'dark' on the very first evaluation — the inline head
-	// script runs before paint, so a dark user never sees the light palette flash.
+	// On reload, data-theme must already be 'light' on the very first evaluation — the inline head
+	// script runs before paint, so a light user never sees the dark palette flash.
 	const fresh = await page.context().newPage();
 	await gotoApp(fresh);
 	const themeAtFirstPaint = await fresh.evaluate(() => document.documentElement.dataset.theme);
-	expect(themeAtFirstPaint).toBe('dark');
+	expect(themeAtFirstPaint).toBe('light');
 	await fresh.close();
 });
 

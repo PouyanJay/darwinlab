@@ -62,19 +62,22 @@ test('a sense pill is a live ablation — it really cuts the input neuron', asyn
 	expect(await direction.getByTestId('gen').innerText()).toMatch(/^Gen \d+$/);
 });
 
-test('adding, duplicating and removing worlds', async ({ page }) => {
+test('adding, branching and removing worlds', async ({ page }) => {
 	await page.locator('main').getByRole('button', { name: 'Add environment' }).click();
 	await expect(tiles(page)).toHaveCount(6);
 	await expect(tiles(page).last().locator('input')).toHaveValue('World 6');
 
-	// a duplicate carries the evolved brains across — it starts where the original is, not at gen 0
+	// A branch carries the evolved brains across — it starts where the parent is, not at gen 0 — and
+	// appends the wired child at the end of the tree, then opens its Conditions to change one thing.
 	const generation = await tile(page, 2).getByTestId('gen').innerText();
-	await tile(page, 2).getByRole('button', { name: 'duplicate world' }).click();
+	await tile(page, 2).getByRole('button', { name: 'Branch' }).click();
+	await expect(page.getByRole('dialog', { name: 'Conditions' })).toBeVisible();
+	await page.keyboard.press('Escape'); // close the "change one thing" dialog for now
 	await expect(tiles(page)).toHaveCount(7);
-	await expect(tile(page, 3).locator('input')).toHaveValue('Direction copy');
-	await expect(tile(page, 3).getByTestId('gen')).toHaveText(generation);
+	await expect(tiles(page).last().locator('input')).toHaveValue('Direction ⑃');
+	await expect(tiles(page).last().getByTestId('gen')).toHaveText(generation);
 
-	await tile(page, 3).getByRole('button', { name: 'remove world' }).click();
+	await tiles(page).last().getByRole('button', { name: 'remove world' }).click();
 	await expect(tiles(page)).toHaveCount(6);
 });
 

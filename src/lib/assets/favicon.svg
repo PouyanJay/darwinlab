@@ -17,10 +17,11 @@
 		.body { fill: #faf9f4 }
 		.net { fill: #4f56d3; stroke: #4f56d3 }
 		@media (prefers-color-scheme: dark) {
-			.plate { fill: #08080b }
-			.rim { stroke: #f5f5fa; stroke-opacity: 0.1 }
-			.body { fill: #f5f5fa }
-			.net { fill: #ff2d9c; stroke: #ff2d9c }
+			.plate { fill: #0e0f12 }
+			.rim { stroke: #e7e8ec; stroke-opacity: 0.1 }
+			.body { fill: #e7e8ec }
+			/* Monochrome dark: a dark-ink net reads on the near-white body (no brand hue). */
+			.net { fill: #16181c; stroke: #16181c }
 		}
 	</style>
 	<rect class="plate" width="240" height="240" rx="54" />

@@ -1,9 +1,12 @@
 <!--
   The lab's control column.
 
-  Everything you DO to the bench lives here, grouped the way you reach for it:
+  Everything you DO to the bench lives here, grouped the way you reach for it — and in the order the
+  work happens, so the column reads as the shape of an experiment top to bottom:
 
-    RUN         how time advances — evolve/pause, speed, and a training burst
+    RUN         how time advances right now — evolve/pause and speed
+    SCHEDULE    how long it evolves — episodes so far, the deploy gen, the jump to it, the reset
+    VIEW        how you look at it — the lens that recolours the tanks
     EXPERIMENT  what is being run — the seed and config it is pinned to, and the environments in it
 
   The top bar keeps only what is not a control (identity, the scenario) plus settings and theme, so
@@ -106,14 +109,7 @@
 			</header>
 
 			<section>
-				<div class="section-head">
-					<h2 class="field-label">Run</h2>
-					<p class="readout">
-						<Icon name="episodes" size={13} />
-						<b class="tabular" data-testid="generations">{bench.generationsEvolved}</b>
-						<span>episodes</span>
-					</p>
-				</div>
+				<h2 class="field-label">Run</h2>
 
 				<!--
 					ONE full-width button in the column, and it is the transport: the thing you press most,
@@ -139,6 +135,22 @@
 						value={bench.speed}
 						onchange={(speed) => bench.setSpeed(speed)}
 					/>
+				</div>
+			</section>
+
+			<!--
+				How long it evolves, and how far along it is: the episodes counter sits with the deploy gen
+				it is climbing toward and the jump that fast-forwards there, so the whole training schedule
+				reads as one thing rather than three controls scattered under "Run".
+			-->
+			<section>
+				<div class="section-head">
+					<h2 class="field-label">Schedule</h2>
+					<p class="readout">
+						<Icon name="episodes" size={13} />
+						<b class="tabular" data-testid="generations">{bench.generationsEvolved}</b>
+						<span>episodes</span>
+					</p>
 				</div>
 
 				<div class="field">
@@ -180,11 +192,11 @@
 			<!--
 				A LENS is a way of looking, not a way of changing. It repaints what is already there and
 				touches nothing that evolved — which is why it is safe to leave on, and why it belongs
-				here rather than on a card: the whole point is to see five tanks answer the same question
+				here rather than on a card: the whole point is to see many tanks answer the same question
 				at once. Blind drift comes out as confetti; a bearing-sensing world comes out calm.
 			-->
 			<section>
-				<h2 class="field-label">Lens</h2>
+				<h2 class="field-label">View</h2>
 
 				<div class="field">
 					<span class="field-label" aria-hidden="true">Colour by</span>
@@ -282,9 +294,16 @@
 		min-width: 0; /* a dragged-narrow panel clips its content instead of pushing the divider */
 		display: flex;
 		flex-direction: column;
-		gap: var(--sp-7);
+		gap: var(--sp-5);
 		padding: var(--sp-4) var(--sp-5) var(--sp-6);
 		overflow-y: auto;
+	}
+
+	/* A hairline between each group and the next, so the four sections read as four things rather
+	   than one long stack. The first section (Run) sits straight under the header, undivided. */
+	section + section {
+		padding-top: var(--sp-5);
+		border-top: 1px solid var(--line);
 	}
 
 	.panel > header {

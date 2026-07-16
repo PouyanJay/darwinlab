@@ -104,37 +104,40 @@ export const THEMES: Record<ThemeName, ThemePalette> = {
 		lensIdle: '150,152,162'
 	},
 	dark: {
-		// Softened from the reference's .42: a 2px magenta rim at nearly half opacity read as a neon
-		// sign around every tank, and five of them lit the page instead of the experiment. The tank
-		// is a container, not a light source — this is the line that says where the water ends.
-		tankEdge: 'rgba(255,45,156,.24)',
-		ray: '255,45,156',
+		// Monochrome dark: the tank edge is a neutral hairline, not a coloured rim — the line that
+		// says where the water ends, nothing more. (The old .24 magenta neon lit the page instead of
+		// the experiment; a container is not a light source.)
+		tankEdge: 'rgba(255,255,255,.14)',
+		ray: '235,238,245',
 		dust: 'rgba(255,255,255,.22)',
-		fish: '#f2f2f7',
-		fishBelly: '#a3a4bc',
-		fishTrail: '242,242,247',
-		pred: '#ff2d9c',
-		predDark: '#a91d6d',
-		predBelly: '#ff8cc7',
-		burst: '255,45,156',
-		sel: '#ff2d9c',
-		selGlow: '255,45,156',
-		threat: '#ff2d9c',
-		// cyan, not magenta: in dark the accent and the danger colour are the same, so an inhibitory
-		// edge and an excitatory one would be indistinguishable.
-		excite: '#38d0f5',
-		inhibit: '#ff2d9c',
-		gold: '#ffd166',
-		ink: '#f5f5fa',
-		inkSoft: 'rgba(245,245,250,.68)', // mirrors --ink2 — deepened with it for the Phase 9 AA gate
-		pill: 'rgba(12,12,17,.88)',
+		fish: '#e7e8ec',
+		fishBelly: '#a7a9b2',
+		fishTrail: '231,232,236',
+		// The shark is the one thing that MEANS danger, so it keeps the danger red (mirrors --danger),
+		// same as the light theme — the only strong colour in the tank.
+		pred: '#ec6a54',
+		predDark: '#b8442f',
+		predBelly: '#e79f8d',
+		burst: '236,106,84',
+		// Selection is a near-white pop (mirrors --accent), a lightness cue not a hue.
+		sel: '#e7e8ec',
+		selGlow: '231,232,236',
+		threat: '#ec6a54',
+		// The brain viz's two signs — the one place colour IS the information: excite a blue, inhibit
+		// the danger red. Mirrors --excite / --inhibit.
+		excite: '#5b9df2',
+		inhibit: '#ec6a54',
+		gold: '#d9a441',
+		ink: '#e7e8ec',
+		inkSoft: 'rgba(231,232,236,.66)', // mirrors --ink2
+		pill: 'rgba(14,15,18,.88)',
 		shadow: 'rgba(0,0,0,.4)',
-		// NOT the predator's magenta for `bad`: a fish painted in the shark's own colour is a fish
-		// the eye stops finding. Cyan → rose is the ramp that stays legible against a magenta hunter.
-		lensGood: '56,208,245',
-		lensMid: '255,209,102',
-		lensBad: '255,92,124',
-		lensIdle: '138,140,155'
+		// The flee ramp diverges green → amber → red around chance (mirrors --lens-*). Red for `bad`
+		// is the shark's colour on purpose here — a fish swimming into the mouth earns the mouth's hue.
+		lensGood: '52,194,162',
+		lensMid: '224,178,78',
+		lensBad: '236,106,84',
+		lensIdle: '140,142,150'
 	}
 };
 

@@ -44,6 +44,9 @@
 		bottom: 14px;
 		z-index: var(--z-footer);
 		transform: translateX(-50%);
+		/* Float over the lineage plane without stealing presses meant for a node beneath it — only the
+		   dismiss button below opts back in. (It was intercepting clicks on deep canvas controls.) */
+		pointer-events: none;
 		display: flex;
 		align-items: center;
 		gap: var(--sp-3);
@@ -59,6 +62,7 @@
 	}
 
 	button {
+		pointer-events: auto; /* the one part of the hint that IS interactive */
 		display: grid;
 		place-items: center;
 		width: 22px;

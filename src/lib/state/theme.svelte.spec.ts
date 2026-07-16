@@ -54,7 +54,7 @@ describe('canvas palettes', () => {
 		// tokens.css :root  → --accent #4f56d3, --danger #e8604c
 		expect(THEMES.light.fish).toBe('#4f56d3');
 		expect(THEMES.light.pred).toBe('#e8604c');
-		// tokens.css [data-theme='dark'] → --accent/--danger #ff2d9c
-		expect(THEMES.dark.pred).toBe('#ff2d9c');
+		// tokens.css [data-theme='dark'] → monochrome: the shark keeps the danger red --danger #ec6a54
+		expect(THEMES.dark.pred).toBe('#ec6a54');
 	});
 });

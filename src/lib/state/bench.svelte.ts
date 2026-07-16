@@ -54,6 +54,7 @@ import {
 import type { Trial, PopulationAssay } from '../engine';
 import type { World, WorldConfig, Senses, Fish, Predator, NumericCondition } from '../engine';
 import { configHash, manifest } from '../lab/run';
+import { NODE_W, NODE_GAP_X, BRANCH_DROP, NODE_STAGGER_X } from '../lab/lineage';
 import type { Rng } from '../engine';
 import type { Picked, Lens } from '../render';
 import { subSteps, turboSlice } from '../sim/loop';
@@ -287,7 +288,14 @@ class BenchStore {
 		this.#seed = seed;
 		this.#rng = rng ?? (seed === null ? undefined : seededRng(seed));
 		this.#baselines.clear();
-		this.#setWorlds(configs.map((cfg) => this.#create(structuredClone(cfg))));
+		const roots = configs.map((cfg) => this.#create(structuredClone(cfg)));
+		// The launched worlds are the roots of the tree — laid out in a row across the canvas, so a
+		// fresh bench reads left-to-right the way the old grid did before the canvas recenters on it.
+		roots.forEach((entry, i) => {
+			entry.lineage.x = i * (NODE_W + NODE_GAP_X);
+			entry.lineage.y = 0;
+		});
+		this.#setWorlds(roots);
 		if (prewarmGenerations > 0) this.playback.requestTraining(prewarmGenerations);
 		this.playback.start((elapsed, frameSeconds) => this.tick(elapsed, frameSeconds));
 	}
@@ -615,16 +623,67 @@ class BenchStore {
 	// ---- world CRUD (all sim mutation funnels through engine fns) ----
 
 	addWorld(cfg: WorldConfig): void {
-		this.#setWorlds([...this.worlds, this.#create(structuredClone(cfg))]);
+		const entry = this.#create(structuredClone(cfg));
+		// A hand-added world is a NEW root, dropped to the right of the rightmost node so it never
+		// lands on top of one. (It has no parent — only a branch wires an edge.)
+		const rightEdge = this.worlds.reduce((x, e) => Math.max(x, e.lineage.x + NODE_W), -NODE_GAP_X);
+		entry.lineage.x = this.worlds.length ? rightEdge + NODE_GAP_X : 0;
+		entry.lineage.y = 0;
+		this.#setWorlds([...this.worlds, entry]);
+	}
+
+	/** Slide a node to a new canvas position (the drag handler's one job). View-only — no sim touched. */
+	moveWorld(id: string, x: number, y: number): void {
+		const entry = this.find(id);
+		if (!entry) return;
+		entry.lineage.x = x;
+		entry.lineage.y = y;
+	}
+
+	/**
+	 * Fork a world into a wired child — the controlled experiment.
+	 *
+	 * The child inherits the parent's CURRENT evolved brains (every genome as it stands this
+	 * generation), so the two share an evolutionary starting point and any later difference is caused
+	 * by the one thing you change, not by a fresh random draw. The parent is untouched. We wire the
+	 * lineage link, drop the child below the parent on the canvas, and open its Conditions so the
+	 * next thing you do is change that one variable. Returns the child's id.
+	 */
+	branchWorld(id: string): string {
+		const parent = this.entry(id);
+		const child = this.#forkFrom(parent, '⑃');
+
+		child.lineage.parentId = id;
+		// Fan successive branches out sideways so siblings don't stack on one vertical line.
+		const sibling = parent.lineage.childIds.length;
+		child.lineage.x = parent.lineage.x + sibling * NODE_STAGGER_X;
+		child.lineage.y = parent.lineage.y + BRANCH_DROP;
+		parent.lineage.childIds = [...parent.lineage.childIds, child.id];
+
+		this.#setWorlds([...this.worlds, child]);
+		this.openConditions(child.id); // the whole point is to change one thing next
+		return child.id;
 	}
 
 	duplicateWorld(id: string): void {
 		const index = this.worlds.findIndex((entry) => entry.id === id);
 		const source = assertEntry(this.worlds[index], id);
 
+		const copy = this.#forkFrom(source, 'copy');
+		copy.lineage.x = source.lineage.x + NODE_STAGGER_X;
+		copy.lineage.y = source.lineage.y + BRANCH_DROP;
+		this.#setWorlds([...this.worlds.slice(0, index + 1), copy, ...this.worlds.slice(index + 1)]);
+	}
+
+	/**
+	 * A wrapped new world that starts EXACTLY where `source` is: its config, its evolved genomes
+	 * (cloned, not shared), and its generation / survival curve / champion carried across. The shared
+	 * heart of both fork paths — branch (wires a lineage edge) and duplicate (a free-standing copy) —
+	 * so the carry-over rule lives in one place. Does not touch the source, nor place the new node.
+	 */
+	#forkFrom(source: WorldEntry, nameSuffix: string): WorldEntry {
 		const cfg = structuredClone(source.world.cfg);
-		cfg.name = this.#uniqueName(`${cfg.name} copy`);
-		// carry the evolved brains across so the copy starts where the original is
+		cfg.name = this.#uniqueName(`${cfg.name} ${nameSuffix}`);
 		const genomes = source.world.roster.map((fish) => cloneGenome(fish.genome));
 		const world = makeWorld(cfg, genomes);
 		world.gen = source.world.gen;
@@ -636,14 +695,22 @@ class BenchStore {
 					gen: source.world.champion.gen
 				}
 			: null;
-
-		const copy = this.#wrap(world);
-		this.#setWorlds([...this.worlds.slice(0, index + 1), copy, ...this.worlds.slice(index + 1)]);
+		return this.#wrap(world);
 	}
 
 	removeWorld(id: string): void {
 		this.stopAssay(id);
 		this.#closeExhibit(id); // nothing may outlive the world it was cloned from
+		// Cut the lineage wires that touched it: drop it from its parent's children, and orphan its own
+		// children (they become roots) so no edge points at a node the bench no longer has.
+		const gone = this.find(id);
+		if (gone?.lineage.parentId) {
+			const parent = this.find(gone.lineage.parentId);
+			if (parent) parent.lineage.childIds = parent.lineage.childIds.filter((c) => c !== id);
+		}
+		for (const entry of this.worlds) {
+			if (entry.lineage.parentId === id) entry.lineage.parentId = null;
+		}
 		this.#setWorlds(this.worlds.filter((entry) => entry.id !== id));
 		// Anything pointing INTO the world that just went away has to go with it, now — not on the
 		// next frame, or a component could render one frame against a world the bench no longer has.

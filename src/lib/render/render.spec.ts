@@ -267,7 +267,7 @@ describe('THEMES', () => {
 	it('exposes a light and dark palette with matching keys', () => {
 		expect(Object.keys(THEMES.light).sort()).toEqual(Object.keys(THEMES.dark).sort());
 		expect(THEMES.light.fish).toBe('#4f56d3');
-		expect(THEMES.dark.pred).toBe('#ff2d9c');
+		expect(THEMES.dark.pred).toBe('#ec6a54');
 	});
 });
 

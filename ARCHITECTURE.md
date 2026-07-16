@@ -36,18 +36,23 @@ src/
 │  ├─ harness/    The honesty gates: the bit-exact fidelity spec against reference/engine2.js,
 │  │              and the headless survival sweep the science claims are measured with.
 │  ├─ state/      Svelte 5 runes stores — THE only seam between UI and simulation.
-│  │              bench.svelte.ts     which worlds exist, selection, conditions, tick()
+│  │              bench.svelte.ts     which worlds exist, selection, conditions, tick();
+│  │                                  branchWorld/moveWorld drive the lineage tree
 │  │              views.svelte.ts     reactive projections components bind to
-│  │                                  (WorldStats / WorldConfigView / MindView)
+│  │                                  (WorldStats / WorldConfigView / MindView / LineageView)
+│  │              canvas.svelte.ts    the lineage canvas VIEWPORT (one pan/zoom transform)
 │  │              playback.svelte.ts  play / pause / speed / turbo training
 │  │              story.svelte.ts     scenes, the scene clock, NEW-sense tagging
-│  │              theme / motion      theme + reduced-motion preferences
+│  │              theme / motion      theme (DARK by default, monochrome) + reduced-motion
 │  │              painters.ts         paint registry (bench/story groups, paint-on-change)
 │  ├─ sim/        loop.ts — the visibility-safe fixed-timestep loop (setTimeout, never bare
 │  │              rAF: rAF throttles offscreen and would freeze the sim).
 │  │              governor.ts — one-way downgrade of cinematic detail under sustained honest
 │  │              frame-time pressure (stands down during turbo training by design).
 │  ├─ components/ UI by feature: topbar, bench, conditions, inspector, story, common.
+│  │              bench/LineageCanvas — the pannable/zoomable plane; worlds are draggable
+│  │              nodes (WorldTile) wired parent→child by branch edges.
+│  ├─ lab/        lineage.ts — canvas geometry (node sizes, the parent→child edge curve).
 │  └─ styles/     Design tokens (both themes as CSS custom properties) + global styles.
 ├─ routes/        Single bench page; ssr=false, prerender=true (client-only static SPA).
 tests/            Playwright e2e: bench, conditions, inspector, deploy lifecycle, story,
@@ -60,6 +65,15 @@ reference/        The vendored original engine + measurement README (read-only t
 `$state.raw` and is never reactive. Components never read `world.*` directly — they bind to
 the projections in `state/views.svelte.ts` and mutate only through store methods. If a
 component is writing `entry.world.x = ...`, the fix is a new store method.
+
+**The lineage canvas:** the bench is a spatial tree, not a grid. Each world is a node with a
+reactive `LineageView` (its `x`/`y` on the plane and its `parentId`/`childIds`), placed and
+moved only by the store (`branchWorld`, `moveWorld`, the initial auto-layout). **Branch** forks
+a world into a wired child that inherits the parent's evolved genomes at the current generation,
+drops below it, and opens Conditions to change one thing — a controlled experiment with a common
+ancestor, so any later difference is caused by the one variable, not a fresh random start. The
+camera (one `translate…scale` transform) lives in `canvas.svelte.ts`, separate from the bench
+because moving the camera touches no genome.
 
 ## Honesty gates
 

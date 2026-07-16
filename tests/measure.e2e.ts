@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { gotoApp, waitForPrewarm } from './helpers';
+import { gotoApp, waitForPrewarm, openAnalysis } from './helpers';
 
 /**
  * The MEASUREMENT suite — the two tests that make this a benchmark rather than a demo.
@@ -33,6 +33,7 @@ test('EVALUATION: a card reports a result with an error bar, and withdraws it wh
 	 */
 	test.setTimeout(240_000);
 	const tile = page.locator('section[aria-label^="world"]').nth(2);
+	await openAnalysis(tile); // the evaluation lives in the folded analysis panel now
 
 	await tile.getByTestId('evaluate').click();
 	await expect(tile.getByTestId('eval-return')).toBeVisible({ timeout: 180_000 });
@@ -63,9 +64,16 @@ test("THE ABLATION MATRIX is PER CARD: it runs in that environment's own conditi
 	const tile = page.locator('section[aria-label^="world"]').nth(2);
 	const matrix = tile.getByRole('region', { name: /ablation matrix/ });
 
-	// every card carries its own, and it is on the card — not once at the bottom of the bench
-	await expect(page.getByRole('region', { name: /ablation matrix/ })).toHaveCount(5);
+	// every card carries its own, and it is on the card — not once at the bottom of the bench. The
+	// panels are folded into each node's analysis disclosure now, so count them including the hidden.
+	await expect(
+		page.getByRole('region', { name: /ablation matrix/, includeHidden: true })
+	).toHaveCount(5);
 
+	await openAnalysis(tile); // reveal this card's analysis to run its matrix
+	// Pause first: live, the node's stats reflow every frame (the alive count and gen change width),
+	// which jitters the tall analysis panel's layout so its run button is never "stable" to click.
+	await page.getByRole('button', { name: 'Pause' }).click();
 	await matrix.getByRole('button', { name: 'ablation matrix', exact: true }).click();
 	await matrix.getByTestId('run-ablation').click();
 

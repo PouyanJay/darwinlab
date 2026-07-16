@@ -160,13 +160,16 @@ test('clicking the shark says there is no brain, by design', async ({ page }) =>
 			.sort((a, b) => b.length - a.length)
 			.slice(0, 5)
 			.map((cluster) => ({
-				// the BODY, not the first pixel of it: picking works from a creature's centre
+				// the BODY, not the first pixel of it: picking works from a creature's centre. Map
+				// backing-store px → SCREEN px with box.width/height (the rendered size), not clientWidth:
+				// the tank now sits inside the lineage canvas's zoom transform, so its rendered box is
+				// scaled and layout size no longer equals screen size.
 				x:
 					box.left +
-					(cluster.reduce((sum, p) => sum + p.x, 0) / cluster.length) * (el.clientWidth / width),
+					(cluster.reduce((sum, p) => sum + p.x, 0) / cluster.length) * (box.width / width),
 				y:
 					box.top +
-					(cluster.reduce((sum, p) => sum + p.y, 0) / cluster.length) * (el.clientHeight / height)
+					(cluster.reduce((sum, p) => sum + p.y, 0) / cluster.length) * (box.height / height)
 			}));
 	});
 
