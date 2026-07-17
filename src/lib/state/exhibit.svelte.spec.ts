@@ -163,7 +163,11 @@ describe('the champion exhibit, in the store', () => {
 		 * this generation is the 30-second clock, which run(5) comes nowhere near. `eaten === 0` proves
 		 * that is the path under test.
 		 */
-		initSolo({ configs: [{ ...DEFAULT_WORLDS[2], preds: 0 }], prewarmGenerations: 0, maxGenerations: 0 });
+		initSolo({
+			configs: [{ ...DEFAULT_WORLDS[2], preds: 0 }],
+			prewarmGenerations: 0,
+			maxGenerations: 0
+		});
 		const entry = bench.worlds[0];
 
 		run(5);
