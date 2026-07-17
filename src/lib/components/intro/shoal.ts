@@ -26,7 +26,7 @@ export interface ShoalColors {
 }
 
 const TRAIL = 9; // points per swimmer — short comet tails, sampled every other frame
-const MARGIN = 56; // soft wall, so the school never grinds along the canvas edge
+const MARGIN = 56; // spawn inset + attractor amplitude — NOT a wall; the water wraps at the edges
 
 export function startShoal(
 	canvas: HTMLCanvasElement,
@@ -165,12 +165,6 @@ export function startShoal(
 				ax += (sdx / sd) * p * 0.85;
 				ay += (sdy / sd) * p * 0.85;
 			}
-			// soft walls
-			if (f.x < MARGIN) ax += 0.05;
-			if (f.x > W - MARGIN) ax -= 0.05;
-			if (f.y < MARGIN) ay += 0.05;
-			if (f.y > H - MARGIN) ay -= 0.05;
-
 			f.vx += ax;
 			f.vy += ay;
 			const v = Math.hypot(f.vx, f.vy) || 1;
@@ -184,6 +178,12 @@ export function startShoal(
 			}
 			f.x += f.vx;
 			f.y += f.vy;
+			// No walls: the water wraps. A fish that swims off one edge comes in from the opposite
+			// side mid-stroke, still on its heading (the trail drawer skips the teleport segment).
+			if (f.x < -20) f.x = W + 20;
+			if (f.x > W + 20) f.x = -20;
+			if (f.y < -20) f.y = H + 20;
+			if (f.y > H + 20) f.y = -20;
 		}
 
 		// sample trails every other frame — twice the reach for half the points
