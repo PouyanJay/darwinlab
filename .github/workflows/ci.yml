@@ -1,6 +1,8 @@
 # The release pipeline: verify on every PR and push to main; on main, additionally run the
-# full e2e suite against a GitHub Pages-shaped build (BASE_PATH=/darwinlab) and, only if that
-# is green, deploy THAT build — the exact bytes the suite just exercised — to Pages.
+# full e2e suite against a GitHub Pages-shaped build (BASE_PATH=/darwinlab) IN PARALLEL with
+# verify — the two are independent gates — and deploy only when BOTH are green, shipping the
+# exact bytes the e2e suite just exercised. Playwright's browser download (~150MB) is cached
+# keyed on the lockfile, so a run without dependency changes skips it entirely.
 name: CI
 
 on:
@@ -24,7 +26,12 @@ jobs:
           cache: npm
       - run: npm ci
       # The vitest "client" project runs component specs in real Chromium, so browsers are
-      # needed for the UNIT suite too, not just Playwright e2e.
+      # needed for the UNIT suite too, not just Playwright e2e. The download is cached on the
+      # lockfile hash — any dependency change (incl. Playwright itself) refreshes it.
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
       - run: npx playwright install --with-deps chromium
       - run: npm run check
       - run: npm run lint
@@ -35,8 +42,9 @@ jobs:
   # base-path regression (an absolute URL escaping the base) fails here, not in production.
   # The suite deliberately does NOT gate PRs (they get check/lint/unit/build); it gates the
   # deploy instead. On success the build the webServer produced becomes the Pages artifact.
+  # No `needs: verify`: the two gates are independent, so they run in PARALLEL and the deploy
+  # below requires BOTH — same bar, roughly half the wall-clock.
   e2e:
-    needs: verify
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     env:
@@ -48,6 +56,10 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
       - run: npx playwright install --with-deps chromium
       - run: npx playwright test
       - uses: actions/upload-artifact@v4
@@ -62,8 +74,9 @@ jobs:
           path: build/
 
   # Ships the artifact the e2e job uploaded — no rebuild, so what deploys is what was tested.
+  # Gated on BOTH parallel jobs: nothing reaches Pages that didn't pass the whole bar.
   deploy:
-    needs: e2e
+    needs: [verify, e2e]
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
