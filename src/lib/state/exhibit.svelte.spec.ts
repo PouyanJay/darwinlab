@@ -18,17 +18,24 @@ function run(seconds: number) {
 }
 
 /**
- * init, then STOP the real loop — this spec drives time itself, via run().
+ * init on a FIXED SEED, then STOP the real loop — this spec drives time itself, via run().
  *
- * bench.init starts the live timer chain, so without this the sim has TWO drivers: the manual
- * run() and the background loop, which under CI starvation fires late and catches up in big
- * gulps of elapsed time. A "no generation has ended yet" world arrived at gen 1 that way and
- * blocked a deploy (after flaking twice locally — always in the full parallel suite, never in
- * isolation). playback.stop() kills the timer but leaves `running` true, so the manual tick
- * still steps; only the racing driver is gone.
+ * Two separate flakes have failed CI from here, both because the sim was unseeded:
+ *
+ *   • bench.init starts the live timer chain, so without the stop() the sim has TWO drivers: the
+ *     manual run() and the background loop, which under CI starvation fires late and catches up in
+ *     big gulps of elapsed time. playback.stop() kills the timer but leaves `running` true, so the
+ *     manual tick still steps; only the racing driver is gone.
+ *   • even with ONE driver the outcome was still random: these worlds have three sharks and gen-0
+ *     brains flee blind, so an unlucky draw could wipe the whole population inside a test's window
+ *     — ending a generation early on the `fish.length === 0` path (a "not finished yet" world
+ *     arriving at gen 1), or leaving benchWithChampion's run with no champion to exhibit. The engine
+ *     takes every random draw from `w.rng`, so a seed makes the run identical on every machine and
+ *     every attempt. That is what turns these from "usually green" into deterministic.
  */
+const SEED = 20260716;
 function initSolo(init: Parameters<typeof bench.init>[0]) {
-	bench.init(init);
+	bench.init({ ...init, seed: init.seed ?? SEED });
 	bench.playback.stop();
 }
 
@@ -147,12 +154,21 @@ describe('the champion exhibit, in the store', () => {
 		 * So: run a fresh world for several seconds — long enough for every fish to have real fitness,
 		 * nowhere near long enough to finish a generation (they are 30 sim-seconds) — and demand the
 		 * exhibit still refuses.
+		 *
+		 * preds: 0 is load-bearing, not a tidy-up. A generation also ends when the population is WIPED
+		 * OUT (world.ts: `genT >= genDuration || fish.length === 0`), and gen-0 brains flee blind. On
+		 * an unlucky unseeded draw the three sharks ate all 20 fish inside these 5 seconds, the
+		 * generation turned on the depopulation path, and the world arrived at gen 1 — the flake that
+		 * failed CI and blocked a deploy. With no predator nobody dies, so the ONLY thing that can end
+		 * this generation is the 30-second clock, which run(5) comes nowhere near. `eaten === 0` proves
+		 * that is the path under test.
 		 */
-		initSolo({ configs: [DEFAULT_WORLDS[2]], prewarmGenerations: 0, maxGenerations: 0 });
+		initSolo({ configs: [{ ...DEFAULT_WORLDS[2], preds: 0 }], prewarmGenerations: 0, maxGenerations: 0 });
 		const entry = bench.worlds[0];
 
 		run(5);
 		expect(entry.world.gen).toBe(0); // no generation has ended…
+		expect(entry.world.eaten).toBe(0); // …because nobody could die, so only the clock could turn it
 		expect(Math.max(...entry.world.fish.map((f) => f.fitness))).toBeGreaterThan(0); // …but they have all lived
 
 		expect(bench.setExhibit(entry.id, 'frozen')).toBe(false);
