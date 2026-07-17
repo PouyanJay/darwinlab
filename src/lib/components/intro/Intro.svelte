@@ -14,8 +14,10 @@
 	import { onMount } from 'svelte';
 	import { fade } from 'svelte/transition';
 	import LogoMark from '../topbar/LogoMark.svelte';
-	import { prefersReducedMotion } from '$lib/state';
+	import { prefersReducedMotion, theme } from '$lib/state';
+	import { THEMES } from '$lib/render';
 	import { DISCLAIMER } from '../common/disclaimer';
+	import { startShoal } from './shoal';
 
 	interface Props {
 		/** Called once the fade has played — the page then unmounts the intro entirely. */
@@ -56,6 +58,17 @@
 
 	// The reveal: one slow, even fade — reduced motion gets an instant cut instead.
 	const duration = $derived(prefersReducedMotion() ? 0 : 700);
+
+	// The shoal fills the right half; it keeps swimming through the fade-out and stops on unmount.
+	let shoalEl = $state<HTMLCanvasElement | null>(null);
+	$effect(() => {
+		if (!shoalEl) return;
+		return startShoal(
+			shoalEl,
+			() => ({ fish: THEMES[theme.name].fish, pred: THEMES[theme.name].pred }),
+			prefersReducedMotion()
+		);
+	});
 </script>
 
 <svelte:window {onmousemove} {onkeydown} onpointerdown={enter} onwheel={enter} />
@@ -75,40 +88,12 @@
 		</header>
 
 		<!--
-			The chase — the product, wordless: a shark following a blue prey fish, looping on a wander
-			path in the intro's open right half. SMIL animateMotion, no JS: both swimmers ride the SAME
-			path, the shark started a beat later, so it is forever ~1.2s behind the fish it hunts.
-			Decorative (aria-hidden), and STILL under reduced motion — the pair is shown parked instead.
+			The shoal and the hunter — the product, wordless, across the intro's whole right half: a real
+			flocking school of prey (separation + cohesion + alignment) and one cruising shark, the school
+			flash-expanding around it and reforming behind. Decorative (aria-hidden); under reduced motion
+			the flock is settled and shown parked, one still frame.
 		-->
-		<svg class="chase" viewBox="0 0 600 600" aria-hidden="true">
-			<path
-				id="intro-chase"
-				d="M 300 90 C 500 130, 530 300, 400 380 C 300 440, 140 420, 110 300 C 85 190, 160 70, 300 90 Z"
-				fill="none"
-			/>
-			<!-- the prey: blue, like the fish in the tanks -->
-			<g class="prey" transform={duration === 0 ? 'translate(200 430) rotate(188)' : undefined}>
-				<path
-					d="M16 0 C10 -6 -4 -7 -12 0 C-4 7 10 6 16 0 Z M-11 0 L-19 -6 C-16.5 -2 -16.5 2 -19 6 Z"
-				/>
-				{#if duration > 0}
-					<animateMotion dur="16s" repeatCount="indefinite" rotate="auto">
-						<mpath href="#intro-chase" />
-					</animateMotion>
-				{/if}
-			</g>
-			<!-- the predator: the danger red it wears in the water -->
-			<g class="pred" transform={duration === 0 ? 'translate(330 412) rotate(192)' : undefined}>
-				<path
-					d="M34 0 C22 -10 -8 -11 -22 -3 L-36 -12 C-31 -4 -31 4 -36 12 L-22 3 C-8 11 22 10 34 0 Z"
-				/>
-				{#if duration > 0}
-					<animateMotion dur="16s" repeatCount="indefinite" rotate="auto" begin="-14.8s">
-						<mpath href="#intro-chase" />
-					</animateMotion>
-				{/if}
-			</g>
-		</svg>
+		<canvas class="chase" bind:this={shoalEl} aria-hidden="true"></canvas>
 
 		<div class="stage">
 			<h1>Behaviour that evolved,<br />not behaviour that was coded.</h1>
@@ -160,15 +145,14 @@
 		gap: var(--sp-3);
 	}
 
-	/* The chase lives in the intro's open right half, vertically centred, behind nothing. It only
-	   appears where there is genuinely room for it beside the text. */
+	/* The shoal owns the WHOLE right half — edge to edge vertically, behind the text's stacking
+	   context, gone where there is no room for it beside the copy. */
 	.chase {
 		position: absolute;
-		top: 50%;
-		right: clamp(16px, 7vw, 140px);
-		width: min(560px, 36vw);
-		height: auto;
-		transform: translateY(-50%);
+		top: 0;
+		right: 0;
+		bottom: 0;
+		width: 52%;
 		pointer-events: none;
 	}
 
@@ -176,14 +160,6 @@
 		.chase {
 			display: none;
 		}
-	}
-
-	.prey path {
-		fill: var(--excite); /* the tank's fish blue, in whichever theme */
-	}
-
-	.pred path {
-		fill: var(--danger); /* the shark's own red */
 	}
 
 	.name {
@@ -204,8 +180,11 @@
 		color: var(--ink3);
 	}
 
-	/* The claim owns the screen: display type at poster size, the reasoning at a readable measure. */
+	/* The claim owns the screen: display type at poster size, the reasoning at a readable measure.
+	   Positioned so it stacks ABOVE the shoal canvas where the two overlap on mid-width screens —
+	   a fish may pass behind the headline, never over it. */
 	.stage {
+		position: relative;
 		flex: 1;
 		display: flex;
 		flex-direction: column;
