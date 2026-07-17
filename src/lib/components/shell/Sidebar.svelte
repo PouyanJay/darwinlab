@@ -1,16 +1,17 @@
 <!--
-  The lab's control column.
+  The lab's control column — organised as an instrument panel: a read-only STATUS header on top,
+  then the controls split by what they ARE, not by an arbitrary topic. You read the state first, then
+  reach for the kind of control you want:
 
-  Everything you DO to the bench lives here, grouped the way you reach for it — and in the order the
-  work happens, so the column reads as the shape of an experiment top to bottom:
+    STATUS      what is running and how far — the run/seed manifest and a progress meter (read-only)
+    TRANSPORT   the live now — evolve/pause and speed, the two things you touch every few seconds
+    SETTINGS    the knobs you set and leave — the deploy generation and the tank lens
+    ACTIONS     the one-shot commands — train to the end, add an environment, play the story, reset
 
-    RUN         how time advances right now — evolve/pause and speed
-    SCHEDULE    how long it evolves — episodes so far, the deploy gen, the jump to it, the reset
-    VIEW        how you look at it — the lens that recolours the tanks
-    EXPERIMENT  what is being run — the seed and config it is pinned to, and the environments in it
-
-  The top bar keeps only what is not a control (identity, the scenario) plus settings and theme, so
-  there is exactly one place to look for an action.
+  Status is stated once, at the top, so "how far along am I" never means hunting through the controls.
+  The knobs are apart from the commands so a value you nudge can't be confused with a button that
+  fires. The top bar keeps only what is not a control (identity, the scenario) plus settings and
+  theme, so there is exactly one place to look for an action.
 
   It is DOCKED and resizable on a desktop, and an OVERLAY on a phone, where there is no room to dock
   anything. Collapsed, it leaves a rail behind rather than vanishing: the run controls are what you
@@ -46,6 +47,23 @@
 
 	const target = $derived(trainTarget(bench.generationsEvolved, bench.maxGenerations));
 	const label = $derived(trainLabel(bench.maxGenerations));
+
+	// The status meter. A deploy generation of 0 means "train forever" — there is no finish line to
+	// fill toward, so the bar stays empty and the caption drops the "/ N" it would otherwise imply.
+	const deployAt = $derived(bench.maxGenerations);
+	const hasTarget = $derived(deployAt > 0);
+	const progress = $derived(
+		hasTarget ? Math.min(100, (bench.generationsEvolved / deployAt) * 100) : 0
+	);
+	// The one honest word for where the run is: past its finish line it has DEPLOYED (population now
+	// decays, nothing more evolves); otherwise it is either evolving or sitting paused.
+	const phase = $derived(
+		hasTarget && bench.generationsEvolved >= deployAt
+			? 'deployed'
+			: bench.running
+				? 'evolving'
+				: 'paused'
+	);
 
 	// "Close" on a phone, where the panel is OVER the bench; "collapse" on a desktop, where it is
 	// beside it. The same press, and two honest words for what it does.
@@ -108,18 +126,48 @@
 				</Button>
 			</header>
 
+			<!--
+				STATUS — read, don't touch. What this run IS (the manifest chip, which opens the seed
+				editor) and how far it has got (the meter). It sits above every control so "where am I"
+				is answered before "what can I press", and it is the only block here you look at rather
+				than operate.
+			-->
+			<div class="status">
+				<RunManifest />
+
+				<div class="meter">
+					<div
+						class="track"
+						role="progressbar"
+						aria-label="training progress"
+						aria-valuemin={0}
+						aria-valuemax={hasTarget ? deployAt : undefined}
+						aria-valuenow={hasTarget ? bench.generationsEvolved : undefined}
+					>
+						<div class="fill" style:width="{progress}%"></div>
+					</div>
+					<div class="cap">
+						<span>
+							<b class="tabular" data-testid="generations">{bench.generationsEvolved}</b>
+							{#if hasTarget}<span class="of">of {deployAt}</span>{/if}
+							episodes
+						</span>
+						<span class="phase" data-phase={phase}>{phase}</span>
+					</div>
+				</div>
+			</div>
+
+			<!--
+				TRANSPORT — the live now. ONE full-width button, and it is the transport: the thing you
+				press most, and the only control that earns the whole measure. Speed sits under it on a
+				label-left / control-right row.
+
+				No aria-label on a button that carries visible text: an aria-label REPLACES the label a
+				sighted user reads with a different one AT hears. Only the glyph-only buttons get one.
+			-->
 			<section>
-				<h2 class="field-label">Run</h2>
+				<h2 class="field-label">Transport</h2>
 
-				<!--
-					ONE full-width button in the column, and it is the transport: the thing you press most,
-					and the only one that earns the whole measure. The rest are sized to what they say, on
-					label-left / control-right rows, so the panel reads as a hierarchy rather than a stack of
-					equal slabs.
-
-					No aria-label on a button that carries visible text: an aria-label REPLACES the label a
-					sighted user reads with a different one AT hears. Only the glyph-only buttons get one.
-				-->
 				<Button variant="primary" class="transport" onclick={() => bench.togglePlay()}>
 					<TransportIcon playing={bench.running} />
 					<span>{bench.running ? 'Pause' : 'Evolve'}</span>
@@ -139,19 +187,13 @@
 			</section>
 
 			<!--
-				How long it evolves, and how far along it is: the episodes counter sits with the deploy gen
-				it is climbing toward and the jump that fast-forwards there, so the whole training schedule
-				reads as one thing rather than three controls scattered under "Run".
+				SETTINGS — the knobs you set and leave. The deploy generation the run climbs toward, and
+				the lens that recolours the tanks. A LENS is a way of looking, not a way of changing: it
+				repaints what is already there and touches nothing that evolved, which is why it is safe
+				to leave on. Both are values, not commands — so they live apart from the Actions below.
 			-->
 			<section>
-				<div class="section-head">
-					<h2 class="field-label">Schedule</h2>
-					<p class="readout">
-						<Icon name="episodes" size={13} />
-						<b class="tabular" data-testid="generations">{bench.generationsEvolved}</b>
-						<span>episodes</span>
-					</p>
-				</div>
+				<h2 class="field-label">Settings</h2>
 
 				<div class="field">
 					<label class="field-label" for="deploy-gen">Deploy at gen</label>
@@ -166,37 +208,6 @@
 						onchange={(event) => bench.setMaxGenerations(Number(event.currentTarget.value))}
 					/>
 				</div>
-
-				<div class="row-buttons">
-					<Button
-						size="sm"
-						class="grow"
-						disabled={bench.training}
-						onclick={() => bench.trainTo(target)}
-					>
-						<Icon name="forward" size={14} />
-						<span>{label}</span>
-					</Button>
-					<Button
-						variant="icon"
-						size="sm"
-						aria-label="reset every world to random brains"
-						title="reset every world to random brains"
-						onclick={() => bench.resetAll()}
-					>
-						<Icon name="reset" size={15} />
-					</Button>
-				</div>
-			</section>
-
-			<!--
-				A LENS is a way of looking, not a way of changing. It repaints what is already there and
-				touches nothing that evolved — which is why it is safe to leave on, and why it belongs
-				here rather than on a card: the whole point is to see many tanks answer the same question
-				at once. Blind drift comes out as confetti; a bearing-sensing world comes out calm.
-			-->
-			<section>
-				<h2 class="field-label">View</h2>
 
 				<div class="field">
 					<span class="field-label" aria-hidden="true">Colour by</span>
@@ -216,12 +227,25 @@
 				{/if}
 			</section>
 
+			<!--
+				ACTIONS — the one-shot commands, gathered so every button that DOES something lives in one
+				place. Train fills the row (it is the one you reach for); add + play share the next; reset
+				is set apart and reddens on hover, because it throws every evolved brain away.
+			-->
 			<section>
-				<h2 class="field-label">Experiment</h2>
+				<h2 class="field-label">Actions</h2>
 
-				<RunManifest />
+				<div class="cluster">
+					<Button
+						size="sm"
+						class="full"
+						disabled={bench.training}
+						onclick={() => bench.trainTo(target)}
+					>
+						<Icon name="forward" size={14} />
+						<span>{label}</span>
+					</Button>
 
-				<div class="actions">
 					<Button size="sm" onclick={andClose(onaddworld)}>
 						<Icon name="plus" size={14} />
 						<span>Add environment</span>
@@ -235,6 +259,16 @@
 					>
 						<TransportIcon playing={false} size={12} />
 						<span>Play story</span>
+					</Button>
+
+					<Button
+						size="sm"
+						class="full reset"
+						title="reset every world to random brains"
+						onclick={() => bench.resetAll()}
+					>
+						<Icon name="reset" size={15} />
+						<span>Reset all brains</span>
 					</Button>
 				</div>
 			</section>
@@ -299,8 +333,9 @@
 		overflow-y: auto;
 	}
 
-	/* A hairline between each group and the next, so the four sections read as four things rather
-	   than one long stack. The first section (Run) sits straight under the header, undivided. */
+	/* A hairline between each group and the next, so the sections read as separate things rather than
+	   one long stack. The status header sits straight under the header, undivided — it is the label
+	   for everything below, not a peer of it. */
 	section + section {
 		padding-top: var(--sp-5);
 		border-top: 1px solid var(--line);
@@ -338,6 +373,83 @@
 		margin: 0 0 var(--sp-1);
 	}
 
+	/*
+		STATUS header — a recessed plate that reads as a readout, not a control surface. The manifest
+		chip is stretched to fill it; the meter sits under it.
+	*/
+	.status {
+		display: flex;
+		flex-direction: column;
+		gap: var(--sp-3);
+		padding: var(--sp-3) var(--sp-4) var(--sp-4);
+		border: 1px solid var(--line);
+		border-radius: var(--radius-card);
+		background: var(--panel2);
+	}
+
+	.sidebar :global(.manifest) {
+		width: 100%;
+		justify-content: flex-start;
+		background: transparent; /* the status plate is already the recessed surface */
+	}
+
+	.meter {
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+	}
+
+	.track {
+		height: 6px;
+		border-radius: var(--radius-chip);
+		background: var(--chip);
+		overflow: hidden;
+	}
+
+	.fill {
+		height: 100%;
+		border-radius: var(--radius-chip);
+		background: var(--ink);
+		transition: width var(--dur) var(--ease);
+	}
+
+	.cap {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: var(--sp-3);
+		font-size: var(--fs-label);
+		color: var(--ink3);
+	}
+
+	.cap b {
+		font-size: var(--fs-sm);
+		font-weight: var(--fw-semibold);
+		color: var(--ink);
+	}
+
+	.cap .of {
+		color: var(--ink3);
+	}
+
+	/* The phase word, keyed by state: "deployed" is the notable one (the run is over and decaying),
+	   so it carries the danger hue; evolving/paused are quiet. */
+	.phase {
+		text-transform: uppercase;
+		letter-spacing: var(--tracking-wide);
+		font-size: var(--fs-eyebrow);
+		font-weight: var(--fw-semibold);
+		color: var(--ink3);
+	}
+
+	.phase[data-phase='evolving'] {
+		color: var(--ink);
+	}
+
+	.phase[data-phase='deployed'] {
+		color: var(--danger-ink);
+	}
+
 	/* The one control that takes the whole measure — see the note in the markup. */
 	.sidebar :global(.transport) {
 		width: 100%;
@@ -345,12 +457,6 @@
 		justify-content: center;
 		font-size: var(--fs-md);
 		letter-spacing: 0.01em;
-	}
-
-	.sidebar :global(.manifest) {
-		width: 100%;
-		justify-content: flex-start;
-		padding: var(--sp-3) var(--sp-4);
 	}
 
 	/* A label on the left, the control it names on the right — the shape of a settings row, and the
@@ -363,27 +469,29 @@
 		min-height: 30px;
 	}
 
-	.actions {
-		display: flex;
-		flex-wrap: wrap;
+	/*
+		ACTIONS — a two-column cluster of one-shot commands. Train and Reset each take the full width
+		(one is the primary reach, the other is set apart on purpose); add + play share the middle row.
+	*/
+	.cluster {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
 		gap: var(--sp-2);
 	}
 
-	/* The section title and its readout share a line — the count sits with the label it belongs to. */
-	.section-head {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
+	.sidebar :global(.cluster .full) {
+		grid-column: 1 / -1;
 	}
 
-	.row-buttons {
-		display: flex;
-		gap: var(--sp-2);
-	}
-
-	.sidebar :global(.grow) {
-		flex: 1;
+	.sidebar :global(.cluster .btn) {
 		justify-content: center;
+	}
+
+	/* Reset throws every evolved brain away, so it reddens on hover — the same warning the icon
+	   buttons carry, on a labelled command. */
+	.sidebar :global(.reset:not(:disabled):hover) {
+		border-color: var(--danger);
+		color: var(--danger-ink);
 	}
 
 	/* A compact number field, sized to a few digits and right-aligned so the value reads as a value. */
@@ -410,24 +518,5 @@
 		font-size: var(--fs-sm);
 		line-height: var(--leading-body);
 		color: var(--ink3);
-	}
-
-	.readout {
-		display: flex;
-		align-items: center;
-		gap: 5px;
-		margin: 0;
-		font-size: var(--fs-sm);
-		color: var(--ink3);
-	}
-
-	.readout :global(.icon) {
-		color: var(--accent);
-	}
-
-	.readout b {
-		font-size: var(--fs-stat);
-		font-weight: var(--fw-semibold);
-		color: var(--ink);
 	}
 </style>
