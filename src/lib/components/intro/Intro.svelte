@@ -152,13 +152,19 @@
 	}
 
 	/* The shoal owns the WHOLE right half — edge to edge vertically, behind the text's stacking
-	   context, gone where there is no room for it beside the copy. */
+	   context, gone where there is no room for it beside the copy.
+
+	   height: 100% is load-bearing, not a tidy-up. A <canvas> is a REPLACED element, so top:0 + bottom:0
+	   with an auto height does NOT stretch it the way it would a <div> — it keeps its intrinsic ratio
+	   (the default 300×150), so the box came out ~half the viewport tall, pinned to the top, and the
+	   shoal filled only the top half with dead black below. An explicit height fills the column, and
+	   the fit() measurement then spawns the school across the whole height. */
 	.chase {
 		position: absolute;
 		top: 0;
 		right: 0;
-		bottom: 0;
 		width: 52%;
+		height: 100%;
 		pointer-events: none;
 	}
 
