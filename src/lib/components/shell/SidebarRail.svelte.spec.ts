@@ -24,7 +24,6 @@ let speed: (typeof SPEEDS)[number]['value'];
 
 beforeEach(() => {
 	speed = bench.speed;
-	shell.setWidth(shell.width); // no-op; keeps the store's persistence path warm and honest
 });
 
 afterEach(() => {

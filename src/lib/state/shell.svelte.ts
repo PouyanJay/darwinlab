@@ -1,8 +1,13 @@
 /**
  * The shell: how the app's chrome is arranged, as opposed to what the simulation is doing.
  *
- * It owns the sidebar — its width, and whether it is open — and nothing else. Kept OUT of the bench
- * store on purpose: dragging a divider must never look like a reason to touch a world.
+ * It owns the sidebar — whether it is open — and nothing else. Kept OUT of the bench store on
+ * purpose: opening the controls must never look like a reason to touch a world.
+ *
+ * The panel is ONE fixed width. It is designed at that width; letting a divider drag it narrower or
+ * wider only ever made the column look worse, and "make it smaller" is already the collapse, which
+ * leaves a working rail rather than a squeezed panel. So the only sidebar preference worth
+ * remembering is open-vs-collapsed.
  *
  * Two different questions hide behind "is the sidebar open", and conflating them is the bug this
  * store exists to avoid:
@@ -23,40 +28,22 @@ export const SIDEBAR_STORAGE_KEY = 'darwinlab:sidebar';
 /** Narrower than this and there is no room to dock a panel beside the bench. */
 export const NARROW_QUERY = '(max-width: 900px)';
 
-/** The panel's width is the user's to choose, between "the labels still fit" and "this is a page". */
-export const SIDEBAR_MIN = 232;
-export const SIDEBAR_MAX = 420;
-export const SIDEBAR_DEFAULT = 268;
+/** The one width the docked panel is drawn at — see the note at the top of this file. */
+export const SIDEBAR_WIDTH = 300;
 
-/** How much a keyboard drag of the divider moves per press. */
-export const SIDEBAR_STEP = 16;
-
-const clampWidth = (px: number) => Math.round(Math.min(SIDEBAR_MAX, Math.max(SIDEBAR_MIN, px)));
-
-interface Saved {
-	width: number;
-	collapsed: boolean;
-}
-
-function load(): Saved {
-	if (!browser) return { width: SIDEBAR_DEFAULT, collapsed: false };
+function loadCollapsed(): boolean {
+	if (!browser) return false;
 	try {
 		const raw = localStorage.getItem(SIDEBAR_STORAGE_KEY);
-		if (!raw) return { width: SIDEBAR_DEFAULT, collapsed: false };
-		const saved = JSON.parse(raw) as Partial<Saved>;
-		return {
-			width: clampWidth(Number(saved.width) || SIDEBAR_DEFAULT),
-			collapsed: saved.collapsed === true
-		};
+		if (!raw) return false;
+		return (JSON.parse(raw) as { collapsed?: unknown }).collapsed === true;
 	} catch {
 		// A corrupt or unreadable entry is not worth a broken shell — open at the default.
-		return { width: SIDEBAR_DEFAULT, collapsed: false };
+		return false;
 	}
 }
 
 class ShellStore {
-	/** The docked panel's width in px. Meaningless while collapsed, but remembered across one. */
-	#width = $state(SIDEBAR_DEFAULT);
 	/** The DOCKED preference — persisted, and only honoured on the wide layout. */
 	#collapsed = $state(false);
 	/** Is the viewport too narrow to dock? Tracked, not guessed: the CSS asks the same question. */
@@ -64,10 +51,9 @@ class ShellStore {
 	/** Narrow layout only: the panel is showing OVER the bench. Session-local, starts shut. */
 	#overlayOpen = $state(false);
 
-	// Read-only outward, like the bench store's projections: a width assigned from a component would
-	// skip the clamp AND the save, leaving a panel at a width it cannot be and will not remember.
+	/** The panel's width — fixed, so callers can size off it without being able to change it. */
 	get width(): number {
-		return this.#width;
+		return SIDEBAR_WIDTH;
 	}
 	get collapsed(): boolean {
 		return this.#collapsed;
@@ -97,9 +83,7 @@ class ShellStore {
 
 	/** Adopt what was saved and start watching the viewport. Returns its teardown. */
 	init(): () => void {
-		const saved = load();
-		this.#width = saved.width;
-		this.#collapsed = saved.collapsed;
+		this.#collapsed = loadCollapsed();
 
 		const media = matchMedia(NARROW_QUERY);
 		const sync = () => {
@@ -112,11 +96,6 @@ class ShellStore {
 		sync();
 		media.addEventListener('change', sync);
 		return () => media.removeEventListener('change', sync);
-	}
-
-	setWidth(px: number): void {
-		this.#width = clampWidth(px);
-		this.#save();
 	}
 
 	/** Open or shut, in whichever sense this layout means it. */
@@ -136,8 +115,7 @@ class ShellStore {
 
 	#save(): void {
 		if (!browser) return;
-		const saved: Saved = { width: this.#width, collapsed: this.#collapsed };
-		localStorage.setItem(SIDEBAR_STORAGE_KEY, JSON.stringify(saved));
+		localStorage.setItem(SIDEBAR_STORAGE_KEY, JSON.stringify({ collapsed: this.#collapsed }));
 	}
 }
 

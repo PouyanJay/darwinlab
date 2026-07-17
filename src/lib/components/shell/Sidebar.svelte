@@ -13,8 +13,8 @@
   fires. The top bar keeps only what is not a control (identity, the scenario) plus settings and
   theme, so there is exactly one place to look for an action.
 
-  It is DOCKED and resizable on a desktop, and an OVERLAY on a phone, where there is no room to dock
-  anything. Collapsed, it leaves a rail behind rather than vanishing: the run controls are what you
+  It is DOCKED at one fixed width on a desktop, and an OVERLAY on a phone, where there is no room to
+  dock anything. Collapsed, it leaves a rail behind rather than vanishing: the run controls are what you
   reach for mid-experiment, and a control you have to re-open a panel to press is a control you stop
   using. Which of the three it is doing is the shell store's answer, not this component's.
 -->
@@ -25,7 +25,6 @@
 	import TransportIcon from '../common/TransportIcon.svelte';
 	import RunManifest from './RunManifest.svelte';
 	import SidebarRail from './SidebarRail.svelte';
-	import SidebarResizer from './SidebarResizer.svelte';
 	import { trainTarget, trainLabel } from './train';
 	import { DISCLAIMER } from '../common/disclaimer';
 	import { bench, shell, SPEEDS } from '$lib/state';
@@ -149,7 +148,7 @@
 					<div class="cap">
 						<span>
 							<b class="tabular" data-testid="generations">{bench.generationsEvolved}</b>
-							{#if hasTarget}<span class="of">of {deployAt}</span>{/if}
+							{#if hasTarget}<span class="of">/ {deployAt}</span>{/if}
 							episodes
 						</span>
 						<span class="phase" data-phase={phase}>{phase}</span>
@@ -277,11 +276,6 @@
 			     FooterPill shows the same line as a pill whenever this column is shut. -->
 			<p class="disclaimer">{DISCLAIMER}</p>
 		</div>
-
-		<!-- Docked only: there is nothing to resize when the panel is floating over the page. -->
-		{#if !shell.narrow}
-			<SidebarResizer />
-		{/if}
 	</aside>
 {/if}
 
@@ -432,18 +426,11 @@
 		color: var(--ink3);
 	}
 
-	/* The phase word, keyed by state: "deployed" is the notable one (the run is over and decaying),
-	   so it carries the danger hue; evolving/paused are quiet. */
+	/* The phase word sits quietly with the caption — same muted grey — except "deployed", the one
+	   notable state (the run is over and the population is decaying), which carries the danger hue. */
 	.phase {
-		text-transform: uppercase;
-		letter-spacing: var(--tracking-wide);
-		font-size: var(--fs-eyebrow);
-		font-weight: var(--fw-semibold);
+		font-size: var(--fs-label);
 		color: var(--ink3);
-	}
-
-	.phase[data-phase='evolving'] {
-		color: var(--ink);
 	}
 
 	.phase[data-phase='deployed'] {
@@ -487,11 +474,21 @@
 		justify-content: center;
 	}
 
-	/* Reset throws every evolved brain away, so it reddens on hover — the same warning the icon
-	   buttons carry, on a labelled command. */
-	.sidebar :global(.reset:not(:disabled):hover) {
-		border-color: var(--danger);
+	/* Reset throws every evolved brain away, so it is set apart from the framed commands above: no
+	   border, danger ink, flush left — a quiet red line, not a button competing for the press. It
+	   deepens on hover. Scoped under `.cluster` so it outweighs the `.cluster .btn` centring rule
+	   rather than losing to it on specificity. */
+	.sidebar :global(.cluster .reset) {
+		justify-content: flex-start;
+		padding-left: var(--sp-3);
+		border-color: transparent;
+		background: transparent;
 		color: var(--danger-ink);
+	}
+
+	.sidebar :global(.cluster .reset:not(:disabled):hover) {
+		background: transparent;
+		color: var(--danger);
 	}
 
 	/* A compact number field, sized to a few digits and right-aligned so the value reads as a value. */
