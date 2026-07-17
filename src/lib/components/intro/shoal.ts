@@ -46,6 +46,19 @@ export function startShoal(
 	let raf = 0;
 
 	/**
+	 * The shark hunts the way the lab's real predator does — in phases, not a beeline:
+	 * CRUISE (slow wander, deciding) → STALK (close on a chosen group, unhurried) → CIRCLE (hold a
+	 * wary standoff ring around it, the caution) → STRIKE (one fast dart through the middle — the
+	 * school flash-expands) → back to a long cruise. Deliberate, patient, occasionally violent.
+	 */
+	type HuntPhase = 'cruise' | 'stalk' | 'circle' | 'strike';
+	const hunt: { phase: HuntPhase; k: number; timer: number } = {
+		phase: 'cruise',
+		k: 0,
+		timer: 150
+	};
+
+	/**
 	 * Three slow drifting attractors, each tracing its own loop across the water. Each fish leans
 	 * weakly toward its own; without them the flock condenses into one huddle and leaves most of
 	 * the canvas empty — with them, sub-shoals occupy and roam the WHOLE half, and the shark has
@@ -58,9 +71,12 @@ export function startShoal(
 	];
 	function attractor(k: number, t: number) {
 		const d = drifts[k];
+		// The vertical range is pulled IN (×0.5): the flock's home is the middle of the half, not its
+		// top or foot — it drifts around the centre rather than camping at an extreme. Horizontal
+		// keeps most of its reach so the width stays used.
 		return {
-			x: W / 2 + Math.sin(t * 0.00006 * d.px + d.ox) * (W / 2 - MARGIN - 30),
-			y: H / 2 + Math.cos(t * 0.00006 * d.py + d.ox * 1.7) * (H / 2 - MARGIN - 30)
+			x: W / 2 + Math.sin(t * 0.00006 * d.px + d.ox) * (W / 2 - MARGIN - 30) * 0.85,
+			y: H / 2 + Math.cos(t * 0.00006 * d.py + d.ox * 1.7) * (H / 2 - MARGIN - 30) * 0.5
 		};
 	}
 
@@ -79,13 +95,17 @@ export function startShoal(
 		// monitor's right half a proper one
 		const want = Math.max(28, Math.min(90, Math.round((W * H) / 9_500)));
 		while (fish.length < want) {
+			// Spawn AROUND the group's own attractor, not uniformly: the flock opens already gathered
+			// where it lives (the centred band) instead of spending its first minute drifting there.
+			const k = fish.length % drifts.length;
+			const home = attractor(k, 0);
 			fish.push({
-				x: MARGIN + Math.random() * (W - 2 * MARGIN),
-				y: MARGIN + Math.random() * (H - 2 * MARGIN),
+				x: home.x + (Math.random() - 0.5) * 420,
+				y: home.y + (Math.random() - 0.5) * 420,
 				vx: (Math.random() - 0.5) * 2,
 				vy: (Math.random() - 0.5) * 2,
 				trail: [],
-				k: fish.length % drifts.length
+				k
 			});
 		}
 		fish.length = want;
@@ -96,22 +116,80 @@ export function startShoal(
 	}
 
 	function step() {
-		// the shark cruises: a slow wander plus a gentle pull toward the shoal's centre
-		wander += (Math.random() - 0.5) * 0.25;
-		let cx = 0;
-		let cy = 0;
+		// per-group centroids: the shark hunts GROUPS, not the abstract average of everything
+		const centroids = drifts.map(() => ({ x: 0, y: 0, n: 0 }));
 		for (const f of fish) {
-			cx += f.x;
-			cy += f.y;
+			const c = centroids[f.k ?? 0];
+			c.x += f.x;
+			c.y += f.y;
+			c.n++;
 		}
-		cx /= fish.length;
-		cy /= fish.length;
-		shark.vx += Math.cos(wander) * 0.05 + (cx - shark.x) * 0.00045;
-		shark.vy += Math.sin(wander) * 0.05 + (cy - shark.y) * 0.00045;
+		for (const c of centroids) {
+			if (c.n) {
+				c.x /= c.n;
+				c.y /= c.n;
+			}
+		}
+
+		const target = centroids[hunt.k];
+		const tdx = target.x - shark.x;
+		const tdy = target.y - shark.y;
+		const tdist = Math.hypot(tdx, tdy) || 1;
+		hunt.timer--;
+
+		let cap = 0.85; // cruising pace — the default, and the slowest
+		if (hunt.phase === 'cruise') {
+			wander += (Math.random() - 0.5) * 0.3;
+			shark.vx += Math.cos(wander) * 0.04;
+			shark.vy += Math.sin(wander) * 0.04;
+			if (hunt.timer <= 0) {
+				// done deciding: stalk the nearest group
+				let best = 0;
+				let bd = Infinity;
+				centroids.forEach((c, i) => {
+					if (!c.n) return;
+					const d = Math.hypot(c.x - shark.x, c.y - shark.y);
+					if (d < bd) {
+						bd = d;
+						best = i;
+					}
+				});
+				hunt.k = best;
+				hunt.phase = 'stalk';
+			}
+		} else if (hunt.phase === 'stalk') {
+			cap = 1.05; // closing, but unhurried
+			shark.vx += (tdx / tdist) * 0.035;
+			shark.vy += (tdy / tdist) * 0.035;
+			if (tdist < 250) {
+				hunt.phase = 'circle';
+				hunt.timer = 200 + Math.random() * 160; // 3–6 wary seconds on the ring
+			}
+		} else if (hunt.phase === 'circle') {
+			cap = 1.15;
+			// the caution: hold a standoff ring around the school and ride along it
+			const ring = 185;
+			const radial = (tdist - ring) / ring;
+			shark.vx += (tdx / tdist) * radial * 0.09 + (-tdy / tdist) * 0.05;
+			shark.vy += (tdy / tdist) * radial * 0.09 + (tdx / tdist) * 0.05;
+			if (hunt.timer <= 0) {
+				hunt.phase = 'strike';
+				hunt.timer = 110;
+			}
+		} else {
+			cap = 2.7; // the strike: one hard dart through the middle
+			shark.vx += (tdx / tdist) * 0.32;
+			shark.vy += (tdy / tdist) * 0.32;
+			if (hunt.timer <= 0 || tdist < 26) {
+				hunt.phase = 'cruise';
+				hunt.timer = 260 + Math.random() * 300; // a long, slow retreat before the next hunt
+			}
+		}
+
 		const sv = Math.hypot(shark.vx, shark.vy) || 1;
-		if (sv > 1.45) {
-			shark.vx = (shark.vx / sv) * 1.45;
-			shark.vy = (shark.vy / sv) * 1.45;
+		if (sv > cap) {
+			shark.vx = (shark.vx / sv) * cap;
+			shark.vy = (shark.vy / sv) * cap;
 		}
 		shark.x += shark.vx;
 		shark.y += shark.vy;
@@ -147,15 +225,17 @@ export function startShoal(
 				}
 			}
 			if (n) {
-				ax += (ncx / n - f.x) * 0.0024; // cohesion — loose, so the shoal breathes across the water
-				ay += (ncy / n - f.y) * 0.0024;
-				ax += (nvx / n - f.vx) * 0.055; // alignment
-				ay += (nvy / n - f.vy) * 0.055;
+				// Cohesion kept LOW on purpose: the sub-shoals should gather gradually — condensing in
+				// seconds read as choreography, not behaviour.
+				ax += (ncx / n - f.x) * 0.0017;
+				ay += (ncy / n - f.y) * 0.0017;
+				ax += (nvx / n - f.vx) * 0.05; // alignment
+				ay += (nvy / n - f.vy) * 0.05;
 			}
 			// a weak lean toward this fish's own drifting attractor — coverage, not a leash
 			const at = attractor(f.k ?? 0, frame * 16.7);
-			ax += (at.x - f.x) * 0.0008;
-			ay += (at.y - f.y) * 0.0008;
+			ax += (at.x - f.x) * 0.00055;
+			ay += (at.y - f.y) * 0.00055;
 			// flash expansion: flee the shark, harder the closer it is
 			const sdx = f.x - shark.x;
 			const sdy = f.y - shark.y;

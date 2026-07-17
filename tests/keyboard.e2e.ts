@@ -11,7 +11,14 @@ import { gotoApp, waitForPrewarm } from './helpers';
  * one step.
  */
 
-const inspector = (page: Page) => page.getByRole('dialog', { name: /fish mind/i });
+/**
+ * EITHER mind drawer — "Fish mind, live" or "Shark, no brain". The walk's stops are every fish plus
+ * the shark, and mid-film scene 1 is Blind drift: on a slow CI runner the whole school can be dead
+ * by the time the arrow lands, so the walk selects the shark. These tests are about keyboard and
+ * focus semantics, and either drawer serves them — pinning "fish" made the suite hostage to how
+ * fast the sharks eat (it failed a deploy exactly that way).
+ */
+const inspector = (page: Page) => page.getByRole('dialog', { name: /fish mind|shark/i });
 
 /** Tab until focus lands on a tank widget — bounded, so a broken tab order fails loudly. */
 async function tabToTank(page: Page) {
