@@ -139,7 +139,13 @@
 		cursor: pointer; /* the whole screen is the way in */
 	}
 
+	/* Pinned to the top-left, OUT of the vertical flow — so the claim below can centre against the
+	   whole viewport rather than against the band left between the brand and a taller footer (which
+	   pulled it up off-centre, most visibly as an empty void under the text on tall screens). */
 	.brand {
+		position: absolute;
+		top: var(--sp-6);
+		left: clamp(24px, 6vw, 96px);
 		display: flex;
 		align-items: center;
 		gap: var(--sp-3);
@@ -191,6 +197,11 @@
 		justify-content: center;
 		gap: var(--sp-5);
 		max-width: 880px;
+		/* EQUAL top and bottom reserve (sized to clear the taller of the two out-of-flow bands, the
+		   footer) so the claim centres on the true viewport middle — asymmetric reserve would just tip
+		   it off-centre again — while never riding under the logo or over the method strip when the
+		   viewport is short. */
+		padding-block: calc(90px + var(--sp-6));
 	}
 
 	h1 {
@@ -236,7 +247,13 @@
 		color: var(--ink3);
 	}
 
+	/* Pinned to the bottom, OUT of the vertical flow — the counterpart to the absolute brand, so the
+	   stage between them centres on the whole viewport. */
 	footer {
+		position: absolute;
+		bottom: var(--sp-6);
+		left: clamp(24px, 6vw, 96px);
+		right: clamp(24px, 6vw, 96px);
 		display: flex;
 		flex-direction: column;
 		gap: var(--sp-4);
