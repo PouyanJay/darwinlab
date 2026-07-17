@@ -28,6 +28,11 @@ export interface ShoalColors {
 const TRAIL = 9; // points per swimmer — short comet tails, sampled every other frame
 const MARGIN = 56; // spawn inset + attractor amplitude — NOT a wall; the water wraps at the edges
 
+// How long the scattered fish take to draw together into shoals. The school opens spread across the
+// whole water and, while it gathers, the fish are mostly fleeing the shark — the coming-together is
+// the slow thing you watch, not a fait accompli. Wall-clock, so it is ~3 minutes on any refresh rate.
+const FORM_MS = 3 * 60 * 1000;
+
 export function startShoal(
 	canvas: HTMLCanvasElement,
 	colors: () => ShoalColors,
@@ -44,6 +49,7 @@ export function startShoal(
 	let wander = Math.random() * Math.PI * 2;
 	let frame = 0;
 	let raf = 0;
+	let startMs = 0; // first-step timestamp — the clock the gather ramp is measured from
 
 	/**
 	 * The shark hunts the way the lab's real predator does — in phases, not a beeline:
@@ -93,15 +99,26 @@ export function startShoal(
 
 		// the population scales with the water: a phone-sized panel gets a small school, a big
 		// monitor's right half a proper one
-		const want = Math.max(28, Math.min(90, Math.round((W * H) / 9_500)));
+		const want = Math.max(42, Math.min(135, Math.round((W * H) / 6_333)));
 		while (fish.length < want) {
-			// Spawn AROUND the group's own attractor, not uniformly: the flock opens already gathered
-			// where it lives (the centred band) instead of spending its first minute drifting there.
 			const k = fish.length % drifts.length;
-			const home = attractor(k, 0);
+			let x: number;
+			let y: number;
+			if (reducedMotion) {
+				// One parked frame: seed already gathered at the group's home, so the still shows the
+				// formed school it would have become rather than the scattered start.
+				const home = attractor(k, 0);
+				x = home.x + (Math.random() - 0.5) * 420;
+				y = home.y + (Math.random() - 0.5) * 420;
+			} else {
+				// Scatter across the WHOLE water. The shoals are meant to gather slowly (see FORM_MS), so
+				// the flock must not open already gathered — it starts spread out and fleeing.
+				x = MARGIN + Math.random() * Math.max(1, W - 2 * MARGIN);
+				y = MARGIN + Math.random() * Math.max(1, H - 2 * MARGIN);
+			}
 			fish.push({
-				x: home.x + (Math.random() - 0.5) * 420,
-				y: home.y + (Math.random() - 0.5) * 420,
+				x,
+				y,
 				vx: (Math.random() - 0.5) * 2,
 				vy: (Math.random() - 0.5) * 2,
 				trail: [],
@@ -116,6 +133,14 @@ export function startShoal(
 	}
 
 	function step() {
+		// How far the flock has been allowed to gather. It opens at ~0 (scattered, cohesion and the
+		// homeward lean switched off, so the fish only align, avoid each other and flee) and reaches 1
+		// over FORM_MS, drawing the shoals together. Smoothstep, so the coming-together eases in rather
+		// than starting at full pull. Reduced motion is settled instantly, so it gathers fully.
+		if (startMs === 0) startMs = performance.now();
+		const t = reducedMotion ? 1 : Math.min(1, (performance.now() - startMs) / FORM_MS);
+		const gather = t * t * (3 - 2 * t);
+
 		// per-group centroids: the shark hunts GROUPS, not the abstract average of everything
 		const centroids = drifts.map(() => ({ x: 0, y: 0, n: 0 }));
 		for (const f of fish) {
@@ -225,17 +250,19 @@ export function startShoal(
 				}
 			}
 			if (n) {
-				// Cohesion kept LOW on purpose: the sub-shoals should gather gradually — condensing in
-				// seconds read as choreography, not behaviour.
-				ax += (ncx / n - f.x) * 0.0017;
-				ay += (ncy / n - f.y) * 0.0017;
+				// Cohesion is gated by `gather`: off at the start (the flock stays scattered) and easing
+				// up to its full, still-gentle pull as the minutes pass. Alignment is NOT gated — even a
+				// scattered field should swim in coordinated streams, it just should not condense yet.
+				ax += (ncx / n - f.x) * 0.0017 * gather;
+				ay += (ncy / n - f.y) * 0.0017 * gather;
 				ax += (nvx / n - f.vx) * 0.05; // alignment
 				ay += (nvy / n - f.vy) * 0.05;
 			}
-			// a weak lean toward this fish's own drifting attractor — coverage, not a leash
+			// The homeward lean is the real gathering force — also gated, so the groups only migrate to
+			// their own patch of water once the school has begun to form.
 			const at = attractor(f.k ?? 0, frame * 16.7);
-			ax += (at.x - f.x) * 0.00055;
-			ay += (at.y - f.y) * 0.00055;
+			ax += (at.x - f.x) * 0.00055 * gather;
+			ay += (at.y - f.y) * 0.00055 * gather;
 			// flash expansion: flee the shark, harder the closer it is
 			const sdx = f.x - shark.x;
 			const sdy = f.y - shark.y;

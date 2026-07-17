@@ -1,11 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import {
-	shell,
-	SIDEBAR_STORAGE_KEY,
-	SIDEBAR_MIN,
-	SIDEBAR_MAX,
-	SIDEBAR_DEFAULT
-} from './shell.svelte';
+import { shell, SIDEBAR_STORAGE_KEY, SIDEBAR_WIDTH } from './shell.svelte';
 import { stubViewport } from './testkit';
 
 /**
@@ -26,26 +20,9 @@ describe('the docked sidebar', () => {
 		viewport = stubViewport(false);
 	});
 
-	it('opens at the default width', () => {
+	it('opens expanded, at the one fixed width', () => {
 		expect(shell.open).toBe(true);
-		expect(shell.width).toBe(SIDEBAR_DEFAULT);
-	});
-
-	/**
-	 * The two preferences are saved by two different paths, so they are tested by two different
-	 * tests. Asserting them together passed even with the save torn out of `setWidth` — `toggle()`
-	 * persists BOTH fields, so it was quietly saving the width the other path had stopped saving. A
-	 * user who only ever drags the divider would have lost it on every reload, and the test would
-	 * have gone on being green.
-	 */
-	it('remembers a width across a reload — from a drag alone', () => {
-		shell.setWidth(340);
-
-		// what a fresh page load does with what the last one left behind
-		viewport.restore();
-		viewport = stubViewport(false);
-
-		expect(shell.width).toBe(340);
+		expect(shell.width).toBe(SIDEBAR_WIDTH);
 	});
 
 	it('remembers a collapse across a reload — from a collapse alone', () => {
@@ -58,22 +35,13 @@ describe('the docked sidebar', () => {
 		expect(shell.open).toBe(false);
 	});
 
-	it('clamps a width to what the panel can actually be', () => {
-		shell.setWidth(9000);
-		expect(shell.width).toBe(SIDEBAR_MAX);
-
-		shell.setWidth(10);
-		expect(shell.width).toBe(SIDEBAR_MIN);
-	});
-
 	it('survives a corrupt saved entry rather than opening broken', () => {
 		localStorage.setItem(SIDEBAR_STORAGE_KEY, '{ not json');
 
 		viewport.restore();
 		viewport = stubViewport(false);
 
-		expect(shell.width).toBe(SIDEBAR_DEFAULT);
-		expect(shell.open).toBe(true);
+		expect(shell.open).toBe(true); // opens expanded, not collapsed on garbage
 	});
 });
 
