@@ -18,6 +18,21 @@ function run(seconds: number) {
 }
 
 /**
+ * init, then STOP the real loop — this spec drives time itself, via run().
+ *
+ * bench.init starts the live timer chain, so without this the sim has TWO drivers: the manual
+ * run() and the background loop, which under CI starvation fires late and catches up in big
+ * gulps of elapsed time. A "no generation has ended yet" world arrived at gen 1 that way and
+ * blocked a deploy (after flaking twice locally — always in the full parallel suite, never in
+ * isolation). playback.stop() kills the timer but leaves `running` true, so the manual tick
+ * still steps; only the racing driver is gone.
+ */
+function initSolo(init: Parameters<typeof bench.init>[0]) {
+	bench.init(init);
+	bench.playback.stop();
+}
+
+/**
  * A bench with one world, evolved far enough to HAVE a champion to exhibit.
  *
  * Evolved by DRIVING THE TICK, not by asking for a prewarm: a prewarm is a turbo burst that runs
@@ -26,7 +41,7 @@ function run(seconds: number) {
  * A generation in these worlds is 30 sim-seconds.
  */
 function benchWithChampion() {
-	bench.init({ configs: [DEFAULT_WORLDS[2]], prewarmGenerations: 0, maxGenerations: 0 });
+	initSolo({ configs: [DEFAULT_WORLDS[2]], prewarmGenerations: 0, maxGenerations: 0 });
 	run(35);
 	const entry = bench.worlds[0];
 	expect(entry.world.champion).not.toBeNull(); // …or there is nothing under test
@@ -113,7 +128,7 @@ describe('the champion exhibit, in the store', () => {
 	});
 
 	it('refuses to exhibit a world that has no champion yet', () => {
-		bench.init({ configs: [DEFAULT_WORLDS[0]], prewarmGenerations: 0, maxGenerations: 0 });
+		initSolo({ configs: [DEFAULT_WORLDS[0]], prewarmGenerations: 0, maxGenerations: 0 });
 		const entry = bench.worlds[0];
 		expect(entry.world.champion).toBeNull(); // generation zero: nothing has been judged
 
@@ -133,7 +148,7 @@ describe('the champion exhibit, in the store', () => {
 		 * nowhere near long enough to finish a generation (they are 30 sim-seconds) — and demand the
 		 * exhibit still refuses.
 		 */
-		bench.init({ configs: [DEFAULT_WORLDS[2]], prewarmGenerations: 0, maxGenerations: 0 });
+		initSolo({ configs: [DEFAULT_WORLDS[2]], prewarmGenerations: 0, maxGenerations: 0 });
 		const entry = bench.worlds[0];
 
 		run(5);
@@ -161,7 +176,7 @@ describe('the champion exhibit, in the store', () => {
 		const staleId = first.id;
 
 		bench.destroy();
-		bench.init({ configs: [DEFAULT_WORLDS[2]], prewarmGenerations: 0, maxGenerations: 0 });
+		initSolo({ configs: [DEFAULT_WORLDS[2]], prewarmGenerations: 0, maxGenerations: 0 });
 
 		const fresh = bench.worlds[0];
 		expect(fresh.id).toBe(staleId); // the same id — which is exactly why this can go wrong
@@ -170,7 +185,7 @@ describe('the champion exhibit, in the store', () => {
 	});
 
 	it('recovers the moment the world crowns its first brain', () => {
-		bench.init({ configs: [DEFAULT_WORLDS[2]], prewarmGenerations: 0, maxGenerations: 0 });
+		initSolo({ configs: [DEFAULT_WORLDS[2]], prewarmGenerations: 0, maxGenerations: 0 });
 		const entry = bench.worlds[0];
 
 		expect(bench.setExhibit(entry.id, 'live')).toBe(false); // nothing judged yet
