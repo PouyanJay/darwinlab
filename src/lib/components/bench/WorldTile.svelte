@@ -60,18 +60,9 @@
 	const trained = $derived(entry.stats.deployed);
 
 	const status = $derived(trained ? 'trained' : bench.running ? 'evolving' : 'paused');
-
-	// Whether THIS world is the one blown up into the focus view. The header's expand control is the
-	// same button in both places: on the canvas it focuses, on the focused detail it collapses back.
-	const focused = $derived(bench.focusedId === entry.id);
 </script>
 
-<section
-	class="tile"
-	class:focused
-	style:--tile-accent={config.accent}
-	aria-label="world {index}: {config.name}"
->
+<section class="tile" style:--tile-accent={config.accent} aria-label="world {index}: {config.name}">
 	<!-- The header is the node's title bar on the lineage canvas. The grip at its start is the DRAG
 	     HANDLE — grab it (or any empty header space) and the whole world slides; the canvas reads the
 	     data-drag-handle attribute to know a press here means "move the node", not "pan the plane". The
@@ -120,17 +111,17 @@
 			>
 				<Icon name="duplicate" size={15} />
 			</Button>
-			<!-- Expand blows this world up to fill the pane, the rest becoming a rail; on the focused
-			     world the same control collapses back to the canvas. A VIEW action, so it sits with the
-			     other view controls, just before the destructive remove. -->
+			<!-- Expand blows this world up into the workbench, the rest becoming a rail. A VIEW action, so
+			     it sits with the other view controls, just before the destructive remove. (The way back is
+			     the collapse control in the workbench's own header.) -->
 			<Button
 				variant="icon"
 				size="sm"
-				title={focused ? 'collapse back to the bench' : 'expand this world'}
-				aria-label={focused ? 'collapse world' : 'expand world'}
-				onclick={() => (focused ? bench.unfocus() : bench.focus(entry.id))}
+				title="expand this world"
+				aria-label="expand world"
+				onclick={() => bench.focus(entry.id)}
 			>
-				<Icon name={focused ? 'collapse' : 'expand'} size={15} />
+				<Icon name="expand" size={15} />
 			</Button>
 			<Button
 				variant="icon"
@@ -170,12 +161,8 @@
 	<!-- The tank keeps the WORLD's shape (640×400, or whatever this one was resized to). It used to be
 	     a fixed 300px-tall box that the water was letterboxed inside, so a wide card painted a margin
 	     of dead pixels around the experiment. -->
-	<!-- On the canvas the tank keeps the world's own shape. Expanded, it instead FILLS the height the
-	     card has left after its controls, so the whole world fits the screen without scrolling — the
-	     renderer fit-scales and centres the water inside whatever box it is given, and `big` fills the
-	     surround with a backdrop so it reads as a stage rather than letterbox bars. -->
 	<div class="tank" style:--tank-aspect="{config.bw} / {config.bh}">
-		<Tank {entry} big={focused} onselect={(picked) => bench.select(entry.id, picked)} />
+		<Tank {entry} onselect={(picked) => bench.select(entry.id, picked)} />
 	</div>
 
 	<!-- Champion clones: put ONE brain in the water and the strategy stops being a smear. -->
@@ -260,36 +247,6 @@
 	.tile:hover {
 		transform: translateY(-2px);
 		box-shadow: var(--shadow-lift);
-	}
-
-	/* Blown up in the focus view it is not a draggable node: no lift on hover, no grab handle, and the
-	   header is just a header. */
-	.tile.focused,
-	.tile.focused:hover {
-		transform: none;
-		box-shadow: var(--shadow);
-	}
-
-	.tile.focused header {
-		cursor: default;
-	}
-
-	.tile.focused .grip {
-		display: none;
-	}
-
-	/* Expanded, the card fills the pane and the TANK takes all the height the chrome leaves — flex-grow
-	   from a zero basis, so its own aspect ratio no longer sets the height and the world can never push
-	   the controls off the bottom of the screen. It stops shrinking at a floor, below which the pane
-	   scrolls (only ever reached with Analysis open). */
-	.tile.focused {
-		min-height: 100%;
-	}
-
-	.tile.focused .tank {
-		flex: 1 1 0;
-		min-height: 240px;
-		aspect-ratio: auto;
 	}
 
 	.status {

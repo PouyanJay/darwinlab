@@ -9,7 +9,7 @@
   overflow, so a bench of any size just keeps going rather than being capped at what fits.
 -->
 <script lang="ts">
-	import WorldTile from './WorldTile.svelte';
+	import Workbench from './Workbench.svelte';
 	import WorldRailCard from './WorldRailCard.svelte';
 	import Icon from '../common/Icon.svelte';
 	import { bench } from '$lib/state';
@@ -60,14 +60,12 @@
 			</div>
 		</aside>
 
-		<!-- The focused world, full size. Keyed on its id so switching worlds remounts cleanly — a fresh
-		     tank painter, not the previous world's canvas re-labelled. -->
+		<!-- The focused world as a workbench. Keyed on its id so switching worlds remounts cleanly — a
+		     fresh tank painter and a fresh champion selection, not the previous world's re-labelled. -->
 		<div class="detail">
-			<div class="detail-inner">
-				{#key focused.id}
-					<WorldTile entry={focused} index={focusedIndex + 1} />
-				{/key}
-			</div>
+			{#key focused.id}
+				<Workbench entry={focused} index={focusedIndex + 1} />
+			{/key}
 		</div>
 	</div>
 {/if}
@@ -179,22 +177,12 @@
 		outline-offset: var(--focus-offset);
 	}
 
+	/* The workbench manages its own two-column scroll (a scrolling bench, an independently scrolling
+	   mind), so the detail just gives it the pane's full, bounded height to fill. */
 	.detail {
 		min-height: 0;
-		overflow-y: auto;
-		padding-bottom: var(--sp-6);
-	}
-
-	/* The expanded world takes the whole width the rail leaves — the majority of the pane, left to
-	   right. It is the thing you are here to look at; capping it to a column of dead space either side
-	   was the wrong call. Full height too, so the focused card can fill the pane and fit the screen. */
-	.detail-inner {
-		width: 100%;
-		/* A DEFINITE height (the pane is bounded), so the focused card's min-height:100% and the tank's
-		   flex-grow actually resolve against it — with only min-height here they had nothing definite to
-		   measure, and the tank collapsed to its floor. Taller content (Analysis open) overflows into
-		   the scrolling .detail. */
 		height: 100%;
+		overflow: hidden;
 	}
 
 	/* On a phone there is no room for a side rail: stack it above the detail as a horizontal strip. */

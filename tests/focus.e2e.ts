@@ -11,7 +11,7 @@ import { gotoApp, waitForPrewarm } from './helpers';
  */
 
 const focusView = (page: Page) => page.locator('.focus');
-const detail = (page: Page) => page.locator('.detail-inner section.tile');
+const detail = (page: Page) => page.locator('.workbench');
 const tile = (page: Page, label: string) => page.locator(`section.tile[aria-label="${label}"]`);
 
 test.beforeEach(async ({ page }) => {
@@ -30,6 +30,9 @@ test('expanding a world opens the focus view; collapsing returns to the canvas',
 	await expect(focusView(page)).toBeVisible();
 	await expect(page.getByRole('button', { name: /^focus world/ })).toHaveCount(5);
 	await expect(detail(page)).toHaveAttribute('aria-label', 'world 3: Direction');
+
+	// The champion's mind docks open in the workbench — the whole reason to expand a world.
+	await expect(detail(page).getByRole('dialog', { name: 'Fish mind, live' })).toBeVisible();
 
 	// The focused card's expand control has become a collapse — press it, and the canvas is back.
 	await detail(page).getByRole('button', { name: 'collapse world' }).click();

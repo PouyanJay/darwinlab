@@ -27,6 +27,12 @@
 		/** A pulsing dot next to the title — "this is live, not a snapshot". */
 		live?: boolean;
 		/**
+		 * DOCKED: render in the normal flow (a column of the workbench) instead of floating fixed on
+		 * the right. Same panel, same content, no overlay chrome — no fixed inset, no slide-in, no
+		 * focus-takeover (it is always present, so opening it is not an event to move focus for).
+		 */
+		docked?: boolean;
+		/**
 		 * Whether opening moves focus into the panel (and returns it on close). The default; the
 		 * caller passes false when the open is a SIDE EFFECT of something mid-flight — the tank's
 		 * keyboard walk opens the inspector, and stealing focus would end the walk one step in.
@@ -42,12 +48,16 @@
 		children,
 		subtitle,
 		live = false,
-		takeFocus = true
+		takeFocus = true,
+		docked = false
 	}: Props = $props();
 
 	let panel = $state<HTMLElement>();
 
 	$effect(() => {
+		// A docked panel is part of the page, not an overlay that arrives — it never takes focus, and
+		// Esc is not its to close (it has no "closed" state to return to).
+		if (docked) return;
 		if (!open || !panel) return;
 		// untracked: the decision is made when the drawer OPENS. If the selection later changes
 		// kind while it stays open, re-running this would yank focus back to a stale invoker.
@@ -67,6 +77,7 @@
 	});
 
 	function onkeydown(event: KeyboardEvent) {
+		if (docked) return; // a docked panel does not answer Esc — there is nothing to close
 		if (event.key !== 'Escape' || !open) return;
 		// A modal on top owns Esc; it will close itself and this drawer must survive that keypress.
 		if (document.querySelector('dialog[open]')) return;
@@ -88,6 +99,7 @@
 		aria-label={title}
 		tabindex="-1"
 		class="drawer"
+		class:docked
 	>
 		<!-- a div, not a <header>: an html header outside main/section is a BANNER landmark, and the
 		     page already has one — the top bar. (axe: landmark-no-duplicate-banner) -->
@@ -122,6 +134,21 @@
 		backdrop-filter: blur(var(--blur-glass));
 		box-shadow: var(--shadow-drawer);
 		animation: slide-in-right var(--dur-enter) var(--ease) both;
+	}
+
+	/* DOCKED: part of the workbench flow, not an overlay. It fills the column it is given and scrolls
+	   inside it; no fixed inset, no glass/blur, no slide-in — it was always here. */
+	.drawer.docked {
+		position: static;
+		inset: auto;
+		width: 100%;
+		max-width: none;
+		height: 100%;
+		z-index: auto;
+		background: var(--panel);
+		backdrop-filter: none;
+		box-shadow: none;
+		animation: none;
 	}
 
 	/* On a phone the inset side panel becomes a full-width overlay rising from the bottom edge —

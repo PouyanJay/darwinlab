@@ -148,7 +148,9 @@
 		<ConditionsModal entry={editing} onclose={() => bench.closeConditions()} />
 	{/if}
 
-	{#if bench.selection && inspecting}
+	<!-- Not while a world is expanded: the workbench docks its own copy of the inspector, and a
+	     floating overlay on top of it would be the same mind twice. -->
+	{#if bench.selection && inspecting && !focusing}
 		<BrainInspector selection={bench.selection} entry={inspecting} />
 	{/if}
 

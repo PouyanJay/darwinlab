@@ -24,9 +24,11 @@
 	interface Props {
 		selection: Selection;
 		entry: WorldEntry;
+		/** Docked into the workbench column instead of floating as an overlay drawer. */
+		docked?: boolean;
 	}
 
-	let { selection, entry }: Props = $props();
+	let { selection, entry, docked = false }: Props = $props();
 
 	const fish = $derived(selection.type === 'fish');
 	const title = $derived(fish ? 'Fish mind, live' : 'Shark, no brain');
@@ -43,6 +45,7 @@
      or the ★ Champion button still moves the reader into the panel, announcement and all. -->
 <Drawer
 	open
+	{docked}
 	live={fish}
 	{title}
 	{subtitle}
