@@ -75,10 +75,19 @@
 <style>
 	.focus {
 		display: grid;
-		grid-template-columns: 272px minmax(0, 1fr);
+		grid-template-columns: 256px minmax(0, 1fr);
+		/* The single row is BOUNDED to the pane, not auto-sized to its tallest child. Without this the
+		   row grew to the full height of a 12-card rail (~2900px) and the rail then had no overflow to
+		   scroll — it just ran off the bottom of the screen. minmax(0,1fr) pins the row to the viewport
+		   so the rail scrolls its own overflow instead. */
+		grid-template-rows: minmax(0, 1fr);
 		gap: var(--sp-6);
 		width: 100%;
 		height: 100%;
+		/* `.focus` is a flex item of <main>; without min-height:0 the flexbox min-height:auto rule lets
+		   it grow to its tallest child (the full rail), so height:100% never bit and the rail could not
+		   scroll. This is what actually bounds it to the pane. */
+		min-height: 0;
 		padding: var(--sp-6) var(--sp-7);
 		overflow: hidden;
 	}
@@ -176,11 +185,11 @@
 		padding-bottom: var(--sp-6);
 	}
 
-	/* Cap the blown-up card so the tank does not become a wall on a wide monitor, and centre it in the
-	   room the rail leaves. */
+	/* The expanded world takes the whole width the rail leaves — the majority of the pane, left to
+	   right. It is the thing you are here to look at; capping it to a column of dead space either side
+	   was the wrong call. */
 	.detail-inner {
-		max-width: 780px;
-		margin: 0 auto;
+		width: 100%;
 	}
 
 	/* On a phone there is no room for a side rail: stack it above the detail as a horizontal strip. */

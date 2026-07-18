@@ -174,6 +174,11 @@
 
 	.shell {
 		flex: 1;
+		/* Bound the row to the viewport: without this the flexbox min-height:auto rule lets a tall child
+		   (the focus view's rail, ~2900px with a big bench) push .shell past the screen instead of the
+		   child scrolling inside it. The pannable canvas never exposed this — its content height is
+		   fixed — but the scrolling rail does. */
+		min-height: 0;
 		display: flex;
 		align-items: stretch;
 	}
