@@ -187,9 +187,14 @@
 
 	/* The expanded world takes the whole width the rail leaves — the majority of the pane, left to
 	   right. It is the thing you are here to look at; capping it to a column of dead space either side
-	   was the wrong call. */
+	   was the wrong call. Full height too, so the focused card can fill the pane and fit the screen. */
 	.detail-inner {
 		width: 100%;
+		/* A DEFINITE height (the pane is bounded), so the focused card's min-height:100% and the tank's
+		   flex-grow actually resolve against it — with only min-height here they had nothing definite to
+		   measure, and the tank collapsed to its floor. Taller content (Analysis open) overflows into
+		   the scrolling .detail. */
+		height: 100%;
 	}
 
 	/* On a phone there is no room for a side rail: stack it above the detail as a horizontal strip. */

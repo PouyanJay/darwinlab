@@ -170,8 +170,12 @@
 	<!-- The tank keeps the WORLD's shape (640×400, or whatever this one was resized to). It used to be
 	     a fixed 300px-tall box that the water was letterboxed inside, so a wide card painted a margin
 	     of dead pixels around the experiment. -->
+	<!-- On the canvas the tank keeps the world's own shape. Expanded, it instead FILLS the height the
+	     card has left after its controls, so the whole world fits the screen without scrolling — the
+	     renderer fit-scales and centres the water inside whatever box it is given, and `big` fills the
+	     surround with a backdrop so it reads as a stage rather than letterbox bars. -->
 	<div class="tank" style:--tank-aspect="{config.bw} / {config.bh}">
-		<Tank {entry} onselect={(picked) => bench.select(entry.id, picked)} />
+		<Tank {entry} big={focused} onselect={(picked) => bench.select(entry.id, picked)} />
 	</div>
 
 	<!-- Champion clones: put ONE brain in the water and the strategy stops being a smear. -->
@@ -272,6 +276,20 @@
 
 	.tile.focused .grip {
 		display: none;
+	}
+
+	/* Expanded, the card fills the pane and the TANK takes all the height the chrome leaves — flex-grow
+	   from a zero basis, so its own aspect ratio no longer sets the height and the world can never push
+	   the controls off the bottom of the screen. It stops shrinking at a floor, below which the pane
+	   scrolls (only ever reached with Analysis open). */
+	.tile.focused {
+		min-height: 100%;
+	}
+
+	.tile.focused .tank {
+		flex: 1 1 0;
+		min-height: 240px;
+		aspect-ratio: auto;
 	}
 
 	.status {
