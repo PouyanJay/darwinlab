@@ -145,45 +145,54 @@
 			</div>
 		</div>
 
-		<!-- The stage: a shrunk tank, sized to the world's shape, capped so a wide monitor does not turn
-		     it back into a wall. -->
-		<div class="stage" style:--tank-aspect="{config.bw} / {config.bh}">
-			<Tank {entry} big onselect={(picked) => bench.select(entry.id, picked)} />
-		</div>
-
-		{#if bench.lens === 'flee'}
-			<LensStrip {entry} />
-		{/if}
-
-		<!-- Evidence: the graphs, on their own, separated from the tools below. -->
-		<section class="panel evidence" aria-label="evidence">
-			<h2 class="panel-title">Evidence</h2>
-			<TileStats {entry} />
-		</section>
-
-		<!-- Champion clones + the world's primary actions. -->
-		<section class="panel clones">
-			<ExhibitControl {entry} />
-			<div class="toolbar">
-				<Button
-					size="sm"
-					class="champion"
-					title="inspect the best brain alive"
-					onclick={() => bench.selectChampion(entry.id)}
-				>
-					<Icon name="star" size={13} />
-					<span>Champion</span>
-				</Button>
-				<Button size="sm" class="branch-btn" onclick={() => bench.branchWorld(entry.id)}>
-					<Icon name="branch" size={13} />
-					<span>Branch</span>
-				</Button>
-				<Button size="sm" onclick={() => bench.openConditions(entry.id)}>
-					<Icon name="sliders" size={13} />
-					<span>Conditions</span>
-				</Button>
+		<!--
+			The board: the stage and its evidence, side by side. The tank is sized to the WATER's own
+			shape (aspect-ratio, filled by width) so the water fills the canvas edge to edge — no wide
+			bands of dead black around a small world — and the graphs and clone controls take the room
+			beside it rather than a full-width stretch below.
+		-->
+		<div class="board">
+			<div class="stage-col">
+				<div class="stage" style:--tank-aspect="{config.bw} / {config.bh}">
+					<Tank {entry} big onselect={(picked) => bench.select(entry.id, picked)} />
+				</div>
+				{#if bench.lens === 'flee'}
+					<LensStrip {entry} />
+				{/if}
 			</div>
-		</section>
+
+			<div class="board-side">
+				<!-- Evidence: the graphs, on their own, separated from the tools below. -->
+				<section class="panel evidence" aria-label="evidence">
+					<h2 class="panel-title">Evidence</h2>
+					<TileStats {entry} />
+				</section>
+
+				<!-- Champion clones + the world's primary actions. -->
+				<section class="panel clones">
+					<ExhibitControl {entry} />
+					<div class="toolbar">
+						<Button
+							size="sm"
+							class="champion"
+							title="inspect the best brain alive"
+							onclick={() => bench.selectChampion(entry.id)}
+						>
+							<Icon name="star" size={13} />
+							<span>Champion</span>
+						</Button>
+						<Button size="sm" class="branch-btn" onclick={() => bench.branchWorld(entry.id)}>
+							<Icon name="branch" size={13} />
+							<span>Branch</span>
+						</Button>
+						<Button size="sm" onclick={() => bench.openConditions(entry.id)}>
+							<Icon name="sliders" size={13} />
+							<span>Conditions</span>
+						</Button>
+					</div>
+				</section>
+			</div>
+		</div>
 
 		<!-- The shelf: the things you RUN, each its own panel, side by side. -->
 		<div class="shelf">
@@ -211,10 +220,14 @@
 <style>
 	.workbench {
 		display: grid;
-		grid-template-columns: minmax(0, 1fr) 340px;
+		grid-template-columns: minmax(0, 1fr) 360px;
 		gap: var(--sp-6);
 		height: 100%;
 		min-height: 0;
+		/* Capped and centred so an ultra-wide monitor does not stretch the bench into a field of empty
+		   space — a workbench has a comfortable working width, past which more pixels are margin. */
+		max-width: 1680px;
+		margin: 0 auto;
 	}
 
 	/* The bench proper scrolls: the shelf lives at the bottom, reached by scrolling past the stage. */
@@ -281,12 +294,42 @@
 		margin-left: 5px;
 	}
 
+	/* The stage and its evidence share the top of the bench. The tank column leads; the evidence and
+	   clone controls take the room beside it. */
+	/* auto-fit, NOT a fixed 2-col: the board's real width is what the rail and the mind leave, which a
+	   viewport media query cannot see — at 1440 that is ~460px, and a fixed second column squeezed the
+	   tank to a sliver. This collapses to a single column (tank, then evidence beneath) whenever the
+	   board itself is too narrow for two, whatever the viewport says. */
+	.board {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+		gap: var(--sp-5);
+		align-items: start;
+	}
+
+	.stage-col {
+		display: flex;
+		flex-direction: column;
+		gap: var(--sp-3);
+		min-width: 0;
+	}
+
+	/* Sized to the WATER's own aspect and filled by width, so the water reaches every edge of the
+	   canvas — no max-height letterboxing a small world inside a wide black box. Its size is set by the
+	   board column, not by stretching to the whole pane. */
 	.stage {
 		aspect-ratio: var(--tank-aspect);
-		max-height: 46vh;
+		width: 100%;
 		border-radius: var(--radius-card);
 		overflow: hidden;
 		background: var(--tank, #000);
+	}
+
+	.board-side {
+		display: flex;
+		flex-direction: column;
+		gap: var(--sp-5);
+		min-width: 0;
 	}
 
 	/* A titled surface — the shared shape of every panel on the bench. */
@@ -378,7 +421,8 @@
 		line-height: var(--leading-body);
 	}
 
-	/* On a narrow bench the mind cannot keep a side of its own: it drops below the stage, full width. */
+	/* On a narrow bench the mind cannot keep a side of its own: it drops below the stage, full width.
+	   (The board's own columns are handled by auto-fit above, independent of the viewport.) */
 	@media (max-width: 1000px) {
 		.workbench {
 			grid-template-columns: 1fr;
