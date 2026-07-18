@@ -32,6 +32,8 @@
 		| 'branch'
 		| 'minus'
 		| 'crosshair'
+		| 'expand'
+		| 'collapse'
 		| 'grip';
 
 	interface Props {
@@ -125,6 +127,12 @@
 	{:else if name === 'crosshair'}
 		<circle cx="12" cy="12" r="7.5" />
 		<path d="M12 1.5v3.5M12 19v3.5M1.5 12h3.5M19 12h3.5" />
+	{:else if name === 'expand'}
+		<!-- blow a world up to fill the pane: four corner brackets opening outward -->
+		<path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5" />
+	{:else if name === 'collapse'}
+		<!-- drop the focused world back to the bench: the same brackets, closing inward -->
+		<path d="M9 4v5H4M20 9h-5V4M15 20v-5h5M4 15h5v5" />
 	{:else if name === 'grip'}
 		<!-- a drag handle: two columns of dots, the universal "grab me" affordance -->
 		<g fill="currentColor" stroke="none">

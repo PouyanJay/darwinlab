@@ -146,6 +146,12 @@ class BenchStore {
 	selection = $state.raw<Selection | null>(null);
 	/** The world whose Conditions dialog is open, or null. One dialog, like one inspector. */
 	conditionsWorldId = $state<string | null>(null);
+	/**
+	 * The world blown up into the FOCUS view, or null for the pannable lineage canvas. Like the
+	 * inspector and the dialog, it is a pointer into the roster and cannot outlive what it points at:
+	 * removing (or reseeding away) the focused world drops the bench back to the canvas.
+	 */
+	focusedId = $state<string | null>(null);
 	/** What the selected fish is thinking, refreshed every frame while a fish is selected. */
 	readonly mind = new MindView();
 	/** The selected fish's escape map — its policy over adversary positions. Memoised; recomputes
@@ -285,6 +291,7 @@ class BenchStore {
 
 	init({ configs, prewarmGenerations = 0, maxGenerations = 0, rng, seed = null }: BenchInit): void {
 		this.setMaxGenerations(maxGenerations); // the same door every other caller uses, clamp and all
+		this.focusedId = null; // a relaunch (reseed) points nowhere until a world is expanded again
 		this.#seed = seed;
 		this.#rng = rng ?? (seed === null ? undefined : seededRng(seed));
 		this.#baselines.clear();
@@ -310,6 +317,7 @@ class BenchStore {
 		this.generationsEvolved = 0;
 		this.selection = null;
 		this.conditionsWorldId = null;
+		this.focusedId = null;
 		this.#rng = undefined;
 		this.#maxGenerations = 0;
 		this.#detail = 'cinematic';
@@ -716,6 +724,7 @@ class BenchStore {
 		// next frame, or a component could render one frame against a world the bench no longer has.
 		if (this.selection?.worldId === id) this.selection = null;
 		if (this.conditionsWorldId === id) this.conditionsWorldId = null;
+		if (this.focusedId === id) this.focusedId = null; // the focused world just left the water
 	}
 
 	/** Restart evolution from random brains. */
@@ -856,6 +865,18 @@ class BenchStore {
 
 	closeConditions(): void {
 		this.conditionsWorldId = null;
+	}
+
+	// ---- the focus view ----
+
+	/** Blow one world up to fill the pane, dropping the rest into the rail. Asserts it exists. */
+	focus(id: string): void {
+		this.focusedId = this.entry(id).id;
+	}
+
+	/** Drop the focused world back onto the pannable canvas. */
+	unfocus(): void {
+		this.focusedId = null;
 	}
 
 	/**

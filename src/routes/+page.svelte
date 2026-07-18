@@ -15,6 +15,7 @@
 	import Intro from '$lib/components/intro/Intro.svelte';
 	import FirstRunHint from '$lib/components/bench/FirstRunHint.svelte';
 	import LineageCanvas from '$lib/components/bench/LineageCanvas.svelte';
+	import FocusView from '$lib/components/bench/FocusView.svelte';
 	import ConditionsModal from '$lib/components/conditions/ConditionsModal.svelte';
 	import BrainInspector from '$lib/components/inspector/BrainInspector.svelte';
 	import StoryMode from '$lib/components/story/StoryMode.svelte';
@@ -81,6 +82,10 @@
 	// Likewise the inspector: one selection across the bench, and it goes when its world does.
 	const inspecting = $derived(bench.selection ? bench.find(bench.selection.worldId) : undefined);
 
+	// The focus view takes over the bench when a world is expanded — but only while that world still
+	// exists. A focusedId left pointing at a removed world falls straight back to the canvas.
+	const focusing = $derived(bench.focusedId ? bench.find(bench.focusedId) : undefined);
+
 	/**
 	 * Space plays/pauses — but ONLY when it isn't already the focused control's key.
 	 *
@@ -125,10 +130,16 @@
 	<div class="shell">
 		<Sidebar onaddworld={addWorld} onplaystory={() => bench.playStory()} />
 
-		<!-- The bench IS the canvas: the family tree takes the full height under the top bar. -->
+		<!-- The bench IS the canvas: the family tree takes the full height under the top bar — unless a
+		     world has been expanded, when the focus view (one world large + a rail of the rest) takes
+		     its place. -->
 		<div class="bench">
 			<main>
-				<LineageCanvas onaddworld={addWorld} />
+				{#if focusing}
+					<FocusView onaddworld={addWorld} />
+				{:else}
+					<LineageCanvas onaddworld={addWorld} />
+				{/if}
 			</main>
 		</div>
 	</div>
