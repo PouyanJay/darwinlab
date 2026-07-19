@@ -73,7 +73,9 @@
 <style>
 	.focus {
 		display: grid;
-		grid-template-columns: 256px minmax(0, 1fr);
+		/* minmax(0, …) on BOTH tracks — without the 0 minimum a track's min size is its content, and the
+		   rail's fixed-width cards (or a wide workbench) then force the whole grid past the viewport. */
+		grid-template-columns: minmax(0, 256px) minmax(0, 1fr);
 		/* The single row is BOUNDED to the pane, not auto-sized to its tallest child. Without this the
 		   row grew to the full height of a 12-card rail (~2900px) and the rail then had no overflow to
 		   scroll — it just ran off the bottom of the screen. minmax(0,1fr) pins the row to the viewport
@@ -92,6 +94,7 @@
 
 	.rail-wrap {
 		position: relative;
+		min-width: 0;
 		min-height: 0;
 	}
 
@@ -178,18 +181,32 @@
 	}
 
 	/* The workbench manages its own two-column scroll (a scrolling bench, an independently scrolling
-	   mind), so the detail just gives it the pane's full, bounded height to fill. */
+	   mind), so the detail just gives it the pane's full, bounded height to fill. It is also the query
+	   CONTAINER the workbench sizes itself against — so the workbench stacks when the room the rail and
+	   sidebar leave it is narrow, which a viewport media query cannot see. */
 	.detail {
+		min-width: 0;
 		min-height: 0;
 		height: 100%;
 		overflow: hidden;
+		container-type: inline-size;
+		container-name: detail;
 	}
 
-	/* On a phone there is no room for a side rail: stack it above the detail as a horizontal strip. */
+	/*
+		The phone: no room for a side rail, so the whole focus becomes ONE vertically scrolling column —
+		the roster as a horizontal filmstrip on top, the workbench (itself fully stacked) beneath it.
+		The focus scrolls as a page rather than pinning a bounded rail + a bounded detail against a
+		screen that has no height to spare.
+	*/
 	@media (max-width: 720px) {
 		.focus {
-			grid-template-columns: 1fr;
-			grid-template-rows: auto minmax(0, 1fr);
+			grid-template-columns: minmax(0, 1fr);
+			grid-template-rows: auto auto;
+			height: auto;
+			min-height: 100%;
+			overflow-y: auto;
+			overflow-x: hidden;
 			padding: var(--sp-4);
 			gap: var(--sp-4);
 		}
@@ -197,9 +214,11 @@
 		.rail {
 			flex-direction: row;
 			height: auto;
-			max-height: 168px;
+			max-height: none;
 			overflow-x: auto;
 			overflow-y: hidden;
+			padding-right: 0;
+			padding-bottom: 4px;
 		}
 
 		.rail-head {
@@ -210,13 +229,23 @@
 		}
 
 		.rail :global(.card) {
-			width: 190px;
+			width: 168px;
 			flex: none;
+		}
+
+		.add {
+			min-width: 132px;
 		}
 
 		.rail-wrap::before,
 		.rail-wrap::after {
 			display: none;
+		}
+
+		/* The workbench flows to its natural height; the focus column above is what scrolls. */
+		.detail {
+			height: auto;
+			overflow: visible;
 		}
 	}
 </style>

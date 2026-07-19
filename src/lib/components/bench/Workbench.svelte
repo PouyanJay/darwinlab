@@ -218,28 +218,46 @@
 </div>
 
 <style>
+	/*
+		Mobile-first: ONE stacked column — bench, then the mind beneath it — that flows to its natural
+		height (the focus column above is what scrolls). It becomes a two-pane bench (a scrolling bench
+		+ an independently scrolling docked mind) only when its own CONTAINER is wide enough for both,
+		which is a container query, not a viewport one: behind the sidebar and the rail the bench can be
+		narrow on a 1024px screen, and a viewport breakpoint cannot see that.
+	*/
 	.workbench {
 		display: grid;
-		grid-template-columns: minmax(0, 1fr) 360px;
-		gap: var(--sp-6);
-		height: 100%;
-		min-height: 0;
-		/* Capped and centred so an ultra-wide monitor does not stretch the bench into a field of empty
-		   space — a workbench has a comfortable working width, past which more pixels are margin. */
-		max-width: 1680px;
-		margin: 0 auto;
+		grid-template-columns: minmax(0, 1fr);
+		gap: var(--sp-5);
+		min-width: 0;
 	}
 
-	/* The bench proper scrolls: the shelf lives at the bottom, reached by scrolling past the stage. */
 	.main {
 		min-width: 0;
-		min-height: 0;
-		overflow-y: auto;
 		display: flex;
 		flex-direction: column;
 		gap: var(--sp-5);
-		padding-right: 4px;
-		padding-bottom: var(--sp-6);
+	}
+
+	@container detail (min-width: 820px) {
+		.workbench {
+			grid-template-columns: minmax(0, 1fr) 360px;
+			gap: var(--sp-6);
+			height: 100%;
+			min-height: 0;
+			/* Capped and centred so an ultra-wide monitor does not stretch the bench into a field of
+			   empty space — a workbench has a comfortable working width, past which more pixels are margin. */
+			max-width: 1680px;
+			margin: 0 auto;
+		}
+
+		/* The bench proper scrolls: the shelf lives at the bottom, reached by scrolling past the stage. */
+		.main {
+			min-height: 0;
+			overflow-y: auto;
+			padding-right: 4px;
+			padding-bottom: var(--sp-6);
+		}
 	}
 
 	header {
@@ -302,7 +320,9 @@
 	   board itself is too narrow for two, whatever the viewport says. */
 	.board {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+		/* min(100%, 340px): a single column may shrink BELOW 340 on a phone rather than forcing the
+		   board past the screen; two columns appear only once there is room for two 340s. */
+		grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
 		gap: var(--sp-5);
 		align-items: start;
 	}
@@ -369,10 +389,11 @@
 		color: var(--gold-ink);
 	}
 
-	/* The service shelf — three tools, equal width, wrapping to a stack when the bench is narrow. */
+	/* The service shelf — three tools, equal width, wrapping to a stack when the bench is narrow (and
+	   collapsing cleanly to one column on a phone via the min(100%, …) floor). */
 	.shelf {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+		grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
 		gap: var(--sp-5);
 	}
 
@@ -384,13 +405,24 @@
 		background: var(--panel);
 	}
 
+	/* Stacked (the default), the mind flows below the bench at its natural height, capped to a reading
+	   column so a wide phone-in-landscape or a narrow laptop does not stretch the escape map into a
+	   billboard. It becomes an independently scrolling side column only in the two-pane layout. */
 	.inspector {
-		min-height: 0;
-		height: 100%;
-		overflow: hidden;
+		min-width: 0;
+		max-width: 480px;
 		border: 1px solid var(--line);
 		border-radius: var(--radius-card);
 		background: var(--panel);
+	}
+
+	@container detail (min-width: 820px) {
+		.inspector {
+			min-height: 0;
+			max-width: none;
+			height: 100%;
+			overflow: hidden;
+		}
 	}
 
 	.mind-empty {
@@ -419,23 +451,5 @@
 		margin: var(--sp-4) 0 0;
 		font-size: var(--fs-sm);
 		line-height: var(--leading-body);
-	}
-
-	/* On a narrow bench the mind cannot keep a side of its own: it drops below the stage, full width.
-	   (The board's own columns are handled by auto-fit above, independent of the viewport.) */
-	@media (max-width: 1000px) {
-		.workbench {
-			grid-template-columns: 1fr;
-			height: auto;
-		}
-
-		.main {
-			overflow-y: visible;
-		}
-
-		.inspector {
-			height: auto;
-			overflow: visible;
-		}
 	}
 </style>
