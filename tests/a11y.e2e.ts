@@ -112,3 +112,14 @@ test('a schooling world scans clean — the school readout and shoal pills are n
 	await expect(page.getByTestId('school-nnd').first()).toBeVisible();
 	expect(await violations(page)).toEqual([]);
 });
+
+test('the Research stage scans clean — the instrument tabs and the Sweep are new surface', async ({
+	page
+}) => {
+	await page
+		.getByRole('radiogroup', { name: 'lab mode' })
+		.getByRole('radio', { name: 'Research' })
+		.click();
+	await page.getByTestId('sweep').waitFor();
+	expect(await violations(page)).toEqual([]);
+});

@@ -1,63 +1,74 @@
 <!--
   The Research stage — the main view while the lab is in Research mode.
 
-  R0 ships the SHELL: the mode switch works, this stage takes the bench, and Studio is untouched
-  behind it. The three instruments (the Sweep, the Ledger, the Atlas) land in later phases; until
-  then this states plainly what Research is for and what is coming, so the mode is honest about being
-  a frame that is not yet furnished rather than pretending to be finished.
-
-  Monochrome on purpose: it matches the platform's plain dark identity (colour belongs to a world's
-  own accent, not to chrome).
+  It hosts the instruments behind a switcher. The Sweep is live; the Ledger and the Atlas are marked
+  "soon" and disabled until their phases land, so the switcher already reads as the home all three
+  will share rather than being rebuilt for each. Monochrome on purpose — colour belongs to a world's
+  own accent, not to chrome.
 -->
 <script lang="ts">
+	import Sweep from './Sweep/Sweep.svelte';
 	import { SCENARIO } from '$lib/lab/scenario';
 
-	// The instruments this stage will hold, in the order they are being built.
-	const INSTRUMENTS = [
-		{
-			name: 'The Sweep',
-			description:
-				'Name the factors and levels; run every combination across seeds and read which knobs move survival.'
-		},
-		{
-			name: 'The Ledger',
-			description:
-				'State a claim; the lab designs the smallest test that could disprove it and records the verdict.'
-		},
-		{
-			name: 'The Atlas',
-			description:
-				'Pick two axes; scatter simulations across the plane and see the survival landscape emerge.'
-		}
+	type Instrument = 'sweep' | 'ledger' | 'atlas';
+
+	const INSTRUMENTS: { key: Instrument; name: string; ready: boolean }[] = [
+		{ key: 'sweep', name: 'The Sweep', ready: true },
+		{ key: 'ledger', name: 'The Ledger', ready: false },
+		{ key: 'atlas', name: 'The Atlas', ready: false }
 	];
+
+	let active = $state<Instrument>('sweep');
+
+	/**
+	 * A single-select tablist: exactly one instrument is active, so ←/→ move the choice among the
+	 * READY tabs (the "soon" ones are disabled and skipped) and focus follows it — the roving-tabindex
+	 * keyboard model the rest of the lab's grouped controls use.
+	 */
+	function move(delta: number) {
+		const ready = INSTRUMENTS.filter((instrument) => instrument.ready).map((i) => i.key);
+		const next = ready[(ready.indexOf(active) + delta + ready.length) % ready.length];
+		active = next;
+		document.getElementById(`rtab-${next}`)?.focus();
+	}
+
+	function onkeydown(event: KeyboardEvent) {
+		if (event.key === 'ArrowRight' || event.key === 'ArrowDown') move(1);
+		else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') move(-1);
+		else return;
+		event.preventDefault();
+	}
 </script>
 
 <div class="research" data-testid="research-stage">
 	<div class="inner">
-		<span class="eyebrow">Research · {SCENARIO.index} · {SCENARIO.name}</span>
-		<h2>Run many simulations. Conclude once.</h2>
-		<p class="lede">
-			Studio shows one world evolving. Research asks the same question across many seeds and
-			conditions until the answer holds or breaks — and keeps the record. The instruments below are
-			being built; the studio keeps running underneath while you work here.
-		</p>
+		<header>
+			<span class="eyebrow">Research · {SCENARIO.index} · {SCENARIO.name}</span>
+			<div class="tabs" role="tablist" aria-label="research instruments">
+				{#each INSTRUMENTS as instrument (instrument.key)}
+					<button
+						id="rtab-{instrument.key}"
+						class="tab"
+						class:active={active === instrument.key}
+						role="tab"
+						aria-selected={active === instrument.key}
+						aria-controls="research-panel"
+						tabindex={active === instrument.key ? 0 : -1}
+						disabled={!instrument.ready}
+						onclick={() => (active = instrument.key)}
+						{onkeydown}
+					>
+						{instrument.name}{#if !instrument.ready}<span class="soon">soon</span>{/if}
+					</button>
+				{/each}
+			</div>
+		</header>
 
-		<ul class="instruments">
-			{#each INSTRUMENTS as instrument (instrument.name)}
-				<li class="instrument">
-					<div class="head">
-						<span class="name">{instrument.name}</span>
-						<span class="soon">soon</span>
-					</div>
-					<p>{instrument.description}</p>
-				</li>
-			{/each}
-		</ul>
-
-		<p class="foot">
-			The engine and every measurement are the ones the lab already ships — Research is where they
-			get to run a thousand times.
-		</p>
+		<div id="research-panel" role="tabpanel" aria-labelledby="rtab-{active}">
+			{#if active === 'sweep'}
+				<Sweep />
+			{/if}
+		</div>
 	</div>
 </div>
 
@@ -66,15 +77,23 @@
 		flex: 1;
 		min-height: 0;
 		overflow-y: auto;
-		display: grid;
-		place-items: center;
-		padding: var(--sp-8) var(--sp-7);
+		padding: var(--sp-7) var(--sp-7) var(--sp-8);
 		background: var(--bgfx);
 	}
 
 	.inner {
 		width: 100%;
-		max-width: 760px;
+		max-width: 1000px;
+		margin: 0 auto;
+		display: flex;
+		flex-direction: column;
+		gap: var(--sp-6);
+	}
+
+	header {
+		display: flex;
+		flex-direction: column;
+		gap: var(--sp-4);
 	}
 
 	.eyebrow {
@@ -85,58 +104,49 @@
 		color: var(--ink3);
 	}
 
-	h2 {
-		font-family: var(--font-display);
-		font-size: clamp(24px, 4vw, 34px);
-		font-weight: var(--fw-semibold);
-		letter-spacing: -0.01em;
-		line-height: 1.1;
-		margin: var(--sp-3) 0 var(--sp-4);
-		color: var(--ink);
-		text-wrap: balance;
+	.tabs {
+		display: flex;
+		gap: var(--sp-5);
+		border-bottom: 1px solid var(--line);
 	}
 
-	.lede {
-		margin: 0 0 var(--sp-7);
-		max-width: 62ch;
-		font-size: var(--fs-body);
-		line-height: var(--leading-body);
+	.tab {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		padding: 0 0 var(--sp-3);
+		border: none;
+		border-bottom: 2px solid transparent;
+		margin-bottom: -1px;
+		background: none;
+		color: var(--ink3);
+		font-family: var(--font-display);
+		font-size: var(--fs-title);
+		font-weight: var(--fw-semibold);
+		cursor: pointer;
+		transition: color var(--dur-fast) var(--ease);
+	}
+
+	.tab:hover:not(:disabled) {
 		color: var(--ink2);
 	}
 
-	.instruments {
-		list-style: none;
-		margin: 0;
-		padding: 0;
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
-		gap: var(--sp-4);
-	}
-
-	.instrument {
-		border: 1px solid var(--line);
-		border-radius: var(--radius-card);
-		background: var(--panel);
-		padding: var(--sp-5);
-	}
-
-	.instrument .head {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: var(--sp-3);
-		margin-bottom: var(--sp-3);
-	}
-
-	.instrument .name {
-		font-family: var(--font-display);
-		font-size: var(--fs-name);
-		font-weight: var(--fw-semibold);
+	.tab.active {
 		color: var(--ink);
+		border-bottom-color: var(--ink);
 	}
 
-	.instrument .soon {
-		flex: none;
+	.tab:disabled {
+		cursor: not-allowed;
+	}
+
+	.tab:focus-visible {
+		outline: var(--focus-ring);
+		outline-offset: var(--focus-offset);
+	}
+
+	.soon {
+		font-family: var(--font-display);
 		font-size: var(--fs-eyebrow);
 		font-weight: var(--fw-semibold);
 		letter-spacing: var(--tracking-wide);
@@ -144,20 +154,6 @@
 		color: var(--ink3);
 		border: 1px solid var(--line);
 		border-radius: var(--radius-chip);
-		padding: 2px 7px;
-	}
-
-	.instrument p {
-		margin: 0;
-		font-size: var(--fs-sm);
-		line-height: var(--leading-body);
-		color: var(--ink2);
-	}
-
-	.foot {
-		margin: var(--sp-7) 0 0;
-		font-size: var(--fs-sm);
-		line-height: var(--leading-body);
-		color: var(--ink3);
+		padding: 2px 6px;
 	}
 </style>
