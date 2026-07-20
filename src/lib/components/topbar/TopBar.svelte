@@ -2,9 +2,10 @@
   The top bar: who this is and what it is pointed at. Not what you can do to it.
 
   Every control that DRIVES the bench lives in the sidebar now, so the bar carries only identity (the
-  mark, the wordmark) and the scenario — the lab is the instrument, the scenario is what it is aimed
-  at, and saying both is what keeps this from reading as a fish game with charts on it. Point it at a
-  maze tomorrow and only the binding changes.
+  mark, the wordmark, and the Studio/Research mode — which instrument the lab is presenting) and the
+  scenario — the lab is the instrument, the scenario is what it is aimed at, and saying both is what
+  keeps this from reading as a fish game with charts on it. Point it at a maze tomorrow and only the
+  binding changes.
 
   What is left on the right is the two things that are about the APP rather than the experiment:
   settings, and the theme.
@@ -14,6 +15,7 @@
 	import Chip from '../common/Chip.svelte';
 	import Icon from '../common/Icon.svelte';
 	import LogoMark from './LogoMark.svelte';
+	import ModeSwitch from './ModeSwitch.svelte';
 	import LabSettings from './LabSettings.svelte';
 	import { theme } from '$lib/state';
 	import { SCENARIO } from '$lib/lab/scenario';
@@ -48,6 +50,9 @@
 		<h1 class="wordmark">Darwin Lab</h1>
 		<Chip variant="tag" class="live-tag">agent sandbox</Chip>
 	</div>
+
+	<!-- The top-level lens; see ModeSwitch.svelte for why a mode lives in the top bar. -->
+	<ModeSwitch />
 
 	<span class="divider" aria-hidden="true"></span>
 
