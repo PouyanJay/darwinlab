@@ -29,6 +29,16 @@ describe('app mode', () => {
 		expect(localStorage.getItem(MODE_STORAGE_KEY)).toBe('research');
 	});
 
+	// Leaving Research must persist too — otherwise a store that only bothers writing the non-default
+	// mode would dump a returning user straight back into Research, which is the bug this store exists
+	// to prevent.
+	it('setMode persists studio when switching back from research', () => {
+		app.setMode('research');
+		expect(localStorage.getItem(MODE_STORAGE_KEY)).toBe('research'); // the value we expect to change
+		app.setMode('studio');
+		expect(localStorage.getItem(MODE_STORAGE_KEY)).toBe('studio');
+	});
+
 	it('adopts the saved mode on init', () => {
 		localStorage.setItem(MODE_STORAGE_KEY, 'research');
 		app.init();

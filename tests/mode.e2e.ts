@@ -12,6 +12,18 @@ import { gotoApp, waitForPrewarm } from './helpers';
 const modeGroup = (page: Page) => page.getByRole('radiogroup', { name: 'lab mode' });
 const researchStage = (page: Page) => page.getByTestId('research-stage');
 
+/**
+ * Reload and re-enter the lab by hand. gotoApp's "recenter the tree" step is a Studio control that
+ * would not exist if we reload into Research, so persistence tests re-enter through the intro
+ * directly rather than through the helper.
+ */
+async function reenter(page: Page): Promise<void> {
+	await page.reload();
+	await expect(page.getByTestId('intro')).toBeVisible();
+	await page.keyboard.press('Enter');
+	await expect(page.getByTestId('intro')).toBeHidden();
+}
+
 test('the top bar swaps Studio ⇄ Research, and the stage swaps with it', async ({ page }) => {
 	await gotoApp(page);
 	await waitForPrewarm(page);
@@ -32,21 +44,21 @@ test('the top bar swaps Studio ⇄ Research, and the stage swaps with it', async
 	await expect(page.locator('section.tile').first()).toBeVisible();
 });
 
-test('the mode survives a reload', async ({ page }) => {
+test('the mode survives a reload — into Research, and back out of it', async ({ page }) => {
 	await gotoApp(page);
 	await waitForPrewarm(page);
 
+	// Entering Research and reloading lands us back in Research, not on the canvas.
 	await modeGroup(page).getByRole('radio', { name: 'Research' }).click();
 	await expect(researchStage(page)).toBeVisible();
-
-	// Reload and re-enter the lab the way a user does. gotoApp's "recenter the tree" step is a Studio
-	// control that would not exist here, so this test enters by hand rather than through the helper.
-	await page.reload();
-	await expect(page.getByTestId('intro')).toBeVisible();
-	await page.keyboard.press('Enter');
-	await expect(page.getByTestId('intro')).toBeHidden();
-
-	// We land back in Research, not on the canvas — the choice was remembered.
+	await reenter(page);
 	await expect(researchStage(page)).toBeVisible();
 	await expect(modeGroup(page).getByRole('radio', { name: 'Research' })).toBeChecked();
+
+	// And LEAVING it persists too: back to Studio, reload, and we are not dumped back into Research.
+	await modeGroup(page).getByRole('radio', { name: 'Studio' }).click();
+	await expect(researchStage(page)).toHaveCount(0);
+	await reenter(page);
+	await expect(researchStage(page)).toHaveCount(0);
+	await expect(modeGroup(page).getByRole('radio', { name: 'Studio' })).toBeChecked();
 });
