@@ -12,15 +12,8 @@
  */
 
 import type { WorldConfig } from '../engine';
-import type { EvalRequest, Evaluation } from './evaluator';
+import type { EvalRequest, Evaluation, RunSize } from './evaluator';
 import { contrast, type Contrast } from './stats';
-
-/** How big each cell's run is — the seeds/episodes/bouts that travel together into every job. */
-export interface RunSize {
-	seeds: number;
-	episodes: number;
-	bouts: number;
-}
 
 /** Sensible defaults for a sweep — smaller than a single Evaluate, because there are many cells. */
 export const SWEEP_DEFAULTS = { seeds: 6, episodes: 20, bouts: 4, maxCells: 32 } as const;

@@ -5,6 +5,7 @@
 export * from './app.svelte';
 export * from './research.svelte';
 export * from './sweep.svelte';
+export * from './ledger.svelte';
 export * from './views.svelte';
 export * from './bench.svelte';
 export * from './story.svelte';

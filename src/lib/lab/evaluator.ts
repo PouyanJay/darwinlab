@@ -46,6 +46,13 @@ export interface EvalRequest {
 	bouts?: number;
 }
 
+/** The run size every batched experiment (the Sweep, the Ledger) sets on each of its requests. */
+export interface RunSize {
+	seeds: number;
+	episodes: number;
+	bouts: number;
+}
+
 /** Mean and (population) standard deviation of a sample. */
 function stats(values: number[]): { mean: number; sd: number } {
 	const mean = values.reduce((a, b) => a + b, 0) / values.length;
