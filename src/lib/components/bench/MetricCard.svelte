@@ -1,9 +1,9 @@
 <!--
-  One metric, as its own little chart card — the unit the workbench's metrics grid is built from.
+  One metric, as its own card — the unit the workbench's metrics grid is built from.
 
-  Each card is a single series painted straight from engine data (the same curves the tile packs into
-  one Evidence block, here given room of their own): a title, the current value, a 0–1 axis, and the
-  line. Painted on change, not every frame — a per-generation curve only gains a point at a boundary.
+  Two shapes, one card so the grid stays even: a CHART (a series painted straight from engine data,
+  with a 0–1 axis) when given a `series`, or a plain STAT (a big number) when not. Charts are painted
+  on change, not every frame — a per-generation curve only gains a point at a boundary.
 -->
 <script lang="ts">
 	import Canvas from '../common/Canvas.svelte';
@@ -21,41 +21,46 @@
 
 	interface Props {
 		title: string;
-		/** The current readout shown top-right — already formatted (e.g. "24%", "30.0s"). */
+		/** The readout shown large (stat) or top-right (chart) — already formatted ("24%", "30.0s"). */
 		value: string;
-		/** The series to plot, read live from the raw world (never a reactive copy). */
-		series: () => number[];
-		/** Which painter draws it — drawCurve / drawDecay / drawSchoolCurve. */
-		draw: DrawFn;
 		accent: string;
-		label: string;
-		/** Show a 0–1 axis (the curves are fractions); off for anything not on that scale. */
-		axis?: boolean;
+		/** A dimmed suffix on a stat's number, e.g. the "/ 20" after "15". */
+		sub?: string;
+		/** A stat card when omitted; a chart card when given the series to plot. */
+		series?: () => number[];
+		draw?: DrawFn;
+		label?: string;
+		testid?: string;
 	}
 
-	let { title, value, series, draw, accent, label, axis = true }: Props = $props();
+	let { title, value, accent, sub, series, draw, label, testid }: Props = $props();
 
 	const register = (render: () => void) => bench.painters.add(render);
 
 	const paint = paintOnChange(
-		() => `${series().length}|${series().at(0)}|${series().at(-1)}|${accent}|${theme.name}`,
-		(ctx, w, h) => draw(ctx, w, h, series(), accent, theme.name)
+		() =>
+			series && draw
+				? `${series().length}|${series().at(0)}|${series().at(-1)}|${accent}|${theme.name}`
+				: '',
+		(ctx, w, h) => {
+			if (series && draw) draw(ctx, w, h, series(), accent, theme.name);
+		}
 	);
 </script>
 
-<div class="metric" style:--metric-accent={accent}>
-	<div class="head">
-		<span class="title">{title}</span>
-		<b class="val tabular">{value}</b>
-	</div>
-	<div class="plot">
-		{#if axis}
+<div class="metric" class:stat={!series} style:--metric-accent={accent}>
+	<span class="title">{title}</span>
+	{#if series && draw}
+		<b class="val tabular" data-testid={testid}>{value}</b>
+		<div class="plot">
 			<div class="axis" aria-hidden="true"><span>1.0</span><span>0.5</span><span>0.0</span></div>
-		{/if}
-		<div class="chart">
-			<Canvas {paint} {register} {label} />
+			<div class="chart"><Canvas {paint} {register} label={label ?? title} /></div>
 		</div>
-	</div>
+	{:else}
+		<b class="big tabular" data-testid={testid}
+			>{value}{#if sub}<span class="dim"> {sub}</span>{/if}</b
+		>
+	{/if}
 </div>
 
 <style>
@@ -64,17 +69,11 @@
 		flex-direction: column;
 		gap: var(--sp-2);
 		min-width: 0;
+		min-height: 112px;
 		padding: var(--sp-3) var(--sp-4) var(--sp-4);
 		border: 1px solid var(--line);
 		border-radius: var(--radius-card);
 		background: var(--panel);
-	}
-
-	.head {
-		display: flex;
-		align-items: baseline;
-		justify-content: space-between;
-		gap: var(--sp-3);
 	}
 
 	.title {
@@ -89,20 +88,22 @@
 	}
 
 	.val {
-		flex: none;
 		font-size: var(--fs-body);
 		font-weight: var(--fw-semibold);
 		/* the metric's accent, run toward the ink so it holds AA at this size */
 		color: color-mix(in srgb, var(--metric-accent) 60%, var(--ink));
+		align-self: flex-end;
+		margin-top: -18px; /* sit on the chart's top-right, over the 1.0 tick line */
 	}
 
 	.plot {
 		display: flex;
 		gap: 6px;
 		min-width: 0;
+		flex: 1;
 	}
 
-	/* The 0–1 axis: three ticks, monospaced-narrow, so the eye has a scale for the line. */
+	/* The 0–1 axis: three ticks so the eye has a scale for the line. */
 	.axis {
 		display: flex;
 		flex-direction: column;
@@ -117,6 +118,23 @@
 	.chart {
 		flex: 1;
 		min-width: 0;
-		height: 42px;
+		min-height: 62px;
+	}
+
+	/* A stat card centres its big number in the space a chart would fill. */
+	.stat {
+		justify-content: space-between;
+	}
+
+	.big {
+		font-size: var(--fs-name);
+		font-weight: var(--fw-semibold);
+		color: var(--ink);
+	}
+
+	.big :global(.dim) {
+		font-size: var(--fs-md);
+		font-weight: var(--fw-regular);
+		color: var(--ink3);
 	}
 </style>

@@ -18,6 +18,7 @@ function statsWorld(senses: Senses, fish: World['fish']): World {
 		eaten: 0,
 		gen: 3,
 		lifeCurve: [],
+		curve: [],
 		champion: null,
 		best: null,
 		_deployed: false,

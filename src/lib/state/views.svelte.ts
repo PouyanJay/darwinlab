@@ -31,8 +31,11 @@ export class WorldStats {
 	alive = $state(0);
 	eaten = $state(0);
 	gen = $state(0);
-	/** Smoothed survival rate of the latest generation, 0–100. */
+	/** The LIFE curve's latest value, 0–100 — mean seconds survived as a share of a generation. */
 	survivalPct = $state(0);
+	/** The alive-at-the-bell rate, 0–100 — the fraction of the population still alive when a
+	 *  generation ends (the reference's `curve`, distinct from the life curve above). */
+	aliveRatePct = $state(0);
 	championFitness = $state(0);
 	/**
 	 * The best survival time of the LAST COMPLETED generation, seconds — what the population knows now.
@@ -166,6 +169,10 @@ export class WorldStats {
 			? world.lifeCurve[world.lifeCurve.length - 1]
 			: world.fish.length / Math.max(1, world.cfg.prey);
 		this.survivalPct = Math.round(survival * 100);
+		const aliveRate = world.curve.length
+			? world.curve[world.curve.length - 1]
+			: world.fish.length / Math.max(1, world.cfg.prey);
+		this.aliveRatePct = Math.round(aliveRate * 100);
 		this.championFitness = world.champion?.fitness ?? 0;
 		this.bestFitness = world.best?.fitness ?? world.champion?.fitness ?? 0;
 		this.deployed = world._deployed;

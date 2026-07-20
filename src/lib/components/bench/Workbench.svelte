@@ -213,24 +213,23 @@
 				</div>
 			</section>
 
-			<div class="stat-row">
-				<div class="stat">
-					<span class="sk">Alive</span>
-					<b class="tabular" data-testid="alive"
-						>{entry.stats.alive}<span class="dim"> / {config.prey}</span></b
-					>
-				</div>
-				<div class="stat">
-					<span class="sk">Eaten</span>
-					<b class="tabular" data-testid="eaten">{entry.stats.eaten}</b>
-				</div>
-				<div class="stat">
-					<span class="sk">Best this gen</span>
-					<b class="tabular">{bestValue}</b>
-				</div>
-			</div>
-
+			<!-- The metrics grid: the three quick scalars and every learning curve, each on its own card,
+			     two across when there is room. One even grid, not a stat row plus a chart block. -->
 			<div class="metrics-grid">
+				<MetricCard
+					title="Alive"
+					value={String(entry.stats.alive)}
+					sub="/ {config.prey}"
+					accent={config.accent}
+					testid="alive"
+				/>
+				<MetricCard
+					title="Eaten"
+					value={String(entry.stats.eaten)}
+					accent={config.accent}
+					testid="eaten"
+				/>
+				<MetricCard title="Best this gen" value={bestValue} accent={config.accent} />
 				<MetricCard
 					title="Mean return / episode"
 					value="{entry.stats.survivalPct}%"
@@ -239,6 +238,15 @@
 					accent={config.accent}
 					label="{config.name}: mean return per episode across {entry.stats
 						.gen} generations, now {entry.stats.survivalPct}%"
+				/>
+				<MetricCard
+					title="Survival rate"
+					value="{entry.stats.aliveRatePct}%"
+					series={() => entry.world.curve}
+					draw={drawCurve}
+					accent={config.accent}
+					label="{config.name}: fraction of the population alive when a generation ends, across {entry
+						.stats.gen} generations"
 				/>
 				<MetricCard
 					title="Held-out run"
@@ -450,42 +458,8 @@
 		color: var(--gold-ink);
 	}
 
-	/* Three quick scalars in a row, ahead of the charts. */
-	.stat-row {
-		display: grid;
-		grid-template-columns: repeat(3, minmax(0, 1fr));
-		gap: var(--sp-3);
-	}
-
-	.stat {
-		display: flex;
-		flex-direction: column;
-		gap: 1px;
-		padding: var(--sp-3) var(--sp-4);
-		border: 1px solid var(--line);
-		border-radius: var(--radius-card);
-		background: var(--panel);
-	}
-
-	.stat .sk {
-		font-size: var(--fs-eyebrow);
-		text-transform: uppercase;
-		letter-spacing: var(--tracking-wide);
-		color: var(--ink3);
-	}
-
-	.stat b {
-		font-size: var(--fs-stat);
-		font-weight: var(--fw-semibold);
-	}
-
-	.stat .dim {
-		font-size: var(--fs-sm);
-		font-weight: var(--fw-regular);
-		color: var(--ink3);
-	}
-
-	/* The metrics grid — each curve its own card; two across when there is room, one when there isn't. */
+	/* The metrics grid — each scalar and curve its own card; two across when there is room, one when
+	   there isn't. */
 	.metrics-grid {
 		display: grid;
 		grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
