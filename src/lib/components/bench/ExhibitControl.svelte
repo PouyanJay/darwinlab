@@ -76,15 +76,13 @@
 </div>
 
 <style>
+	/* No chrome of its own: it is the head of the clones card, not a card inside it. The border and
+	   padding live on .clones (Workbench), so the segmented control, the description and the buttons
+	   read as one panel rather than a box floating inside another box. */
 	.exhibit {
 		display: flex;
 		flex-direction: column;
 		gap: var(--sp-3);
-		margin: var(--sp-4) var(--sp-5) 0;
-		padding: var(--sp-4);
-		border: 1px solid var(--line);
-		border-radius: var(--radius-input);
-		background: var(--panel2);
 	}
 
 	.row {

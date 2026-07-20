@@ -183,8 +183,7 @@
 			{/if}
 		</div>
 
-		<!-- ZONE 2 · METRICS: the champion clones, the learning curves as a stack of wide charts, and
-		     the tools you RUN on the shelf beneath them — the stage keeps only the water itself. -->
+		<!-- ZONE 2 · METRICS: the champion clones, then the learning curves as a stack of wide charts. -->
 		<div class="metrics-zone">
 			<section class="panel clones">
 				<ExhibitControl {entry} />
@@ -250,13 +249,15 @@
 					/>
 				{/if}
 			</div>
+		</div>
 
-			<!-- The shelf: the things you RUN, each its own panel, under the charts they feed. -->
-			<div class="shelf">
-				<AssayPanel {entry} />
-				<EvalPanel {entry} />
-				<AblationMatrix {entry} />
-			</div>
+		<!-- The shelf: the things you RUN, each its own panel. On a wide bench it is a footer spanning
+		     the metrics and mind columns — three roomy cards in a row — so the stage column beside it is
+		     free to run the tank to the very bottom. Stacked, it flows below the charts. -->
+		<div class="shelf">
+			<AssayPanel {entry} />
+			<EvalPanel {entry} />
+			<AblationMatrix {entry} />
 		</div>
 	</div>
 
@@ -387,9 +388,14 @@
 		background: var(--panel);
 	}
 
+	/* One clean card: the exhibit control (segmented + description) sits directly in it, and the
+	   buttons are a footer under a hairline — not a box floating inside another box. The card's own
+	   padding gives the buttons room on every side, so nothing crowds the border. */
 	.clones {
 		display: flex;
 		flex-direction: column;
+		gap: var(--sp-4);
+		padding: var(--sp-5);
 	}
 
 	.toolbar {
@@ -397,7 +403,8 @@
 		flex-wrap: wrap; /* a narrow metrics column drops Conditions to a second row, not off the edge */
 		align-items: center;
 		gap: var(--sp-3);
-		margin: 0 var(--sp-5) var(--sp-4);
+		padding-top: var(--sp-4);
+		border-top: 1px solid var(--line);
 	}
 
 	.toolbar :global(.branch-btn) {
@@ -474,12 +481,21 @@
 	   their own, and each zone scrolls independently ONLY if it must — at this size the bench is built
 	   to fit the height with no page scroll, every zone starting on the same top line. */
 	@container detail (min-width: 1240px) {
+		/* Two rows: the stage runs the FULL height on the left (tank to the very bottom), while the
+		   metrics and mind share the top row and the tools span a footer beneath them — three roomy
+		   cards, wider than either column alone, instead of three slivers crammed into one. */
 		.workbench {
-			grid-template-columns: minmax(0, 2.6fr) minmax(280px, 1fr) minmax(300px, 340px);
-			grid-template-areas: 'stage metrics inspector';
+			/* The stage takes a big share so that on a wide monitor the column is wider than the water's
+			   1.6 aspect needs — which makes the tank HEIGHT-bound and it fills the pane top to bottom.
+			   The metrics keep a comfortable minimum; the mind is capped. */
+			grid-template-columns: minmax(0, 3.4fr) minmax(300px, 1fr) minmax(300px, 340px);
+			grid-template-rows: minmax(0, 1fr) auto;
+			grid-template-areas:
+				'stage metrics inspector'
+				'stage tools tools';
 		}
 
-		/* contents: the two zones drop into the workbench grid as real columns. */
+		/* contents: the three zones drop into the workbench grid as real areas. */
 		.bench-main {
 			display: contents;
 		}
@@ -489,8 +505,7 @@
 			min-height: 0;
 			overflow-y: auto;
 			padding-right: 4px;
-			/* an inline-size container, so the stage below can say "no taller than the full-width tank"
-			   in terms of the column's own width (cqw) */
+			/* an inline-size container so the tank box can size itself against the column's own width */
 			container-type: inline-size;
 		}
 
@@ -505,35 +520,35 @@
 			grid-area: inspector;
 		}
 
-		/* The stage becomes a SIZE container taking the height left over by the bar and the shelf —
-		   but never more than the full-width tank can use (the cqw cap), so on a tall column the bar
-		   and shelf hug the tank instead of being pinned below a void. Inside it the tank box takes
-		   min(full width, full height × aspect): as large as the column can physically show the
-		   water, whichever axis binds, with nothing letterboxed. */
+		.shelf {
+			grid-area: tools;
+			/* three abreast across the full footer width — one even row of comfortably sized panels */
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+			align-items: stretch;
+		}
+
+		/* The stage takes the height the caption bar leaves and fills it — a SIZE container so the tank
+		   box can read the leftover height (cqh). No max-height cap: the stage runs to the bottom of the
+		   pane, and the tank is centred in it, as large as the water's aspect allows on whichever axis
+		   binds — so a wide column shows a full-height tank flush to the floor. */
 		.stage {
 			flex: 1 1 auto;
 			min-height: 220px;
-			max-height: calc(100cqw * var(--tank-h) / var(--tank-w));
 			container-type: size;
+			display: grid;
+			place-items: center;
 		}
 
 		.tank-box {
 			width: min(100%, calc(100cqh * var(--tank-w) / var(--tank-h)));
-			margin-inline: auto;
 		}
 
-		/* The chart stack stretches to take whatever height the clones and the shelf leave, so the
-		   charts grow into rectangles instead of leaving a void. minmax keeps a floor; past it the
-		   zone scrolls. */
+		/* The chart stack stretches to take whatever height the clones leave, so the charts grow into
+		   rectangles instead of leaving a void. minmax keeps a floor; past it the zone scrolls. */
 		.metrics-grid {
 			flex: 1;
 			min-height: 0;
 			grid-auto-rows: minmax(112px, 1fr);
-		}
-
-		/* In the side column the tools sit three abreast — one even row of panels under the charts. */
-		.shelf {
-			grid-template-columns: repeat(3, minmax(0, 1fr));
 		}
 	}
 
