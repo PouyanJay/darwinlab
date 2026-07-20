@@ -206,14 +206,24 @@ test('nothing here is a recording: a fish can be stopped and read mid-scene', as
 			return null;
 		});
 
-	await expect.poll(async () => (await findFish()) !== null, { timeout: 15_000 }).toBe(true); // the scene has painted, and there are fish in it
-	const fish = await findFish();
-	expect(fish, 'no fish found in the tank').not.toBeNull();
-
-	await page.mouse.click(box.x + fish!.x, box.y + fish!.y);
-
 	const inspector = page.getByRole('dialog', { name: /Fish mind/ });
-	await expect(inspector).toBeVisible();
+
+	// Poll the WHOLE gesture — find a fish, click it, check the mind opened — not just "a fish exists".
+	// Pausing the story takes a frame to still the tank, and a click that lands a pixel off the pickable
+	// body selects nothing; a single find-then-click therefore misses under a loaded suite (it did).
+	// Retrying the gesture makes it robust without weakening what it proves: a live brain opened on a
+	// click, mid-scene.
+	await expect
+		.poll(
+			async () => {
+				const fish = await findFish();
+				if (!fish) return false;
+				await page.mouse.click(box.x + fish.x, box.y + fish.y);
+				return inspector.isVisible();
+			},
+			{ timeout: 15_000 }
+		)
+		.toBe(true);
 	// The film is a real takeover — the app behind it (the inspector included) is inert, so the panel
 	// opens READ-ONLY. Its default escape map is this fish's own evolved rule, which is proof enough a
 	// live brain opened mid-scene; the wiring toggle needs interaction the inert film withholds.

@@ -2,20 +2,22 @@
   The expanded world, as a WORKBENCH — the alternative to the tile's one long column.
 
   A world you are giving your full attention to is not read top to bottom; it is operated. So it is
-  laid out as a bench: the tank is a stage (shrunk, not stretched wall to wall), the champion's mind
-  is docked open on the right where the eye already goes for detail, the graphs sit with the tank as
-  the evidence of what it is doing, and the things you RUN — the flee assay, the evaluation, the
-  ablation matrix — are separated onto a shelf along the bottom, read as tools rather than more
-  readouts. Reached from a world's expand control; the header's collapse drops back to the canvas.
+  laid out as a bench in three zones:
 
-  It composes the same live pieces the tile does (Tank, ExhibitControl, TileStats, the service
-  panels, the Brain Inspector) — nothing here is a second copy of that logic, only a second
-  arrangement of it. All mutation still goes through the bench store.
+    STAGE      the tank, large — the thing you are watching — with the tools you RUN (flee assay,
+               evaluation, ablation) on a shelf directly beneath it.
+    METRICS    the champion clones and, below them, a GRID of the world's metrics, each curve on its
+               own little chart instead of packed into one block.
+    MIND       the champion's brain, docked open — senses, escape map, motor outputs — live.
+
+  It is one stacked column on a phone; the mind docks to the side as soon as there is room; and the
+  metrics take a column of their own on a wide monitor. It composes the same live pieces the tile
+  does — nothing here is a second copy of that logic, only a second arrangement of it.
 -->
 <script lang="ts">
 	import Tank from './Tank.svelte';
 	import ExhibitControl from './ExhibitControl.svelte';
-	import TileStats from './TileStats.svelte';
+	import MetricCard from './MetricCard.svelte';
 	import AssayPanel from './AssayPanel.svelte';
 	import EvalPanel from './EvalPanel.svelte';
 	import AblationMatrix from './AblationMatrix.svelte';
@@ -29,6 +31,7 @@
 	import { sensesFor } from '../senses';
 	import { describeWorld } from './describeWorld';
 	import { bench } from '$lib/state';
+	import { drawCurve, drawDecay, drawSchoolCurve } from '$lib/render';
 	import { configDiff } from '$lib/lab/run';
 	import type { WorldEntry } from '$lib/state';
 
@@ -54,6 +57,19 @@
 	const trained = $derived(entry.stats.deployed);
 	const status = $derived(trained ? 'trained' : bench.running ? 'evolving' : 'paused');
 
+	// The held-out run's one-line state, short enough for a metric card's corner (the full sentence
+	// lives in the deploy readout the tile carries; here it is the value on the Held-out chart).
+	const deployValue = $derived.by(() => {
+		const { deployed, extinctT, halfLife, deployT } = entry.stats;
+		if (!deployed) return '—';
+		if (extinctT !== null) return `wiped ${extinctT.toFixed(0)}s`;
+		if (halfLife !== null) return `½ ${halfLife.toFixed(0)}s`;
+		return `${deployT.toFixed(0)}s`;
+	});
+	const bestValue = $derived(
+		entry.stats.bestFitness ? `${entry.stats.bestFitness.toFixed(1)}s` : '—'
+	);
+
 	// Open the champion's mind the moment this world takes the bench, and again whenever we switch to a
 	// different world (the component is keyed on the world id, so this re-runs on a fresh mount). Let go
 	// of the selection when the workbench leaves, so collapsing back to the canvas does not pop the
@@ -72,139 +88,182 @@
 </script>
 
 <div class="workbench" aria-label="world {index}: {config.name}">
-	<div class="main">
-		<header>
-			<Chip class="badge">{badge}</Chip>
-			<EditableLabel
-				value={config.name}
-				label="world name"
-				onchange={(name) => bench.renameWorld(entry.id, name)}
-			/>
-			<Chip tabular data-testid="gen">
-				<span class="status {status}" aria-hidden="true"></span>
-				Gen {entry.stats.gen}{trained ? ' · trained' : ''}
-			</Chip>
-
-			<div class="actions">
-				<Button
-					variant="icon"
-					size="sm"
-					title="restart evolution from random brains"
-					aria-label="reset world"
-					onclick={() => bench.resetWorld(entry.id)}
-				>
-					<Icon name="reset" size={15} />
-				</Button>
-				<Button
-					variant="icon"
-					size="sm"
-					title="duplicate as a standalone world (no lineage link)"
-					aria-label="duplicate world"
-					onclick={() => bench.duplicateWorld(entry.id)}
-				>
-					<Icon name="duplicate" size={15} />
-				</Button>
-				<Button
-					variant="icon"
-					size="sm"
-					title="collapse back to the bench"
-					aria-label="collapse world"
-					onclick={() => bench.unfocus()}
-				>
-					<Icon name="collapse" size={15} />
-				</Button>
-				<Button
-					variant="icon"
-					size="sm"
-					tone="danger"
-					title="remove world"
-					aria-label="remove world"
-					onclick={() => bench.removeWorld(entry.id)}
-				>
-					<Icon name="close" size={15} />
-				</Button>
-			</div>
-		</header>
-
-		<div class="chips">
-			<Chip>{meta}</Chip>
-			{#if diffKeys.length}
-				<Chip title="overrides vs the launched baseline: {diffText}">
-					▲ {diffKeys.length} override{diffKeys.length > 1 ? 's' : ''}
+	<!-- bench-main: a flex column on small screens (stage over metrics, scrolling as one); at the
+	     widest size it becomes `display: contents`, so the two zones drop straight into the workbench
+	     grid as their own columns. -->
+	<div class="bench-main">
+		<!-- ZONE 1 · STAGE: the world large, its tools beneath it. -->
+		<div class="stage-zone">
+			<header>
+				<Chip class="badge">{badge}</Chip>
+				<EditableLabel
+					value={config.name}
+					label="world name"
+					onchange={(name) => bench.renameWorld(entry.id, name)}
+				/>
+				<Chip tabular data-testid="gen">
+					<span class="status {status}" aria-hidden="true"></span>
+					Gen {entry.stats.gen}{trained ? ' · trained' : ''}
 				</Chip>
+
+				<div class="actions">
+					<Button
+						variant="icon"
+						size="sm"
+						title="restart evolution from random brains"
+						aria-label="reset world"
+						onclick={() => bench.resetWorld(entry.id)}
+					>
+						<Icon name="reset" size={15} />
+					</Button>
+					<Button
+						variant="icon"
+						size="sm"
+						title="duplicate as a standalone world (no lineage link)"
+						aria-label="duplicate world"
+						onclick={() => bench.duplicateWorld(entry.id)}
+					>
+						<Icon name="duplicate" size={15} />
+					</Button>
+					<Button
+						variant="icon"
+						size="sm"
+						title="collapse back to the bench"
+						aria-label="collapse world"
+						onclick={() => bench.unfocus()}
+					>
+						<Icon name="collapse" size={15} />
+					</Button>
+					<Button
+						variant="icon"
+						size="sm"
+						tone="danger"
+						title="remove world"
+						aria-label="remove world"
+						onclick={() => bench.removeWorld(entry.id)}
+					>
+						<Icon name="close" size={15} />
+					</Button>
+				</div>
+			</header>
+
+			<div class="chips">
+				<Chip>{meta}</Chip>
+				{#if diffKeys.length}
+					<Chip title="overrides vs the launched baseline: {diffText}">
+						▲ {diffKeys.length} override{diffKeys.length > 1 ? 's' : ''}
+					</Chip>
+				{/if}
+				<div
+					class="senses"
+					role="group"
+					aria-label="observation space: the policy's input channels"
+				>
+					{#each sensesFor(config.senses) as sense (sense.key)}
+						<SensePill
+							label={sense.short}
+							name={sense.name}
+							on={!!config.senses[sense.key]}
+							onclick={() => bench.toggleSense(entry.id, sense.key)}
+						/>
+					{/each}
+				</div>
+			</div>
+
+			<!-- The stage: the tank sized to the WATER's own aspect and filled by width, so the water
+			     reaches every edge — no dead black bands. -->
+			<div class="stage" style:--tank-aspect="{config.bw} / {config.bh}">
+				<Tank {entry} big onselect={(picked) => bench.select(entry.id, picked)} />
+			</div>
+
+			{#if bench.lens === 'flee'}
+				<LensStrip {entry} />
 			{/if}
-			<div class="senses" role="group" aria-label="observation space: the policy's input channels">
-				{#each sensesFor(config.senses) as sense (sense.key)}
-					<SensePill
-						label={sense.short}
-						name={sense.name}
-						on={!!config.senses[sense.key]}
-						onclick={() => bench.toggleSense(entry.id, sense.key)}
-					/>
-				{/each}
+
+			<!-- The shelf: the things you RUN, each its own panel, directly under the world they act on. -->
+			<div class="shelf">
+				<AssayPanel {entry} />
+				<EvalPanel {entry} />
+				<AblationMatrix {entry} />
 			</div>
 		</div>
 
-		<!--
-			The board: the stage and its evidence, side by side. The tank is sized to the WATER's own
-			shape (aspect-ratio, filled by width) so the water fills the canvas edge to edge — no wide
-			bands of dead black around a small world — and the graphs and clone controls take the room
-			beside it rather than a full-width stretch below.
-		-->
-		<div class="board">
-			<div class="stage-col">
-				<div class="stage" style:--tank-aspect="{config.bw} / {config.bh}">
-					<Tank {entry} big onselect={(picked) => bench.select(entry.id, picked)} />
+		<!-- ZONE 2 · METRICS: the champion clones, then the world's metrics as a grid of charts. -->
+		<div class="metrics-zone">
+			<section class="panel clones">
+				<ExhibitControl {entry} />
+				<div class="toolbar">
+					<Button
+						size="sm"
+						class="champion"
+						title="inspect the best brain alive"
+						onclick={() => bench.selectChampion(entry.id)}
+					>
+						<Icon name="star" size={13} />
+						<span>Champion</span>
+					</Button>
+					<Button size="sm" class="branch-btn" onclick={() => bench.branchWorld(entry.id)}>
+						<Icon name="branch" size={13} />
+						<span>Branch</span>
+					</Button>
+					<Button size="sm" onclick={() => bench.openConditions(entry.id)}>
+						<Icon name="sliders" size={13} />
+						<span>Conditions</span>
+					</Button>
 				</div>
-				{#if bench.lens === 'flee'}
-					<LensStrip {entry} />
+			</section>
+
+			<div class="stat-row">
+				<div class="stat">
+					<span class="sk">Alive</span>
+					<b class="tabular" data-testid="alive"
+						>{entry.stats.alive}<span class="dim"> / {config.prey}</span></b
+					>
+				</div>
+				<div class="stat">
+					<span class="sk">Eaten</span>
+					<b class="tabular" data-testid="eaten">{entry.stats.eaten}</b>
+				</div>
+				<div class="stat">
+					<span class="sk">Best this gen</span>
+					<b class="tabular">{bestValue}</b>
+				</div>
+			</div>
+
+			<div class="metrics-grid">
+				<MetricCard
+					title="Mean return / episode"
+					value="{entry.stats.survivalPct}%"
+					series={() => entry.world.lifeCurve}
+					draw={drawCurve}
+					accent={config.accent}
+					label="{config.name}: mean return per episode across {entry.stats
+						.gen} generations, now {entry.stats.survivalPct}%"
+				/>
+				<MetricCard
+					title="Held-out run"
+					value={deployValue}
+					series={() => entry.world.decay}
+					draw={drawDecay}
+					accent={config.accent}
+					label="{config.name}: how fast the deployed population is wiped out"
+				/>
+				{#if entry.stats.schooling}
+					<MetricCard
+						title="School tightness"
+						value="{entry.stats.schoolNND ?? '—'}px"
+						series={() => entry.world.schoolCurve}
+						draw={drawSchoolCurve}
+						accent={config.accent}
+						label="{config.name}: how tightly the school packs across {entry.stats.gen} generations"
+					/>
 				{/if}
 			</div>
-
-			<div class="board-side">
-				<!-- Evidence: the graphs, on their own, separated from the tools below. -->
-				<section class="panel evidence" aria-label="evidence">
-					<h2 class="panel-title">Evidence</h2>
-					<TileStats {entry} />
-				</section>
-
-				<!-- Champion clones + the world's primary actions. -->
-				<section class="panel clones">
-					<ExhibitControl {entry} />
-					<div class="toolbar">
-						<Button
-							size="sm"
-							class="champion"
-							title="inspect the best brain alive"
-							onclick={() => bench.selectChampion(entry.id)}
-						>
-							<Icon name="star" size={13} />
-							<span>Champion</span>
-						</Button>
-						<Button size="sm" class="branch-btn" onclick={() => bench.branchWorld(entry.id)}>
-							<Icon name="branch" size={13} />
-							<span>Branch</span>
-						</Button>
-						<Button size="sm" onclick={() => bench.openConditions(entry.id)}>
-							<Icon name="sliders" size={13} />
-							<span>Conditions</span>
-						</Button>
-					</div>
-				</section>
-			</div>
-		</div>
-
-		<!-- The shelf: the things you RUN, each its own panel, side by side. -->
-		<div class="shelf">
-			<AssayPanel {entry} />
-			<EvalPanel {entry} />
-			<AblationMatrix {entry} />
 		</div>
 	</div>
 
-	<!-- The mind, docked open — the champion's brain by default, or whichever fish you click in the
-	     tank. Its own scroll, so a long inspector never grows the whole bench. -->
-	<aside class="inspector" aria-label="the mind">
+	<!-- ZONE 3 · MIND: the champion's brain, docked open — or whichever fish you click in the tank. -->
+	<aside class="inspector-zone" aria-label="the mind">
 		{#if mindSelection}
 			<BrainInspector docked selection={mindSelection} {entry} />
 		{:else}
@@ -219,11 +278,10 @@
 
 <style>
 	/*
-		Mobile-first: ONE stacked column — bench, then the mind beneath it — that flows to its natural
-		height (the focus column above is what scrolls). It becomes a two-pane bench (a scrolling bench
-		+ an independently scrolling docked mind) only when its own CONTAINER is wide enough for both,
-		which is a container query, not a viewport one: behind the sidebar and the rail the bench can be
-		narrow on a 1024px screen, and a viewport breakpoint cannot see that.
+		Mobile-first: ONE stacked column. The mind docks to the side once the pane is wide enough (760),
+		and the metrics break out into a column of their own on a wide monitor (1240) — all measured
+		against the workbench's own CONTAINER, not the viewport, because the sidebar and the rail eat
+		into the width a viewport query cannot see.
 	*/
 	.workbench {
 		display: grid;
@@ -232,32 +290,78 @@
 		min-width: 0;
 	}
 
-	.main {
-		min-width: 0;
+	.bench-main {
 		display: flex;
 		flex-direction: column;
 		gap: var(--sp-5);
+		min-width: 0;
 	}
 
-	@container detail (min-width: 820px) {
+	/* Two-pane: the bench (stage over metrics) scrolls as one column; the mind is its own scroll. */
+	@container detail (min-width: 760px) {
 		.workbench {
-			grid-template-columns: minmax(0, 1fr) 360px;
+			grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
 			gap: var(--sp-6);
 			height: 100%;
 			min-height: 0;
-			/* Capped and centred so an ultra-wide monitor does not stretch the bench into a field of
-			   empty space — a workbench has a comfortable working width, past which more pixels are margin. */
-			max-width: 1680px;
+			max-width: 1760px;
 			margin: 0 auto;
 		}
 
-		/* The bench proper scrolls: the shelf lives at the bottom, reached by scrolling past the stage. */
-		.main {
+		.bench-main {
 			min-height: 0;
 			overflow-y: auto;
 			padding-right: 4px;
 			padding-bottom: var(--sp-6);
 		}
+
+		.inspector-zone {
+			min-height: 0;
+			height: 100%;
+			overflow: hidden;
+		}
+	}
+
+	/* Three columns: the metrics take a column of their own beside the stage, and each zone scrolls
+	   independently so the whole bench fits the height without a page scroll. */
+	@container detail (min-width: 1240px) {
+		.workbench {
+			grid-template-columns: minmax(0, 1.7fr) minmax(320px, 1fr) minmax(300px, 360px);
+			grid-template-areas: 'stage metrics inspector';
+		}
+
+		/* contents: the two zones drop into the workbench grid as real columns. */
+		.bench-main {
+			display: contents;
+		}
+
+		.stage-zone {
+			grid-area: stage;
+			min-height: 0;
+			overflow-y: auto;
+			padding-right: 4px;
+			padding-bottom: var(--sp-6);
+		}
+
+		.metrics-zone {
+			grid-area: metrics;
+			min-height: 0;
+			overflow-y: auto;
+			padding-right: 4px;
+			padding-bottom: var(--sp-6);
+		}
+
+		.inspector-zone {
+			grid-area: inspector;
+		}
+	}
+
+	.stage-zone,
+	.metrics-zone {
+		display: flex;
+		flex-direction: column;
+		gap: var(--sp-5);
+		min-width: 0;
 	}
 
 	header {
@@ -312,31 +416,6 @@
 		margin-left: 5px;
 	}
 
-	/* The stage and its evidence share the top of the bench. The tank column leads; the evidence and
-	   clone controls take the room beside it. */
-	/* auto-fit, NOT a fixed 2-col: the board's real width is what the rail and the mind leave, which a
-	   viewport media query cannot see — at 1440 that is ~460px, and a fixed second column squeezed the
-	   tank to a sliver. This collapses to a single column (tank, then evidence beneath) whenever the
-	   board itself is too narrow for two, whatever the viewport says. */
-	.board {
-		display: grid;
-		/* min(100%, 340px): a single column may shrink BELOW 340 on a phone rather than forcing the
-		   board past the screen; two columns appear only once there is room for two 340s. */
-		grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
-		gap: var(--sp-5);
-		align-items: start;
-	}
-
-	.stage-col {
-		display: flex;
-		flex-direction: column;
-		gap: var(--sp-3);
-		min-width: 0;
-	}
-
-	/* Sized to the WATER's own aspect and filled by width, so the water reaches every edge of the
-	   canvas — no max-height letterboxing a small world inside a wide black box. Its size is set by the
-	   board column, not by stretching to the whole pane. */
 	.stage {
 		aspect-ratio: var(--tank-aspect);
 		width: 100%;
@@ -345,28 +424,10 @@
 		background: var(--tank, #000);
 	}
 
-	.board-side {
-		display: flex;
-		flex-direction: column;
-		gap: var(--sp-5);
-		min-width: 0;
-	}
-
-	/* A titled surface — the shared shape of every panel on the bench. */
 	.panel {
 		border: 1px solid var(--line);
 		border-radius: var(--radius-card);
 		background: var(--panel);
-	}
-
-	.panel-title {
-		margin: 0;
-		padding: var(--sp-3) var(--sp-5) 0;
-		font-size: var(--fs-eyebrow);
-		font-weight: var(--fw-semibold);
-		letter-spacing: var(--tracking-wide);
-		text-transform: uppercase;
-		color: var(--ink3);
 	}
 
 	.clones {
@@ -389,12 +450,54 @@
 		color: var(--gold-ink);
 	}
 
-	/* The service shelf — three tools, equal width, wrapping to a stack when the bench is narrow (and
-	   collapsing cleanly to one column on a phone via the min(100%, …) floor). */
+	/* Three quick scalars in a row, ahead of the charts. */
+	.stat-row {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: var(--sp-3);
+	}
+
+	.stat {
+		display: flex;
+		flex-direction: column;
+		gap: 1px;
+		padding: var(--sp-3) var(--sp-4);
+		border: 1px solid var(--line);
+		border-radius: var(--radius-card);
+		background: var(--panel);
+	}
+
+	.stat .sk {
+		font-size: var(--fs-eyebrow);
+		text-transform: uppercase;
+		letter-spacing: var(--tracking-wide);
+		color: var(--ink3);
+	}
+
+	.stat b {
+		font-size: var(--fs-stat);
+		font-weight: var(--fw-semibold);
+	}
+
+	.stat .dim {
+		font-size: var(--fs-sm);
+		font-weight: var(--fw-regular);
+		color: var(--ink3);
+	}
+
+	/* The metrics grid — each curve its own card; two across when there is room, one when there isn't. */
+	.metrics-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+		gap: var(--sp-3);
+	}
+
+	/* The service shelf, directly under the stage. Cards want ~280px so the flee assay's label, blurb
+	   and Run button sit on one comfortable line; below that they wrap, and stack on a phone. */
 	.shelf {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
-		gap: var(--sp-5);
+		grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+		gap: var(--sp-4);
 	}
 
 	.shelf :global(.assay),
@@ -405,10 +508,9 @@
 		background: var(--panel);
 	}
 
-	/* Stacked (the default), the mind flows below the bench at its natural height, capped to a reading
-	   column so a wide phone-in-landscape or a narrow laptop does not stretch the escape map into a
-	   billboard. It becomes an independently scrolling side column only in the two-pane layout. */
-	.inspector {
+	/* The mind: stacked (default) it flows below the bench, capped to a reading column so its escape
+	   map never stretches into a billboard; docked, it is an independently scrolling side column. */
+	.inspector-zone {
 		min-width: 0;
 		max-width: 480px;
 		border: 1px solid var(--line);
@@ -416,12 +518,9 @@
 		background: var(--panel);
 	}
 
-	@container detail (min-width: 820px) {
-		.inspector {
-			min-height: 0;
+	@container detail (min-width: 760px) {
+		.inspector-zone {
 			max-width: none;
-			height: 100%;
-			overflow: hidden;
 		}
 	}
 
