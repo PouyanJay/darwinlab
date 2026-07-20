@@ -23,7 +23,7 @@
 		const pad = Math.max(0.2, (hi - lo) * 0.2);
 		return { lo: Math.max(0, lo - pad), hi: hi + pad };
 	});
-	const px = (v: number) => ((v - axis.lo) / (axis.hi - axis.lo)) * 100;
+	const toPercent = (v: number) => ((v - axis.lo) / (axis.hi - axis.lo)) * 100;
 	const ticks = $derived([axis.lo, (axis.lo + axis.hi) / 2, axis.hi]);
 	const fmt = (v: number) => (v > 0 ? '+' : '') + v.toFixed(1);
 </script>
@@ -43,17 +43,17 @@
 						{#if !Number.isNaN(arm.mean)}
 							<div
 								class="ci"
-								style:left="{px(arm.ci.lo)}%"
-								style:width="{Math.max(0, px(arm.ci.hi) - px(arm.ci.lo))}%"
+								style:left="{toPercent(arm.ci.lo)}%"
+								style:width="{Math.max(0, toPercent(arm.ci.hi) - toPercent(arm.ci.lo))}%"
 							></div>
-							<div class="dot" style:left="{px(arm.mean)}%"></div>
+							<div class="dot" style:left="{toPercent(arm.mean)}%"></div>
 						{/if}
 					</div>
 				</div>
 			{/each}
 			<div class="axislabels" aria-hidden="true">
 				{#each ticks as tick (tick)}
-					<span style:left="{px(tick)}%">{tick.toFixed(1)}s</span>
+					<span style:left="{toPercent(tick)}%">{tick.toFixed(1)}s</span>
 				{/each}
 			</div>
 		</div>

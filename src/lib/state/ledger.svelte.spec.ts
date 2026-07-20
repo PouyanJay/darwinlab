@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { ledger, LEDGER_STORAGE_KEY } from './ledger.svelte';
+import { ledger, loadEntries, LEDGER_STORAGE_KEY, MAX_ENTRIES } from './ledger.svelte';
 import type { JobExecutor } from '../lab/runner';
 import type { Evaluation } from '../lab/evaluator';
 
@@ -67,5 +67,49 @@ describe('the Ledger', () => {
 		ledger.clear();
 		expect(ledger.entries).toHaveLength(0);
 		expect(localStorage.getItem(LEDGER_STORAGE_KEY)).toBeNull();
+	});
+
+	it('reruns get distinct ids, so a rerun after a reload cannot collide with a loaded entry', async () => {
+		await ledger.run('dir-beats-dist', new CannedExecutor([evalWith([5]), evalWith([3])]));
+		await ledger.run('dir-beats-dist', new CannedExecutor([evalWith([5]), evalWith([3])]));
+		expect(ledger.entries).toHaveLength(2);
+		expect(ledger.entries[0].id).not.toBe(ledger.entries[1].id);
+	});
+
+	it('caps the record, evicting the oldest', async () => {
+		for (let i = 0; i < MAX_ENTRIES + 3; i++) {
+			await ledger.run('dir-beats-dist', new CannedExecutor([evalWith([5]), evalWith([3])]));
+		}
+		expect(ledger.entries).toHaveLength(MAX_ENTRIES);
+	});
+
+	it('load drops malformed entries and ignores a foreign or corrupt store', () => {
+		const good = {
+			id: 'x',
+			claimId: 'c',
+			text: 't',
+			verdict: 'supported',
+			delta: 1,
+			ci: { lo: 0.2, hi: 1.8 },
+			d: 1,
+			arms: [],
+			seeds: 8,
+			configHash: 'abc123',
+			recorded: ''
+		};
+		// a valid entry beside one missing its numeric fields — only the valid one loads
+		localStorage.setItem(
+			LEDGER_STORAGE_KEY,
+			JSON.stringify({ version: 1, entries: [good, { id: 'y', claimId: 'c' }] })
+		);
+		expect(loadEntries()).toHaveLength(1);
+
+		// a version this build did not write is discarded wholesale, not half-trusted
+		localStorage.setItem(LEDGER_STORAGE_KEY, JSON.stringify({ version: 999, entries: [good] }));
+		expect(loadEntries()).toEqual([]);
+
+		// and outright garbage never throws
+		localStorage.setItem(LEDGER_STORAGE_KEY, 'not json at all');
+		expect(loadEntries()).toEqual([]);
 	});
 });

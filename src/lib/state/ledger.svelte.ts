@@ -28,7 +28,8 @@ import type { Evaluation } from '../lab/evaluator';
 
 export const LEDGER_STORAGE_KEY = 'darwinlab:ledger';
 const STORAGE_VERSION = 1;
-const MAX_ENTRIES = 50;
+/** The record is bounded; over this, the oldest entries are evicted. */
+export const MAX_ENTRIES = 50;
 
 /** A ledger run's size — more seeds per arm than a sweep cell, since there are only two arms. */
 const LEDGER_RUN = { seeds: 8, episodes: 30, bouts: 4 };
@@ -58,15 +59,33 @@ export interface LedgerEntry {
 	recorded: string;
 }
 
-/** Read the persisted ledger, tolerating anything that is not a ledger this version wrote. */
-function loadEntries(): LedgerEntry[] {
+/** A runtime shape check on ONE entry — a persisted record can be hand-edited, half-written or from a
+ *  future build, and the UI calls `.toFixed` on `delta` and maps `arms`, so a malformed entry must be
+ *  dropped rather than trusted (a bare `as LedgerEntry[]` cast would let it through to crash a render). */
+function isLedgerEntry(value: unknown): value is LedgerEntry {
+	if (!value || typeof value !== 'object') return false;
+	const e = value as Record<string, unknown>;
+	return (
+		typeof e.id === 'string' &&
+		typeof e.claimId === 'string' &&
+		typeof e.text === 'string' &&
+		(e.verdict === 'supported' || e.verdict === 'refuted') &&
+		typeof e.delta === 'number' &&
+		Array.isArray(e.arms) &&
+		typeof e.configHash === 'string'
+	);
+}
+
+/** Read the persisted ledger, tolerating anything that is not a ledger this version wrote. Exported
+ *  so the persistence robustness (version mismatch, corrupt JSON, malformed entries) can be tested. */
+export function loadEntries(): LedgerEntry[] {
 	if (!browser) return [];
 	try {
 		const raw = localStorage.getItem(LEDGER_STORAGE_KEY);
 		if (!raw) return [];
 		const parsed = JSON.parse(raw);
 		if (parsed?.version !== STORAGE_VERSION || !Array.isArray(parsed.entries)) return [];
-		return parsed.entries as LedgerEntry[];
+		return (parsed.entries as unknown[]).filter(isLedgerEntry);
 	} catch {
 		return [];
 	}
@@ -77,7 +96,6 @@ class LedgerStore {
 
 	#activeId = $state<string>(CANDIDATE_CLAIMS[0].id);
 	#entries = $state.raw<LedgerEntry[]>(loadEntries());
-	#seq = 0;
 
 	/** The claim whose verdict card is open. */
 	get active(): Claim {
@@ -124,15 +142,27 @@ class LedgerStore {
 		const results = await research.run([design.a, design.b], executor);
 		if (!results) return;
 
-		const [armA, armB] = results;
+		const entry = this.#toEntry(claim, design, results);
+		this.#entries = [entry, ...this.#entries].slice(0, MAX_ENTRIES);
+		this.#persist();
+	}
+
+	/** Assemble the record: the verdict, each arm's interval, and the config fingerprint that reruns it. */
+	#toEntry(
+		claim: Claim,
+		design: ReturnType<typeof designFor>,
+		[armA, armB]: (Evaluation | null)[]
+	): LedgerEntry {
 		const c = contrast(armA?.returns ?? [], armB?.returns ?? []);
 		const summarise = (label: string, result: Evaluation | null): ArmSummary => ({
 			label,
 			mean: mean(result?.returns ?? []),
 			ci: bootstrapCI(result?.returns ?? [])
 		});
-		const entry: LedgerEntry = {
-			id: `${claim.id}#${this.#seq++}`,
+		return {
+			// A globally-unique id — never a session counter, which would reset on reload and collide
+			// with an id already in the persisted array (run.svelte.ts's keyed feed needs it unique).
+			id: crypto.randomUUID(),
 			claimId: claim.id,
 			text: claim.text,
 			verdict: verdictFrom(c, claim.expect),
@@ -142,11 +172,9 @@ class LedgerStore {
 			arms: [summarise(claim.a.label, armA), summarise(claim.b.label, armB)],
 			seeds: LEDGER_RUN.seeds,
 			configHash: configHash([design.a.cfg, design.b.cfg]),
-			recorded: browser ? new Date().toISOString() : ''
+			// run() is only ever called from a client button handler, so the browser clock is present.
+			recorded: new Date().toISOString()
 		};
-
-		this.#entries = [entry, ...this.#entries].slice(0, MAX_ENTRIES);
-		this.#persist();
 	}
 
 	cancel(): void {

@@ -10,10 +10,11 @@
 <div class="hyps" role="group" aria-label="hypotheses">
 	{#each ledger.claims as claim (claim.id)}
 		{@const latest = ledger.latestFor(claim.id)}
+		{@const isActive = ledger.active.id === claim.id}
 		<button
 			class="hyp"
-			class:active={ledger.active.id === claim.id}
-			aria-pressed={ledger.active.id === claim.id}
+			class:active={isActive}
+			aria-pressed={isActive}
 			onclick={() => ledger.select(claim.id)}
 		>
 			<span class="claim">{claim.text}</span>

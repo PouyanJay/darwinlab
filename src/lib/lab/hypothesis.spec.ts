@@ -17,8 +17,9 @@ describe('designFor', () => {
 		// arm A is "only direction", arm B is "only distance"
 		expect(a.cfg.senses).toEqual({ dist: false, dir: true, closing: false, walls: false });
 		expect(b.cfg.senses).toEqual({ dist: true, dir: false, closing: false, walls: false });
-		expect(a.seeds).toBe(5);
-		expect(b.seeds).toBe(5);
+		// the whole run size travels through — seeds AND episodes AND bouts, not a subset
+		expect(a).toMatchObject({ seeds: 5, episodes: 20, bouts: 4 });
+		expect(b).toMatchObject({ seeds: 5, episodes: 20, bouts: 4 });
 	});
 
 	it('sets both the senses and the predator speed for a cliff claim', () => {

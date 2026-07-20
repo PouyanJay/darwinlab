@@ -40,13 +40,19 @@ const only = (key: keyof Senses): Senses => ({ ...BLIND, [key]: true });
 
 const withSenses = (senses: Senses) => (cfg: WorldConfig) => ({ ...cfg, senses: { ...senses } });
 
+/** One side of a sense-vs-sense claim — the channel and how to name it. */
+interface SenseSide {
+	key: keyof Senses;
+	label: string;
+}
+
 /** "X pays more than Y": the world with only X survives longer than the world with only Y. */
-function senseBeats(x: keyof Senses, xLabel: string, y: keyof Senses, yLabel: string): Claim {
+function senseBeats(x: SenseSide, y: SenseSide): Claim {
 	return {
-		id: `${String(x)}-beats-${String(y)}`,
-		text: `${xLabel} pays more than ${yLabel.toLowerCase()}.`,
-		a: { label: `only ${xLabel.toLowerCase()}`, apply: withSenses(only(x)) },
-		b: { label: `only ${yLabel.toLowerCase()}`, apply: withSenses(only(y)) },
+		id: `${String(x.key)}-beats-${String(y.key)}`,
+		text: `${x.label} pays more than ${y.label.toLowerCase()}.`,
+		a: { label: `only ${x.label.toLowerCase()}`, apply: withSenses(only(x.key)) },
+		b: { label: `only ${y.label.toLowerCase()}`, apply: withSenses(only(y.key)) },
 		expect: 'A>B'
 	};
 }
@@ -81,7 +87,7 @@ function speedCliff(speed: number): Claim {
 
 /** The claims the Ledger opens with — the lab's own findings, ready to be re-tested. */
 export const CANDIDATE_CLAIMS: Claim[] = [
-	senseBeats('dir', 'Direction', 'dist', 'Distance'),
+	senseBeats({ key: 'dir', label: 'Direction' }, { key: 'dist', label: 'Distance' }),
 	sensePaysAlone('walls', 'wall'),
 	speedCliff(1.0)
 ];
