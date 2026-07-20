@@ -4,15 +4,17 @@
   A world you are giving your full attention to is not read top to bottom; it is operated. So it is
   laid out as a bench in three zones:
 
-    STAGE      the tank, large — the thing you are watching — with the tools you RUN (flee assay,
-               evaluation, ablation) on a shelf directly beneath it.
-    METRICS    the champion clones and, below them, a GRID of the world's metrics, each curve on its
-               own little chart instead of packed into one block.
+    STAGE      the tank FIRST and as large as the pane allows — it fills the height the column gives
+               it at the water's own aspect — with the world's identity and controls as a caption bar
+               beneath it, and the tools you RUN (flee assay, evaluation, ablation) on a shelf below.
+    METRICS    the champion clones and, below them, a GRID of the world's metrics that stretches to
+               fill the column — each curve on its own chart, no dead space underneath.
     MIND       the champion's brain, docked open — senses, escape map, motor outputs — live.
 
   It is one stacked column on a phone; the mind docks to the side as soon as there is room; and the
-  metrics take a column of their own on a wide monitor. It composes the same live pieces the tile
-  does — nothing here is a second copy of that logic, only a second arrangement of it.
+  metrics take a column of their own on a wide monitor, where all three zones share one top line and
+  none of them scrolls the page. It composes the same live pieces the tile does — nothing here is a
+  second copy of that logic, only a second arrangement of it.
 -->
 <script lang="ts">
 	import Tank from './Tank.svelte';
@@ -92,19 +94,57 @@
 	     widest size it becomes `display: contents`, so the two zones drop straight into the workbench
 	     grid as their own columns. -->
 	<div class="bench-main">
-		<!-- ZONE 1 · STAGE: the world large, its tools beneath it. -->
+		<!-- ZONE 1 · STAGE: the world first and large, its caption bar and tools beneath it. -->
 		<div class="stage-zone">
-			<header>
+			<!-- The stage: sized by WIDTH in the stacked layouts (the tank at the water's aspect), and by
+			     the column's HEIGHT on a wide bench — a size container, so the tank box can take
+			     min(full width, full height × aspect) and the water reaches every edge either way. -->
+			<div class="stage" style:--tank-w={config.bw} style:--tank-h={config.bh}>
+				<div class="tank-box">
+					<Tank {entry} big onselect={(picked) => bench.select(entry.id, picked)} />
+				</div>
+			</div>
+
+			{#if bench.lens === 'flee'}
+				<LensStrip {entry} />
+			{/if}
+
+			<!-- The caption bar: whose water this is and everything you do TO the world (rename, senses,
+			     reset / duplicate / collapse / remove) — one wrapping row under the tank, so the stage
+			     starts at the very top of the bench, level with the other two zones. -->
+			<div class="bar">
 				<Chip class="badge">{badge}</Chip>
-				<EditableLabel
-					value={config.name}
-					label="world name"
-					onchange={(name) => bench.renameWorld(entry.id, name)}
-				/>
+				<div class="name">
+					<EditableLabel
+						value={config.name}
+						label="world name"
+						onchange={(name) => bench.renameWorld(entry.id, name)}
+					/>
+				</div>
 				<Chip tabular data-testid="gen">
 					<span class="status {status}" aria-hidden="true"></span>
 					Gen {entry.stats.gen}{trained ? ' · trained' : ''}
 				</Chip>
+				<Chip>{meta}</Chip>
+				{#if diffKeys.length}
+					<Chip title="overrides vs the launched baseline: {diffText}">
+						▲ {diffKeys.length} override{diffKeys.length > 1 ? 's' : ''}
+					</Chip>
+				{/if}
+				<div
+					class="senses"
+					role="group"
+					aria-label="observation space: the policy's input channels"
+				>
+					{#each sensesFor(config.senses) as sense (sense.key)}
+						<SensePill
+							label={sense.short}
+							name={sense.name}
+							on={!!config.senses[sense.key]}
+							onclick={() => bench.toggleSense(entry.id, sense.key)}
+						/>
+					{/each}
+				</div>
 
 				<div class="actions">
 					<Button
@@ -145,40 +185,7 @@
 						<Icon name="close" size={15} />
 					</Button>
 				</div>
-			</header>
-
-			<div class="chips">
-				<Chip>{meta}</Chip>
-				{#if diffKeys.length}
-					<Chip title="overrides vs the launched baseline: {diffText}">
-						▲ {diffKeys.length} override{diffKeys.length > 1 ? 's' : ''}
-					</Chip>
-				{/if}
-				<div
-					class="senses"
-					role="group"
-					aria-label="observation space: the policy's input channels"
-				>
-					{#each sensesFor(config.senses) as sense (sense.key)}
-						<SensePill
-							label={sense.short}
-							name={sense.name}
-							on={!!config.senses[sense.key]}
-							onclick={() => bench.toggleSense(entry.id, sense.key)}
-						/>
-					{/each}
-				</div>
 			</div>
-
-			<!-- The stage: the tank sized to the WATER's own aspect and filled by width, so the water
-			     reaches every edge — no dead black bands. -->
-			<div class="stage" style:--tank-aspect="{config.bw} / {config.bh}">
-				<Tank {entry} big onselect={(picked) => bench.select(entry.id, picked)} />
-			</div>
-
-			{#if bench.lens === 'flee'}
-				<LensStrip {entry} />
-			{/if}
 
 			<!-- The shelf: the things you RUN, each its own panel, directly under the world they act on. -->
 			<div class="shelf">
@@ -214,7 +221,8 @@
 			</section>
 
 			<!-- The metrics grid: the three quick scalars and every learning curve, each on its own card,
-			     two across when there is room. One even grid, not a stat row plus a chart block. -->
+			     two across when there is room. On a wide bench it stretches to the column's full height,
+			     so the cards share the space evenly instead of leaving a void underneath. -->
 			<div class="metrics-grid">
 				<MetricCard
 					title="Alive"
@@ -305,62 +313,18 @@
 		min-width: 0;
 	}
 
-	/* Two-pane: the bench (stage over metrics) scrolls as one column; the mind is its own scroll. */
-	@container detail (min-width: 760px) {
-		.workbench {
-			grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
-			gap: var(--sp-6);
-			height: 100%;
-			min-height: 0;
-			max-width: 1760px;
-			margin: 0 auto;
-		}
-
-		.bench-main {
-			min-height: 0;
-			overflow-y: auto;
-			padding-right: 4px;
-			padding-bottom: var(--sp-6);
-		}
-
-		.inspector-zone {
-			min-height: 0;
-			height: 100%;
-			overflow: hidden;
-		}
-	}
-
-	/* Three columns: the metrics take a column of their own beside the stage, and each zone scrolls
-	   independently so the whole bench fits the height without a page scroll. */
-	@container detail (min-width: 1240px) {
-		.workbench {
-			grid-template-columns: minmax(0, 1.7fr) minmax(320px, 1fr) minmax(300px, 360px);
-			grid-template-areas: 'stage metrics inspector';
-		}
-
-		/* contents: the two zones drop into the workbench grid as real columns. */
-		.bench-main {
-			display: contents;
-		}
-
-		.stage-zone {
-			grid-area: stage;
-			min-height: 0;
-			overflow-y: auto;
-			padding-right: 4px;
-			padding-bottom: var(--sp-6);
-		}
-
-		.metrics-zone {
-			grid-area: metrics;
-			min-height: 0;
-			overflow-y: auto;
-			padding-right: 4px;
-			padding-bottom: var(--sp-6);
-		}
-
-		.inspector-zone {
-			grid-area: inspector;
+	/* Stacked inside a BOUNDED pane (the focus view's detail is overflow: hidden), the workbench must
+	   scroll itself or everything below the shelf is simply unreachable. Guarded to viewports above
+	   the focus view's phone breakpoint: on a phone the detail is auto-height and the whole focus
+	   column is the one scroll — a nested scroller there would trap it in a short inner pane. */
+	@media (width > 720px) {
+		@container detail (width < 760px) {
+			.workbench {
+				height: 100%;
+				min-height: 0;
+				overflow-y: auto;
+				padding-right: 4px;
+			}
 		}
 	}
 
@@ -372,10 +336,29 @@
 		min-width: 0;
 	}
 
-	header {
+	.stage {
+		min-width: 0;
+	}
+
+	.tank-box {
+		width: 100%;
+		aspect-ratio: var(--tank-w) / var(--tank-h);
+		border-radius: var(--radius-card);
+		overflow: hidden;
+		background: var(--tank, #000);
+	}
+
+	/* The caption bar: one wrapping row — identity on the left, the icon actions pinned right. */
+	.bar {
 		display: flex;
+		flex-wrap: wrap;
 		align-items: center;
-		gap: 9px;
+		gap: 5px 9px;
+	}
+
+	.bar .name {
+		flex: 0 1 220px;
+		min-width: 110px;
 	}
 
 	.status {
@@ -394,7 +377,7 @@
 		background: var(--gold);
 	}
 
-	header :global(.badge) {
+	.bar :global(.badge) {
 		flex: none;
 		min-width: 24px;
 		justify-content: center;
@@ -407,29 +390,13 @@
 		display: flex;
 		flex: none;
 		gap: 2px;
-	}
-
-	.chips {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: 5px;
-		margin-top: calc(-1 * var(--sp-2));
+		margin-left: auto;
 	}
 
 	.senses {
 		display: flex;
 		flex-wrap: wrap;
 		gap: 5px;
-		margin-left: 5px;
-	}
-
-	.stage {
-		aspect-ratio: var(--tank-aspect);
-		width: 100%;
-		border-radius: var(--radius-card);
-		overflow: hidden;
-		background: var(--tank, #000);
 	}
 
 	.panel {
@@ -445,6 +412,7 @@
 
 	.toolbar {
 		display: flex;
+		flex-wrap: wrap; /* a narrow metrics column drops Conditions to a second row, not off the edge */
 		align-items: center;
 		gap: var(--sp-3);
 		margin: 0 var(--sp-5) var(--sp-4);
@@ -492,9 +460,96 @@
 		background: var(--panel);
 	}
 
+	/*
+		The wide arrangements, AFTER every base rule — these override base declarations (the tank box's
+		width, the metrics grid's tracks) at equal specificity, so they must win on source order.
+	*/
+
+	/* Two-pane: the bench (stage over metrics) scrolls as one column; the mind is its own scroll. */
 	@container detail (min-width: 760px) {
+		.workbench {
+			grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
+			gap: var(--sp-6);
+			height: 100%;
+			min-height: 0;
+		}
+
+		.bench-main {
+			min-height: 0;
+			overflow-y: auto;
+			padding-right: 4px;
+			padding-bottom: var(--sp-6);
+		}
+
 		.inspector-zone {
 			max-width: none;
+			min-height: 0;
+			height: 100%;
+			overflow: hidden;
+		}
+	}
+
+	/* Three columns: the stage takes the lion's share (the tank is the hero), the metrics a column of
+	   their own, and each zone scrolls independently ONLY if it must — at this size the bench is built
+	   to fit the height with no page scroll, every zone starting on the same top line. */
+	@container detail (min-width: 1240px) {
+		.workbench {
+			grid-template-columns: minmax(0, 2.6fr) minmax(280px, 1fr) minmax(300px, 340px);
+			grid-template-areas: 'stage metrics inspector';
+		}
+
+		/* contents: the two zones drop into the workbench grid as real columns. */
+		.bench-main {
+			display: contents;
+		}
+
+		.stage-zone {
+			grid-area: stage;
+			min-height: 0;
+			overflow-y: auto;
+			padding-right: 4px;
+			/* an inline-size container, so the stage below can say "no taller than the full-width tank"
+			   in terms of the column's own width (cqw) */
+			container-type: inline-size;
+		}
+
+		.metrics-zone {
+			grid-area: metrics;
+			min-height: 0;
+			overflow-y: auto;
+			padding-right: 4px;
+		}
+
+		.inspector-zone {
+			grid-area: inspector;
+		}
+
+		/* The stage becomes a SIZE container taking the height left over by the bar and the shelf —
+		   but never more than the full-width tank can use (the cqw cap), so on a tall column the bar
+		   and shelf hug the tank instead of being pinned below a void. Inside it the tank box takes
+		   min(full width, full height × aspect): as large as the column can physically show the
+		   water, whichever axis binds, with nothing letterboxed. */
+		.stage {
+			flex: 1 1 auto;
+			min-height: 220px;
+			max-height: calc(100cqw * var(--tank-h) / var(--tank-w));
+			container-type: size;
+		}
+
+		.tank-box {
+			width: min(100%, calc(100cqh * var(--tank-w) / var(--tank-h)));
+			margin-inline: auto;
+		}
+
+		/* The metrics grid stretches to the column's full height — the mock's even wall of cards, not a
+		   stack with a void under it. minmax keeps a floor; past it the zone scrolls. The 40% track
+		   minimum caps the grid at TWO across however wide the column grows (the mock's shape) while
+		   still dropping to one column when the metrics are squeezed to their floor. */
+		.metrics-grid {
+			flex: 1;
+			min-height: 0;
+			grid-template-columns: repeat(auto-fit, minmax(min(100%, max(200px, 40%)), 1fr));
+			grid-auto-rows: minmax(112px, 1fr);
 		}
 	}
 

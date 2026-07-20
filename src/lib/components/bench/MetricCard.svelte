@@ -48,7 +48,7 @@
 	);
 </script>
 
-<div class="metric" class:stat={!series} style:--metric-accent={accent}>
+<div class="metric" style:--metric-accent={accent}>
 	<span class="title">{title}</span>
 	{#if series && draw}
 		<b class="val tabular" data-testid={testid}>{value}</b>
@@ -121,12 +121,10 @@
 		min-height: 62px;
 	}
 
-	/* A stat card centres its big number in the space a chart would fill. */
-	.stat {
-		justify-content: space-between;
-	}
-
+	/* A stat card centres its big number in the space a chart would fill — margin auto, so it stays
+	   centred however tall the grid stretches the card. */
 	.big {
+		margin-block: auto;
 		font-size: var(--fs-name);
 		font-weight: var(--fw-semibold);
 		color: var(--ink);

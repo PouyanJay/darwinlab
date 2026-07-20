@@ -74,8 +74,10 @@
 	.focus {
 		display: grid;
 		/* minmax(0, …) on BOTH tracks — without the 0 minimum a track's min size is its content, and the
-		   rail's fixed-width cards (or a wide workbench) then force the whole grid past the viewport. */
-		grid-template-columns: minmax(0, 256px) minmax(0, 1fr);
+		   rail's fixed-width cards (or a wide workbench) then force the whole grid past the viewport.
+		   The rail is deliberately slim (the mock's proportion): it is a place to glance and switch,
+		   and every pixel it gives up goes straight to the tank. */
+		grid-template-columns: minmax(0, 212px) minmax(0, 1fr);
 		/* The single row is BOUNDED to the pane, not auto-sized to its tallest child. Without this the
 		   row grew to the full height of a 12-card rail (~2900px) and the rail then had no overflow to
 		   scroll — it just ran off the bottom of the screen. minmax(0,1fr) pins the row to the viewport
