@@ -33,22 +33,26 @@
 			.join(' · ');
 </script>
 
-<div
-	class="heat"
-	style:--seeds={seeds}
-	role="img"
-	aria-label="Survival across {cells.length} conditions and {seeds} seeds; lighter squares survived longer"
->
-	{#each cells as cell, i (cell.index)}
-		{#each seedIndices as s (s)}
-			<div
-				class="cell"
-				style:background={shade(results[i]?.returns[s])}
-				title="{describe(cell)} · seed {s + 1}: {results[i]?.returns[s]?.toFixed(1) ?? '—'}s"
-			></div>
+{#if seeds === 0}
+	<p class="empty">No conditions completed.</p>
+{:else}
+	<div
+		class="heat"
+		style:--seeds={seeds}
+		role="img"
+		aria-label="Survival across {cells.length} conditions and {seeds} seeds; lighter squares survived longer"
+	>
+		{#each cells as cell, i (cell.index)}
+			{#each seedIndices as s (s)}
+				<div
+					class="cell"
+					style:background={shade(results[i]?.returns[s])}
+					title="{describe(cell)} · seed {s + 1}: {results[i]?.returns[s]?.toFixed(1) ?? '—'}s"
+				></div>
+			{/each}
 		{/each}
-	{/each}
-</div>
+	</div>
+{/if}
 
 <style>
 	.heat {
@@ -64,5 +68,11 @@
 	.cell {
 		height: 10px;
 		border-radius: 1.5px;
+	}
+
+	.empty {
+		margin: 0;
+		font-size: var(--fs-sm);
+		color: var(--ink3);
 	}
 </style>

@@ -13,7 +13,7 @@ describe('sweep selection', () => {
 		for (const factor of sweep.factors) {
 			if (sweep.isSelected(factor.key) !== DEFAULTS.has(factor.key)) sweep.toggle(factor.key);
 		}
-		sweep.seeds = 6;
+		sweep.setSeeds(6);
 	});
 
 	it('starts on a bounded grid under the cap', () => {
@@ -33,5 +33,14 @@ describe('sweep selection', () => {
 		sweep.toggle('persistence'); // → 96, over the 32 cap
 		expect(sweep.plannedCells).toBeGreaterThan(32);
 		expect(sweep.willSample).toBe(true);
+	});
+
+	it('setSeeds clamps out-of-range values so a bad input never reaches a job', () => {
+		sweep.setSeeds(999);
+		expect(sweep.seeds).toBe(12);
+		sweep.setSeeds(-4);
+		expect(sweep.seeds).toBe(2);
+		sweep.setSeeds(5);
+		expect(sweep.seeds).toBe(5);
 	});
 });

@@ -37,6 +37,13 @@ describe('expandSweep', () => {
 		expect(dirOff?.cfg.senses.dir).toBe(false);
 		expect(fast?.cfg.predSpeed).toBe(1.0);
 	});
+
+	it('is a single empty cell when there are no factors', () => {
+		const cells = expandSweep(base(), []);
+		expect(cells).toHaveLength(1);
+		expect(cells[0].levels).toEqual({});
+		expect(sweepEffects([], cells, [null])).toEqual([]); // no factors ⇒ no effects
+	});
 });
 
 describe('planSweep', () => {
@@ -52,8 +59,10 @@ describe('planSweep', () => {
 		const plan = planSweep(
 			base(),
 			[senseFactor('dir', 'Direction'), senseFactor('walls', 'Walls')],
-			32,
-			seededRng(1)
+			{
+				maxCells: 32,
+				rng: seededRng(1)
+			}
 		);
 		expect(plan.total).toBe(4);
 		expect(plan.sampled).toBe(false);
@@ -61,15 +70,16 @@ describe('planSweep', () => {
 	});
 
 	it('samples a subset over the cap, and reports that it did', () => {
-		const plan = planSweep(base(), fourSensesAndSpeed, 10, seededRng(1));
+		const plan = planSweep(base(), fourSensesAndSpeed, { maxCells: 10, rng: seededRng(1) });
 		expect(plan.total).toBe(48); // the honest full size is kept…
 		expect(plan.sampled).toBe(true); // …and it says it did not run all of them
 		expect(plan.cells).toHaveLength(10);
 	});
 
 	it('samples reproducibly from its seed', () => {
-		const a = planSweep(base(), fourSensesAndSpeed, 10, seededRng(3)).cells.map((c) => c.levels);
-		const b = planSweep(base(), fourSensesAndSpeed, 10, seededRng(3)).cells.map((c) => c.levels);
+		const opts = () => ({ maxCells: 10, rng: seededRng(3) });
+		const a = planSweep(base(), fourSensesAndSpeed, opts()).cells.map((c) => c.levels);
+		const b = planSweep(base(), fourSensesAndSpeed, opts()).cells.map((c) => c.levels);
 		expect(a).toEqual(b);
 	});
 });
@@ -77,7 +87,7 @@ describe('planSweep', () => {
 describe('sweepJobs', () => {
 	it('makes one job per cell, carrying its config and the run sizes', () => {
 		const cells = expandSweep(base(), [senseFactor('dir', 'Direction')]);
-		const jobs = sweepJobs(cells, 5, 20, 4);
+		const jobs = sweepJobs(cells, { seeds: 5, episodes: 20, bouts: 4 });
 		expect(jobs).toHaveLength(2);
 		expect(jobs[0].seeds).toBe(5);
 		expect(jobs[0].episodes).toBe(20);

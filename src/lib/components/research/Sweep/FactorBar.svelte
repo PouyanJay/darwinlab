@@ -6,16 +6,11 @@
 <script lang="ts">
 	import Button from '../../common/Button.svelte';
 	import Icon from '../../common/Icon.svelte';
+	import RunProgress from '../RunProgress.svelte';
 	import { sweep } from '$lib/state';
 
+	// The input's own bounds, a hint to the browser; the store owns the real clamp (sweep.setSeeds).
 	const SEED_RANGE = { min: 2, max: 12 };
-
-	function setSeeds(value: number) {
-		sweep.seeds = Math.max(
-			SEED_RANGE.min,
-			Math.min(SEED_RANGE.max, Math.round(value) || SEED_RANGE.min)
-		);
-	}
 </script>
 
 <div class="factorbar">
@@ -42,7 +37,7 @@
 				min={SEED_RANGE.min}
 				max={SEED_RANGE.max}
 				value={sweep.seeds}
-				onchange={(event) => setSeeds(Number(event.currentTarget.value))}
+				onchange={(event) => sweep.setSeeds(Number(event.currentTarget.value))}
 			/>
 		</label>
 
@@ -52,11 +47,7 @@
 		</span>
 
 		{#if sweep.running}
-			<div class="progress" role="status">
-				<div class="track"><div class="fill" style:width="{sweep.progress * 100}%"></div></div>
-				<span class="pct tabular">{Math.round(sweep.progress * 100)}%</span>
-			</div>
-			<Button size="sm" variant="ghost" onclick={() => sweep.cancel()}>Cancel</Button>
+			<RunProgress progress={sweep.progress} oncancel={() => sweep.cancel()} />
 		{:else}
 			<Button
 				variant="primary"
@@ -170,30 +161,5 @@
 
 	.summary .cap {
 		color: var(--danger-ink);
-	}
-
-	.progress {
-		display: flex;
-		align-items: center;
-		gap: var(--sp-2);
-	}
-
-	.progress .track {
-		width: 90px;
-		height: 4px;
-		border-radius: 2px;
-		background: var(--chip);
-		overflow: hidden;
-	}
-
-	.progress .fill {
-		height: 100%;
-		background: var(--ink);
-		transition: width var(--dur-fast) linear;
-	}
-
-	.progress .pct {
-		font-size: var(--fs-sm);
-		color: var(--ink2);
 	}
 </style>

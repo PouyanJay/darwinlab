@@ -27,10 +27,13 @@ import type { Evaluation } from '../lab/evaluator';
 /** The factors the sweep starts with selected — a real but bounded grid (2×2×2×3 = 24 cells). */
 const DEFAULT_SELECTED = ['dir', 'dist', 'walls', 'predSpeed'];
 
+/** Seeds a cell may run, so the store clamps its own invariant rather than trusting a caller. */
+const SEED_RANGE = { min: 2, max: 12 };
+
 class SweepStore {
 	// A SvelteSet is reactive on mutation, so `.add`/`.delete` in toggle wake the readers directly.
 	#selected = new SvelteSet<string>(DEFAULT_SELECTED);
-	seeds = $state<number>(SWEEP_DEFAULTS.seeds);
+	#seeds = $state<number>(SWEEP_DEFAULTS.seeds);
 
 	// The run's outputs, replaced wholesale — never mutated in place (they are large and unreactive
 	// per cell). `cells` and `results` stay index-aligned: results[i] is the result for cells[i].
@@ -38,6 +41,10 @@ class SweepStore {
 	#results = $state.raw<(Evaluation | null)[] | null>(null);
 	#total = $state(0);
 	#sampled = $state(false);
+
+	// The factors the current results were computed for, captured at run time so a toggle after a run
+	// does not re-pool the old results against a factor set they were never measured on.
+	#lastFactors: Factor[] = [];
 
 	/** Every factor the sweep could include, in offered order. */
 	get factors(): Factor[] {
@@ -48,10 +55,19 @@ class SweepStore {
 		return this.#selected.has(key);
 	}
 
-	/** Toggle a factor in or out. */
 	toggle(key: string): void {
 		if (this.#selected.has(key)) this.#selected.delete(key);
 		else this.#selected.add(key);
+	}
+
+	get seeds(): number {
+		return this.#seeds;
+	}
+
+	/** Set the seed count, clamped to a sane range — the store owns this invariant, not the control. */
+	setSeeds(value: number): void {
+		const clamped = Math.round(value) || SEED_RANGE.min;
+		this.#seeds = Math.max(SEED_RANGE.min, Math.min(SEED_RANGE.max, clamped));
 	}
 
 	#selectedFactors(): Factor[] {
@@ -100,10 +116,6 @@ class SweepStore {
 		return sweepEffects(this.#lastFactors, this.#cells, this.#results);
 	}
 
-	// The factors the current results were computed for, captured at run time so a toggle after a run
-	// does not re-pool the old results against a factor set they were never measured on.
-	#lastFactors: Factor[] = [];
-
 	/**
 	 * Run the sweep: plan it, run every cell through the batch runner, and keep the results — unless a
 	 * newer run superseded this one, in which case `research.run` returns null and this publishes
@@ -114,8 +126,12 @@ class SweepStore {
 		if (factors.length === 0) return;
 
 		const base = newWorldConfig('Sweep', '#8b8b8b');
-		const plan = planSweep(base, factors, SWEEP_DEFAULTS.maxCells, seededRng(1));
-		const jobs = sweepJobs(plan.cells, this.seeds, SWEEP_DEFAULTS.episodes, SWEEP_DEFAULTS.bouts);
+		const plan = planSweep(base, factors, { maxCells: SWEEP_DEFAULTS.maxCells, rng: seededRng(1) });
+		const jobs = sweepJobs(plan.cells, {
+			seeds: this.#seeds,
+			episodes: SWEEP_DEFAULTS.episodes,
+			bouts: SWEEP_DEFAULTS.bouts
+		});
 
 		const results = await research.run(jobs);
 		if (!results) return;

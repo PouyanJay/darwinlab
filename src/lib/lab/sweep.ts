@@ -15,6 +15,13 @@ import type { WorldConfig } from '../engine';
 import type { EvalRequest, Evaluation } from './evaluator';
 import { contrast, type Contrast } from './stats';
 
+/** How big each cell's run is — the seeds/episodes/bouts that travel together into every job. */
+export interface RunSize {
+	seeds: number;
+	episodes: number;
+	bouts: number;
+}
+
 /** Sensible defaults for a sweep — smaller than a single Evaluate, because there are many cells. */
 export const SWEEP_DEFAULTS = { seeds: 6, episodes: 20, bouts: 4, maxCells: 32 } as const;
 
@@ -132,8 +139,7 @@ export function expandSweep(base: WorldConfig, factors: Factor[]): SweepCell[] {
 export function planSweep(
 	base: WorldConfig,
 	factors: Factor[],
-	maxCells: number,
-	rng: () => number
+	{ maxCells, rng }: { maxCells: number; rng: () => number }
 ): SweepPlan {
 	const all = expandSweep(base, factors);
 	if (all.length <= maxCells) return { cells: all, total: all.length, sampled: false };
@@ -149,13 +155,8 @@ export function planSweep(
 }
 
 /** One evaluation request per cell — the whole plan becomes one batch. */
-export function sweepJobs(
-	cells: SweepCell[],
-	seeds: number,
-	episodes: number,
-	bouts: number
-): EvalRequest[] {
-	return cells.map((cell) => ({ cfg: cell.cfg, seeds, episodes, bouts }));
+export function sweepJobs(cells: SweepCell[], size: RunSize): EvalRequest[] {
+	return cells.map((cell) => ({ cfg: cell.cfg, ...size }));
 }
 
 /**

@@ -19,20 +19,44 @@
 	];
 
 	let active = $state<Instrument>('sweep');
+
+	/**
+	 * A single-select tablist: exactly one instrument is active, so ←/→ move the choice among the
+	 * READY tabs (the "soon" ones are disabled and skipped) and focus follows it — the roving-tabindex
+	 * keyboard model the rest of the lab's grouped controls use.
+	 */
+	function move(delta: number) {
+		const ready = INSTRUMENTS.filter((instrument) => instrument.ready).map((i) => i.key);
+		const next = ready[(ready.indexOf(active) + delta + ready.length) % ready.length];
+		active = next;
+		document.getElementById(`rtab-${next}`)?.focus();
+	}
+
+	function onkeydown(event: KeyboardEvent) {
+		if (event.key === 'ArrowRight' || event.key === 'ArrowDown') move(1);
+		else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') move(-1);
+		else return;
+		event.preventDefault();
+	}
 </script>
 
 <div class="research" data-testid="research-stage">
 	<div class="inner">
 		<header>
 			<span class="eyebrow">Research · {SCENARIO.index} · {SCENARIO.name}</span>
-			<div class="tabs" role="group" aria-label="research instruments">
+			<div class="tabs" role="tablist" aria-label="research instruments">
 				{#each INSTRUMENTS as instrument (instrument.key)}
 					<button
+						id="rtab-{instrument.key}"
 						class="tab"
 						class:active={active === instrument.key}
-						aria-pressed={active === instrument.key}
+						role="tab"
+						aria-selected={active === instrument.key}
+						aria-controls="research-panel"
+						tabindex={active === instrument.key ? 0 : -1}
 						disabled={!instrument.ready}
 						onclick={() => (active = instrument.key)}
+						{onkeydown}
 					>
 						{instrument.name}{#if !instrument.ready}<span class="soon">soon</span>{/if}
 					</button>
@@ -40,9 +64,11 @@
 			</div>
 		</header>
 
-		{#if active === 'sweep'}
-			<Sweep />
-		{/if}
+		<div id="research-panel" role="tabpanel" aria-labelledby="rtab-{active}">
+			{#if active === 'sweep'}
+				<Sweep />
+			{/if}
+		</div>
 	</div>
 </div>
 
