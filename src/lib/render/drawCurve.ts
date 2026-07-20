@@ -114,6 +114,28 @@ export function drawSchoolCurve(
 	});
 }
 
+/**
+ * The learning curve on a TRUE 0–1 axis — for charts that print an axis (the workbench's metric
+ * cards say 1.0 / 0.5 / 0.0), where the sparkline's legibility zoom would make the labels lie:
+ * zoomed, a 1% survival rate clamps flat onto the floor and reads as a broken, empty chart.
+ * The tile sparklines keep the zoomed drawCurve — they carry no axis, so the zoom misleads nobody.
+ */
+export function drawRate(
+	ctx: CanvasRenderingContext2D,
+	W: number,
+	H: number,
+	curve: number[],
+	accent: string,
+	theme: ThemeName
+): void {
+	drawSparkline(ctx, W, H, curve, theme, {
+		color: accent,
+		map: (v) => H - 2 - clamp(v, 0, 1) * (H - 4),
+		baselineAlpha: 0.18,
+		fillAlpha: 0.13
+	});
+}
+
 /** Real-world population decay: fraction of the deployed batch still alive, over time.
  *  In the WORLD'S accent, like every other chart on the card — the accent owns the graphs. */
 export function drawDecay(

@@ -115,10 +115,21 @@
 		text-align: right;
 	}
 
+	/* The canvas is absolutely positioned OUT of the flow: a canvas's bitmap (client size × DPR) is
+	   also its intrinsic size, and in a stretched flex column that intrinsic height feeds back into
+	   the min-content floor — the plot then outgrows its card every repaint and the axis's 0.0 and
+	   the curve's floor are clipped off the bottom. Absolute, it contributes nothing and simply
+	   fills whatever height the card really has. */
 	.chart {
+		position: relative;
 		flex: 1;
 		min-width: 0;
 		min-height: 62px;
+	}
+
+	.chart :global(canvas) {
+		position: absolute;
+		inset: 0;
 	}
 
 	/* A stat card centres its big number in the space a chart would fill — margin auto, so it stays

@@ -4,11 +4,10 @@
   A world you are giving your full attention to is not read top to bottom; it is operated. So it is
   laid out as a bench in three zones:
 
-    STAGE      the tank, and almost nothing else — as large as the pane allows, filling the height
-               the column gives it at the water's own aspect, with the world's identity and controls
-               as one caption bar beneath it.
+    STAGE      the caption bar (the world's identity and controls) on top, then the tank — as large
+               as the pane allows, filling the remaining height at the water's own aspect.
     METRICS    the champion clones, then every learning curve as its own WIDE chart stacked down the
-               column, and the tools you RUN (flee assay, evaluation, ablation) shelved below them.
+               column, and the tools you RUN (flee assay, evaluation, ablation) three abreast below.
     MIND       the champion's brain, docked open — senses, escape map, motor outputs — live.
 
   It is one stacked column on a phone; the mind docks to the side as soon as there is room; and the
@@ -33,7 +32,7 @@
 	import { sensesFor } from '../senses';
 	import { describeWorld } from './describeWorld';
 	import { bench } from '$lib/state';
-	import { drawCurve, drawDecay, drawSchoolCurve } from '$lib/render';
+	import { drawRate, drawDecay, drawSchoolCurve } from '$lib/render';
 	import { configDiff } from '$lib/lab/run';
 	import type { WorldEntry } from '$lib/state';
 
@@ -90,24 +89,11 @@
 	     widest size it becomes `display: contents`, so the two zones drop straight into the workbench
 	     grid as their own columns. -->
 	<div class="bench-main">
-		<!-- ZONE 1 · STAGE: the world, large, with only its caption bar beneath it. -->
+		<!-- ZONE 1 · STAGE: the caption bar on top, then the world, large, to the bottom of the pane. -->
 		<div class="stage-zone">
-			<!-- The stage: sized by WIDTH in the stacked layouts (the tank at the water's aspect), and by
-			     the column's HEIGHT on a wide bench — a size container, so the tank box can take
-			     min(full width, full height × aspect) and the water reaches every edge either way. -->
-			<div class="stage" style:--tank-w={config.bw} style:--tank-h={config.bh}>
-				<div class="tank-box">
-					<Tank {entry} big onselect={(picked) => bench.select(entry.id, picked)} />
-				</div>
-			</div>
-
-			{#if bench.lens === 'flee'}
-				<LensStrip {entry} />
-			{/if}
-
 			<!-- The caption bar: whose water this is and everything you do TO the world (rename, senses,
-			     reset / duplicate / collapse / remove) — one wrapping row under the tank, so the stage
-			     starts at the very top of the bench, level with the other two zones. -->
+			     reset / duplicate / collapse / remove) — one wrapping row ABOVE the tank: the stage's
+			     header. -->
 			<div class="bar">
 				<Chip class="badge">{badge}</Chip>
 				<div class="name">
@@ -182,6 +168,19 @@
 					</Button>
 				</div>
 			</div>
+
+			<!-- The stage: sized by WIDTH in the stacked layouts (the tank at the water's aspect), and by
+			     the column's HEIGHT on a wide bench — a size container, so the tank box can take
+			     min(full width, full height × aspect) and the water reaches every edge either way. -->
+			<div class="stage" style:--tank-w={config.bw} style:--tank-h={config.bh}>
+				<div class="tank-box">
+					<Tank {entry} big onselect={(picked) => bench.select(entry.id, picked)} />
+				</div>
+			</div>
+
+			{#if bench.lens === 'flee'}
+				<LensStrip {entry} />
+			{/if}
 		</div>
 
 		<!-- ZONE 2 · METRICS: the champion clones, the learning curves as a stack of wide charts, and
@@ -218,7 +217,7 @@
 					title="Mean return / episode"
 					value="{entry.stats.survivalPct}%"
 					series={() => entry.world.lifeCurve}
-					draw={drawCurve}
+					draw={drawRate}
 					accent={config.accent}
 					label="{config.name}: mean return per episode across {entry.stats
 						.gen} generations, now {entry.stats.survivalPct}%"
@@ -227,7 +226,7 @@
 					title="Survival rate"
 					value="{entry.stats.aliveRatePct}%"
 					series={() => entry.world.curve}
-					draw={drawCurve}
+					draw={drawRate}
 					accent={config.accent}
 					label="{config.name}: fraction of the population alive when a generation ends, across {entry
 						.stats.gen} generations"
@@ -532,9 +531,9 @@
 			grid-auto-rows: minmax(112px, 1fr);
 		}
 
-		/* In the side column the tools stack one per row — a 2+1 wrap reads as clutter there. */
+		/* In the side column the tools sit three abreast — one even row of panels under the charts. */
 		.shelf {
-			grid-template-columns: minmax(0, 1fr);
+			grid-template-columns: repeat(3, minmax(0, 1fr));
 		}
 	}
 
