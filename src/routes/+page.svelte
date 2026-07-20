@@ -16,11 +16,12 @@
 	import FirstRunHint from '$lib/components/bench/FirstRunHint.svelte';
 	import LineageCanvas from '$lib/components/bench/LineageCanvas.svelte';
 	import FocusView from '$lib/components/bench/FocusView.svelte';
+	import ResearchStage from '$lib/components/research/ResearchStage.svelte';
 	import ConditionsModal from '$lib/components/conditions/ConditionsModal.svelte';
 	import BrainInspector from '$lib/components/inspector/BrainInspector.svelte';
 	import StoryMode from '$lib/components/story/StoryMode.svelte';
 	import FooterPill from '$lib/components/common/FooterPill.svelte';
-	import { bench, shell, story, theme, prefersReducedMotion } from '$lib/state';
+	import { app, bench, shell, story, theme, prefersReducedMotion } from '$lib/state';
 	import { DEFAULT_WORLDS, newWorldConfig, MAX_GENERATIONS_DEFAULT } from '$lib/engine';
 	import { PREWARM_GENERATIONS } from '$lib/lab/scenario';
 
@@ -35,6 +36,7 @@
 	});
 
 	onMount(() => {
+		app.init();
 		const stopWatchingViewport = shell.init();
 		bench.init({
 			configs: DEFAULT_WORLDS,
@@ -102,6 +104,10 @@
 		// shortcuts stand down, or the keypress that enters the lab would also pause the sim.
 		if (!entered) return;
 
+		// Research has no bench transport, so the page's Studio shortcuts (Space, the overlay Esc)
+		// stand down here — exactly as they do behind the film.
+		if (app.research) return;
+
 		// Esc shuts the control panel where it is an overlay — the same key that closes every other
 		// thing this app puts over the bench.
 		if (event.key === 'Escape' && shell.narrow && shell.overlayOpen && !story.active) {
@@ -125,37 +131,51 @@
      not be able to Tab onto controls they cannot see and remove a world mid-presentation. -->
 <div class="app" inert={story.active || !entered} style:--shell-gutter={gutter}>
 	<TopBar />
-	<TurboPill />
+	{#if !app.research}
+		<TurboPill />
+	{/if}
 
 	<div class="shell">
-		<Sidebar onaddworld={addWorld} onplaystory={() => bench.playStory()} />
+		{#if app.research}
+			<!-- Research takes the full bench: the studio sidebar and its transport do not apply here,
+			     and the instruments carry their own controls (built in later phases). -->
+			<div class="bench">
+				<main><ResearchStage /></main>
+			</div>
+		{:else}
+			<Sidebar onaddworld={addWorld} onplaystory={() => bench.playStory()} />
 
-		<!-- The bench IS the canvas: the family tree takes the full height under the top bar — unless a
-		     world has been expanded, when the focus view (one world large + a rail of the rest) takes
-		     its place. -->
-		<div class="bench">
-			<main>
-				{#if focusing}
-					<FocusView onaddworld={addWorld} />
-				{:else}
-					<LineageCanvas onaddworld={addWorld} />
-				{/if}
-			</main>
-		</div>
+			<!-- The bench IS the canvas: the family tree takes the full height under the top bar — unless
+			     a world has been expanded, when the focus view (one world large + a rail of the rest)
+			     takes its place. -->
+			<div class="bench">
+				<main>
+					{#if focusing}
+						<FocusView onaddworld={addWorld} />
+					{:else}
+						<LineageCanvas onaddworld={addWorld} />
+					{/if}
+				</main>
+			</div>
+		{/if}
 	</div>
 
-	{#if editing}
-		<ConditionsModal entry={editing} onclose={() => bench.closeConditions()} />
-	{/if}
+	<!-- Studio-only furniture: the dialogs, the docked inspector, the disclaimer and the first-run
+	     hint all belong to the canvas, so none of them float over Research. -->
+	{#if !app.research}
+		{#if editing}
+			<ConditionsModal entry={editing} onclose={() => bench.closeConditions()} />
+		{/if}
 
-	<!-- Not while a world is expanded: the workbench docks its own copy of the inspector, and a
-	     floating overlay on top of it would be the same mind twice. -->
-	{#if bench.selection && inspecting && !focusing}
-		<BrainInspector selection={bench.selection} entry={inspecting} />
-	{/if}
+		<!-- Not while a world is expanded: the workbench docks its own copy of the inspector, and a
+		     floating overlay on top of it would be the same mind twice. -->
+		{#if bench.selection && inspecting && !focusing}
+			<BrainInspector selection={bench.selection} entry={inspecting} />
+		{/if}
 
-	<FooterPill />
-	<FirstRunHint />
+		<FooterPill />
+		<FirstRunHint />
+	{/if}
 </div>
 
 <!-- OUTSIDE the app, deliberately: the app above is `inert` while a takeover is up, and a takeover
