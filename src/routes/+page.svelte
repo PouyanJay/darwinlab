@@ -136,28 +136,25 @@
 	{/if}
 
 	<div class="shell">
-		{#if app.research}
-			<!-- Research takes the full bench: the studio sidebar and its transport do not apply here,
-			     and the instruments carry their own controls (built in later phases). -->
-			<div class="bench">
-				<main><ResearchStage /></main>
-			</div>
-		{:else}
+		<!-- The studio sidebar and its transport do not apply in Research; the instruments carry their
+		     own controls (built in later phases). -->
+		{#if !app.research}
 			<Sidebar onaddworld={addWorld} onplaystory={() => bench.playStory()} />
-
-			<!-- The bench IS the canvas: the family tree takes the full height under the top bar — unless
-			     a world has been expanded, when the focus view (one world large + a rail of the rest)
-			     takes its place. -->
-			<div class="bench">
-				<main>
-					{#if focusing}
-						<FocusView onaddworld={addWorld} />
-					{:else}
-						<LineageCanvas onaddworld={addWorld} />
-					{/if}
-				</main>
-			</div>
 		{/if}
+
+		<!-- The bench IS the canvas: the family tree (or a focused world's workbench) fills the height
+		     under the top bar — unless the lab is in Research, when the Research stage takes its place. -->
+		<div class="bench">
+			<main>
+				{#if app.research}
+					<ResearchStage />
+				{:else if focusing}
+					<FocusView onaddworld={addWorld} />
+				{:else}
+					<LineageCanvas onaddworld={addWorld} />
+				{/if}
+			</main>
+		</div>
 	</div>
 
 	<!-- Studio-only furniture: the dialogs, the docked inspector, the disclaimer and the first-run

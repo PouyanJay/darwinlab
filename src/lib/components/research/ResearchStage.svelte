@@ -16,15 +16,18 @@
 	const INSTRUMENTS = [
 		{
 			name: 'The Sweep',
-			line: 'Name the factors and levels; run every combination across seeds and read which knobs move survival.'
+			description:
+				'Name the factors and levels; run every combination across seeds and read which knobs move survival.'
 		},
 		{
 			name: 'The Ledger',
-			line: 'State a claim; the lab designs the smallest test that could disprove it and records the verdict.'
+			description:
+				'State a claim; the lab designs the smallest test that could disprove it and records the verdict.'
 		},
 		{
 			name: 'The Atlas',
-			line: 'Pick two axes; scatter simulations across the plane and see the survival landscape emerge.'
+			description:
+				'Pick two axes; scatter simulations across the plane and see the survival landscape emerge.'
 		}
 	];
 </script>
@@ -46,7 +49,7 @@
 						<span class="name">{instrument.name}</span>
 						<span class="soon">soon</span>
 					</div>
-					<p>{instrument.line}</p>
+					<p>{instrument.description}</p>
 				</li>
 			{/each}
 		</ul>

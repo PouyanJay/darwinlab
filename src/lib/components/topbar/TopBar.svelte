@@ -51,8 +51,7 @@
 		<Chip variant="tag" class="live-tag">agent sandbox</Chip>
 	</div>
 
-	<!-- The top-level lens. A mode is identity ("which instrument"), so it sits with the wordmark —
-	     and it is the one control here that persists across both modes rather than driving either. -->
+	<!-- The top-level lens; see ModeSwitch.svelte for why a mode lives in the top bar. -->
 	<ModeSwitch />
 
 	<span class="divider" aria-hidden="true"></span>
