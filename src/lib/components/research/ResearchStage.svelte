@@ -8,13 +8,14 @@
 -->
 <script lang="ts">
 	import Sweep from './Sweep/Sweep.svelte';
+	import Ledger from './Ledger/Ledger.svelte';
 	import { SCENARIO } from '$lib/lab/scenario';
 
 	type Instrument = 'sweep' | 'ledger' | 'atlas';
 
 	const INSTRUMENTS: { key: Instrument; name: string; ready: boolean }[] = [
 		{ key: 'sweep', name: 'The Sweep', ready: true },
-		{ key: 'ledger', name: 'The Ledger', ready: false },
+		{ key: 'ledger', name: 'The Ledger', ready: true },
 		{ key: 'atlas', name: 'The Atlas', ready: false }
 	];
 
@@ -67,6 +68,8 @@
 		<div id="research-panel" role="tabpanel" aria-labelledby="rtab-{active}">
 			{#if active === 'sweep'}
 				<Sweep />
+			{:else if active === 'ledger'}
+				<Ledger />
 			{/if}
 		</div>
 	</div>

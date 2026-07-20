@@ -113,7 +113,7 @@ test('a schooling world scans clean — the school readout and shoal pills are n
 	expect(await violations(page)).toEqual([]);
 });
 
-test('the Research stage scans clean — the instrument tabs and the Sweep are new surface', async ({
+test('the Research stage scans clean — the instrument tabs, the Sweep and the Ledger are new surface', async ({
 	page
 }) => {
 	await page
@@ -121,5 +121,10 @@ test('the Research stage scans clean — the instrument tabs and the Sweep are n
 		.getByRole('radio', { name: 'Research' })
 		.click();
 	await page.getByTestId('sweep').waitFor();
+	expect(await violations(page)).toEqual([]);
+
+	// and the Ledger — its hypothesis list, verdict card and feed are their own new surface
+	await page.getByRole('tab', { name: 'The Ledger' }).click();
+	await page.getByTestId('ledger').waitFor();
 	expect(await violations(page)).toEqual([]);
 });
