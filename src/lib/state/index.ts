@@ -3,6 +3,7 @@
  * See `bench.svelte.ts` for the architecture and the reactivity/performance rationale.
  */
 export * from './app.svelte';
+export * from './research.svelte';
 export * from './views.svelte';
 export * from './bench.svelte';
 export * from './story.svelte';
