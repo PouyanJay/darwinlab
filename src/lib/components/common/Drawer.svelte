@@ -127,6 +127,9 @@
 		width: var(--drawer-width, 360px);
 		max-width: calc(100vw - 32px);
 		overflow: auto;
+		/* Scrolls, but the bar stays out of sight — the mind is a tall reading panel and a native
+		   scrollbar down its edge reads as chrome. Scrolling (wheel, trackpad, keys) is untouched. */
+		scrollbar-width: none; /* Firefox */
 		padding: 17px 19px 19px;
 		border: 1px solid var(--line);
 		border-radius: var(--radius-card);
@@ -134,6 +137,10 @@
 		backdrop-filter: blur(var(--blur-glass));
 		box-shadow: var(--shadow-drawer);
 		animation: slide-in-right var(--dur-enter) var(--ease) both;
+	}
+
+	.drawer::-webkit-scrollbar {
+		display: none; /* WebKit / Blink */
 	}
 
 	/* DOCKED: part of the workbench flow, not an overlay. It fills the column it is given and scrolls
