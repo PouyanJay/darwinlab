@@ -11,9 +11,8 @@
  * time-boxed slices and return null, and the worker lives on to take the next job.
  */
 
-import { evaluate, type EvalRequest } from './evaluator';
-
-type Incoming = { jobId: number; req: EvalRequest } | { type: 'cancel'; jobId: number };
+import { evaluate } from './evaluator';
+import type { WorkerRequest, WorkerResponse } from './protocol';
 
 // A dedicated worker's global scope. The cast sidesteps the DOM/WebWorker `self` type clash without
 // pulling the DOM lib's `Window.postMessage` signature in.
@@ -21,7 +20,7 @@ const ctx = self as unknown as DedicatedWorkerGlobalScope;
 
 const controllers = new Map<number, AbortController>();
 
-ctx.onmessage = async (event: MessageEvent<Incoming>) => {
+ctx.onmessage = async (event: MessageEvent<WorkerRequest>) => {
 	const message = event.data;
 
 	// The cancel message is the only one carrying `type`, so its presence narrows the union.
@@ -36,10 +35,10 @@ ctx.onmessage = async (event: MessageEvent<Incoming>) => {
 
 	const result = await evaluate(req, {
 		signal: controller.signal,
-		onProgress: (progress) => ctx.postMessage({ jobId, progress })
+		onProgress: (progress) => ctx.postMessage({ jobId, progress } satisfies WorkerResponse)
 	});
 
 	controllers.delete(jobId);
 	// `result` is null if the job was cancelled mid-flight — the pool resolves that job to null.
-	ctx.postMessage({ jobId, result });
+	ctx.postMessage({ jobId, result } satisfies WorkerResponse);
 };

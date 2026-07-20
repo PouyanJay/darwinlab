@@ -77,4 +77,12 @@ describe('contrast', () => {
 		expect(ci.lo).toBeLessThan(0);
 		expect(ci.hi).toBeGreaterThan(0);
 	});
+
+	it('has no contrast when an arm is empty', () => {
+		const { delta, ci, d } = contrast([], [1, 2, 3]);
+		expect(delta).toBeNaN();
+		expect(ci.lo).toBeNaN();
+		expect(ci.hi).toBeNaN();
+		expect(d).toBeNaN();
+	});
 });

@@ -17,6 +17,7 @@
 
 import { browser } from '$app/environment';
 import { evaluate, type EvalRequest, type Evaluation } from './evaluator';
+import type { WorkerRequest, WorkerResponse } from './protocol';
 
 export interface JobExecutor {
 	/** How many jobs may run at once — the pool size, or 1 in-thread. */
@@ -27,7 +28,7 @@ export interface JobExecutor {
 		onProgress: (fraction: number) => void,
 		signal: AbortSignal
 	): Promise<Evaluation | null>;
-	/** Release any workers held. */
+	/** Release any workers held, settling anything still in flight to null. */
 	dispose(): void;
 }
 
@@ -46,14 +47,24 @@ export class InThreadExecutor implements JobExecutor {
 	dispose(): void {}
 }
 
-type OutgoingProgress = { jobId: number; progress: number };
-type OutgoingResult = { jobId: number; result: Evaluation | null };
-type Outgoing = OutgoingProgress | OutgoingResult;
-
 interface PendingJob {
 	onProgress: (fraction: number) => void;
 	settle: (result: Evaluation | null) => void;
 }
+
+/** A job waiting for a worker to free up, with the wiring to drop it if it is cancelled first. */
+interface WaitingJob {
+	resolve: (worker: Worker) => void;
+	reject: (reason: unknown) => void;
+	signal: AbortSignal;
+	onAbort: () => void;
+}
+
+/** How the pool spawns a worker — the real Vite module worker in production, a fake in tests. */
+export type WorkerFactory = () => Worker;
+
+const defaultWorkerFactory: WorkerFactory = () =>
+	new Worker(new URL('./eval.worker.ts', import.meta.url), { type: 'module' });
 
 /** A pool of Web Workers, each running the pure evaluator off the main thread. */
 export class WorkerPoolExecutor implements JobExecutor {
@@ -61,21 +72,72 @@ export class WorkerPoolExecutor implements JobExecutor {
 
 	#workers: Worker[] = [];
 	#free: Worker[] = [];
-	#waiting: Array<(worker: Worker) => void> = [];
+	#waiting: WaitingJob[] = [];
 	#pending = new Map<number, PendingJob>();
 	#nextJobId = 0;
 
-	constructor(size: number) {
+	constructor(size: number, makeWorker: WorkerFactory = defaultWorkerFactory) {
 		this.concurrency = Math.max(1, size);
 		for (let i = 0; i < this.concurrency; i++) {
-			const worker = new Worker(new URL('./eval.worker.ts', import.meta.url), { type: 'module' });
-			worker.onmessage = (event: MessageEvent<Outgoing>) => this.#onMessage(worker, event.data);
+			const worker = makeWorker();
+			worker.onmessage = (event: MessageEvent<WorkerResponse>) =>
+				this.#onMessage(worker, event.data);
 			this.#workers.push(worker);
 			this.#free.push(worker);
 		}
 	}
 
-	#onMessage(worker: Worker, message: Outgoing): void {
+	async submit(
+		req: EvalRequest,
+		onProgress: (fraction: number) => void,
+		signal: AbortSignal
+	): Promise<Evaluation | null> {
+		if (signal.aborted) return null;
+
+		let worker: Worker;
+		try {
+			worker = await this.#acquire(signal);
+		} catch {
+			return null; // cancelled while queued for a free worker
+		}
+		if (signal.aborted) {
+			this.#release(worker);
+			return null;
+		}
+
+		const jobId = this.#nextJobId++;
+		return new Promise<Evaluation | null>((resolve) => {
+			const onAbort = () => worker.postMessage({ type: 'cancel', jobId } satisfies WorkerRequest);
+			signal.addEventListener('abort', onAbort, { once: true });
+
+			this.#pending.set(jobId, {
+				onProgress,
+				settle: (result) => {
+					signal.removeEventListener('abort', onAbort);
+					resolve(result);
+				}
+			});
+
+			worker.postMessage({ jobId, req } satisfies WorkerRequest);
+		});
+	}
+
+	dispose(): void {
+		for (const worker of this.#workers) worker.terminate();
+		// Nothing may be left awaiting a promise that can never resolve now the workers are gone:
+		// settle every in-flight job to null, and reject every job still queued for a worker.
+		for (const job of this.#pending.values()) job.settle(null);
+		for (const job of this.#waiting) {
+			job.signal.removeEventListener('abort', job.onAbort);
+			job.reject(new DOMException('Executor disposed', 'AbortError'));
+		}
+		this.#workers = [];
+		this.#free = [];
+		this.#waiting = [];
+		this.#pending.clear();
+	}
+
+	#onMessage(worker: Worker, message: WorkerResponse): void {
 		const job = this.#pending.get(message.jobId);
 		if (!job) return;
 
@@ -93,53 +155,41 @@ export class WorkerPoolExecutor implements JobExecutor {
 	/** Hand a freed worker to whoever is waiting, or put it back on the free list. */
 	#release(worker: Worker): void {
 		const next = this.#waiting.shift();
-		if (next) next(worker);
-		else this.#free.push(worker);
-	}
-
-	/** Resolve as soon as a worker is free — immediately if one is idle, else when one frees up. */
-	#acquire(): Promise<Worker> {
-		const worker = this.#free.pop();
-		if (worker) return Promise.resolve(worker);
-		return new Promise((resolve) => this.#waiting.push(resolve));
-	}
-
-	async submit(
-		req: EvalRequest,
-		onProgress: (fraction: number) => void,
-		signal: AbortSignal
-	): Promise<Evaluation | null> {
-		if (signal.aborted) return null;
-
-		const worker = await this.#acquire();
-		if (signal.aborted) {
-			this.#release(worker);
-			return null;
+		if (next) {
+			next.signal.removeEventListener('abort', next.onAbort);
+			next.resolve(worker);
+		} else {
+			this.#free.push(worker);
 		}
-
-		const jobId = this.#nextJobId++;
-		return new Promise<Evaluation | null>((resolve) => {
-			const onAbort = () => worker.postMessage({ type: 'cancel', jobId });
-			signal.addEventListener('abort', onAbort, { once: true });
-
-			this.#pending.set(jobId, {
-				onProgress,
-				settle: (result) => {
-					signal.removeEventListener('abort', onAbort);
-					resolve(result);
-				}
-			});
-
-			worker.postMessage({ jobId, req });
-		});
 	}
 
-	dispose(): void {
-		for (const worker of this.#workers) worker.terminate();
-		this.#workers = [];
-		this.#free = [];
-		this.#waiting = [];
-		this.#pending.clear();
+	/**
+	 * Resolve as soon as a worker is free — immediately if one is idle, else when one frees up. A job
+	 * that is cancelled while it waits drops out of the queue and rejects, so its cancellation is
+	 * honoured without waiting for an unrelated job to finish.
+	 */
+	#acquire(signal: AbortSignal): Promise<Worker> {
+		const free = this.#free.pop();
+		if (free) return Promise.resolve(free);
+
+		return new Promise<Worker>((resolve, reject) => {
+			if (signal.aborted) {
+				reject(new DOMException('Aborted', 'AbortError'));
+				return;
+			}
+			const job: WaitingJob = {
+				resolve,
+				reject,
+				signal,
+				onAbort: () => {
+					const index = this.#waiting.indexOf(job);
+					if (index !== -1) this.#waiting.splice(index, 1);
+					reject(new DOMException('Aborted', 'AbortError'));
+				}
+			};
+			signal.addEventListener('abort', job.onAbort, { once: true });
+			this.#waiting.push(job);
+		});
 	}
 }
 

@@ -33,8 +33,8 @@ class ResearchStore {
 	 * Run a batch of evaluations, cancelling any batch already in flight.
 	 *
 	 * Resolves to the per-job results (a null in a slot is a job that failed or was cancelled), or to
-	 * `null` for the WHOLE run when a newer run has superseded this one — at which point this call no
-	 * longer owns the store and must publish nothing.
+	 * `null` for the WHOLE run when this call no longer owns the store — because a newer run has
+	 * superseded it, or `cancel()` stopped it outright — at which point it must publish nothing.
 	 *
 	 * `executor` overrides the runner's default pool — the seam the tests drive, and where a custom
 	 * pool would plug in.

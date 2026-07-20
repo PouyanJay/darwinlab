@@ -67,6 +67,20 @@ function percentile(sorted: number[], p: number): number {
 	return sorted[lo] + (sorted[hi] - sorted[lo]) * (rank - lo);
 }
 
+/** The two-sided interval from a sorted bootstrap distribution — shared by both bootstrap functions. */
+function boundsFrom(sortedValues: number[], alpha: number): Interval {
+	return { lo: percentile(sortedValues, alpha / 2), hi: percentile(sortedValues, 1 - alpha / 2) };
+}
+
+/** The bootstrap defaults, resolved once so the two callers cannot silently diverge. */
+function resolveOptions(options: BootstrapOptions): Required<BootstrapOptions> {
+	return {
+		alpha: options.alpha ?? 0.05,
+		resamples: options.resamples ?? 2000,
+		rng: options.rng ?? seededRng(1)
+	};
+}
+
 /** One bootstrap resample's mean: draw `xs.length` values with replacement and average them. */
 function resampleMean(xs: number[], rng: () => number): number {
 	let sum = 0;
@@ -81,13 +95,13 @@ function resampleMean(xs: number[], rng: () => number): number {
  * identical numbers can only ever resample identical numbers, which is the honest answer.
  */
 export function bootstrapCI(xs: number[], options: BootstrapOptions = {}): Interval {
-	const { alpha = 0.05, resamples = 2000, rng = seededRng(1) } = options;
 	if (xs.length === 0) return { lo: NaN, hi: NaN };
+	const { alpha, resamples, rng } = resolveOptions(options);
 
 	const means: number[] = [];
 	for (let r = 0; r < resamples; r++) means.push(resampleMean(xs, rng));
 	means.sort((a, b) => a - b);
-	return { lo: percentile(means, alpha / 2), hi: percentile(means, 1 - alpha / 2) };
+	return boundsFrom(means, alpha);
 }
 
 /**
@@ -110,16 +124,15 @@ export function cohensD(a: number[], b: number[]): number {
  * makes "a pays more than b" a claim rather than a hope.
  */
 export function contrast(a: number[], b: number[], options: BootstrapOptions = {}): Contrast {
-	const { alpha = 0.05, resamples = 2000, rng = seededRng(1) } = options;
+	// An empty arm has no difference to report — say so, rather than returning a delta of NaN dressed
+	// as a number, mirroring bootstrapCI's explicit empty handling.
+	if (a.length === 0 || b.length === 0) return { delta: NaN, ci: { lo: NaN, hi: NaN }, d: NaN };
+	const { alpha, resamples, rng } = resolveOptions(options);
 	const delta = mean(a) - mean(b);
 
 	const deltas: number[] = [];
 	for (let r = 0; r < resamples; r++) deltas.push(resampleMean(a, rng) - resampleMean(b, rng));
 	deltas.sort((x, y) => x - y);
 
-	return {
-		delta,
-		ci: { lo: percentile(deltas, alpha / 2), hi: percentile(deltas, 1 - alpha / 2) },
-		d: cohensD(a, b)
-	};
+	return { delta, ci: boundsFrom(deltas, alpha), d: cohensD(a, b) };
 }
