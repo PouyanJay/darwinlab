@@ -4,11 +4,11 @@
   A world you are giving your full attention to is not read top to bottom; it is operated. So it is
   laid out as a bench in three zones:
 
-    STAGE      the tank FIRST and as large as the pane allows — it fills the height the column gives
-               it at the water's own aspect — with the world's identity and controls as a caption bar
-               beneath it, and the tools you RUN (flee assay, evaluation, ablation) on a shelf below.
-    METRICS    the champion clones and, below them, a GRID of the world's metrics that stretches to
-               fill the column — each curve on its own chart, no dead space underneath.
+    STAGE      the tank, and almost nothing else — as large as the pane allows, filling the height
+               the column gives it at the water's own aspect, with the world's identity and controls
+               as one caption bar beneath it.
+    METRICS    the champion clones, then every learning curve as its own WIDE chart stacked down the
+               column, and the tools you RUN (flee assay, evaluation, ablation) shelved below them.
     MIND       the champion's brain, docked open — senses, escape map, motor outputs — live.
 
   It is one stacked column on a phone; the mind docks to the side as soon as there is room; and the
@@ -68,10 +68,6 @@
 		if (halfLife !== null) return `½ ${halfLife.toFixed(0)}s`;
 		return `${deployT.toFixed(0)}s`;
 	});
-	const bestValue = $derived(
-		entry.stats.bestFitness ? `${entry.stats.bestFitness.toFixed(1)}s` : '—'
-	);
-
 	// Open the champion's mind the moment this world takes the bench, and again whenever we switch to a
 	// different world (the component is keyed on the world id, so this re-runs on a fresh mount). Let go
 	// of the selection when the workbench leaves, so collapsing back to the canvas does not pop the
@@ -94,7 +90,7 @@
 	     widest size it becomes `display: contents`, so the two zones drop straight into the workbench
 	     grid as their own columns. -->
 	<div class="bench-main">
-		<!-- ZONE 1 · STAGE: the world first and large, its caption bar and tools beneath it. -->
+		<!-- ZONE 1 · STAGE: the world, large, with only its caption bar beneath it. -->
 		<div class="stage-zone">
 			<!-- The stage: sized by WIDTH in the stacked layouts (the tank at the water's aspect), and by
 			     the column's HEIGHT on a wide bench — a size container, so the tank box can take
@@ -186,16 +182,10 @@
 					</Button>
 				</div>
 			</div>
-
-			<!-- The shelf: the things you RUN, each its own panel, directly under the world they act on. -->
-			<div class="shelf">
-				<AssayPanel {entry} />
-				<EvalPanel {entry} />
-				<AblationMatrix {entry} />
-			</div>
 		</div>
 
-		<!-- ZONE 2 · METRICS: the champion clones, then the world's metrics as a grid of charts. -->
+		<!-- ZONE 2 · METRICS: the champion clones, the learning curves as a stack of wide charts, and
+		     the tools you RUN on the shelf beneath them — the stage keeps only the water itself. -->
 		<div class="metrics-zone">
 			<section class="panel clones">
 				<ExhibitControl {entry} />
@@ -220,24 +210,10 @@
 				</div>
 			</section>
 
-			<!-- The metrics grid: the three quick scalars and every learning curve, each on its own card,
-			     two across when there is room. On a wide bench it stretches to the column's full height,
-			     so the cards share the space evenly instead of leaving a void underneath. -->
+			<!-- The metrics: every learning curve as its own WIDE chart, stacked — the quick scalars
+			     (alive, eaten, best) live on the rail card and in the mind panel, so here the column
+			     spends its whole height on the curves. On a wide bench the stack stretches to fill. -->
 			<div class="metrics-grid">
-				<MetricCard
-					title="Alive"
-					value={String(entry.stats.alive)}
-					sub="/ {config.prey}"
-					accent={config.accent}
-					testid="alive"
-				/>
-				<MetricCard
-					title="Eaten"
-					value={String(entry.stats.eaten)}
-					accent={config.accent}
-					testid="eaten"
-				/>
-				<MetricCard title="Best this gen" value={bestValue} accent={config.accent} />
 				<MetricCard
 					title="Mean return / episode"
 					value="{entry.stats.survivalPct}%"
@@ -274,6 +250,13 @@
 						label="{config.name}: how tightly the school packs across {entry.stats.gen} generations"
 					/>
 				{/if}
+			</div>
+
+			<!-- The shelf: the things you RUN, each its own panel, under the charts they feed. -->
+			<div class="shelf">
+				<AssayPanel {entry} />
+				<EvalPanel {entry} />
+				<AblationMatrix {entry} />
 			</div>
 		</div>
 	</div>
@@ -426,11 +409,10 @@
 		color: var(--gold-ink);
 	}
 
-	/* The metrics grid — each scalar and curve its own card; two across when there is room, one when
-	   there isn't. */
+	/* The metrics — one column of WIDE charts, each curve its own rectangular card. */
 	.metrics-grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+		grid-template-columns: minmax(0, 1fr);
 		gap: var(--sp-3);
 	}
 
@@ -541,15 +523,18 @@
 			margin-inline: auto;
 		}
 
-		/* The metrics grid stretches to the column's full height — the mock's even wall of cards, not a
-		   stack with a void under it. minmax keeps a floor; past it the zone scrolls. The 40% track
-		   minimum caps the grid at TWO across however wide the column grows (the mock's shape) while
-		   still dropping to one column when the metrics are squeezed to their floor. */
+		/* The chart stack stretches to take whatever height the clones and the shelf leave, so the
+		   charts grow into rectangles instead of leaving a void. minmax keeps a floor; past it the
+		   zone scrolls. */
 		.metrics-grid {
 			flex: 1;
 			min-height: 0;
-			grid-template-columns: repeat(auto-fit, minmax(min(100%, max(200px, 40%)), 1fr));
 			grid-auto-rows: minmax(112px, 1fr);
+		}
+
+		/* In the side column the tools stack one per row — a 2+1 wrap reads as clutter there. */
+		.shelf {
+			grid-template-columns: minmax(0, 1fr);
 		}
 	}
 

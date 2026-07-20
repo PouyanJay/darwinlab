@@ -146,6 +146,9 @@
 		padding: var(--sp-4) var(--sp-5);
 		border-top: 1px solid var(--line);
 		background: var(--panel2);
+		/* its own query container: this card lives at every width from a phone column to a full-width
+		   shelf, and only IT knows when its one-line header no longer fits */
+		container-type: inline-size;
 	}
 
 	header {
@@ -210,5 +213,23 @@
 		font-size: var(--fs-sm);
 		font-weight: var(--fw-regular);
 		color: var(--ink3);
+	}
+
+	/* Squeezed narrow (the workbench's side column, a phone), the header stacks: label and button
+	   hold the first line, the blurb takes a full line beneath — never one word per line. AFTER the
+	   base rules on purpose: it overrides .blurb's flex-basis at equal specificity. */
+	@container (width < 360px) {
+		header {
+			flex-wrap: wrap;
+		}
+
+		.blurb {
+			order: 1;
+			flex-basis: 100%;
+		}
+
+		.verdict {
+			flex-wrap: wrap;
+		}
 	}
 </style>
