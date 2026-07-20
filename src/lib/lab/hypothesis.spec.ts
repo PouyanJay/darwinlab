@@ -22,6 +22,16 @@ describe('designFor', () => {
 		expect(b).toMatchObject({ seeds: 5, episodes: 20, bouts: 4 });
 	});
 
+	it('turns a pays-alone claim into "only X" versus a blind policy', () => {
+		const { a, b } = designFor(claim('walls-pays-alone'), base(), {
+			seeds: 4,
+			episodes: 10,
+			bouts: 2
+		});
+		expect(a.cfg.senses).toEqual({ dist: false, dir: false, closing: false, walls: true }); // only walls
+		expect(b.cfg.senses).toEqual({ dist: false, dir: false, closing: false, walls: false }); // blind
+	});
+
 	it('sets both the senses and the predator speed for a cliff claim', () => {
 		const { a, b } = designFor(claim('cliff-1'), base(), { seeds: 3, episodes: 10, bouts: 2 });
 		expect(a.cfg.predSpeed).toBe(1.0);
@@ -42,6 +52,11 @@ describe('verdictFrom', () => {
 		expect(verdictFrom(ci(-0.3, 0.4), 'A≈B')).toBe('supported'); // no difference shown
 		expect(verdictFrom(ci(0.4, 1.2), 'A≈B')).toBe('refuted'); // there IS a difference
 		expect(verdictFrom(ci(-1.2, -0.4), 'A≈B')).toBe('refuted');
+	});
+
+	it('treats a lower bound of exactly zero as not clearing zero', () => {
+		expect(verdictFrom(ci(0, 1), 'A>B')).toBe('refuted'); // ci.lo === 0 does not clear
+		expect(verdictFrom(ci(0, 1), 'A≈B')).toBe('supported'); // but it does straddle
 	});
 
 	it('a contrast with no data refutes either kind of claim', () => {
