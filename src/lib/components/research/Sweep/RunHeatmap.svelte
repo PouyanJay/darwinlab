@@ -110,7 +110,7 @@
 		width: 96px;
 		height: 6px;
 		border-radius: 3px;
-		background: linear-gradient(90deg, rgb(232, 96, 76), rgb(14, 148, 136));
+		background: linear-gradient(90deg, var(--data-coral), var(--data-teal));
 	}
 
 	.empty {

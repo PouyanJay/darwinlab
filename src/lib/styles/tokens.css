@@ -138,6 +138,13 @@
 	   Retuned to 4.92:1 on --panel2 (5.33:1 on --panel) — move either surface again and re-measure. */
 	--danger-ink: #c03d2a;
 	--gold-ink: #8a651c;
+	/* DATA — the survival ramp, coral (short) → teal (long). NOT chrome, and NOT theme-scoped: the
+	   colour IS the data here, so it reads the same in both themes (defined once in :root, never
+	   overridden in the dark block below). ⚠️ MIRROR of CORAL/TEAL in render/drawLandscape.ts — the
+	   canvas paints the map + heatmap from those rgb triples and the DOM (the verdict, the effect bars,
+	   the legends) reads these tokens, so the two must stay the same two colours. */
+	--data-coral: rgb(232, 96, 76);
+	--data-teal: rgb(14, 148, 136);
 	/* The flee lens's ramp. ⚠️ MIRROR of THEMES.light.lens* in render/theme.ts — the tank paints the
 	   fish from there and this legend explains them from here, so they must be the same three
 	   colours or the legend is a lie about the picture next to it. */

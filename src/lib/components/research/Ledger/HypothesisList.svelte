@@ -97,7 +97,7 @@
 	}
 
 	.status-supported .dot {
-		background: rgb(14, 148, 136);
+		background: var(--data-teal);
 	}
 
 	.status-refuted {

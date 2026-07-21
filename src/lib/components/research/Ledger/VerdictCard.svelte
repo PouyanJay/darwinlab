@@ -175,7 +175,7 @@
 
 	/* The winning arm's interval + mean in the survival teal, so the eye lands on it first. */
 	.ci.won {
-		background: rgb(14, 148, 136);
+		background: var(--data-teal);
 		opacity: 0.9;
 	}
 
@@ -191,7 +191,7 @@
 	}
 
 	.dot.won {
-		background: rgb(14, 148, 136);
+		background: var(--data-teal);
 	}
 
 	.axislabels {
@@ -239,8 +239,8 @@
 	/* The verdict word carries the weight: supported wears the survival teal, refuted the danger hue. */
 	.chip.verdict-supported {
 		color: var(--ink);
-		background: color-mix(in oklab, rgb(14, 148, 136) 18%, transparent);
-		border-color: rgb(14, 148, 136);
+		background: color-mix(in oklab, var(--data-teal) 18%, transparent);
+		border-color: var(--data-teal);
 		font-weight: var(--fw-semibold);
 	}
 
