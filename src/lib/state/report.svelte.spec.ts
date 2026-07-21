@@ -99,6 +99,21 @@ describe('the Report', () => {
 		expect(report.lead?.title).toBe('Direction pays'); // the Ledger verdict leads, despite being older
 	});
 
+	it('exports the live report as Markdown — the snapshot → formatter wiring, end to end', () => {
+		findings.add(
+			input({
+				source: 'sweep',
+				title: 'Direction +2.4s',
+				evidence: { kind: 'effects', effects: [{ label: 'Direction', delta: 2.4, lo: 1.2, hi: 3.1 }] }
+			})
+		);
+
+		const md = report.toMarkdown();
+		expect(md).toContain('# Research report —');
+		expect(md).toContain('Direction +2.4s'); // the answered question carries its headline
+		expect(md).toContain('_Not answered yet — run The Ledger._'); // Q3, still an honest prompt
+	});
+
 	it('scopes to the current subject — a finding on another world does not fill this report', () => {
 		app.analyze({ ...structuredClone(app.subjectBase('X')), vision: 999 });
 		findings.add(input({ title: 'on the subject' }));

@@ -69,3 +69,64 @@ test('the Report scans clean — the headings, the glance table and the graphs a
 	// scanForViolations settles the fade-in (capped) before reading computed colours — no blind wait.
 	expect(await scanForViolations(page)).toEqual([]);
 });
+
+test('the workspace header tags each instrument with the questions it answers', async ({ page }) => {
+	await gotoApp(page);
+	await openResearch(page);
+
+	// The Sweep leads: it settles what matters (Q2) and what did not (Q6).
+	await expect(page.getByRole('group', { name: 'answers Q2, Q6' })).toBeVisible();
+
+	// Switch instruments and the tag follows — the Ledger settles whether a winner is real (Q3).
+	await page.getByRole('tab', { name: 'The Ledger' }).click();
+	await expect(page.getByRole('group', { name: 'answers Q3' })).toBeVisible();
+	await expect(page.getByRole('group', { name: 'answers Q2, Q6' })).toBeHidden();
+});
+
+test('the Report exports as a Markdown file the study can keep', async ({ page }) => {
+	await reportWithASweep(page);
+
+	const [download] = await Promise.all([
+		page.waitForEvent('download'),
+		page.getByTestId('export-md').click()
+	]);
+	expect(download.suggestedFilename()).toBe('darwin-lab-report.md');
+
+	// The file is the brief itself, not an empty stub — its title and the Sweep's answered question are in it.
+	const stream = await download.createReadStream();
+	const text = await new Promise<string>((resolve, reject) => {
+		const chunks: Buffer[] = [];
+		stream.on('data', (c) => chunks.push(Buffer.from(c)));
+		stream.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
+		stream.on('error', reject);
+	});
+	expect(text).toContain('# Research report —');
+	expect(text).toContain('## Q2 · What actually moves survival?');
+});
+
+test('the Print action asks the browser to print — the "save as PDF" path', async ({ page }) => {
+	await reportWithASweep(page);
+
+	// Stub window.print BEFORE clicking: a real print dialog would hang the headless run, and the flag
+	// proves the button reached print() rather than silently doing nothing.
+	await page.evaluate(() => {
+		(window as unknown as { __prints: number }).__prints = 0;
+		window.print = () => {
+			(window as unknown as { __prints: number }).__prints++;
+		};
+	});
+	await page.getByTestId('print-report').click();
+	expect(await page.evaluate(() => (window as unknown as { __prints: number }).__prints)).toBe(1);
+});
+
+test('"Watch in Studio" carries the report subject back into Studio', async ({ page }) => {
+	await reportWithASweep(page);
+
+	await page.getByTestId('watch-subject').click();
+
+	// The lab flips to Studio: the research console is gone and the Studio transport is back.
+	await expect(page.getByTestId('research-stage')).toBeHidden();
+	await expect(
+		page.getByRole('radiogroup', { name: 'lab mode' }).getByRole('radio', { name: 'Studio' })
+	).toBeChecked();
+});
