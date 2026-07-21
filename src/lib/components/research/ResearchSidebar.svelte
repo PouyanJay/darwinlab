@@ -8,6 +8,7 @@
 -->
 <script lang="ts">
 	import DrillCard from './Atlas/DrillCard.svelte';
+	import LandscapeSummary from './Atlas/LandscapeSummary.svelte';
 	import SweepSummary from './Sweep/SweepSummary.svelte';
 	import ClaimSummary from './Ledger/ClaimSummary.svelte';
 	import { landscape } from '$lib/state';
@@ -15,19 +16,23 @@
 
 	let { active }: { active: Instrument } = $props();
 
+	const hasField = $derived(landscape.field !== null);
 	const drilled = $derived(landscape.selected !== null && landscape.field !== null);
 </script>
 
 <aside class="sidebar" data-testid="research-sidebar" aria-label="research context">
 	{#if active === 'atlas'}
-		{#if drilled}
-			<DrillCard />
+		{#if hasField}
+			<LandscapeSummary />
+			{#if drilled}
+				<DrillCard />
+			{:else}
+				<p class="empty">Click a cell on the map to open its world here — the door into Studio.</p>
+			{/if}
 		{:else}
 			<div class="panel">
-				<span class="eyebrow">Drilled point</span>
-				<p class="empty">
-					Click a cell on the map — its world opens here, with the door back into Studio.
-				</p>
+				<span class="eyebrow">This landscape</span>
+				<p class="empty">Run a landscape — its threshold and drilled worlds appear here.</p>
 			</div>
 		{/if}
 	{:else if active === 'sweep'}

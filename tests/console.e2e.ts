@@ -38,10 +38,10 @@ test('the console has three zones and the sidebar follows the active instrument'
 	await expect(sidebar).toContainText('This claim');
 	await expect(sidebar).toContainText('Not tested yet');
 
-	// The Atlas — the sidebar becomes the drilled-point panel (empty until a cell is opened).
+	// The Atlas — the sidebar becomes the landscape panel (its empty state until a landscape is run).
 	await page.getByRole('tab', { name: 'The Atlas' }).click();
 	await expect(page.getByTestId('atlas')).toBeVisible();
-	await expect(sidebar).toContainText('Drilled point');
+	await expect(sidebar).toContainText('This landscape');
 
 	// The Report is shown as a not-yet-built instrument, disabled — never a dead tab that opens nothing.
 	await expect(page.getByRole('tab', { name: 'The Report' })).toBeDisabled();

@@ -24,6 +24,7 @@
 		| 'duplicate'
 		| 'close'
 		| 'plus'
+		| 'check'
 		| 'chevron-left'
 		| 'chevron-right'
 		| 'episodes'
@@ -100,6 +101,8 @@
 		<path d="M6.5 6.5l11 11M17.5 6.5l-11 11" />
 	{:else if name === 'plus'}
 		<path d="M12 5.5v13M5.5 12h13" />
+	{:else if name === 'check'}
+		<path d="M5 12.5l4.5 4.5L19 7" />
 	{:else if name === 'chevron-left'}
 		<path d="M14.5 5.5L8 12l6.5 6.5" />
 	{:else if name === 'chevron-right'}

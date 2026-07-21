@@ -5,13 +5,30 @@
   tested it says so, rather than inventing a verdict.
 -->
 <script lang="ts">
-	import { ledger } from '$lib/state';
+	import { ledger, findings } from '$lib/state';
 	import { formatSignedSeconds } from '$lib/format';
+	import ReportButton from '../ReportButton.svelte';
 
 	const claim = $derived(ledger.active);
 	// The latest settled record for this claim (its name is `entry`, matching VerdictCard — the field
 	// on it called `verdict` is the outcome word, which is exactly why the variable is not).
 	const entry = $derived(ledger.latestFor(claim.id));
+
+	// One finding per claim per subject — so the button tracks THIS claim, not the Ledger in general.
+	const inReport = $derived(findings.has('ledger', claim.id));
+
+	function addToReport(): void {
+		if (!entry) return;
+		findings.add({
+			source: 'ledger',
+			variant: claim.id,
+			title: claim.text,
+			detail: `${entry.verdict} · Δ ${formatSignedSeconds(entry.delta)} · d ${entry.d.toFixed(1)}`,
+			status: entry.verdict === 'supported' ? 'ok' : 'limit',
+			seeds: entry.seeds,
+			configHash: entry.configHash
+		});
+	}
 </script>
 
 <div class="panel">
@@ -41,6 +58,7 @@
 		<p class="note">
 			Run <b class="tabular">{entry.configHash}</b> · pre-registered contrast, re-runs identical.
 		</p>
+		<ReportButton {inReport} onadd={addToReport} />
 	{:else}
 		<p class="empty">Not tested yet — run this claim to settle it.</p>
 	{/if}
