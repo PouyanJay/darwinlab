@@ -5,6 +5,8 @@
  * All four are built. (The Report was the last to land — RC3.)
  */
 
+import { ANSWERS, type QuestionId } from '../../lab/questions';
+
 export type Instrument = 'sweep' | 'ledger' | 'atlas' | 'report';
 
 export interface InstrumentMeta {
@@ -32,4 +34,13 @@ export const readyInstrumentKeys: Instrument[] = INSTRUMENTS.filter((i) => i.isR
 /** The metadata for one instrument key — the list is small, so a find is fine. */
 export function instrumentMeta(key: Instrument): InstrumentMeta {
 	return INSTRUMENTS.find((instrument) => instrument.key === key) ?? INSTRUMENTS[0];
+}
+
+/**
+ * Which of the seven questions an instrument settles — the "answers Q…" tag the rail and the workspace
+ * header wear, from the one `ANSWERS` map so a tag can never drift from what the Report actually credits
+ * that instrument for. The Report ASSEMBLES the seven rather than answering any, so it carries no tag.
+ */
+export function answersOf(key: Instrument): QuestionId[] {
+	return key === 'report' ? [] : ANSWERS[key];
 }

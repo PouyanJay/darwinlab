@@ -14,8 +14,9 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
 	import SubjectCard from './SubjectCard.svelte';
+	import QuestionTags from './QuestionTags.svelte';
 	import Icon from '../common/Icon.svelte';
-	import { INSTRUMENTS, readyInstrumentKeys, type Instrument } from './instruments';
+	import { INSTRUMENTS, readyInstrumentKeys, answersOf, type Instrument } from './instruments';
 	import { research, findings, currentSubjectHash } from '$lib/state';
 
 	let { active, onselect }: { active: Instrument; onselect: (key: Instrument) => void } = $props();
@@ -77,6 +78,7 @@
 					<span class="lbl">
 						<b>{instrument.name}</b>
 						<span class="blurb">{instrument.blurb}</span>
+						<QuestionTags questions={answersOf(instrument.key)} decorative />
 					</span>
 					{#if !instrument.isReady}<span class="soon">soon</span>{/if}
 				</button>
@@ -224,6 +226,12 @@
 	.blurb {
 		font-size: var(--fs-eyebrow);
 		color: var(--ink3);
+	}
+
+	/* The "answers Q…" chips sit just below the blurb — a hair of space off it, not the 1px the label
+	   column stacks its lines at. */
+	.lbl :global(.qtags) {
+		margin-top: 3px;
 	}
 
 	.soon {
