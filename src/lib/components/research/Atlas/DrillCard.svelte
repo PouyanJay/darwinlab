@@ -34,7 +34,10 @@
 </script>
 
 {#if cell && field}
-	<aside class="drill" data-testid="atlas-drill" aria-label="drilled point">
+	<!-- A plain div, not an <aside>: it now renders inside the console's `complementary` sidebar, so a
+	     second complementary landmark here would nest one inside another. The visible "Drilled point"
+	     eyebrow is its label. -->
+	<div class="drill" data-testid="atlas-drill">
 		<div class="head">
 			<span class="eyebrow">Drilled point</span>
 			<button
@@ -71,7 +74,7 @@
 			<Icon name="forward" size={13} />
 			<span>Watch this world</span>
 		</Button>
-	</aside>
+	</div>
 {/if}
 
 <style>
