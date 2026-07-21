@@ -151,7 +151,7 @@ class LandscapeStore {
 	 * this publishes nothing. Clears any prior drill-in, since the old cell is not in the new grid.
 	 */
 	async run(executor?: JobExecutor): Promise<void> {
-		const base = app.subjectBase('Atlas', '#8b8b8b');
+		const base = app.subjectBase('Atlas');
 		const plan = planLandscape(base, this.axisX, this.axisY, this.#resolution);
 		const jobs = landscapeJobs(plan.cells, {
 			seeds: this.#seeds,

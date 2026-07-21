@@ -23,6 +23,7 @@ import { research } from './research.svelte';
 import { app } from './app.svelte';
 import { seededRng } from '../engine';
 import { SvelteSet } from 'svelte/reactivity';
+import type { JobExecutor } from '../lab/runner';
 import type { Evaluation } from '../lab/evaluator';
 
 /** The factors the sweep starts with selected — a real but bounded grid (2×2×2×3 = 24 cells). */
@@ -120,13 +121,13 @@ class SweepStore {
 	/**
 	 * Run the sweep: plan it, run every cell through the batch runner, and keep the results — unless a
 	 * newer run superseded this one, in which case `research.run` returns null and this publishes
-	 * nothing.
+	 * nothing. `executor` overrides the pool for tests, exactly as it does on the ledger and Atlas.
 	 */
-	async run(): Promise<void> {
+	async run(executor?: JobExecutor): Promise<void> {
 		const factors = this.#selectedFactors();
 		if (factors.length === 0) return;
 
-		const base = app.subjectBase('Sweep', '#8b8b8b');
+		const base = app.subjectBase('Sweep');
 		const plan = planSweep(base, factors, { maxCells: SWEEP_DEFAULTS.maxCells, rng: seededRng(1) });
 		const jobs = sweepJobs(plan.cells, {
 			seeds: this.#seeds,
@@ -134,7 +135,7 @@ class SweepStore {
 			bouts: SWEEP_DEFAULTS.bouts
 		});
 
-		const results = await research.run(jobs);
+		const results = await research.run(jobs, executor);
 		if (!results) return;
 
 		this.#lastFactors = factors;

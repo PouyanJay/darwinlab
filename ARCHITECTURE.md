@@ -103,7 +103,7 @@ a supported/refuted verdict, kept as a dated, reproducible, localStorage-persist
 Atlas** (two parameters → a pannable survival landscape with the cliff drawn where it measures, not
 where it's assumed). All three are thin UIs over one spine: the pure `evaluator` moved onto a **Web
 Worker pool** (`runner.ts`) so a thousand-bout batch never blocks the frame, aggregated by honest
-`stats.ts`. **The engine and the fidelity gate are never touched** — Research only ever *reads* the
+`stats.ts`. **The engine and the fidelity gate are never touched** — Research only ever _reads_ the
 engine. The two modes are stitched by a round-trip: Studio's **Analyse** hands a world to Research as
 the subject every instrument then explores (`app.analyze` / `bench.analyzeWorld`), and the Atlas's
 **Watch this world** drops a drilled point back onto the bench (`landscape.watch`).

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { app, MODE_STORAGE_KEY } from './app.svelte';
 import { bench } from './bench.svelte';
 import { newWorldConfig } from '../engine';
@@ -61,6 +61,10 @@ describe('the analysis subject (the Studio→Research round-trip)', () => {
 		app.clearSubject();
 	});
 
+	// These tests add a world to the shared bench singleton — clear it so a later test never starts
+	// from a polluted bench (the same discipline bench.svelte.spec follows).
+	afterEach(() => bench.destroy());
+
 	it('has no subject by default — Research explores a generic world', () => {
 		expect(app.subject).toBeNull();
 	});
@@ -100,10 +104,19 @@ describe('the analysis subject (the Studio→Research round-trip)', () => {
 	it('bench.analyzeWorld hands a CLONE of the world over and switches to Research', () => {
 		bench.addWorld(newWorldConfig('Watched', '#123456'));
 		const added = bench.worlds[bench.worlds.length - 1];
+		expect(app.mode).toBe('studio'); // the mode we claim the hand-off flips really starts here
+		expect(app.subject).toBeNull(); // and there is no subject yet
+
 		bench.analyzeWorld(added.id);
 
 		expect(app.mode).toBe('research');
 		expect(app.subject).toEqual(added.world.cfg); // same config…
 		expect(app.subject).not.toBe(added.world.cfg); // …but a snapshot, so later edits don't mutate it
+	});
+
+	it('bench.analyzeWorld on an unknown id is a no-op — no subject, no mode change', () => {
+		bench.analyzeWorld('does-not-exist');
+		expect(app.subject).toBeNull(); // nothing was handed over
+		expect(app.mode).toBe('studio'); // and we did not lurch into Research on a bad id
 	});
 });

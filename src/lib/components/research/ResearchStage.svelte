@@ -100,26 +100,9 @@
 		overflow-y: auto;
 		padding: var(--sp-7) var(--sp-7) var(--sp-8);
 		background: var(--bgfx);
-		/* A gentle settle as the stage swaps in from Studio — enough to read as a transition, not a
-		   performance. Suppressed under reduced-motion. */
-		animation: stage-in var(--dur) var(--ease);
-	}
-
-	@keyframes stage-in {
-		from {
-			opacity: 0;
-			transform: translateY(8px);
-		}
-		to {
-			opacity: 1;
-			transform: none;
-		}
-	}
-
-	@media (prefers-reduced-motion: reduce) {
-		.research {
-			animation: none;
-		}
+		/* A gentle settle as the stage swaps in from Studio — the shared card-entrance, not a bespoke
+		   one. Reduced-motion is handled globally in app.css (a blanket animation: none). */
+		animation: fade-up var(--dur-slow) var(--ease) both;
 	}
 
 	.inner {

@@ -138,7 +138,7 @@ class LedgerStore {
 		const claim = this.claims.find((c) => c.id === claimId);
 		if (!claim) return;
 
-		const design = designFor(claim, app.subjectBase('Ledger', '#8b8b8b'), LEDGER_RUN);
+		const design = designFor(claim, app.subjectBase('Ledger'), LEDGER_RUN);
 		const results = await research.run([design.a, design.b], executor);
 		if (!results) return;
 

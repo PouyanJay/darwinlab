@@ -35,3 +35,27 @@ test('"Analyse" carries a Studio world into Research, and "use a generic world" 
 		page.getByRole('radiogroup', { name: 'lab mode' }).getByRole('radio', { name: 'Research' })
 	).toBeChecked();
 });
+
+test('the analysis subject does NOT survive a reload — a hand-off, not a stored setting', async ({
+	page
+}) => {
+	await gotoApp(page);
+	await page
+		.locator('section[aria-label^="world"]')
+		.first()
+		.getByRole('button', { name: 'Analyse' })
+		.click();
+	await expect(page.getByTestId('research-subject')).toBeVisible(); // it really was set before the reload
+
+	await page.reload();
+	await expect(page.getByTestId('intro')).toBeVisible();
+	await page.keyboard.press('Enter');
+	await expect(page.getByTestId('intro')).toBeHidden();
+
+	// The MODE persists (a settled preference)…
+	await expect(
+		page.getByRole('radiogroup', { name: 'lab mode' }).getByRole('radio', { name: 'Research' })
+	).toBeChecked();
+	// …but the subject does not (a live hand-off from a world you were watching last session, not now).
+	await expect(page.getByTestId('research-subject')).toHaveCount(0);
+});
