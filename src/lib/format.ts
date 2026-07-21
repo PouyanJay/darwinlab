@@ -10,3 +10,13 @@
 export function formatSignedSeconds(value: number): string {
 	return `${value > 0 ? '+' : ''}${value.toFixed(1)}s`;
 }
+
+/** A survival time in seconds, one decimal — `3.1s`. */
+export function formatSeconds(value: number): string {
+	return `${value.toFixed(1)}s`;
+}
+
+/** A survival FRACTION (0–1) as a whole percent — `60%`. Clamped, since a fraction can't leave [0,1]. */
+export function formatSurvivalPct(value: number): string {
+	return `${Math.round(Math.max(0, Math.min(1, value)) * 100)}%`;
+}

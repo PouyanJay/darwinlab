@@ -15,19 +15,18 @@
 import type { LandscapeField, Falloff } from '../lab/landscape';
 
 type Rgb = [number, number, number];
+// The survival ramp's ends, for the canvas. ⚠️ MIRROR of --data-coral / --data-teal in
+// styles/tokens.css — the DOM (verdict, effect bars, legends) reads those tokens and the canvas paints
+// from these triples, so they must stay the same two colours or a legend lies about the map beside it.
 /** Short survival — the cliff. */
 const CORAL: Rgb = [232, 96, 76];
 /** Long survival — the ridge. */
 const TEAL: Rgb = [14, 148, 136];
 
-/** The ramp's ends as CSS strings — the single source of truth the Legend's gradient reuses. */
-export const HEAT_LOW = `rgb(${CORAL[0]}, ${CORAL[1]}, ${CORAL[2]})`;
-export const HEAT_HIGH = `rgb(${TEAL[0]}, ${TEAL[1]}, ${TEAL[2]})`;
-
 /**
  * A point on the survival ramp — coral (t=0, short) → teal (t=1, long). The ONE survival palette the
- * whole platform speaks: the Atlas paints it on canvas, the Sweep's run grid and effect bars use it in
- * the DOM. Returns a CSS `rgb(...)` string.
+ * whole platform speaks: the Atlas and the Sweep's run grid paint it on canvas from here; the DOM
+ * (effect bars, legends, the verdict) reads the matching `--data-*` tokens. Returns a CSS `rgb(...)`.
  */
 export function heatColor(t: number): string {
 	return lerp(CORAL, TEAL, t);

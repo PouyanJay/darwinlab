@@ -6,7 +6,6 @@
 -->
 <script lang="ts">
 	import type { FactorEffect } from '$lib/lab/sweep';
-	import { HEAT_HIGH, HEAT_LOW } from '$lib/render';
 
 	interface Props {
 		effects: FactorEffect[];
@@ -30,7 +29,7 @@
 
 	/** Teal when a factor helps, coral when it costs, muted when its interval can't clear zero. */
 	const barColor = (helps: boolean, flat: boolean) =>
-		flat ? 'var(--ink3)' : helps ? HEAT_HIGH : HEAT_LOW;
+		flat ? 'var(--ink3)' : helps ? 'var(--data-teal)' : 'var(--data-coral)';
 </script>
 
 <div class="effects">
