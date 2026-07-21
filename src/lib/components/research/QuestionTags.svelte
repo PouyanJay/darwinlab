@@ -15,12 +15,12 @@
 	let { questions, decorative = false }: { questions: QuestionId[]; decorative?: boolean } =
 		$props();
 
-	/** The full question behind a tag — its title is the chip's tooltip, its short the spoken label. */
+	/** The full question behind a tag — its title is the chip's hover tooltip. */
 	function question(id: QuestionId) {
 		return QUESTIONS.find((q) => q.id === id);
 	}
 
-	// The spoken summary for the non-decorative (header) case: "answers Q2, Q6".
+	// The spoken summary for the non-decorative (header) case, built from the ids: "answers Q2, Q6".
 	const label = $derived(`answers ${questions.join(', ')}`);
 </script>
 

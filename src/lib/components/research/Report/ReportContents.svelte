@@ -2,7 +2,8 @@
   The Report's context in the console sidebar: the seven questions as a contents outline, each with a
   dot that fills once a finding answers it, a count of what the brief is built from, and — once there is
   something to keep — the actions that take it elsewhere: export it as Markdown, print it (the browser's
-  own "save as PDF"), or reopen its subject in Studio. Reads only the report store.
+  own "save as PDF"), or reopen its subject in Studio. Reads the report store; the actions are its own
+  side effects (a download, a print, a hop to Studio).
 -->
 <script lang="ts">
 	import { report } from '$lib/state';

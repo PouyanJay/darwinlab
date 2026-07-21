@@ -12,7 +12,7 @@ import { findings, currentSubjectHash, type Finding } from './findings.svelte';
 import { app } from './app.svelte';
 import { bench } from './bench.svelte';
 import { QUESTIONS, type Question, type QuestionId } from '../lab/questions';
-import { isFlatEffect } from '../lab/evidence';
+import { negativesOf as negativesFromEvidence } from '../lab/evidence';
 import { reportToMarkdown, type ReportSnapshot } from '../report/export';
 
 /** Who answers each question — the instrument (or action) whose finding fills it, named for the prompt
@@ -38,10 +38,10 @@ export interface ReportSection {
 	answer: string | null;
 }
 
-/** The Sweep's kept negatives — the factors whose interval can't clear zero (what did NOT work). */
+/** The Sweep's kept negatives for a finding — a thin Finding-typed adapter over the one extractor in
+ *  `evidence.ts`, so the Report view and the Markdown export read the same "what did NOT work". */
 export function negativesOf(finding: Finding | null): string[] {
-	if (finding?.evidence?.kind !== 'effects') return [];
-	return finding.evidence.effects.filter(isFlatEffect).map((e) => e.label);
+	return negativesFromEvidence(finding?.evidence);
 }
 
 /** The method/provenance footer (Q7): the fingerprint + seed count any finding carries. */

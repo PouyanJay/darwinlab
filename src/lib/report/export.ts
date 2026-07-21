@@ -11,7 +11,7 @@
 
 import { CANDIDATE_AXES } from '../lab/landscape';
 import { SOURCE_LABEL } from '../lab/questions';
-import { isFlatEffect, type Evidence } from '../lab/evidence';
+import { negativesOf, type Evidence } from '../lab/evidence';
 import { formatSeconds, formatSignedSeconds } from '../format';
 import type { ReportSection, ReportMethod } from '../state/report.svelte';
 
@@ -84,17 +84,9 @@ function evidenceMarkdown(evidence: Evidence | undefined): string {
 	}
 }
 
-/** Q6's kept negatives (the factors whose interval can't clear zero) — the same predicate the notebook
- *  and the on-screen note read, so the export never disagrees about what "did not work". */
-function negativesOf(section: ReportSection): string[] {
-	const evidence = section.finding?.evidence;
-	if (evidence?.kind !== 'effects') return [];
-	return evidence.effects.filter(isFlatEffect).map((e) => e.label);
-}
-
 /** The Q6 body: the honest negatives note. */
 function negativesMarkdown(section: ReportSection): string {
-	const negatives = negativesOf(section);
+	const negatives = negativesOf(section.finding?.evidence);
 	if (negatives.length)
 		return `**${negatives.join(', ')}** don't clear zero — kept as real negatives, not hidden. More knobs is not more survival.`;
 	if (section.finding) return 'Every factor the Sweep measured moved survival — no kept negatives.';

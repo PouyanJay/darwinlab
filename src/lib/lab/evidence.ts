@@ -43,3 +43,13 @@ export type Evidence =
 export function isFlatEffect(row: EffectRow): boolean {
 	return Number.isNaN(row.delta) || (row.lo <= 0 && row.hi >= 0);
 }
+
+/**
+ * The kept negatives in a piece of evidence — the factors whose interval can't clear zero (Q6). ONE
+ * extractor, so the on-screen note and the Markdown export can never disagree about what "did not work";
+ * evidence that isn't a Sweep's effects has no negatives to keep.
+ */
+export function negativesOf(evidence: Evidence | undefined): string[] {
+	if (evidence?.kind !== 'effects') return [];
+	return evidence.effects.filter(isFlatEffect).map((e) => e.label);
+}
