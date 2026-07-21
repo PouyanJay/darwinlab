@@ -10,7 +10,9 @@
 	import Sweep from './Sweep/Sweep.svelte';
 	import Ledger from './Ledger/Ledger.svelte';
 	import Atlas from './Atlas/Atlas.svelte';
+	import Icon from '../common/Icon.svelte';
 	import { SCENARIO } from '$lib/lab/scenario';
+	import { app } from '$lib/state';
 
 	type Instrument = 'sweep' | 'ledger' | 'atlas';
 
@@ -66,6 +68,19 @@
 			</div>
 		</header>
 
+		{#if app.subject}
+			<!-- A world was handed over from Studio ("Analyse"): every instrument now explores AROUND it.
+			     The chip names it and offers the way back to a generic world, so the subject is never a
+			     trap you can't see or leave. -->
+			<div class="subject" data-testid="research-subject">
+				<Icon name="flask" size={13} />
+				<span class="subject-text">
+					Analysing <b>{app.subject.name}</b> — the Sweep, the Ledger and the Atlas run on this world.
+				</span>
+				<button class="clear" onclick={() => app.clearSubject()}>Use a generic world</button>
+			</div>
+		{/if}
+
 		<div id="research-panel" role="tabpanel" aria-labelledby="rtab-{active}">
 			{#if active === 'sweep'}
 				<Sweep />
@@ -85,6 +100,9 @@
 		overflow-y: auto;
 		padding: var(--sp-7) var(--sp-7) var(--sp-8);
 		background: var(--bgfx);
+		/* A gentle settle as the stage swaps in from Studio — the shared card-entrance, not a bespoke
+		   one. Reduced-motion is handled globally in app.css (a blanket animation: none). */
+		animation: fade-up var(--dur-slow) var(--ease) both;
 	}
 
 	.inner {
@@ -161,5 +179,50 @@
 		border: 1px solid var(--line);
 		border-radius: var(--radius-chip);
 		padding: 2px 6px;
+	}
+
+	.subject {
+		display: flex;
+		align-items: center;
+		gap: var(--sp-3);
+		padding: var(--sp-3) var(--sp-4);
+		border: 1px solid var(--line);
+		border-radius: var(--radius-card);
+		background: var(--panel);
+		color: var(--ink2);
+		font-size: var(--fs-sm);
+	}
+
+	.subject-text {
+		flex: 1;
+		min-width: 0;
+	}
+
+	.subject-text b {
+		color: var(--ink);
+		font-weight: var(--fw-semibold);
+	}
+
+	.clear {
+		flex: none;
+		border: 1px solid var(--line);
+		border-radius: var(--radius-pill);
+		background: none;
+		padding: 4px var(--sp-3);
+		color: var(--ink2);
+		font-size: var(--fs-sm);
+		font-weight: var(--fw-semibold);
+		cursor: pointer;
+		transition: border-color var(--dur-fast) var(--ease);
+	}
+
+	.clear:hover {
+		border-color: var(--accent);
+		color: var(--ink);
+	}
+
+	.clear:focus-visible {
+		outline: var(--focus-ring);
+		outline-offset: var(--focus-offset);
 	}
 </style>

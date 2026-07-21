@@ -20,7 +20,7 @@ import {
 	type Verdict
 } from '../lab/hypothesis';
 import { research } from './research.svelte';
-import { newWorldConfig } from '../engine';
+import { app } from './app.svelte';
 import { configHash } from '../lab/run';
 import { contrast, mean, bootstrapCI, type Interval } from '../lab/stats';
 import type { JobExecutor } from '../lab/runner';
@@ -138,7 +138,7 @@ class LedgerStore {
 		const claim = this.claims.find((c) => c.id === claimId);
 		if (!claim) return;
 
-		const design = designFor(claim, newWorldConfig('Ledger', '#8b8b8b'), LEDGER_RUN);
+		const design = designFor(claim, app.subjectBase('Ledger'), LEDGER_RUN);
 		const results = await research.run([design.a, design.b], executor);
 		if (!results) return;
 

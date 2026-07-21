@@ -73,6 +73,32 @@ exactly as the thesis predicts.
 
 ![Story mode: a narrated tour that is still a live sim](docs/story.webp)
 
+## Two modes: Studio and Research
+
+Everything above is **Studio** — watching one world evolve. Flip the top bar to **Research** and the
+same engine becomes an instrument for running MANY simulations and reading a conclusion out of them.
+Each experiment runs on a **Web Worker pool**, so a batch of thousands of bouts measures in the
+background while the lab stays responsive; nothing here edits the engine — Research only ever _reads_
+it.
+
+- **The Sweep** — pick some factors (each sense, predator speed, persistence…) and it runs the full
+  factorial across your seeds, then reports each factor's **effect on survival with a 95% interval**.
+  A bar that clears zero is a knob that matters; one that straddles zero is a knob that does nothing
+  here. It shows intervals only — no significance badge, because a sweep is many comparisons.
+- **The Ledger** — state a claim ("direction pays more than distance"), and it designs the two arms,
+  measures them, and returns a **supported / refuted verdict** from a single pre-registered contrast —
+  the one thing that makes a verdict word honest. Every finding is kept as a dated, reproducible,
+  reload-surviving record you can export.
+- **The Atlas** — choose two parameters and it paints a **survival landscape** you can pan and zoom:
+  coral where fish die fast, teal where they last, with the cliff drawn down the column where survival
+  actually falls off (the ~0.88× predator-speed cliff shows up as a near-vertical line). Drill any
+  point and **Watch this world** carries that exact config back into Studio.
+
+The two modes are one lab: **Analyse** on any Studio world hands it to Research as the subject every
+instrument then explores; the Atlas's **Watch this world** brings a point on the map back to the
+bench. The honest finding survives the harder look — Direction is still the only sense whose Sweep bar
+clears zero.
+
 ## How it works
 
 - **Network**: 8 inputs → 6 hidden (tanh) → 2 outputs (turn, thrust). The genome is the 68

@@ -32,7 +32,6 @@ import { research } from './research.svelte';
 import { bench } from './bench.svelte';
 import { app } from './app.svelte';
 import { Viewport } from './viewport.svelte';
-import { newWorldConfig } from '../engine';
 import type { JobExecutor } from '../lab/runner';
 
 /** The two parameters the plane opens on — the predator-speed cliff against evolutionary drift. */
@@ -152,7 +151,7 @@ class LandscapeStore {
 	 * this publishes nothing. Clears any prior drill-in, since the old cell is not in the new grid.
 	 */
 	async run(executor?: JobExecutor): Promise<void> {
-		const base = newWorldConfig('Atlas', '#8b8b8b');
+		const base = app.subjectBase('Atlas');
 		const plan = planLandscape(base, this.axisX, this.axisY, this.#resolution);
 		const jobs = landscapeJobs(plan.cells, {
 			seeds: this.#seeds,

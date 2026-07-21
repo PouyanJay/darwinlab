@@ -1,5 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { ledger, loadEntries, LEDGER_STORAGE_KEY, MAX_ENTRIES } from './ledger.svelte';
+import { app } from './app.svelte';
+import { newWorldConfig } from '../engine';
 import type { JobExecutor } from '../lab/runner';
 import type { Evaluation } from '../lab/evaluator';
 
@@ -26,7 +28,10 @@ const evalWith = (returns: number[]) => ({ returns }) as unknown as Evaluation;
 const stored = () => JSON.parse(localStorage.getItem(LEDGER_STORAGE_KEY) ?? 'null');
 
 describe('the Ledger', () => {
-	beforeEach(() => ledger.clear());
+	beforeEach(() => {
+		ledger.clear();
+		app.clearSubject();
+	});
 
 	it('records a supported verdict when arm A beats arm B, and persists it', async () => {
 		// "Direction pays more than distance" (an A>B claim): arm A survives longer than arm B.
@@ -81,6 +86,19 @@ describe('the Ledger', () => {
 			await ledger.run('dir-beats-dist', new CannedExecutor([evalWith([5]), evalWith([3])]));
 		}
 		expect(ledger.entries).toHaveLength(MAX_ENTRIES);
+	});
+
+	it('runs the claim on the analysis subject — its config is in the recorded fingerprint', async () => {
+		// The configHash is over the two arms' configs, so a different base (the subject) must produce a
+		// different fingerprint — that is what proves the subject reached the design, not a generic world.
+		await ledger.run('dir-beats-dist', new CannedExecutor([evalWith([5]), evalWith([3])]));
+		const generic = ledger.latestFor('dir-beats-dist')!.configHash;
+
+		app.analyze({ ...newWorldConfig('Watched', '#123456'), vision: 999 });
+		await ledger.run('dir-beats-dist', new CannedExecutor([evalWith([5]), evalWith([3])]));
+		const onSubject = ledger.latestFor('dir-beats-dist')!.configHash;
+
+		expect(onSubject).not.toBe(generic); // the subject's vision changed the two-arm fingerprint
 	});
 
 	it('load drops malformed entries and ignores a foreign or corrupt store', () => {

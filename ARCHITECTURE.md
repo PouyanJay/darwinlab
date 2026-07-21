@@ -36,11 +36,18 @@ src/
 │  ├─ harness/    The honesty gates: the bit-exact fidelity spec against reference/engine2.js,
 │  │              and the headless survival sweep the science claims are measured with.
 │  ├─ state/      Svelte 5 runes stores — THE only seam between UI and simulation.
+│  │              app.svelte.ts       the MODE (Studio | Research, persisted) + the analysis
+│  │                                  SUBJECT (a Studio world handed to Research to explore)
 │  │              bench.svelte.ts     which worlds exist, selection, conditions, tick();
-│  │                                  branchWorld/moveWorld drive the lineage tree
+│  │                                  branchWorld/moveWorld drive the lineage tree;
+│  │                                  analyzeWorld hands a world to Research (Studio→Research)
 │  │              views.svelte.ts     reactive projections components bind to
 │  │                                  (WorldStats / WorldConfigView / MindView / LineageView)
-│  │              canvas.svelte.ts    the lineage canvas VIEWPORT (one pan/zoom transform)
+│  │              viewport.svelte.ts  the generic pan/zoom CAMERA; the lineage tree (canvas.svelte)
+│  │                                  and the Atlas each own one instance, never shared
+│  │              research.svelte.ts  the ONE running batch (progress, cancel-on-new)
+│  │              sweep / ledger /     the three Research instruments' state (factors →
+│  │              landscape.svelte     effects · claims → verdicts+persistence · axes → landscape)
 │  │              playback.svelte.ts  play / pause / speed / turbo training
 │  │              story.svelte.ts     scenes, the scene clock, NEW-sense tagging
 │  │              theme / motion      theme (DARK by default, monochrome) + reduced-motion
@@ -49,14 +56,25 @@ src/
 │  │              rAF: rAF throttles offscreen and would freeze the sim).
 │  │              governor.ts — one-way downgrade of cinematic detail under sustained honest
 │  │              frame-time pressure (stands down during turbo training by design).
-│  ├─ components/ UI by feature: intro, topbar, bench, conditions, inspector, story, common.
-│  │              intro/Intro — the full-screen welcome (the claim + method); the first
-│  │              interaction fades it out over the already-running platform.
-│  │              bench/LineageCanvas — the pannable/zoomable plane; worlds are draggable
-│  │              nodes (WorldTile) wired parent→child by branch edges.
-│  ├─ lab/        lineage.ts — canvas geometry (node sizes, the parent→child edge curve).
+│  ├─ components/ UI by feature: intro, topbar, bench, conditions, inspector, story, research,
+│  │              common. intro/Intro — the full-screen welcome; the first interaction fades it
+│  │              out over the already-running platform. bench/LineageCanvas — the pannable plane;
+│  │              worlds are draggable nodes (WorldTile) wired parent→child by branch edges.
+│  │              research/ — the Research stage + the three instruments (Sweep, Ledger, Atlas)
+│  │              and RunProgress; topbar/ModeSwitch flips Studio ⇄ Research.
+│  ├─ lab/        The Research SCIENCE (pure, no Svelte/DOM), + the batch pipeline:
+│  │              evaluator.ts        n-seed measurement of a config (mean ± sd survival)
+│  │              runner.ts +         the off-main-thread worker POOL and its protocol;
+│  │              eval.worker.ts +      falls back in-thread where Worker is absent (SSR/vitest).
+│  │              protocol.ts          runner.spec asserts worker ≡ in-thread, bit-identical.
+│  │              stats.ts            bootstrap CIs, Cohen's d, two-arm contrast (seeded)
+│  │              sweep / hypothesis / the instruments' pure cores (factorial · claim→contrast ·
+│  │              landscape.ts          2D grid + measured cliff)
+│  │              run.ts              configHash + manifest (an experiment you can cite)
+│  │              lineage.ts          canvas geometry (node sizes, the parent→child edge curve)
 │  └─ styles/     Design tokens (both themes as CSS custom properties) + global styles.
-├─ routes/        Single bench page; ssr=false, prerender=true (client-only static SPA).
+├─ routes/        Single bench page; ssr=false, prerender=true (client-only static SPA). Vite
+│                 bundles eval.worker.ts as its own module chunk for the static build.
 tests/            Playwright e2e: bench, conditions, inspector, deploy lifecycle, story,
                   keyboard, a11y (zero axe violations, both themes), responsive.
 scripts/bench.ts  Headless survival sweep + drift watch (nightly CI job fails on drift).
@@ -76,6 +94,25 @@ drops below it, and opens Conditions to change one thing — a controlled experi
 ancestor, so any later difference is caused by the one variable, not a fresh random start. The
 camera (one `translate…scale` transform) lives in `canvas.svelte.ts`, separate from the bench
 because moving the camera touches no genome.
+
+**Studio + Research:** the lab is one place with two modes (`app.svelte.ts`, flipped from the top
+bar). **Studio** is the spatial tree above — watch a world evolve, read one brain. **Research** runs
+MANY simulations to extract conclusions, across three instruments: **the Sweep** (a factorial → each
+factor's effect on survival, with intervals), **the Ledger** (a claim → one pre-registered contrast →
+a supported/refuted verdict, kept as a dated, reproducible, localStorage-persisted record), and **the
+Atlas** (two parameters → a pannable survival landscape with the cliff drawn where it measures, not
+where it's assumed). All three are thin UIs over one spine: the pure `evaluator` moved onto a **Web
+Worker pool** (`runner.ts`) so a thousand-bout batch never blocks the frame, aggregated by honest
+`stats.ts`. **The engine and the fidelity gate are never touched** — Research only ever _reads_ the
+engine. The two modes are stitched by a round-trip: Studio's **Analyse** hands a world to Research as
+the subject every instrument then explores (`app.analyze` / `bench.analyzeWorld`), and the Atlas's
+**Watch this world** drops a drilled point back onto the bench (`landscape.watch`).
+
+**Honesty rails (load-bearing):** an exploratory Sweep shows effect **intervals only** — no
+significance badge, because it is many comparisons. A verdict WORD ("supported"/"refuted") is emitted
+**only** by the Ledger, and only from a single contrast fixed before the run. The Atlas's cliff is the
+steepest measured fall-off, and it draws **nothing** on a flat or rising field rather than inventing a
+threshold.
 
 ## Honesty gates
 

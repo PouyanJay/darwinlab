@@ -1,5 +1,9 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { sweep } from './sweep.svelte';
+import { app } from './app.svelte';
+import { newWorldConfig } from '../engine';
+import type { JobExecutor } from '../lab/runner';
+import type { Evaluation } from '../lab/evaluator';
 
 /**
  * The selection → grid-size logic, kept fast and free of any run. The store is a singleton, so each
@@ -8,12 +12,23 @@ import { sweep } from './sweep.svelte';
  */
 const DEFAULTS = new Set(['dir', 'dist', 'walls', 'predSpeed']);
 
+/** An executor that settles every cell without running the engine — the grid is what we assert, not survival. */
+class NullExecutor implements JobExecutor {
+	readonly concurrency = 1;
+	async submit(): Promise<Evaluation | null> {
+		return null;
+	}
+	dispose(): void {}
+}
+
 describe('sweep selection', () => {
 	beforeEach(() => {
 		for (const factor of sweep.factors) {
 			if (sweep.isSelected(factor.key) !== DEFAULTS.has(factor.key)) sweep.toggle(factor.key);
 		}
 		sweep.setSeeds(6);
+		app.setMode('studio');
+		app.clearSubject();
 	});
 
 	it('starts on a bounded grid under the cap', () => {
@@ -42,5 +57,13 @@ describe('sweep selection', () => {
 		expect(sweep.seeds).toBe(2);
 		sweep.setSeeds(5);
 		expect(sweep.seeds).toBe(5);
+	});
+
+	it('runs on the analysis subject when Studio hands one over — its config reaches every cell', async () => {
+		// A world with a distinctive vision none of the default factors (senses, predator speed) touch.
+		app.analyze({ ...newWorldConfig('Watched', '#123456'), vision: 999 });
+		await sweep.run(new NullExecutor());
+		expect(sweep.cells.length).toBeGreaterThan(0); // it really planned and ran a grid
+		expect(sweep.cells.every((cell) => cell.cfg.vision === 999)).toBe(true); // the subject's vision, not a default
 	});
 });

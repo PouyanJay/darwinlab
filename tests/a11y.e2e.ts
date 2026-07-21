@@ -134,6 +134,20 @@ test('the Research stage scans clean — the instrument tabs, the Sweep and the 
 	expect(await violations(page)).toEqual([]);
 });
 
+test('the Research subject banner scans clean — "Analysing <world>" is new surface', async ({
+	page
+}) => {
+	// "Analyse" on a Studio world carries it into Research with a subject banner — a surface that only
+	// exists after the cross-link, so it is scanned from that state, not the empty Research stage.
+	await page
+		.locator('section[aria-label^="world"]')
+		.first()
+		.getByRole('button', { name: 'Analyse' })
+		.click();
+	await expect(page.getByTestId('research-subject')).toBeVisible();
+	expect(await violations(page)).toEqual([]);
+});
+
 test('the painted Atlas scans clean — the map, legend and drill card are new surface', async ({
 	page
 }) => {
