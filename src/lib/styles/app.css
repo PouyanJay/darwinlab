@@ -216,12 +216,15 @@ textarea,
  * own max-width + auto margins still apply, so it prints in a comfortable measure, centred.
  */
 @media print {
-	body * {
+	/* Only reshape the page when a printable region is actually on screen (the Report is open). Without
+	   the `:has` guard, a manual Cmd+P from anywhere else would blank the whole document; with it, those
+	   prints fall through to normal behaviour and only the Report is ever singled out. */
+	body:has([data-print-region]) * {
 		visibility: hidden;
 	}
 
-	[data-print-region],
-	[data-print-region] * {
+	body:has([data-print-region]) [data-print-region],
+	body:has([data-print-region]) [data-print-region] * {
 		visibility: visible;
 	}
 
