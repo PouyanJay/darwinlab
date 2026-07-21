@@ -5,7 +5,7 @@
   tested it says so, rather than inventing a verdict.
 -->
 <script lang="ts">
-	import { ledger, findings } from '$lib/state';
+	import { ledger, findings, toArmRows } from '$lib/state';
 	import { formatSignedSeconds } from '$lib/format';
 	import SummaryPanel from '../SummaryPanel.svelte';
 	import ReportButton from '../ReportButton.svelte';
@@ -30,7 +30,8 @@
 			detail: `${entry.verdict} · Δ ${formatSignedSeconds(entry.delta)} · d ${entry.d.toFixed(1)}`,
 			status: entry.verdict === 'supported' ? 'ok' : 'limit',
 			seeds: entry.seeds,
-			configHash: entry.configHash
+			configHash: entry.configHash,
+			evidence: { kind: 'contrast', arms: toArmRows(entry.arms) }
 		});
 	}
 </script>

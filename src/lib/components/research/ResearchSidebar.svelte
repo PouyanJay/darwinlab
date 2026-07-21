@@ -11,6 +11,7 @@
 	import LandscapeSummary from './Atlas/LandscapeSummary.svelte';
 	import SweepSummary from './Sweep/SweepSummary.svelte';
 	import ClaimSummary from './Ledger/ClaimSummary.svelte';
+	import ReportContents from './Report/ReportContents.svelte';
 	import SummaryPanel from './SummaryPanel.svelte';
 	import { landscape } from '$lib/state';
 	import type { Instrument } from './instruments';
@@ -40,6 +41,8 @@
 		<SweepSummary />
 	{:else if active === 'ledger'}
 		<ClaimSummary />
+	{:else if active === 'report'}
+		<ReportContents />
 	{/if}
 </aside>
 

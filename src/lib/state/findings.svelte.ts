@@ -15,6 +15,7 @@ import { browser } from '$app/environment';
 import { app } from './app.svelte';
 import { configHash } from '../lab/run';
 import { ANSWERS, type FindingSource, type QuestionId } from '../lab/questions';
+import type { Evidence } from '../lab/evidence';
 
 export const FINDINGS_STORAGE_KEY = 'darwinlab:findings';
 const STORAGE_VERSION = 1;
@@ -42,6 +43,8 @@ export interface Finding {
 	configHash: string;
 	/** The subject this finding is about — stable across instruments, so the Report can scope to it. */
 	subjectHash: string;
+	/** The small graph payload the Report renders (optional: a text-only finding still answers a Q). */
+	evidence?: Evidence;
 	/** ISO timestamp of when it was recorded. Metadata, not part of what reproduces the run. */
 	recorded: string;
 }
@@ -57,6 +60,7 @@ export interface FindingInput {
 	status: FindingStatus;
 	seeds: number;
 	configHash: string;
+	evidence?: Evidence;
 }
 
 const VALID_SOURCES: FindingSource[] = ['sweep', 'ledger', 'atlas', 'trace'];
@@ -76,7 +80,13 @@ function isFinding(value: unknown): value is Finding {
 		typeof f.title === 'string' &&
 		(f.status === 'ok' || f.status === 'limit') &&
 		typeof f.configHash === 'string' &&
-		typeof f.subjectHash === 'string'
+		typeof f.subjectHash === 'string' &&
+		// evidence is optional; if present it must at least be a kind-tagged object (the Report renders
+		// defensively per kind, so a foreign kind just means "no graph", not a crash).
+		(f.evidence === undefined ||
+			(typeof f.evidence === 'object' &&
+				f.evidence !== null &&
+				typeof (f.evidence as { kind?: unknown }).kind === 'string'))
 	);
 }
 
@@ -151,6 +161,7 @@ class FindingsStore {
 			seeds: input.seeds,
 			configHash: input.configHash,
 			subjectHash,
+			evidence: input.evidence,
 			// add() is only ever called from a client button handler, so the browser clock is present.
 			recorded: new Date().toISOString()
 		};

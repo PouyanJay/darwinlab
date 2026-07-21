@@ -2,9 +2,7 @@
  * The instruments of the Research console — the fixed list the rail nav, the workspace header and the
  * right sidebar all read, so they can never disagree about what exists or what is active.
  *
- * The Report is listed but not ready: its view lands in a later phase (RC3). Keeping it here — as a
- * disabled "soon" entry — means the rail already reads as the home all four instruments share, rather
- * than being rebuilt when the Report arrives.
+ * All four are built. (The Report was the last to land — RC3.)
  */
 
 export type Instrument = 'sweep' | 'ledger' | 'atlas' | 'report';
@@ -23,7 +21,7 @@ export const INSTRUMENTS: InstrumentMeta[] = [
 	{ key: 'sweep', name: 'The Sweep', blurb: 'factorial → effects', isReady: true },
 	{ key: 'ledger', name: 'The Ledger', blurb: 'claim → verdict', isReady: true },
 	{ key: 'atlas', name: 'The Atlas', blurb: 'two axes → landscape', isReady: true },
-	{ key: 'report', name: 'The Report', blurb: 'findings → a brief', isReady: false }
+	{ key: 'report', name: 'The Report', blurb: 'findings → a brief', isReady: true }
 ];
 
 /** The instruments a user can actually select — what the rail's roving-tabindex cycles through. */

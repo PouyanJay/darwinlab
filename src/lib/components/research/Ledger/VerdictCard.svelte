@@ -7,31 +7,14 @@
 <script lang="ts">
 	import Button from '../../common/Button.svelte';
 	import RunProgress from '../RunProgress.svelte';
-	import { ledger } from '$lib/state';
+	import IntervalPlot from '../viz/IntervalPlot.svelte';
+	import { ledger, toArmRows } from '$lib/state';
 
 	const claim = $derived(ledger.active);
 	const entry = $derived(ledger.latestFor(claim.id));
-
-	// A shared axis spanning both arms' intervals, padded and never below zero (survival can't be).
-	const axis = $derived.by(() => {
-		const values = (entry?.arms ?? [])
-			.flatMap((arm) => [arm.ci.lo, arm.ci.hi, arm.mean])
-			.filter((v) => !Number.isNaN(v));
-		if (values.length === 0) return { lo: 0, hi: 1 };
-		const lo = Math.min(...values);
-		const hi = Math.max(...values);
-		const pad = Math.max(0.2, (hi - lo) * 0.2);
-		return { lo: Math.max(0, lo - pad), hi: hi + pad };
-	});
-	const toPercent = (v: number) => ((v - axis.lo) / (axis.hi - axis.lo)) * 100;
-	const ticks = $derived([axis.lo, (axis.lo + axis.hi) / 2, axis.hi]);
 	const fmt = (v: number) => (v > 0 ? '+' : '') + v.toFixed(1);
 
-	// The longer-surviving arm is drawn teal, the other grey — so "which one won" reads at a glance,
-	// honestly (it tracks the measured means, not the claim's hoped-for direction).
-	const topMean = $derived(
-		Math.max(...(entry?.arms ?? []).map((a) => a.mean).filter((m) => !Number.isNaN(m)), -Infinity)
-	);
+	const armRows = $derived(toArmRows(entry?.arms ?? []));
 </script>
 
 <div class="verdict">
@@ -40,30 +23,8 @@
 	<h2>{claim.text}</h2>
 
 	{#if entry}
-		<div class="ab" data-testid="verdict-plot">
-			{#each entry.arms as arm (arm.label)}
-				{@const won = !Number.isNaN(arm.mean) && arm.mean === topMean}
-				<div class="armrow">
-					<span class="arm" class:won>{arm.label}</span>
-					<div class="track">
-						<div class="baseline" aria-hidden="true"></div>
-						{#if !Number.isNaN(arm.mean)}
-							<div
-								class="ci"
-								class:won
-								style:left="{toPercent(arm.ci.lo)}%"
-								style:width="{Math.max(0, toPercent(arm.ci.hi) - toPercent(arm.ci.lo))}%"
-							></div>
-							<div class="dot" class:won style:left="{toPercent(arm.mean)}%"></div>
-						{/if}
-					</div>
-				</div>
-			{/each}
-			<div class="axislabels" aria-hidden="true">
-				{#each ticks as tick (tick)}
-					<span style:left="{toPercent(tick)}%">{tick.toFixed(1)}s</span>
-				{/each}
-			</div>
+		<div data-testid="verdict-plot">
+			<IntervalPlot arms={armRows} />
 		</div>
 
 		<div class="design">
@@ -121,91 +82,6 @@
 		margin: -2px 0 0;
 		line-height: 1.25;
 		color: var(--ink);
-	}
-
-	.ab {
-		display: flex;
-		flex-direction: column;
-		gap: var(--sp-3);
-	}
-
-	.armrow {
-		display: grid;
-		grid-template-columns: 108px 1fr;
-		align-items: center;
-		gap: var(--sp-3);
-	}
-
-	.arm {
-		font-size: var(--fs-sm);
-		color: var(--ink2);
-		text-align: right;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
-
-	.arm.won {
-		color: var(--ink);
-		font-weight: var(--fw-semibold);
-	}
-
-	.track {
-		position: relative;
-		height: 20px;
-	}
-
-	.baseline {
-		position: absolute;
-		left: 0;
-		right: 0;
-		bottom: 3px;
-		height: 1px;
-		background: var(--line);
-	}
-
-	.ci {
-		position: absolute;
-		top: 8px;
-		height: 4px;
-		border-radius: 2px;
-		background: var(--ink3);
-		opacity: 0.5;
-	}
-
-	/* The winning arm's interval + mean in the survival teal, so the eye lands on it first. */
-	.ci.won {
-		background: var(--data-teal);
-		opacity: 0.9;
-	}
-
-	.dot {
-		position: absolute;
-		top: 5px;
-		width: 10px;
-		height: 10px;
-		border-radius: 50%;
-		background: var(--ink3);
-		border: 2px solid var(--panel);
-		transform: translateX(-50%);
-	}
-
-	.dot.won {
-		background: var(--data-teal);
-	}
-
-	.axislabels {
-		position: relative;
-		height: 12px;
-		margin-left: calc(108px + var(--sp-3));
-	}
-
-	.axislabels span {
-		position: absolute;
-		transform: translateX(-50%);
-		font-size: 9px;
-		font-variant-numeric: tabular-nums;
-		color: var(--ink3);
 	}
 
 	.design {

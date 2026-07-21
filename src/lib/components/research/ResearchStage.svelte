@@ -18,6 +18,7 @@
 	import Sweep from './Sweep/Sweep.svelte';
 	import Ledger from './Ledger/Ledger.svelte';
 	import Atlas from './Atlas/Atlas.svelte';
+	import ReportView from './Report/ReportView.svelte';
 	import { instrumentMeta, type Instrument } from './instruments';
 	import { SCENARIO } from '$lib/lab/scenario';
 
@@ -45,6 +46,8 @@
 					<Ledger />
 				{:else if active === 'atlas'}
 					<Atlas />
+				{:else if active === 'report'}
+					<ReportView />
 				{/if}
 			</div>
 		</ResearchWorkspace>

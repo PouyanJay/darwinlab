@@ -7,9 +7,12 @@
 -->
 <script lang="ts">
 	import FactorBar from './FactorBar.svelte';
-	import EffectChart from './EffectChart.svelte';
+	import EffectBars from '../viz/EffectBars.svelte';
 	import RunHeatmap from './RunHeatmap.svelte';
 	import { sweep } from '$lib/state';
+	import { toEffectRows } from '$lib/lab/sweep';
+
+	const effectRows = $derived(toEffectRows(sweep.effects));
 </script>
 
 <div class="sweep" data-testid="sweep">
@@ -21,7 +24,7 @@
 				<div class="head">
 					<span class="eyebrow">Main effect on survival · 95% interval</span>
 				</div>
-				<EffectChart effects={sweep.effects} />
+				<EffectBars effects={effectRows} />
 				<p class="read">
 					A bar clears zero when a factor reliably moves survival — <b>teal</b> if it helps,
 					<b>coral</b> if it costs. A muted bar is a knob that does nothing in this environment, and the

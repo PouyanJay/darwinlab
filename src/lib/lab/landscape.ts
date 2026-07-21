@@ -203,10 +203,10 @@ export function valueAt(field: LandscapeField, ix: number, iy: number): number {
  * largest DROP. Returns null when survival never falls along X (nothing to annotate) or the grid is
  * too narrow to have a slope — so a flat or rising landscape gets no fake cliff drawn on it.
  */
-export function steepestFalloff(field: LandscapeField): Falloff | null {
-	if (field.cols < 2) return null;
-
-	const columnMean = (ix: number): number => {
+/** Each column's mean survival, averaged over its FINITE rows (a dead cell must not drag a column to
+ *  NaN). Shared by the cliff finder and the Report's X-marginal, so the two can't average differently. */
+function columnMeans(field: LandscapeField): number[] {
+	return Array.from({ length: field.cols }, (_, ix) => {
 		let sum = 0;
 		let n = 0;
 		for (let iy = 0; iy < field.rows; iy++) {
@@ -217,9 +217,13 @@ export function steepestFalloff(field: LandscapeField): Falloff | null {
 			}
 		}
 		return n ? sum / n : NaN;
-	};
+	});
+}
 
-	const means = Array.from({ length: field.cols }, (_, ix) => columnMean(ix));
+export function steepestFalloff(field: LandscapeField): Falloff | null {
+	if (field.cols < 2) return null;
+
+	const means = columnMeans(field);
 	const xs = linspace(field.axisX.min, field.axisX.max, field.cols);
 
 	let best: Falloff | null = null;
@@ -229,6 +233,17 @@ export function steepestFalloff(field: LandscapeField): Falloff | null {
 		if (!best || drop > best.drop) best = { ix, x: (xs[ix] + xs[ix + 1]) / 2, drop };
 	}
 	return best;
+}
+
+/**
+ * The field collapsed onto its X axis: each column's mean survival, paired with that column's X value.
+ * This is the compact 1-D slice the Report's Q4 strip persists and draws — the whole plane is too much
+ * to keep in a finding, but its marginal along the cliff axis is the answer to "where does it break".
+ */
+export function xMarginal(field: LandscapeField): { x: number; survival: number }[] {
+	const xs = linspace(field.axisX.min, field.axisX.max, field.cols);
+	const means = columnMeans(field);
+	return xs.map((x, ix) => ({ x, survival: means[ix] }));
 }
 
 /** The default per-cell run size, as a RunSize the batch spreads onto each request. */

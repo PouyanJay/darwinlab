@@ -23,6 +23,7 @@ import { research } from './research.svelte';
 import { app } from './app.svelte';
 import { configHash } from '../lab/run';
 import { contrast, mean, bootstrapCI, type Interval } from '../lab/stats';
+import type { ArmRow } from '../lab/evidence';
 import type { JobExecutor } from '../lab/runner';
 import type { Evaluation } from '../lab/evaluator';
 
@@ -39,6 +40,12 @@ export interface ArmSummary {
 	label: string;
 	mean: number;
 	ci: Interval;
+}
+
+/** The arms as the compact ArmRow the interval plot and the notebook share — one converter, so the
+ *  Ledger's card and the Report's Q3 can't shape the evidence differently. */
+export function toArmRows(arms: ArmSummary[]): ArmRow[] {
+	return arms.map((a) => ({ label: a.label, mean: a.mean, lo: a.ci.lo, hi: a.ci.hi }));
 }
 
 /** One settled finding — enough to read it AND to reproduce it. */

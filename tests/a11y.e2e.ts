@@ -1,6 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { gotoApp, waitForPrewarm, openAtlas, shrinkAtlasRun } from './helpers';
-import AxeBuilder from '@axe-core/playwright';
+import { gotoApp, waitForPrewarm, openAtlas, shrinkAtlasRun, scanForViolations } from './helpers';
 
 /**
  * The Phase 9 a11y gate: axe scans of every major surface.
@@ -10,31 +9,9 @@ import AxeBuilder from '@axe-core/playwright';
  * that passed. (The plan's "≥95" was a Lighthouse framing; zero axe violations is stricter.)
  */
 
-const violations = async (page: Page) => {
-	// Let entrance animations LAND first: axe reads computed colours, and text caught mid fade-up
-	// sits at partial opacity — a contrast failure that exists for a quarter of a second and
-	// belongs to no real state. Infinite animations (status dots) are excluded or this never ends.
-	//
-	// The wait is CAPPED, because "wait for every finite animation to finish" is not safe on its own:
-	// after a theme toggle a transition can be left in a state whose `.finished` never resolves (seen
-	// hanging on CI), and one stuck promise would hang the whole scan. A theme transition is well under
-	// a second, so 2s of settle is plenty, and the cap means a stuck animation can never wedge it.
-	await page.evaluate(
-		() =>
-			Promise.race([
-				Promise.all(
-					document
-						.getAnimations()
-						.filter((a) => (a.effect?.getTiming().iterations ?? 1) !== Infinity)
-						.map((a) => a.finished.catch(() => {}))
-				),
-				new Promise((resolve) => setTimeout(resolve, 2000))
-			]) as Promise<unknown>
-	);
-	const results = await new AxeBuilder({ page }).analyze();
-	// One line per violation, so a failure names the rule and the damage without spelunking.
-	return results.violations.map((v) => `${v.impact}: ${v.id} (${v.nodes.length} node(s))`);
-};
+// The settle-then-scan helper lives in helpers.ts now (shared with report.e2e) — it caps the
+// animation settle so a stuck transition can't wedge the scan, then returns one line per violation.
+const violations = (page: Page) => scanForViolations(page);
 
 test.beforeEach(async ({ page }) => {
 	// An axe scan of the whole bench is heavy now — the canvas plus every node's folded analysis

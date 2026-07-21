@@ -42,3 +42,11 @@ export const ANSWERS: Record<FindingSource, QuestionId[]> = {
 	atlas: ['Q4'],
 	trace: ['Q1', 'Q5']
 };
+
+/** How each source is named in the Report — the "← source" pill on an answered question. */
+export const SOURCE_LABEL: Record<FindingSource, string> = {
+	sweep: 'The Sweep',
+	ledger: 'The Ledger',
+	atlas: 'The Atlas',
+	trace: 'Behaviour trace'
+};
