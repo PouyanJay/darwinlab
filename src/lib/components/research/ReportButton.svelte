@@ -12,7 +12,11 @@
 	let { inReport, onadd }: { inReport: boolean; onadd: () => void } = $props();
 </script>
 
-<Button size="sm" onclick={onadd} data-testid="add-to-report" aria-pressed={inReport}>
+<!--
+  Not a toggle: pressing it while "in report" re-adds the latest run (the store dedupes on source +
+  subject), it never removes — so the state rides on the label and icon, not `aria-pressed`.
+-->
+<Button size="sm" onclick={onadd} data-testid="add-to-report">
 	<Icon name={inReport ? 'check' : 'plus'} size={13} />
 	<span>{inReport ? 'In report' : 'Add to report'}</span>
 </Button>

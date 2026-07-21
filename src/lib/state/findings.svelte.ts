@@ -121,8 +121,13 @@ class FindingsStore {
 	/** Whether a finding from this source + variant about the CURRENT subject is already in the notebook
 	 *  — so a summary's button can read "in report" instead of inviting a duplicate. */
 	has(source: FindingSource, variant = ''): boolean {
-		const key = `${source}:${variant}:${currentSubjectHash()}`;
+		const key = this.#keyFor(source, variant, currentSubjectHash());
 		return this.#entries.some((finding) => finding.key === key);
+	}
+
+	/** The dedupe identity of a finding — one place, so `add` and `has` can never disagree on it. */
+	#keyFor(source: FindingSource, variant: string, subjectHash: string): string {
+		return `${source}:${variant}:${subjectHash}`;
 	}
 
 	/**

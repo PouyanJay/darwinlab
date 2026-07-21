@@ -6,6 +6,7 @@
 <script lang="ts">
 	import { landscape, app, findings } from '$lib/state';
 	import { configHash } from '$lib/lab/run';
+	import SummaryPanel from '../SummaryPanel.svelte';
 	import ReportButton from '../ReportButton.svelte';
 
 	const field = $derived(landscape.field);
@@ -31,98 +32,17 @@
 </script>
 
 {#if field}
-	<div class="panel">
-		<span class="eyebrow">This landscape</span>
-		<div class="lead">
-			{#if falloff}
-				<b>Cliff at {field.axisX.format(falloff.x)}</b>
-				<span>survival drops {falloff.drop.toFixed(1)}s across one step in {field.axisX.label}</span
-				>
-			{:else}
-				<b>No sharp threshold</b>
-				<span>survival holds across {field.axisX.label} in range</span>
-			{/if}
-		</div>
-		<dl class="statgrid">
-			<div>
-				<dt>Survival</dt>
-				<dd class="tabular">{field.min.toFixed(1)}–{field.max.toFixed(1)}s</dd>
-			</div>
-			<div>
-				<dt>Seeds</dt>
-				<dd class="tabular">{landscape.seeds}</dd>
-			</div>
-		</dl>
+	<SummaryPanel
+		eyebrow="This landscape"
+		title={falloff ? `Cliff at ${field.axisX.format(falloff.x)}` : 'No sharp threshold'}
+		detail={falloff
+			? `survival drops ${falloff.drop.toFixed(1)}s across one step in ${field.axisX.label}`
+			: `survival holds across ${field.axisX.label} in range`}
+		stats={[
+			{ label: 'Survival', value: `${field.min.toFixed(1)}–${field.max.toFixed(1)}s` },
+			{ label: 'Seeds', value: String(landscape.seeds) }
+		]}
+	>
 		<ReportButton {inReport} onadd={addToReport} />
-	</div>
+	</SummaryPanel>
 {/if}
-
-<style>
-	.panel {
-		display: flex;
-		flex-direction: column;
-		gap: var(--sp-3);
-	}
-
-	.eyebrow {
-		font-size: var(--fs-eyebrow);
-		font-weight: var(--fw-semibold);
-		letter-spacing: var(--tracking-wide);
-		text-transform: uppercase;
-		color: var(--ink3);
-	}
-
-	.lead {
-		display: flex;
-		flex-direction: column;
-		gap: 3px;
-		padding: var(--sp-4);
-		border: 1px solid var(--line);
-		border-radius: var(--radius-sm);
-		background: var(--panel2);
-	}
-
-	.lead b {
-		font-size: var(--fs-title);
-		font-weight: var(--fw-semibold);
-		color: var(--ink);
-		letter-spacing: var(--tracking-tight);
-	}
-
-	.lead span {
-		font-size: var(--fs-sm);
-		color: var(--ink3);
-	}
-
-	.statgrid {
-		display: grid;
-		grid-template-columns: 1fr 1fr;
-		gap: 1px;
-		margin: 0;
-		border: 1px solid var(--line);
-		border-radius: var(--radius-sm);
-		overflow: hidden;
-		background: var(--line);
-	}
-
-	.statgrid > div {
-		display: flex;
-		flex-direction: column;
-		gap: 2px;
-		padding: var(--sp-3) var(--sp-4);
-		background: var(--panel);
-	}
-
-	.statgrid dt {
-		font-size: var(--fs-sm);
-		color: var(--ink3);
-	}
-
-	.statgrid dd {
-		margin: 0;
-		font-size: var(--fs-md);
-		font-weight: var(--fw-semibold);
-		color: var(--ink);
-		font-variant-numeric: tabular-nums;
-	}
-</style>

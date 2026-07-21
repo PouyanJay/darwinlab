@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { gotoApp, openResearch } from './helpers';
+import { gotoApp, openResearch, runMinimalSweep } from './helpers';
 
 /**
  * The Findings notebook end to end (RC1): running an instrument and pressing "add to report" records
@@ -15,17 +15,7 @@ test('a swept finding is added to the notebook, shows in the rail, and survives 
 }) => {
 	await gotoApp(page);
 	await openResearch(page); // opens on the Sweep
-
-	// Shrink to a single factor (Direction), two seeds → two conditions, four jobs.
-	for (const factor of ['Distance', 'Walls', 'Predator speed']) {
-		await page.getByRole('button', { name: factor, exact: false }).first().click();
-	}
-	await page.locator('.seeds input').fill('2');
-	await page.locator('.seeds input').blur();
-	await expect(page.getByTestId('sweep-summary')).toContainText('2 conditions × 2 seeds');
-
-	await page.getByRole('button', { name: 'Run sweep' }).click();
-	await expect(page.locator('[data-testid="sweep"] .effects')).toBeVisible({ timeout: 60_000 });
+	await runMinimalSweep(page);
 
 	// The notebook starts empty; adding the run records exactly one finding and the button flips.
 	const rail = page.getByTestId('findings');

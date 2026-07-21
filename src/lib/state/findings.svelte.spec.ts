@@ -89,6 +89,17 @@ describe('the Findings notebook', () => {
 		expect(findings.has('ledger', 'walls-pays-alone')).toBe(false);
 	});
 
+	it('remove drops one finding by id, keeps the rest, and persists the removal', () => {
+		findings.add(input({ variant: 'a', title: 'A' }));
+		findings.add(input({ variant: 'b', title: 'B' }));
+		const removed = findings.entries.find((f) => f.title === 'A')!;
+
+		findings.remove(removed.id);
+
+		expect(findings.entries.map((f) => f.title)).toEqual(['B']); // A gone, B untouched
+		expect(stored().entries.map((f: { title: string }) => f.title)).toEqual(['B']); // and on disk
+	});
+
 	it('clear forgets the notebook on disk as well as in memory', () => {
 		findings.add(input());
 		expect(findings.entries).toHaveLength(1); // it really recorded before we clear it

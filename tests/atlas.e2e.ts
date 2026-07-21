@@ -26,6 +26,10 @@ test('a landscape runs, paints a map with a legend, and drills a cell', async ({
 	await expect(page.getByTestId('atlas-legend')).toBeVisible();
 	await expect(page.getByTestId('atlas')).toContainText('Predator speed →');
 
+	// The landscape's threshold feeds the report notebook: "add to report" records it in the rail.
+	await page.getByTestId('add-to-report').click();
+	await expect(page.getByTestId('findings')).toContainText('1 kept');
+
 	// Drill a cell with the keyboard (deterministic, unlike clicking a pixel): move the cursor, open it.
 	await page.locator('[data-testid="atlas"] canvas').first().focus();
 	await page.keyboard.press('ArrowRight');

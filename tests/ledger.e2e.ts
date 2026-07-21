@@ -30,6 +30,10 @@ test('a claim runs to a verdict, and the record survives a reload', async ({ pag
 		'Direction pays more than distance'
 	);
 
+	// The claim's verdict feeds the report notebook too: "add to report" records it in the rail.
+	await page.getByTestId('add-to-report').click();
+	await expect(page.getByTestId('findings')).toContainText('1 kept');
+
 	// Reload and re-enter. The mode persists (Research), so we only re-open the Ledger tab — and the
 	// record is still on disk.
 	await page.reload();

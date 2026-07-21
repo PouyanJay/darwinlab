@@ -84,7 +84,7 @@
 		</div>
 	</section>
 
-	<section class="sec findings-sec" data-testid="findings">
+	<section class="sec" data-testid="findings">
 		<span class="eyebrow"
 			>Findings{#if kept.length}
 				· {kept.length} kept{/if}</span
