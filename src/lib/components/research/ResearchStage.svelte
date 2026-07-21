@@ -9,6 +9,7 @@
 <script lang="ts">
 	import Sweep from './Sweep/Sweep.svelte';
 	import Ledger from './Ledger/Ledger.svelte';
+	import Atlas from './Atlas/Atlas.svelte';
 	import { SCENARIO } from '$lib/lab/scenario';
 
 	type Instrument = 'sweep' | 'ledger' | 'atlas';
@@ -16,7 +17,7 @@
 	const INSTRUMENTS: { key: Instrument; name: string; ready: boolean }[] = [
 		{ key: 'sweep', name: 'The Sweep', ready: true },
 		{ key: 'ledger', name: 'The Ledger', ready: true },
-		{ key: 'atlas', name: 'The Atlas', ready: false }
+		{ key: 'atlas', name: 'The Atlas', ready: true }
 	];
 
 	let active = $state<Instrument>('sweep');
@@ -70,6 +71,8 @@
 				<Sweep />
 			{:else if active === 'ledger'}
 				<Ledger />
+			{:else if active === 'atlas'}
+				<Atlas />
 			{/if}
 		</div>
 	</div>

@@ -127,4 +127,39 @@ test('the Research stage scans clean — the instrument tabs, the Sweep and the 
 	await page.getByRole('tab', { name: 'The Ledger' }).click();
 	await page.getByTestId('ledger').waitFor();
 	expect(await violations(page)).toEqual([]);
+
+	// and the Atlas's controls — its axis pickers, grid/seed inputs and run button (empty state)
+	await page.getByRole('tab', { name: 'The Atlas' }).click();
+	await page.getByTestId('atlas').waitFor();
+	expect(await violations(page)).toEqual([]);
+});
+
+test('the painted Atlas scans clean — the map, legend and drill card are new surface', async ({
+	page
+}) => {
+	// A real landscape is measured here, so give it room; kept to the smallest grid (3×3, 2 seeds).
+	test.setTimeout(120_000);
+	await page
+		.getByRole('radiogroup', { name: 'lab mode' })
+		.getByRole('radio', { name: 'Research' })
+		.click();
+	await page.getByRole('tab', { name: 'The Atlas' }).click();
+	await page.getByTestId('atlas').waitFor();
+
+	const grid = page.locator('[data-testid="atlas"] .num input').first();
+	const seeds = page.locator('[data-testid="atlas"] .num input').nth(1);
+	await grid.fill('3');
+	await grid.blur();
+	await seeds.fill('2');
+	await seeds.blur();
+	await page.getByRole('button', { name: 'Run landscape' }).click();
+	await expect(page.locator('[data-testid="atlas"] canvas')).toBeVisible({ timeout: 90_000 });
+
+	// Drill a cell so the drill card is in the scan too.
+	await page.locator('[data-testid="atlas"] canvas').focus();
+	await page.keyboard.press('ArrowRight');
+	await page.keyboard.press('Enter');
+	await expect(page.getByTestId('atlas-drill')).toBeVisible();
+
+	expect(await violations(page)).toEqual([]);
 });
