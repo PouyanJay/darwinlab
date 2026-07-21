@@ -6,6 +6,7 @@
 -->
 <script lang="ts">
 	import type { FactorEffect } from '$lib/lab/sweep';
+	import { HEAT_HIGH, HEAT_LOW } from '$lib/render';
 
 	interface Props {
 		effects: FactorEffect[];
@@ -26,6 +27,10 @@
 	);
 	const px = (v: number) => 50 + (v / max) * 50;
 	const straddlesZero = (e: FactorEffect) => e.effect.ci.lo <= 0 && e.effect.ci.hi >= 0;
+
+	/** Teal when a factor helps, coral when it costs, muted when its interval can't clear zero. */
+	const barColor = (helps: boolean, flat: boolean) =>
+		flat ? 'var(--ink3)' : helps ? HEAT_HIGH : HEAT_LOW;
 </script>
 
 <div class="effects">
@@ -41,10 +46,9 @@
 				{#if !missing}
 					<div
 						class="bar"
-						class:cost
-						class:flat
 						style:left="{Math.min(px(delta), 50)}%"
 						style:width="{Math.abs(px(delta) - 50)}%"
+						style:background={barColor(!cost, flat)}
 					></div>
 					<div
 						class="whisk"
@@ -85,7 +89,7 @@
 
 	.track {
 		position: relative;
-		height: 16px;
+		height: 20px;
 	}
 
 	.zero {
@@ -98,26 +102,17 @@
 		opacity: 0.6;
 	}
 
+	/* Colour is set inline from the survival palette (teal helps / coral costs / muted when flat). */
 	.bar {
 		position: absolute;
-		top: 3px;
-		height: 10px;
-		border-radius: 2px;
-		background: var(--ink);
-	}
-
-	/* A cost leans on the danger hue; a bar that can't clear zero fades to a muted grey. */
-	.bar.cost {
-		background: var(--danger);
-	}
-
-	.bar.flat {
-		background: var(--ink3);
+		top: 4px;
+		height: 12px;
+		border-radius: 3px;
 	}
 
 	.whisk {
 		position: absolute;
-		top: 7px;
+		top: 9px;
 		height: 1px;
 		background: var(--ink2);
 	}
@@ -126,9 +121,9 @@
 	.whisk::after {
 		content: '';
 		position: absolute;
-		top: -3px;
+		top: -4px;
 		width: 1px;
-		height: 7px;
+		height: 9px;
 		background: var(--ink2);
 	}
 

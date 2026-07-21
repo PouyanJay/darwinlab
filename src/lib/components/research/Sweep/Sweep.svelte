@@ -16,28 +16,31 @@
 	<FactorBar />
 
 	{#if sweep.results}
-		<section class="block">
-			<div class="head">
-				<span class="eyebrow">Main effect on survival · 95% interval</span>
-			</div>
-			<EffectChart effects={sweep.effects} />
-			<p class="read">
-				A bar clears zero when a factor reliably moves survival; a muted bar is a knob that does
-				nothing in this environment — the sweep won't round it into a finding.
-			</p>
-		</section>
+		<div class="results">
+			<section class="block conclusion">
+				<div class="head">
+					<span class="eyebrow">Main effect on survival · 95% interval</span>
+				</div>
+				<EffectChart effects={sweep.effects} />
+				<p class="read">
+					A bar clears zero when a factor reliably moves survival — <b>teal</b> if it helps,
+					<b>coral</b> if it costs. A muted bar is a knob that does nothing in this environment, and the
+					sweep won't round it into a finding.
+				</p>
+			</section>
 
-		<section class="block">
-			<div class="head">
-				<span class="eyebrow">Runs · condition × seed</span>
-				{#if sweep.sampled}
-					<span class="sampled" data-testid="sweep-sampled">
-						sampled {sweep.cells.length} of {sweep.total} conditions
-					</span>
-				{/if}
-			</div>
-			<RunHeatmap cells={sweep.cells} results={sweep.results} />
-		</section>
+			<section class="block evidence">
+				<div class="head">
+					<span class="eyebrow">Runs · condition × seed</span>
+					{#if sweep.sampled}
+						<span class="sampled" data-testid="sweep-sampled">
+							sampled {sweep.cells.length} of {sweep.total} conditions
+						</span>
+					{/if}
+				</div>
+				<RunHeatmap cells={sweep.cells} results={sweep.results} />
+			</section>
+		</div>
 	{:else}
 		<p class="hint">
 			Pick the factors to vary and run the sweep. Every combination is measured across your chosen
@@ -53,10 +56,27 @@
 		gap: var(--sp-6);
 	}
 
+	/* Conclusion beside evidence on a wide stage — the effect chart (the answer) leads and takes the
+	   room its bars need; the run grid (the evidence) sits alongside. They stack on a narrow stage. */
+	.results {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) minmax(0, 340px);
+		gap: var(--sp-7);
+		align-items: start;
+	}
+
+	@media (max-width: 760px) {
+		.results {
+			grid-template-columns: 1fr;
+			gap: var(--sp-6);
+		}
+	}
+
 	.block {
 		display: flex;
 		flex-direction: column;
 		gap: var(--sp-4);
+		min-width: 0;
 	}
 
 	.head {

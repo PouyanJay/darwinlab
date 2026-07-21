@@ -1,27 +1,24 @@
 <!--
-  The landscape itself — a pannable, zoomable heatmap of survival across two parameters.
+  The landscape — a survival heatmap that FILLS its frame, read like a chart of the whole plane.
 
-  Drag to pan, scroll to zoom toward the cursor, hover for a cell's numbers, click (or Enter on a
-  keyboard-moved cursor) to drill in. The camera is the Atlas's own `Viewport`; the paint runs
-  through the shared DPR-aware Canvas host, driven not by the sim loop (idle in Research) but by an
-  effect that repaints whenever the picture would change — the camera, the field, the cursor, or the
-  theme. Grid coordinates map to the screen through exactly one transform, shared with the painter,
-  so where you point is the cell you get.
+  The grid stretches to the full width × height (rectangular cells, no dead margin), with the two
+  parameters as real axes: predator speed and its partner ticked along the bottom and up the side.
+  Hover a cell for its numbers, click (or Enter on a keyboard-moved cursor) to drill in. The measured
+  cliff is drawn as a dashed line where survival falls off hardest, and the colour scale sits on the
+  map so "coral = wiped, teal = survives" is right there. Coordinates map straight to pixels — a
+  column is width/cols wide — which is exactly how a pointer is hit-tested back to a cell.
 -->
 <script lang="ts">
 	import Canvas from '../../common/Canvas.svelte';
-	import Button from '../../common/Button.svelte';
-	import Icon from '../../common/Icon.svelte';
 	import { landscape, theme } from '$lib/state';
-	import { drawLandscape, CELL, type CellRef } from '$lib/render';
+	import { drawLandscape, type CellRef } from '$lib/render';
 
-	let container = $state<HTMLDivElement>();
-	const view = landscape.view;
+	let chart = $state<HTMLDivElement>();
 
-	/** The outlined cell — set by hover or by the keyboard cursor; the one Enter/click drills. */
+	/** The outlined cell — set by hover or the keyboard cursor; the one Enter/click drills. */
 	let focus = $state<CellRef | null>(null);
-	/** Pointer position within the container, for placing the tooltip. */
-	let pointer = $state<{ px: number; py: number } | null>(null);
+	/** Pointer position within the chart, for placing the tooltip. */
+	let pointer = $state<{ x: number; y: number } | null>(null);
 	/** The host's repaint fn, captured so the effect below can drive it on state change. */
 	let repaint = $state<(() => void) | undefined>();
 
@@ -38,9 +35,6 @@
 		}
 		drawLandscape(ctx, width, height, {
 			field,
-			tx: view.tx,
-			ty: view.ty,
-			scale: view.scale,
 			theme: theme.name,
 			hovered: focus,
 			selected: landscape.selected,
@@ -48,106 +42,30 @@
 		});
 	}
 
-	// Repaint whenever any input to the picture changes. This is the sync-to-canvas seam: the Research
-	// stage has no per-frame loop, so the map is driven off its own reactive dependencies instead.
+	// Research has no per-frame loop, so the map repaints off its own reactive dependencies.
 	$effect(() => {
-		void (view.tx, view.ty, view.scale, landscape.field, landscape.selected, focus, theme.name);
+		void (landscape.field, landscape.selected, focus, theme.name);
 		repaint?.();
 	});
 
-	/** Frame the whole grid in the viewport — on a new field, and on demand (recenter). */
-	function frame(): void {
+	/** Which grid cell a chart-relative point falls on, or null if outside. */
+	function cellAt(x: number, y: number): CellRef | null {
 		const field = landscape.field;
-		if (!field || !container) return;
-		const rect = container.getBoundingClientRect();
-		view.fitBox(0, 0, field.cols * CELL, field.rows * CELL, rect.width, rect.height, 24);
-	}
-
-	// A fresh field is a fresh landscape — frame it. Reads only `field`, so writing the camera here
-	// cannot re-trigger it (no loop with the repaint effect, which never writes state).
-	$effect(() => {
-		if (landscape.field) frame();
-	});
-
-	// Wheel must be a NON-PASSIVE listener or preventDefault is ignored and the page scrolls instead.
-	$effect(() => {
-		const el = container;
-		if (!el) return;
-		const onwheel = (event: WheelEvent) => {
-			event.preventDefault();
-			const rect = el.getBoundingClientRect();
-			view.zoomAt(
-				event.clientX - rect.left,
-				event.clientY - rect.top,
-				Math.exp(-event.deltaY * 0.0015)
-			);
-		};
-		el.addEventListener('wheel', onwheel, { passive: false });
-		return () => el.removeEventListener('wheel', onwheel);
-	});
-
-	function localPos(event: PointerEvent): { px: number; py: number } {
-		const rect = container!.getBoundingClientRect();
-		return { px: event.clientX - rect.left, py: event.clientY - rect.top };
-	}
-
-	/** Which grid cell a container-relative point falls on, or null if outside the grid. */
-	function cellAt(px: number, py: number): CellRef | null {
-		const field = landscape.field;
-		if (!field) return null;
-		const { x, y } = view.toCanvas(px, py);
-		const ix = Math.floor(x / CELL);
-		const iy = Math.floor(y / CELL);
+		if (!field || !chart) return null;
+		const ix = Math.floor(x / (chart.clientWidth / field.cols));
+		const iy = Math.floor(y / (chart.clientHeight / field.rows));
 		if (ix < 0 || iy < 0 || ix >= field.cols || iy >= field.rows) return null;
 		return { ix, iy };
 	}
 
-	// A press is a pan until it proves itself a click — a click that never moved drills the cell.
-	let drag: { lastX: number; lastY: number; moved: boolean } | null = null;
-	let grabbing = $state(false);
-
-	function onpointerdown(event: PointerEvent): void {
-		if (event.button !== 0 || !container) return;
-		drag = { lastX: event.clientX, lastY: event.clientY, moved: false };
-		grabbing = true;
-		container.setPointerCapture(event.pointerId);
+	function onhover(x: number, y: number): void {
+		pointer = { x, y };
+		focus = cellAt(x, y);
 	}
 
-	function onpointermove(event: PointerEvent): void {
-		const { px, py } = localPos(event);
-		pointer = { px, py };
-		if (drag) {
-			const dx = event.clientX - drag.lastX;
-			const dy = event.clientY - drag.lastY;
-			if (Math.abs(dx) + Math.abs(dy) > 2) drag.moved = true;
-			drag.lastX = event.clientX;
-			drag.lastY = event.clientY;
-			view.panBy(dx, dy);
-			focus = null; // no cell outline while the plane is moving
-		} else {
-			focus = cellAt(px, py);
-		}
-	}
-
-	function onpointerup(event: PointerEvent): void {
-		if (drag && !drag.moved) {
-			const { px, py } = localPos(event);
-			const cell = cellAt(px, py);
-			if (cell) landscape.select(cell.ix, cell.iy);
-		}
-		endDrag(event);
-	}
-
-	function endDrag(event: PointerEvent): void {
-		drag = null;
-		grabbing = false;
-		if (container?.hasPointerCapture(event.pointerId))
-			container.releasePointerCapture(event.pointerId);
-	}
-
-	function onpointerleave(): void {
-		if (!drag) focus = null;
-		pointer = null;
+	function onpick(x: number, y: number): void {
+		const cell = cellAt(x, y);
+		if (cell) landscape.select(cell.ix, cell.iy);
 	}
 
 	/** Arrow keys move a cursor cell; Enter/Space drills it — the keyboard path to the same drill-in. */
@@ -174,100 +92,173 @@
 		}
 	}
 
-	function zoomFromCentre(factor: number): void {
-		if (!container) return;
-		const rect = container.getBoundingClientRect();
-		view.zoomAt(rect.width / 2, rect.height / 2, factor);
-	}
+	const field = $derived(landscape.field);
 
-	/**
-	 * The focused cell's labels, axis values and survival — the tooltip's contents, matching the drill
-	 * card. Everything reads the FIELD's own frozen axes, so touching the picker before the next run
-	 * never relabels the painted grid with an axis it was not measured on.
-	 */
+	/** Five evenly-spaced ticks across an axis, min→max, formatted by the axis itself. */
+	function axisTicks(min: number, max: number, format: (v: number) => string) {
+		return Array.from({ length: 5 }, (_, i) => {
+			const frac = i / 4;
+			return { frac, label: format(min + (max - min) * frac) };
+		});
+	}
+	const xTicks = $derived(
+		field ? axisTicks(field.axisX.min, field.axisX.max, field.axisX.format) : []
+	);
+
+	/** The focused cell's labels, axis values and survival — the tooltip's contents. */
 	const focusValues = $derived.by(() => {
-		const field = landscape.field;
 		if (!field || !focus) return null;
 		const xs = field.axisX;
 		const ys = field.axisY;
-		// The grid is uniform, so a cell's axis value is recoverable from its index without the plan.
 		const x = xs.min + ((xs.max - xs.min) * focus.ix) / Math.max(1, field.cols - 1);
 		const y = ys.min + ((ys.max - ys.min) * focus.iy) / Math.max(1, field.rows - 1);
 		const value = field.values[focus.iy * field.cols + focus.ix];
 		return { xLabel: xs.label, yLabel: ys.label, x: xs.format(x), y: ys.format(y), value };
 	});
 
-	const mapLabel = $derived.by(() => {
-		const field = landscape.field;
-		if (!field) return 'Survival landscape — run the Atlas to fill it.';
-		const grid = `${field.cols} by ${field.rows} grid of ${field.axisX.label} against ${field.axisY.label}`;
-		return `Survival landscape, ${grid}. Drag to pan, scroll to zoom, arrow keys to move the cursor, Enter to open a cell.`;
-	});
+	/** Where along the width the cliff line sits, as a percentage — for the on-map label. */
+	const cliffPct = $derived(
+		field && landscape.falloff ? ((landscape.falloff.ix + 1) / field.cols) * 100 : null
+	);
+
+	const mapLabel = $derived(
+		field
+			? `Survival landscape, ${field.cols} by ${field.rows} grid of ${field.axisX.label} against ${field.axisY.label}. Arrow keys move the cursor, Enter opens a cell.`
+			: 'Survival landscape — run the Atlas to fill it.'
+	);
 </script>
 
-<!-- The wrapper carries the POINTER gestures (pan + hover + click-to-drill) as a role="group",
-     exactly like the lineage canvas; the KEYBOARD widget (arrow-cursor + Enter-to-drill) lives on
-     the <canvas> itself, where the Canvas host gives it role="application" and focus. Splitting them
-     this way keeps each element's a11y semantics honest — no non-interactive div holding key handlers. -->
-<div
-	class="map"
-	class:grabbing
-	bind:this={container}
-	role="group"
-	aria-label="Survival landscape map — drag to pan, scroll to zoom"
-	{onpointerdown}
-	{onpointermove}
-	{onpointerup}
-	onpointercancel={endDrag}
-	{onpointerleave}
->
-	<Canvas {paint} {register} {onkeydown} label={mapLabel} cursor={grabbing ? 'grabbing' : 'grab'} />
+{#if field}
+	<div class="map">
+		<div class="ylabel"><span>{field.axisY.label} →</span></div>
 
-	{#if focusValues && pointer && !grabbing}
-		<div class="tip" style:left="{pointer.px}px" style:top="{pointer.py}px" aria-hidden="true">
-			<span class="tip-line tabular">{focusValues.xLabel} {focusValues.x}</span>
-			<span class="tip-line tabular">{focusValues.yLabel} {focusValues.y}</span>
-			<span class="tip-val tabular"
-				>{Number.isFinite(focusValues.value) ? `${focusValues.value.toFixed(1)}s` : '—'}</span
-			>
+		<div class="chart" bind:this={chart}>
+			<Canvas
+				{paint}
+				{register}
+				{onkeydown}
+				{onpick}
+				{onhover}
+				onleave={() => (focus = null)}
+				label={mapLabel}
+				cursor="crosshair"
+			/>
+
+			<!-- The colour scale, on the map where the eye already is. -->
+			<div class="legend" data-testid="atlas-legend" aria-hidden="true">
+				<span>{field.min.toFixed(1)}s</span>
+				<span class="ramp"></span>
+				<span>{field.max.toFixed(1)}s</span>
+			</div>
+
+			<!-- The measured cliff, named at the line. -->
+			{#if cliffPct !== null && landscape.falloff}
+				<span class="cliff-label" style:left="{cliffPct}%" aria-hidden="true">
+					the cliff · {field.axisX.format(landscape.falloff.x)}
+				</span>
+			{/if}
+
+			{#if focusValues && pointer}
+				<div class="tip" style:left="{pointer.x}px" style:top="{pointer.y}px" aria-hidden="true">
+					<span class="tip-line tabular">{focusValues.xLabel} {focusValues.x}</span>
+					<span class="tip-line tabular">{focusValues.yLabel} {focusValues.y}</span>
+					<span class="tip-val tabular"
+						>{Number.isFinite(focusValues.value) ? `${focusValues.value.toFixed(1)}s` : '—'}</span
+					>
+				</div>
+			{/if}
 		</div>
-	{/if}
 
-	<div class="controls">
-		<Button variant="icon" size="sm" aria-label="zoom out" onclick={() => zoomFromCentre(1 / 1.2)}>
-			<Icon name="minus" size={15} />
-		</Button>
-		<span class="zoom tabular" aria-hidden="true">{Math.round(view.scale * 100)}%</span>
-		<Button variant="icon" size="sm" aria-label="zoom in" onclick={() => zoomFromCentre(1.2)}>
-			<Icon name="plus" size={15} />
-		</Button>
-		<Button variant="icon" size="sm" aria-label="recenter the landscape" onclick={frame}>
-			<Icon name="crosshair" size={15} />
-		</Button>
+		<div class="xaxis">
+			<div class="xticks" aria-hidden="true">
+				{#each xTicks as tick (tick.frac)}
+					<span class="tabular" style:left="{tick.frac * 100}%">{tick.label}</span>
+				{/each}
+			</div>
+			<span class="xlabel">{field.axisX.label} →</span>
+		</div>
 	</div>
-</div>
+{/if}
 
 <style>
 	.map {
+		display: grid;
+		grid-template-columns: 20px minmax(0, 1fr);
+		grid-template-rows: minmax(0, 1fr) auto;
+		gap: var(--sp-2);
+	}
+
+	.ylabel {
+		grid-column: 1;
+		grid-row: 1;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.ylabel span {
+		writing-mode: vertical-rl;
+		transform: rotate(180deg);
+		font-size: var(--fs-eyebrow);
+		letter-spacing: var(--tracking-wide);
+		text-transform: uppercase;
+		color: var(--ink3);
+		white-space: nowrap;
+	}
+
+	.chart {
+		grid-column: 2;
+		grid-row: 1;
 		position: relative;
-		width: 100%;
-		height: clamp(320px, 46vh, 520px);
+		height: clamp(300px, 44vh, 460px);
 		overflow: hidden;
 		border: 1px solid var(--line);
 		border-radius: var(--radius-card);
 		background: var(--canvas-bg);
-		cursor: grab;
-		touch-action: none;
 	}
 
-	.map.grabbing {
-		cursor: grabbing;
-	}
-
-	/* The focusable element is the <canvas> inside (the keyboard widget), so the focus ring lands there. */
-	.map :global(canvas:focus-visible) {
+	.chart :global(canvas:focus-visible) {
 		outline: var(--focus-ring);
 		outline-offset: -2px;
+	}
+
+	.legend {
+		position: absolute;
+		top: var(--sp-2);
+		right: var(--sp-2);
+		display: flex;
+		align-items: center;
+		gap: var(--sp-2);
+		padding: 3px var(--sp-2);
+		border-radius: var(--radius-pill);
+		background: var(--glass);
+		backdrop-filter: blur(var(--blur-glass));
+		font-size: var(--fs-eyebrow);
+		color: var(--ink2);
+		font-variant-numeric: tabular-nums;
+		pointer-events: none;
+	}
+
+	.ramp {
+		width: 64px;
+		height: 6px;
+		border-radius: 3px;
+		background: linear-gradient(90deg, rgb(232, 96, 76), rgb(14, 148, 136));
+	}
+
+	.cliff-label {
+		position: absolute;
+		top: var(--sp-2);
+		transform: translateX(-50%);
+		padding: 2px 7px;
+		border-radius: var(--radius-chip);
+		background: var(--glass);
+		backdrop-filter: blur(var(--blur-glass));
+		font-size: var(--fs-eyebrow);
+		font-weight: var(--fw-semibold);
+		color: var(--ink);
+		white-space: nowrap;
+		pointer-events: none;
 	}
 
 	.tip {
@@ -290,39 +281,49 @@
 	.tip-line {
 		font-size: var(--fs-eyebrow);
 		color: var(--ink3);
-		font-variant-numeric: tabular-nums;
 	}
 
 	.tip-val {
 		font-size: var(--fs-sm);
 		font-weight: var(--fw-semibold);
 		color: var(--ink);
-		font-variant-numeric: tabular-nums;
 	}
 
-	.controls {
-		position: absolute;
-		right: var(--sp-4);
-		bottom: var(--sp-4);
-		z-index: 2;
+	.xaxis {
+		grid-column: 2;
+		grid-row: 2;
 		display: flex;
-		align-items: center;
+		flex-direction: column;
 		gap: 2px;
-		padding: 4px var(--sp-2);
-		border: 1px solid var(--line);
-		border-radius: var(--radius-pill);
-		background: var(--glass);
-		backdrop-filter: blur(var(--blur-glass));
-		box-shadow: var(--shadow-pill);
 	}
 
-	.zoom {
-		min-width: 40px;
-		padding: 0 4px;
-		text-align: center;
-		font-size: var(--fs-sm);
-		font-weight: var(--fw-semibold);
-		color: var(--ink2);
+	.xticks {
+		position: relative;
+		height: 14px;
+	}
+
+	.xticks span {
+		position: absolute;
+		transform: translateX(-50%);
+		font-size: var(--fs-eyebrow);
+		color: var(--ink3);
 		font-variant-numeric: tabular-nums;
+	}
+
+	/* Keep the end ticks from spilling past the frame edges. */
+	.xticks span:first-child {
+		transform: none;
+	}
+
+	.xticks span:last-child {
+		transform: translateX(-100%);
+	}
+
+	.xlabel {
+		align-self: center;
+		font-size: var(--fs-eyebrow);
+		letter-spacing: var(--tracking-wide);
+		text-transform: uppercase;
+		color: var(--ink3);
 	}
 </style>

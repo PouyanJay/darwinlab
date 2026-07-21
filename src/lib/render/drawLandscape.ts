@@ -14,9 +14,6 @@
 
 import type { LandscapeField, Falloff } from '../lab/landscape';
 
-/** Canvas-space size of one cell, before the camera scales it. Shared with the component's hit-testing. */
-export const CELL = 56;
-
 type Rgb = [number, number, number];
 /** Short survival — the cliff. */
 const CORAL: Rgb = [232, 96, 76];
@@ -26,6 +23,15 @@ const TEAL: Rgb = [14, 148, 136];
 /** The ramp's ends as CSS strings — the single source of truth the Legend's gradient reuses. */
 export const HEAT_LOW = `rgb(${CORAL[0]}, ${CORAL[1]}, ${CORAL[2]})`;
 export const HEAT_HIGH = `rgb(${TEAL[0]}, ${TEAL[1]}, ${TEAL[2]})`;
+
+/**
+ * A point on the survival ramp — coral (t=0, short) → teal (t=1, long). The ONE survival palette the
+ * whole platform speaks: the Atlas paints it on canvas, the Sweep's run grid and effect bars use it in
+ * the DOM. Returns a CSS `rgb(...)` string.
+ */
+export function heatColor(t: number): string {
+	return lerp(CORAL, TEAL, t);
+}
 
 interface Palette {
 	/** An unmeasured cell. */
@@ -47,9 +53,6 @@ export interface CellRef {
 
 export interface LandscapePaint {
 	field: LandscapeField;
-	tx: number;
-	ty: number;
-	scale: number;
 	theme: 'light' | 'dark';
 	hovered: CellRef | null;
 	selected: CellRef | null;
@@ -62,43 +65,46 @@ function lerp(a: Rgb, b: Rgb, t: number): string {
 	return `rgb(${channel(0)}, ${channel(1)}, ${channel(2)})`;
 }
 
+/**
+ * Paint the landscape FILLING the canvas — the grid stretches to the full width × height, so cells
+ * are rectangles that leave no dead margin (a small square grid lost in a black frame was the old
+ * look). Grid coordinates map straight to pixels: a column is `width / cols` wide, a row
+ * `height / rows` tall, which is also exactly how the component hit-tests a pointer back to a cell.
+ */
 export function drawLandscape(
 	ctx: CanvasRenderingContext2D,
 	width: number,
 	height: number,
-	{ field, tx, ty, scale, theme, hovered, selected, falloff }: LandscapePaint
+	{ field, theme, hovered, selected, falloff }: LandscapePaint
 ): void {
 	ctx.clearRect(0, 0, width, height);
 	const palette = PALETTES[theme];
 	const span = Math.max(1e-6, field.max - field.min);
-	const size = CELL * scale;
+	const cw = width / field.cols;
+	const ch = height / field.rows;
 
-	// Grid coordinate → top-left in screen pixels.
-	const sx = (ix: number) => tx + ix * size;
-	const sy = (iy: number) => ty + iy * size;
-
-	// The cells. A hairline gap between them reads as a grid without a separate stroke pass.
-	const gap = Math.min(1, size * 0.06);
+	// A hairline gap between cells reads as a grid without a separate stroke pass.
+	const gap = 0.75;
 	for (let iy = 0; iy < field.rows; iy++) {
 		for (let ix = 0; ix < field.cols; ix++) {
 			const value = field.values[iy * field.cols + ix];
 			ctx.fillStyle = Number.isFinite(value)
 				? lerp(CORAL, TEAL, (value - field.min) / span)
 				: palette.empty;
-			ctx.fillRect(sx(ix) + gap, sy(iy) + gap, size - 2 * gap, size - 2 * gap);
+			ctx.fillRect(ix * cw + gap, iy * ch + gap, cw - 2 * gap, ch - 2 * gap);
 		}
 	}
 
 	// The measured cliff: a dashed line down the column boundary where survival falls off hardest.
 	if (falloff) {
-		const x = sx(falloff.ix + 1);
+		const x = (falloff.ix + 1) * cw;
 		ctx.save();
 		ctx.strokeStyle = palette.line;
 		ctx.lineWidth = 1.5;
 		ctx.setLineDash([5, 5]);
 		ctx.beginPath();
-		ctx.moveTo(x, sy(0));
-		ctx.lineTo(x, sy(field.rows));
+		ctx.moveTo(x, 0);
+		ctx.lineTo(x, height);
 		ctx.stroke();
 		ctx.restore();
 	}
@@ -108,7 +114,7 @@ export function drawLandscape(
 		ctx.save();
 		ctx.strokeStyle = palette.line;
 		ctx.lineWidth = weight;
-		ctx.strokeRect(sx(ref.ix) + gap, sy(ref.iy) + gap, size - 2 * gap, size - 2 * gap);
+		ctx.strokeRect(ref.ix * cw + gap, ref.iy * ch + gap, cw - 2 * gap, ch - 2 * gap);
 		ctx.restore();
 	};
 	if (hovered) outline(hovered, 1.5);
