@@ -55,10 +55,8 @@ describe('evaluate — a result, not a lucky run', () => {
 		expect(withCurve!.curve).toBeDefined();
 		// One point per evolved generation — the per-gen survival fraction the UI plots.
 		expect(withCurve!.curve).toHaveLength(tiny.episodes);
-		for (const point of withCurve!.curve!) {
-			expect(point).toBeGreaterThanOrEqual(0);
-			expect(point).toBeLessThanOrEqual(1); // a smoothed survival FRACTION, not seconds
-		}
+		// a smoothed survival FRACTION per point, never seconds — so it stays inside [0, 1]
+		expect(withCurve!.curve!.every((point) => point >= 0 && point <= 1)).toBe(true);
 	}, 60_000);
 
 	it('the captured curve is deterministic — the same run gives the same curve', async () => {

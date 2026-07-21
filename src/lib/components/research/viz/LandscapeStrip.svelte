@@ -9,6 +9,7 @@
 	import { heatColor } from '$lib/render';
 	import Figure from './Figure.svelte';
 	import DataTable from './DataTable.svelte';
+	import { formatSeconds } from '$lib/format';
 
 	let {
 		band,
@@ -70,9 +71,7 @@
 				]
 	);
 
-	const rows = $derived(
-		band.map((b) => ({ x: format(b.x), survival: `${b.survival.toFixed(1)}s` }))
-	);
+	const rows = $derived(band.map((b) => ({ x: format(b.x), survival: formatSeconds(b.survival) })));
 	const label = $derived(
 		n === 0
 			? `Survival across ${axisLabel}: no data yet.`

@@ -30,8 +30,8 @@ describe('Distribution', () => {
 
 		const bodyRows = container.querySelectorAll('tbody tr');
 		expect(bodyRows).toHaveLength(seeds.length);
-		// Second column is the survival time, one decimal + "s".
-		expect(bodyRows[0].querySelectorAll('td')[1].textContent).toContain('3.1s');
+		// Second column is the survival time, one decimal + "s" — the exact cell, in seed order.
+		expect(bodyRows[0].querySelectorAll('td')[1].textContent).toBe('3.1s');
 	});
 
 	it('labels the graphic with the seed count and mean, for a screen reader', () => {

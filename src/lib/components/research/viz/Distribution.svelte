@@ -8,6 +8,7 @@
 <script lang="ts">
 	import Figure from './Figure.svelte';
 	import DataTable from './DataTable.svelte';
+	import { formatSeconds } from '$lib/format';
 
 	let { returns, ci, mean }: { returns: number[]; ci?: { lo: number; hi: number }; mean?: number } =
 		$props();
@@ -21,7 +22,7 @@
 	const BAND_TOP = 15;
 	const BAND_H = 24;
 
-	const secs = (v: number) => `${v.toFixed(1)}s`;
+	const secs = formatSeconds;
 
 	const n = $derived(returns.length);
 	// The axis spans the data's own range, padded ~5% so the extreme dots aren't jammed on the edge.

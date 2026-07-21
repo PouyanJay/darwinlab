@@ -7,6 +7,7 @@
 <script lang="ts">
 	import Figure from './Figure.svelte';
 	import DataTable from './DataTable.svelte';
+	import { formatSurvivalPct } from '$lib/format';
 
 	let {
 		curve,
@@ -16,12 +17,12 @@
 
 	const W = 320;
 	const H = 120;
-	const PAD = { l: 6, r: 34, t: 10, b: 16 };
+	const PAD = { l: 6, r: 34, t: 10, b: 16 }; // r leaves room for the endpoint's % label
 	const plotW = W - PAD.l - PAD.r;
 	const plotH = H - PAD.t - PAD.b;
 
 	const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
-	const pct = (v: number) => `${Math.round(clamp01(v) * 100)}%`;
+	const pct = formatSurvivalPct;
 
 	const n = $derived(curve.length);
 	const x = (i: number) => PAD.l + (n > 1 ? i / (n - 1) : 0) * plotW;

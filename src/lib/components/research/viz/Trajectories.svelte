@@ -7,16 +7,17 @@
   colours, because the outcome is the data.
 -->
 <script lang="ts">
-	import type { BoutTrace } from '$lib/harness/trace';
+	import type { BoutTrace, Point } from '$lib/harness/trace';
 	import Figure from './Figure.svelte';
 	import DataTable from './DataTable.svelte';
+	import { formatSeconds } from '$lib/format';
 
 	let { panels }: { panels: { title: string; trace: BoutTrace }[] } = $props();
 
 	/** Half-length of an outcome mark (✕ arm / dot radius), in arena units — small and fixed. */
 	const MARK = 8;
 
-	const points = (path: BoutTrace['pred']) =>
+	const points = (path: Point[]) =>
 		path.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
 
 	const survived = (t: BoutTrace) => t.fish.filter((f) => !f.died).length;
@@ -33,7 +34,7 @@
 		panels.map((p) => ({
 			population: p.title,
 			survived: `${survived(p.trace)} / ${p.trace.fish.length}`,
-			meanLife: `${meanLife(p.trace).toFixed(1)}s`
+			meanLife: formatSeconds(meanLife(p.trace))
 		}))
 	);
 </script>

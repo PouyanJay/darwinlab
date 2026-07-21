@@ -8,8 +8,9 @@
  * action, never on the hot batch path, so its cost is bounded.
  */
 
-import { makeWorld, stepWorld, seededRng, applyCfg, GEN_DURATION } from '../engine';
+import { stepWorld, GEN_DURATION } from '../engine';
 import type { Genome, WorldConfig, Point } from '../engine';
+import { makeFrozenWorld } from './frozenWorld';
 
 // Re-exported so a consumer of BoutTrace (the Trajectories chart) gets the point type from one import.
 export type { Point };
@@ -38,20 +39,24 @@ export interface BoutTrace {
 	pred: Point[];
 }
 
-/**
- * Step one frozen bout and record where everything went. `genomes` is the evolved population; pass
- * `undefined` for a random-brain control (the two-schools comparison). Deterministic in `seed`.
- */
-export function traceBout(
-	cfg: WorldConfig,
-	genomes: Genome[] | undefined,
-	seed: number,
-	seconds: number = cfg.genDuration ?? GEN_DURATION
-): BoutTrace {
-	const w = makeWorld(cfg, genomes, seededRng(seed));
-	w.maxGen = 1; // frozen: no respawns, no breeding — the population IS the subject
-	w.gen = 1;
-	applyCfg(w); // normalise the frozen world (makeWorld double-spawns predators; measureBout does this too)
+/** One trace request. `genomes` is the evolved population; omit it for a random-brain control (the
+ *  two-schools comparison). Deterministic in `seed`. */
+export interface TraceRequest {
+	cfg: WorldConfig;
+	genomes?: Genome[];
+	seed: number;
+	/** Bout length; defaults to the config's generation duration. */
+	seconds?: number;
+}
+
+/** Step one frozen bout and record where everything went. */
+export function traceBout({
+	cfg,
+	genomes,
+	seed,
+	seconds = cfg.genDuration ?? GEN_DURATION
+}: TraceRequest): BoutTrace {
+	const w = makeFrozenWorld(cfg, genomes, seed);
 
 	const steps = Math.round(seconds / DT);
 	const paths = new Map<(typeof w.fish)[number], Point[]>(w.fish.map((f) => [f, []]));

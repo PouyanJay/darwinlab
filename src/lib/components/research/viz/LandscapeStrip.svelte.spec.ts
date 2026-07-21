@@ -27,14 +27,15 @@ describe('LandscapeStrip', () => {
 		expect(withoutCliff.querySelector('.cliff')).toBeNull();
 	});
 
-	it('backs the strip with a table of the same formatted band', () => {
+	it('backs the strip with a table in the SAME order as the band, formatted', () => {
 		const { container } = render(LandscapeStrip, base);
-		const rows = container.querySelectorAll('tbody tr');
+		const rows = [...container.querySelectorAll('tbody tr')];
 
-		expect(rows).toHaveLength(band.length);
-		const cells = rows[1].querySelectorAll('td');
-		expect(cells[0].textContent).toBe(px(band[1].x)); // '10px'
-		expect(cells[1].textContent).toBe(`${band[1].survival.toFixed(1)}s`); // '22.0s'
+		// The whole band, in order — checking the endpoints too, so a reversed row order can't slip
+		// past on the odd-length array's fixed midpoint.
+		expect(rows.map((r) => [...r.querySelectorAll('td')].map((c) => c.textContent))).toEqual(
+			band.map((b) => [px(b.x), `${b.survival.toFixed(1)}s`])
+		);
 	});
 
 	it('names the axis in the graphic label a screen reader hears', () => {

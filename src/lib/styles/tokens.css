@@ -143,6 +143,8 @@
 	   overridden in the dark block below). ⚠️ MIRROR of CORAL/TEAL in render/drawLandscape.ts — the
 	   canvas paints the map + heatmap from those rgb triples and the DOM (the verdict, the effect bars,
 	   the legends) reads these tokens, so the two must stay the same two colours. */
+	/* --data-coral coincides with --danger in LIGHT mode only (dark --danger is retuned for contrast);
+	   do NOT consolidate them — the ramp is data and must read the same in both themes. */
 	--data-coral: rgb(232, 96, 76);
 	--data-teal: rgb(14, 148, 136);
 	/* The flee lens's ramp. ⚠️ MIRROR of THEMES.light.lens* in render/theme.ts — the tank paints the
