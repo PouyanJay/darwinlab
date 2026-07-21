@@ -22,13 +22,10 @@ export const BRANCH_DROP = 720;
 /** Sideways offset per additional child, so siblings fan out instead of stacking on one line. */
 export const NODE_STAGGER_X = 264;
 
-/** Zoom bounds — far enough out to see a big tree, close enough in to read a single tank. */
+/** Zoom bounds — far enough out to see a big tree, close enough in to read a single tank. The clamp
+ *  itself lives in the `Viewport` camera (state/viewport.svelte.ts), which owns these as its defaults. */
 export const MIN_SCALE = 0.2;
 export const MAX_SCALE = 1.6;
-
-export function clampScale(s: number): number {
-	return Math.min(MAX_SCALE, Math.max(MIN_SCALE, s));
-}
 
 /**
  * A smooth vertical S-curve from a parent's lower edge to a child's upper edge, in whatever space

@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { gotoApp, waitForPrewarm } from './helpers';
+import { gotoApp, waitForPrewarm, openAtlas, shrinkAtlasRun } from './helpers';
 import AxeBuilder from '@axe-core/playwright';
 
 /**
@@ -126,5 +126,31 @@ test('the Research stage scans clean — the instrument tabs, the Sweep and the 
 	// and the Ledger — its hypothesis list, verdict card and feed are their own new surface
 	await page.getByRole('tab', { name: 'The Ledger' }).click();
 	await page.getByTestId('ledger').waitFor();
+	expect(await violations(page)).toEqual([]);
+
+	// and the Atlas's controls — its axis pickers, grid/seed inputs and run button (empty state)
+	await page.getByRole('tab', { name: 'The Atlas' }).click();
+	await page.getByTestId('atlas').waitFor();
+	expect(await violations(page)).toEqual([]);
+});
+
+test('the painted Atlas scans clean — the map, legend and drill card are new surface', async ({
+	page
+}) => {
+	// A real landscape is measured here, so give it room; kept to the smallest grid (3×3, 2 seeds),
+	// and shrinkAtlasRun PROVES that shrink applied before the run — otherwise a silent full-size grid
+	// could hide behind this passing scan.
+	test.setTimeout(120_000);
+	await openAtlas(page);
+	await shrinkAtlasRun(page);
+	await page.getByRole('button', { name: 'Run landscape' }).click();
+	await expect(page.locator('[data-testid="atlas"] canvas')).toBeVisible({ timeout: 90_000 });
+
+	// Drill a cell so the drill card is in the scan too.
+	await page.locator('[data-testid="atlas"] canvas').focus();
+	await page.keyboard.press('ArrowRight');
+	await page.keyboard.press('Enter');
+	await expect(page.getByTestId('atlas-drill')).toBeVisible();
+
 	expect(await violations(page)).toEqual([]);
 });

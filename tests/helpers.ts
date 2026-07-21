@@ -51,3 +51,28 @@ export async function openAnalysis(card: Locator): Promise<void> {
 	const summary = card.locator('details.analysis > summary');
 	if ((await card.locator('details.analysis[open]').count()) === 0) await summary.click();
 }
+
+/** Switch the lab to Research and open the Atlas instrument. Assumes the bench is already open. */
+export async function openAtlas(page: Page): Promise<void> {
+	await page
+		.getByRole('radiogroup', { name: 'lab mode' })
+		.getByRole('radio', { name: 'Research' })
+		.click();
+	await page.getByRole('tab', { name: 'The Atlas' }).click();
+	await page.getByTestId('atlas').waitFor();
+}
+
+/**
+ * Shrink the Atlas to the smallest real grid (3×3 at two seeds) and PROVE it applied before running.
+ * The store reads the inputs on `change`, so this waits for the summary to confirm the new size — a
+ * run kicked off on the assumption the change fired could silently measure the full default grid.
+ */
+export async function shrinkAtlasRun(page: Page): Promise<void> {
+	const grid = page.locator('[data-testid="atlas"] .num input').first();
+	const seeds = page.locator('[data-testid="atlas"] .num input').nth(1);
+	await grid.fill('3');
+	await grid.blur();
+	await seeds.fill('2');
+	await seeds.blur();
+	await expect(page.getByTestId('atlas-summary')).toContainText('9 cells × 2 seeds');
+}

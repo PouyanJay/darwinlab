@@ -15,4 +15,5 @@ export * from './drawBrain';
 export * from './drawEscapeMap';
 export * from './drawCurve';
 export * from './drawAssay';
+export * from './drawLandscape';
 export * from './pick';
