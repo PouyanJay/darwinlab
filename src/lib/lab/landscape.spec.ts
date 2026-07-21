@@ -8,6 +8,7 @@ import {
 	landscapeField,
 	valueAt,
 	steepestFalloff,
+	xMarginal,
 	type LandscapeAxis,
 	type LandscapeField
 } from './landscape';
@@ -107,6 +108,32 @@ function fieldWithColumnMeans(columnMeans: number[]): LandscapeField {
 		max: finite.length ? Math.max(...finite) : 0
 	};
 }
+
+describe('xMarginal — the field collapsed onto its X axis for the Report strip', () => {
+	it('pairs each column mean with its X value, in axis order', () => {
+		// column means [10, 6, 3, 2]; xs = linspace(0.6, 1.2, 4) = [0.6, 0.8, 1.0, 1.2]
+		const band = xMarginal(fieldWithColumnMeans([10, 6, 3, 2]));
+
+		expect(band).toHaveLength(4);
+		expect(band.map((b) => b.survival)).toEqual([10, 6, 3, 2]);
+		expect(band[0].x).toBeCloseTo(0.6);
+		expect(band[3].x).toBeCloseTo(1.2);
+	});
+
+	it('averages a column over its FINITE rows, not down to NaN', () => {
+		// col 1 has one dead cell; its marginal is the surviving row's value, not NaN
+		const field: LandscapeField = {
+			cols: 2,
+			rows: 2,
+			axisX: axis('predSpeed'),
+			axisY: axis('mutation'),
+			values: [10, 4, 10, NaN], // col 0: 10,10 · col 1: 4,NaN
+			min: 4,
+			max: 10
+		};
+		expect(xMarginal(field).map((b) => b.survival)).toEqual([10, 4]);
+	});
+});
 
 describe('steepestFalloff — the cliff, measured not assumed', () => {
 	it('finds the column boundary where survival drops hardest', () => {

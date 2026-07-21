@@ -18,6 +18,21 @@ import { newWorldConfig } from '../engine';
 
 const stored = () => JSON.parse(localStorage.getItem(FINDINGS_STORAGE_KEY) ?? 'null');
 
+/** A well-formed PERSISTED finding (the shape `loadFindings` reads off disk), for the guard tests. */
+const GOOD = {
+	id: 'x',
+	key: 'sweep::abc',
+	source: 'sweep',
+	questions: ['Q2', 'Q6'],
+	title: 't',
+	detail: 'd',
+	status: 'ok',
+	seeds: 6,
+	configHash: 'abc123',
+	subjectHash: 'abc123',
+	recorded: ''
+};
+
 /** A sweep-shaped finding by default; override any field per test. */
 const input = (over: Partial<FindingInput> = {}): FindingInput => ({
 	source: 'sweep',
@@ -89,6 +104,33 @@ describe('the Findings notebook', () => {
 		expect(findings.has('ledger', 'walls-pays-alone')).toBe(false);
 	});
 
+	it('carries a graph evidence payload through, so the Report can draw it', () => {
+		findings.add(
+			input({
+				source: 'sweep',
+				evidence: {
+					kind: 'effects',
+					effects: [{ label: 'Direction', delta: 2.4, lo: 1.2, hi: 3.1 }]
+				}
+			})
+		);
+
+		const evidence = findings.entries[0].evidence;
+		expect(evidence?.kind).toBe('effects');
+		// …and it survives the round-trip to disk
+		expect(stored().entries[0].evidence.kind).toBe('effects');
+	});
+
+	it('drops a finding whose evidence is not a kind-tagged object (a text-only finding still loads)', () => {
+		const withText = { ...GOOD, id: 'text' }; // no evidence at all — valid
+		const withBadEvidence = { ...GOOD, id: 'bad', evidence: 'not an object' };
+		localStorage.setItem(
+			FINDINGS_STORAGE_KEY,
+			JSON.stringify({ version: 1, entries: [withText, withBadEvidence] })
+		);
+		expect(loadFindings().map((f) => f.id)).toEqual(['text']);
+	});
+
 	it('remove drops one finding by id, keeps the rest, and persists the removal', () => {
 		findings.add(input({ variant: 'a', title: 'A' }));
 		findings.add(input({ variant: 'b', title: 'B' }));
@@ -123,28 +165,15 @@ describe('the Findings notebook', () => {
 	});
 
 	it('load drops malformed findings and ignores a foreign or corrupt store', () => {
-		const good = {
-			id: 'x',
-			key: 'sweep::abc',
-			source: 'sweep',
-			questions: ['Q2', 'Q6'],
-			title: 't',
-			detail: 'd',
-			status: 'ok',
-			seeds: 6,
-			configHash: 'abc123',
-			subjectHash: 'abc123',
-			recorded: ''
-		};
 		// a valid finding beside one with an unknown source — only the valid one loads
 		localStorage.setItem(
 			FINDINGS_STORAGE_KEY,
-			JSON.stringify({ version: 1, entries: [good, { id: 'y', source: 'nonsense' }] })
+			JSON.stringify({ version: 1, entries: [GOOD, { id: 'y', source: 'nonsense' }] })
 		);
 		expect(loadFindings()).toHaveLength(1);
 
 		// a version this build did not write is discarded wholesale, not half-trusted
-		localStorage.setItem(FINDINGS_STORAGE_KEY, JSON.stringify({ version: 999, entries: [good] }));
+		localStorage.setItem(FINDINGS_STORAGE_KEY, JSON.stringify({ version: 999, entries: [GOOD] }));
 		expect(loadFindings()).toEqual([]);
 
 		// and outright garbage never throws

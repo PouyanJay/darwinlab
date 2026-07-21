@@ -231,6 +231,27 @@ export function steepestFalloff(field: LandscapeField): Falloff | null {
 	return best;
 }
 
+/**
+ * The field collapsed onto its X axis: each column's mean survival, paired with that column's X value.
+ * This is the compact 1-D slice the Report's Q4 strip persists and draws — the whole plane is too much
+ * to keep in a finding, but its marginal along the cliff axis is the answer to "where does it break".
+ */
+export function xMarginal(field: LandscapeField): { x: number; survival: number }[] {
+	const xs = linspace(field.axisX.min, field.axisX.max, field.cols);
+	return xs.map((x, ix) => {
+		let sum = 0;
+		let n = 0;
+		for (let iy = 0; iy < field.rows; iy++) {
+			const value = field.values[iy * field.cols + ix];
+			if (Number.isFinite(value)) {
+				sum += value;
+				n++;
+			}
+		}
+		return { x, survival: n ? sum / n : NaN };
+	});
+}
+
 /** The default per-cell run size, as a RunSize the batch spreads onto each request. */
 export const LANDSCAPE_RUN: RunSize = {
 	seeds: LANDSCAPE_DEFAULTS.seeds,

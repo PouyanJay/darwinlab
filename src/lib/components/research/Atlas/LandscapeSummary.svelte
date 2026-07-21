@@ -6,6 +6,7 @@
 <script lang="ts">
 	import { landscape, app, findings } from '$lib/state';
 	import { configHash } from '$lib/lab/run';
+	import { xMarginal } from '$lib/lab/landscape';
 	import SummaryPanel from '../SummaryPanel.svelte';
 	import ReportButton from '../ReportButton.svelte';
 
@@ -26,7 +27,14 @@
 				: `survival holds ${field.min.toFixed(1)}–${field.max.toFixed(1)}s across the plane`,
 			status: 'ok',
 			seeds: landscape.seeds,
-			configHash: configHash([app.subjectBase('Atlas')])
+			configHash: configHash([app.subjectBase('Atlas')]),
+			evidence: {
+				kind: 'landscape',
+				axisLabel: field.axisX.label,
+				axisKey: field.axisX.key,
+				band: xMarginal(field),
+				cliffX: falloff?.x
+			}
 		});
 	}
 </script>

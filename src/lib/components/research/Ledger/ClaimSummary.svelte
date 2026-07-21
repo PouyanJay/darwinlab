@@ -30,7 +30,11 @@
 			detail: `${entry.verdict} · Δ ${formatSignedSeconds(entry.delta)} · d ${entry.d.toFixed(1)}`,
 			status: entry.verdict === 'supported' ? 'ok' : 'limit',
 			seeds: entry.seeds,
-			configHash: entry.configHash
+			configHash: entry.configHash,
+			evidence: {
+				kind: 'contrast',
+				arms: entry.arms.map((a) => ({ label: a.label, mean: a.mean, lo: a.ci.lo, hi: a.ci.hi }))
+			}
 		});
 	}
 </script>

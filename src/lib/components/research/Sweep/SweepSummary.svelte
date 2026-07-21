@@ -39,7 +39,16 @@
 				: 'a flat environment — a real negative the Sweep keeps',
 			status: lead ? 'ok' : 'limit',
 			seeds: sweep.seeds,
-			configHash: configHash([app.subjectBase('Sweep')])
+			configHash: configHash([app.subjectBase('Sweep')]),
+			evidence: {
+				kind: 'effects',
+				effects: sweep.effects.map((e) => ({
+					label: e.label,
+					delta: e.effect.delta,
+					lo: e.effect.ci.lo,
+					hi: e.effect.ci.hi
+				}))
+			}
 		});
 	}
 </script>
