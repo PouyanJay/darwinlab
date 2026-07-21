@@ -31,7 +31,6 @@ import {
 import { research } from './research.svelte';
 import { bench } from './bench.svelte';
 import { app } from './app.svelte';
-import { Viewport } from './viewport.svelte';
 import type { JobExecutor } from '../lab/runner';
 
 /** The two parameters the plane opens on — the predator-speed cliff against evolutionary drift. */
@@ -40,9 +39,6 @@ const DEFAULT_Y = 'mutation';
 
 class LandscapeStore {
 	readonly axes: LandscapeAxis[] = CANDIDATE_AXES;
-
-	/** The Atlas's own camera — wider zoom range than the tree, to drill into a cliff. */
-	readonly view = new Viewport({ minScale: 0.4, maxScale: 4 });
 
 	#xKey = $state<string>(DEFAULT_X);
 	#yKey = $state<string>(DEFAULT_Y);

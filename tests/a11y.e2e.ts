@@ -158,10 +158,12 @@ test('the painted Atlas scans clean — the map, legend and drill card are new s
 	await openAtlas(page);
 	await shrinkAtlasRun(page);
 	await page.getByRole('button', { name: 'Run landscape' }).click();
-	await expect(page.locator('[data-testid="atlas"] canvas')).toBeVisible({ timeout: 90_000 });
+	await expect(page.locator('[data-testid="atlas"] canvas').first()).toBeVisible({
+		timeout: 90_000
+	});
 
 	// Drill a cell so the drill card is in the scan too.
-	await page.locator('[data-testid="atlas"] canvas').focus();
+	await page.locator('[data-testid="atlas"] canvas').first().focus();
 	await page.keyboard.press('ArrowRight');
 	await page.keyboard.press('Enter');
 	await expect(page.getByTestId('atlas-drill')).toBeVisible();

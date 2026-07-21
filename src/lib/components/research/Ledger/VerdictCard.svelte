@@ -26,6 +26,12 @@
 	const toPercent = (v: number) => ((v - axis.lo) / (axis.hi - axis.lo)) * 100;
 	const ticks = $derived([axis.lo, (axis.lo + axis.hi) / 2, axis.hi]);
 	const fmt = (v: number) => (v > 0 ? '+' : '') + v.toFixed(1);
+
+	// The longer-surviving arm is drawn teal, the other grey — so "which one won" reads at a glance,
+	// honestly (it tracks the measured means, not the claim's hoped-for direction).
+	const topMean = $derived(
+		Math.max(...(entry?.arms ?? []).map((a) => a.mean).filter((m) => !Number.isNaN(m)), -Infinity)
+	);
 </script>
 
 <div class="verdict">
@@ -36,17 +42,19 @@
 	{#if entry}
 		<div class="ab" data-testid="verdict-plot">
 			{#each entry.arms as arm (arm.label)}
+				{@const won = !Number.isNaN(arm.mean) && arm.mean === topMean}
 				<div class="armrow">
-					<span class="arm">{arm.label}</span>
+					<span class="arm" class:won>{arm.label}</span>
 					<div class="track">
 						<div class="baseline" aria-hidden="true"></div>
 						{#if !Number.isNaN(arm.mean)}
 							<div
 								class="ci"
+								class:won
 								style:left="{toPercent(arm.ci.lo)}%"
 								style:width="{Math.max(0, toPercent(arm.ci.hi) - toPercent(arm.ci.lo))}%"
 							></div>
-							<div class="dot" style:left="{toPercent(arm.mean)}%"></div>
+							<div class="dot" class:won style:left="{toPercent(arm.mean)}%"></div>
 						{/if}
 					</div>
 				</div>
@@ -137,6 +145,11 @@
 		white-space: nowrap;
 	}
 
+	.arm.won {
+		color: var(--ink);
+		font-weight: var(--fw-semibold);
+	}
+
 	.track {
 		position: relative;
 		height: 20px;
@@ -160,15 +173,25 @@
 		opacity: 0.5;
 	}
 
+	/* The winning arm's interval + mean in the survival teal, so the eye lands on it first. */
+	.ci.won {
+		background: rgb(14, 148, 136);
+		opacity: 0.9;
+	}
+
 	.dot {
 		position: absolute;
 		top: 5px;
 		width: 10px;
 		height: 10px;
 		border-radius: 50%;
-		background: var(--ink);
+		background: var(--ink3);
 		border: 2px solid var(--panel);
 		transform: translateX(-50%);
+	}
+
+	.dot.won {
+		background: rgb(14, 148, 136);
 	}
 
 	.axislabels {
@@ -213,11 +236,11 @@
 		color: var(--ink2);
 	}
 
-	/* The verdict word carries the weight: supported is emphatic ink, refuted the danger hue. */
+	/* The verdict word carries the weight: supported wears the survival teal, refuted the danger hue. */
 	.chip.verdict-supported {
 		color: var(--ink);
-		background: var(--chip);
-		border-color: var(--ink3);
+		background: color-mix(in oklab, rgb(14, 148, 136) 18%, transparent);
+		border-color: rgb(14, 148, 136);
 		font-weight: var(--fw-semibold);
 	}
 

@@ -9,7 +9,6 @@
 <script lang="ts">
 	import AxisPicker from './AxisPicker.svelte';
 	import LandscapeMap from './LandscapeMap.svelte';
-	import Legend from './Legend.svelte';
 	import DrillCard from './DrillCard.svelte';
 	import Button from '../../common/Button.svelte';
 	import Icon from '../../common/Icon.svelte';
@@ -67,7 +66,6 @@
 		<div class="plane">
 			<div class="main">
 				<LandscapeMap />
-				<Legend />
 			</div>
 			<div class="side">
 				<DrillCard />

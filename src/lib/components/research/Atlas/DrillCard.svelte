@@ -7,13 +7,30 @@
 <script lang="ts">
 	import Button from '../../common/Button.svelte';
 	import Icon from '../../common/Icon.svelte';
-	import { landscape } from '$lib/state';
+	import Canvas from '../../common/Canvas.svelte';
+	import { landscape, theme } from '$lib/state';
+	import { makeWorld, stepWorld, seededRng } from '$lib/engine';
+	import { drawWorld } from '$lib/render';
 
 	const cell = $derived(landscape.selected);
 	const value = $derived(landscape.selectedValue);
 	// The axes the FIELD was measured on — frozen with the data, so changing the picker before the
 	// next run cannot relabel this cell with an axis it was never measured against.
 	const field = $derived(landscape.field);
+
+	/**
+	 * A peek at the arena at this point on the plane: a FRESH world at the drilled config, stepped a
+	 * couple of sim-seconds so the fish scatter and the shark is hunting. It is a preview of the place,
+	 * not the evolved result — "Watch this world" opens the real, evolving tank in Studio. Painted once
+	 * per drill (the block is keyed by the cell), so there is no loop to tear down.
+	 */
+	function paintMini(ctx: CanvasRenderingContext2D, w: number, h: number): void {
+		const drilled = landscape.selected;
+		if (!drilled) return;
+		const world = makeWorld(structuredClone(drilled.cfg), undefined, seededRng(7));
+		for (let i = 0; i < 120; i++) stepWorld(world, 1 / 60);
+		drawWorld(world, ctx, w, h, { theme: theme.name, detail: 'performance' });
+	}
 </script>
 
 {#if cell && field}
@@ -27,6 +44,12 @@
 			>
 				<Icon name="close" size={14} />
 			</button>
+		</div>
+
+		<div class="mini">
+			{#key `${cell.ix}-${cell.iy}-${theme.name}`}
+				<Canvas paint={paintMini} label="preview of the drilled world" />
+			{/key}
 		</div>
 
 		<dl class="stats">
@@ -66,6 +89,15 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
+	}
+
+	.mini {
+		aspect-ratio: 8 / 5;
+		width: 100%;
+		border-radius: var(--radius-sm);
+		overflow: hidden;
+		background: var(--canvas-bg);
+		border: 1px solid var(--line);
 	}
 
 	.eyebrow {

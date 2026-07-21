@@ -19,12 +19,15 @@ test('a landscape runs, paints a map with a legend, and drills a cell', async ({
 
 	await page.getByRole('button', { name: 'Run landscape' }).click();
 
-	// The map paints when the field lands, and the legend reads its measured range.
-	await expect(page.locator('[data-testid="atlas"] canvas')).toBeVisible({ timeout: 90_000 });
-	await expect(page.getByTestId('atlas')).toContainText('coral = shorter');
+	// The map paints when the field lands, with its axis labelled and the colour scale read on it.
+	await expect(page.locator('[data-testid="atlas"] canvas').first()).toBeVisible({
+		timeout: 90_000
+	});
+	await expect(page.getByTestId('atlas-legend')).toBeVisible();
+	await expect(page.getByTestId('atlas')).toContainText('Predator speed →');
 
 	// Drill a cell with the keyboard (deterministic, unlike clicking a pixel): move the cursor, open it.
-	await page.locator('[data-testid="atlas"] canvas').focus();
+	await page.locator('[data-testid="atlas"] canvas').first().focus();
 	await page.keyboard.press('ArrowRight');
 	await page.keyboard.press('Enter');
 	await expect(page.getByTestId('atlas-drill')).toBeVisible();
@@ -38,9 +41,11 @@ test('"Watch this world" carries the drilled config back into Studio', async ({ 
 	await shrinkAtlasRun(page);
 
 	await page.getByRole('button', { name: 'Run landscape' }).click();
-	await expect(page.locator('[data-testid="atlas"] canvas')).toBeVisible({ timeout: 90_000 });
+	await expect(page.locator('[data-testid="atlas"] canvas').first()).toBeVisible({
+		timeout: 90_000
+	});
 
-	await page.locator('[data-testid="atlas"] canvas').focus();
+	await page.locator('[data-testid="atlas"] canvas').first().focus();
 	await page.keyboard.press('ArrowRight');
 	await page.keyboard.press('Enter');
 	await expect(page.getByTestId('atlas-drill')).toBeVisible();
@@ -65,9 +70,11 @@ test('changing an axis after drilling does not relabel the measured cell', async
 	await shrinkAtlasRun(page); // X = Predator speed, Y = Mutation (the defaults)
 
 	await page.getByRole('button', { name: 'Run landscape' }).click();
-	await expect(page.locator('[data-testid="atlas"] canvas')).toBeVisible({ timeout: 90_000 });
+	await expect(page.locator('[data-testid="atlas"] canvas').first()).toBeVisible({
+		timeout: 90_000
+	});
 
-	await page.locator('[data-testid="atlas"] canvas').focus();
+	await page.locator('[data-testid="atlas"] canvas').first().focus();
 	await page.keyboard.press('ArrowRight');
 	await page.keyboard.press('Enter');
 	await expect(page.getByTestId('atlas-drill')).toContainText('Predator speed'); // measured on this axis
