@@ -1,123 +1,88 @@
 <!--
-  The Research stage — the main view while the lab is in Research mode.
+  The Research stage — the console the lab becomes in Research mode.
 
-  It hosts the instruments behind a switcher. The Sweep is live; the Ledger and the Atlas are marked
-  "soon" and disabled until their phases land, so the switcher already reads as the home all three
-  will share rather than being rebuilt for each. Monochrome on purpose — colour belongs to a world's
-  own accent, not to chrome.
+  Three zones, not a tab bar: a left RAIL (the subject, the instrument nav, the compute readout), a
+  confined WORKSPACE that holds the active instrument, and a persistent right SIDEBAR of context for
+  whatever the workspace shows. The rail drives which instrument is active; the workspace renders it as
+  a tabpanel; the sidebar adapts to it. Monochrome chrome throughout — teal and coral live in the
+  instruments' own graphs, never in this furniture.
+
+  `active` is owned here and passed down, so the rail (the tablist), the workspace (the panel) and the
+  sidebar all read one truth. The `research-panel` id wires the rail's tabs to the workspace's panel
+  across the two subtrees.
 -->
 <script lang="ts">
+	import ResearchRail from './ResearchRail.svelte';
+	import ResearchWorkspace from './ResearchWorkspace.svelte';
+	import ResearchSidebar from './ResearchSidebar.svelte';
 	import Sweep from './Sweep/Sweep.svelte';
 	import Ledger from './Ledger/Ledger.svelte';
 	import Atlas from './Atlas/Atlas.svelte';
-	import Icon from '../common/Icon.svelte';
+	import { instrumentMeta, type Instrument } from './instruments';
 	import { SCENARIO } from '$lib/lab/scenario';
-	import { app } from '$lib/state';
-
-	type Instrument = 'sweep' | 'ledger' | 'atlas';
-
-	const INSTRUMENTS: { key: Instrument; name: string; ready: boolean }[] = [
-		{ key: 'sweep', name: 'The Sweep', ready: true },
-		{ key: 'ledger', name: 'The Ledger', ready: true },
-		{ key: 'atlas', name: 'The Atlas', ready: true }
-	];
 
 	let active = $state<Instrument>('sweep');
-
-	/**
-	 * A single-select tablist: exactly one instrument is active, so ←/→ move the choice among the
-	 * READY tabs (the "soon" ones are disabled and skipped) and focus follows it — the roving-tabindex
-	 * keyboard model the rest of the lab's grouped controls use.
-	 */
-	function move(delta: number) {
-		const ready = INSTRUMENTS.filter((instrument) => instrument.ready).map((i) => i.key);
-		const next = ready[(ready.indexOf(active) + delta + ready.length) % ready.length];
-		active = next;
-		document.getElementById(`rtab-${next}`)?.focus();
-	}
-
-	function onkeydown(event: KeyboardEvent) {
-		if (event.key === 'ArrowRight' || event.key === 'ArrowDown') move(1);
-		else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') move(-1);
-		else return;
-		event.preventDefault();
-	}
+	const meta = $derived(instrumentMeta(active));
 </script>
 
-<div class="research" data-testid="research-stage">
-	<div class="inner">
-		<header>
-			<span class="eyebrow">Research · {SCENARIO.index} · {SCENARIO.name}</span>
-			<div class="tabs" role="tablist" aria-label="research instruments">
-				{#each INSTRUMENTS as instrument (instrument.key)}
-					<button
-						id="rtab-{instrument.key}"
-						class="tab"
-						class:active={active === instrument.key}
-						role="tab"
-						aria-selected={active === instrument.key}
-						aria-controls="research-panel"
-						tabindex={active === instrument.key ? 0 : -1}
-						disabled={!instrument.ready}
-						onclick={() => (active = instrument.key)}
-						{onkeydown}
-					>
-						{instrument.name}{#if !instrument.ready}<span class="soon">soon</span>{/if}
-					</button>
-				{/each}
-			</div>
-		</header>
+<div class="console" data-testid="research-stage">
+	<div class="zone zone-rail">
+		<ResearchRail {active} onselect={(key) => (active = key)} />
+	</div>
 
-		{#if app.subject}
-			<!-- A world was handed over from Studio ("Analyse"): every instrument now explores AROUND it.
-			     The chip names it and offers the way back to a generic world, so the subject is never a
-			     trap you can't see or leave. -->
-			<div class="subject" data-testid="research-subject">
-				<Icon name="flask" size={13} />
-				<span class="subject-text">
-					Analysing <b>{app.subject.name}</b> — the Sweep, the Ledger and the Atlas run on this world.
-				</span>
-				<button class="clear" onclick={() => app.clearSubject()}>Use a generic world</button>
-			</div>
-		{/if}
+	<div class="zone zone-work">
+		<ResearchWorkspace>
+			<header class="ws-head">
+				<span class="eyebrow">Research · {SCENARIO.index} · {SCENARIO.name}</span>
+				<h2>{meta.name}</h2>
+				<p class="blurb">{meta.blurb}</p>
+			</header>
 
-		<div id="research-panel" role="tabpanel" aria-labelledby="rtab-{active}">
-			{#if active === 'sweep'}
-				<Sweep />
-			{:else if active === 'ledger'}
-				<Ledger />
-			{:else if active === 'atlas'}
-				<Atlas />
-			{/if}
-		</div>
+			<div id="research-panel" role="tabpanel" aria-labelledby="rtab-{active}">
+				{#if active === 'sweep'}
+					<Sweep />
+				{:else if active === 'ledger'}
+					<Ledger />
+				{:else if active === 'atlas'}
+					<Atlas />
+				{/if}
+			</div>
+		</ResearchWorkspace>
+	</div>
+
+	<div class="zone zone-side">
+		<ResearchSidebar {active} />
 	</div>
 </div>
 
 <style>
-	.research {
+	.console {
+		--rail-w: 260px;
+		--side-w: 300px;
 		flex: 1;
+		min-width: 0;
 		min-height: 0;
-		overflow-y: auto;
-		padding: var(--sp-7) var(--sp-7) var(--sp-8);
+		display: grid;
+		grid-template-columns: var(--rail-w) minmax(0, 1fr) var(--side-w);
+		grid-template-rows: minmax(0, 1fr);
 		background: var(--bgfx);
-		/* A gentle settle as the stage swaps in from Studio — the shared card-entrance, not a bespoke
-		   one. Reduced-motion is handled globally in app.css (a blanket animation: none). */
+		/* The shared card-entrance as the console swaps in from Studio. Reduced-motion is handled
+		   globally in app.css (a blanket animation: none). */
 		animation: fade-up var(--dur-slow) var(--ease) both;
 	}
 
-	.inner {
-		width: 100%;
-		max-width: 1000px;
-		margin: 0 auto;
-		display: flex;
-		flex-direction: column;
-		gap: var(--sp-6);
+	/* Each zone is a grid cell that fills its column and lets its instrument scroll inside it — the
+	   console never grows the page; the zones do. `display: grid` makes the single child fill the cell. */
+	.zone {
+		display: grid;
+		min-width: 0;
+		min-height: 0;
 	}
 
-	header {
+	.ws-head {
 		display: flex;
 		flex-direction: column;
-		gap: var(--sp-4);
+		gap: 3px;
 	}
 
 	.eyebrow {
@@ -128,101 +93,62 @@
 		color: var(--ink3);
 	}
 
-	.tabs {
-		display: flex;
-		gap: var(--sp-5);
-		border-bottom: 1px solid var(--line);
-	}
-
-	.tab {
-		display: inline-flex;
-		align-items: center;
-		gap: 6px;
-		padding: 0 0 var(--sp-3);
-		border: none;
-		border-bottom: 2px solid transparent;
-		margin-bottom: -1px;
-		background: none;
-		color: var(--ink3);
+	.ws-head h2 {
+		margin: 0;
 		font-family: var(--font-display);
-		font-size: var(--fs-title);
+		font-size: var(--fs-wordmark);
 		font-weight: var(--fw-semibold);
-		cursor: pointer;
-		transition: color var(--dur-fast) var(--ease);
-	}
-
-	.tab:hover:not(:disabled) {
-		color: var(--ink2);
-	}
-
-	.tab.active {
+		letter-spacing: var(--tracking-tight);
 		color: var(--ink);
-		border-bottom-color: var(--ink);
 	}
 
-	.tab:disabled {
-		cursor: not-allowed;
-	}
-
-	.tab:focus-visible {
-		outline: var(--focus-ring);
-		outline-offset: var(--focus-offset);
-	}
-
-	.soon {
-		font-family: var(--font-display);
-		font-size: var(--fs-eyebrow);
-		font-weight: var(--fw-semibold);
-		letter-spacing: var(--tracking-wide);
-		text-transform: uppercase;
-		color: var(--ink3);
-		border: 1px solid var(--line);
-		border-radius: var(--radius-chip);
-		padding: 2px 6px;
-	}
-
-	.subject {
-		display: flex;
-		align-items: center;
-		gap: var(--sp-3);
-		padding: var(--sp-3) var(--sp-4);
-		border: 1px solid var(--line);
-		border-radius: var(--radius-card);
-		background: var(--panel);
-		color: var(--ink2);
+	.blurb {
+		margin: 0;
 		font-size: var(--fs-sm);
+		color: var(--ink3);
 	}
 
-	.subject-text {
-		flex: 1;
+	#research-panel {
+		display: flex;
+		flex-direction: column;
 		min-width: 0;
 	}
 
-	.subject-text b {
-		color: var(--ink);
-		font-weight: var(--fw-semibold);
+	/* Below the sidebar's comfortable width: keep the rail on the left, and drop the context sidebar to
+	   a capped strip under the workspace so the drilled point is still reachable, never hidden. */
+	@media (max-width: 1200px) {
+		.console {
+			grid-template-columns: var(--rail-w) minmax(0, 1fr);
+			grid-template-rows: minmax(0, 1fr) auto;
+		}
+
+		.zone-rail {
+			grid-row: 1 / span 2;
+		}
+
+		.zone-side {
+			grid-column: 2;
+			grid-row: 2;
+			max-height: 42vh;
+			border-top: 1px solid var(--line);
+		}
 	}
 
-	.clear {
-		flex: none;
-		border: 1px solid var(--line);
-		border-radius: var(--radius-pill);
-		background: none;
-		padding: 4px var(--sp-3);
-		color: var(--ink2);
-		font-size: var(--fs-sm);
-		font-weight: var(--fw-semibold);
-		cursor: pointer;
-		transition: border-color var(--dur-fast) var(--ease);
-	}
+	/* Narrow: one column, everything stacked — rail, then the instrument, then its context. */
+	@media (max-width: 760px) {
+		.console {
+			grid-template-columns: 1fr;
+			grid-template-rows: auto minmax(0, 1fr) auto;
+		}
 
-	.clear:hover {
-		border-color: var(--accent);
-		color: var(--ink);
-	}
+		.zone-rail {
+			grid-row: 1;
+		}
 
-	.clear:focus-visible {
-		outline: var(--focus-ring);
-		outline-offset: var(--focus-offset);
+		.zone-side {
+			grid-column: 1;
+			grid-row: 3;
+			max-height: 40vh;
+		}
 	}
 </style>
