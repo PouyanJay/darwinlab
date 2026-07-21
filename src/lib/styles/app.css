@@ -204,3 +204,31 @@ textarea,
 		scroll-behavior: auto !important;
 	}
 }
+
+/*
+ * Print = "Save the Report as PDF". Only the report article prints; everything else — the rail, the
+ * context sidebar, the top bar, the workspace header, the whole Studio — is on-screen chrome.
+ *
+ * The classic "print one element" trick: hide the whole document, then reveal only the marked region
+ * and its descendants (visibility overrides down the tree even through a hidden ancestor), and pull the
+ * region to the page origin so the hidden-but-present chrome leaves no gap before it. This targets a
+ * `data-` attribute, so it works regardless of Svelte's per-component class scoping. The `.report`'s
+ * own max-width + auto margins still apply, so it prints in a comfortable measure, centred.
+ */
+@media print {
+	body * {
+		visibility: hidden;
+	}
+
+	[data-print-region],
+	[data-print-region] * {
+		visibility: visible;
+	}
+
+	[data-print-region] {
+		position: absolute;
+		left: 0;
+		top: 0;
+		width: 100%;
+	}
+}

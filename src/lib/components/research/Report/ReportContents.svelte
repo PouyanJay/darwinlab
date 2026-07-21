@@ -1,13 +1,20 @@
 <!--
   The Report's context in the console sidebar: the seven questions as a contents outline, each with a
-  dot that fills once a finding answers it, and a count of what the brief is built from. Reads only the
-  report store.
+  dot that fills once a finding answers it, a count of what the brief is built from, and — once there is
+  something to keep — the actions that take it elsewhere: export it as Markdown, print it (the browser's
+  own "save as PDF"), or reopen its subject in Studio. Reads only the report store.
 -->
 <script lang="ts">
 	import { report } from '$lib/state';
+	import { downloadText } from '$lib/download';
+	import Button from '../../common/Button.svelte';
 
 	const sections = $derived(report.sections);
 	const n = $derived(report.findings.length);
+
+	function exportMarkdown(): void {
+		downloadText('darwin-lab-report.md', report.toMarkdown(), 'text/markdown');
+	}
 </script>
 
 <div class="panel">
@@ -21,6 +28,20 @@
 		{/each}
 	</ul>
 	<p class="built">Built from {n} finding{n === 1 ? '' : 's'}.</p>
+
+	{#if report.hasFindings}
+		<div class="actions" data-testid="report-actions">
+			<Button size="sm" variant="ghost" onclick={exportMarkdown} data-testid="export-md">
+				Export Markdown
+			</Button>
+			<Button size="sm" variant="ghost" onclick={() => window.print()} data-testid="print-report">
+				Print / Save PDF
+			</Button>
+			<Button size="sm" variant="ghost" onclick={() => report.watch()} data-testid="watch-subject">
+				Watch in Studio
+			</Button>
+		</div>
+	{/if}
 </div>
 
 <style>
@@ -81,5 +102,20 @@
 		margin: var(--sp-2) 0 0;
 		font-size: var(--fs-sm);
 		color: var(--ink3);
+	}
+
+	/* The actions sit under the outline, separated by a hairline — take the brief with you, or reopen
+	   its subject in Studio. A wrapping column so each label stays whole in the narrow sidebar. */
+	.actions {
+		display: flex;
+		flex-direction: column;
+		gap: var(--sp-2);
+		margin-top: var(--sp-4);
+		padding-top: var(--sp-4);
+		border-top: 1px solid var(--line);
+	}
+
+	.actions :global(.btn) {
+		width: 100%;
 	}
 </style>
