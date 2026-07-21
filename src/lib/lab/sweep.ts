@@ -14,6 +14,7 @@
 import type { WorldConfig } from '../engine';
 import type { EvalRequest, Evaluation, RunSize } from './evaluator';
 import { contrast, type Contrast } from './stats';
+import type { EffectRow } from './evidence';
 
 /** Sensible defaults for a sweep — smaller than a single Evaluate, because there are many cells. */
 export const SWEEP_DEFAULTS = { seeds: 6, episodes: 20, bouts: 4, maxCells: 32 } as const;
@@ -55,6 +56,17 @@ export interface FactorEffect {
 	from: string;
 	to: string;
 	effect: Contrast;
+}
+
+/** The effects as the compact EffectRow the graph and the notebook share — one converter, so the
+ *  Sweep's summary and the Report's Q2 can't shape the evidence differently. */
+export function toEffectRows(effects: FactorEffect[]): EffectRow[] {
+	return effects.map((e) => ({
+		label: e.label,
+		delta: e.effect.delta,
+		lo: e.effect.ci.lo,
+		hi: e.effect.ci.hi
+	}));
 }
 
 /** A sense channel as a two-level off/on factor. */

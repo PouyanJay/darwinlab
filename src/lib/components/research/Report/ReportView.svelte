@@ -6,12 +6,16 @@
 -->
 <script lang="ts">
 	import { report, negativesOf } from '$lib/state';
+	import type { QuestionId } from '$lib/lab/questions';
 	import AnswersTable from './AnswersTable.svelte';
 	import QuestionSection from './QuestionSection.svelte';
 
+	// Q6 (the negatives note) and Q7 (the method footer) are rendered specially below, not as graph
+	// sections — the rest (Q1–Q5) each get a detailed QuestionSection.
+	const SPECIAL_SECTIONS: QuestionId[] = ['Q6', 'Q7'];
+
 	const sections = $derived(report.sections);
-	// Q1–Q5 get a detailed section with a graph; Q6 is a note (the negatives) and Q7 the method footer.
-	const detailed = $derived(sections.filter((s) => !['Q6', 'Q7'].includes(s.question.id)));
+	const detailed = $derived(sections.filter((s) => !SPECIAL_SECTIONS.includes(s.question.id)));
 	const q6 = $derived(sections.find((s) => s.question.id === 'Q6')!);
 	const lead = $derived(report.lead);
 	const coverage = $derived(report.coverage);

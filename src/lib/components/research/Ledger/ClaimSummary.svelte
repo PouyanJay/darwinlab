@@ -5,7 +5,7 @@
   tested it says so, rather than inventing a verdict.
 -->
 <script lang="ts">
-	import { ledger, findings } from '$lib/state';
+	import { ledger, findings, toArmRows } from '$lib/state';
 	import { formatSignedSeconds } from '$lib/format';
 	import SummaryPanel from '../SummaryPanel.svelte';
 	import ReportButton from '../ReportButton.svelte';
@@ -31,10 +31,7 @@
 			status: entry.verdict === 'supported' ? 'ok' : 'limit',
 			seeds: entry.seeds,
 			configHash: entry.configHash,
-			evidence: {
-				kind: 'contrast',
-				arms: entry.arms.map((a) => ({ label: a.label, mean: a.mean, lo: a.ci.lo, hi: a.ci.hi }))
-			}
+			evidence: { kind: 'contrast', arms: toArmRows(entry.arms) }
 		});
 	}
 </script>

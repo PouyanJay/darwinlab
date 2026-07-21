@@ -8,16 +8,13 @@
 	import Button from '../../common/Button.svelte';
 	import RunProgress from '../RunProgress.svelte';
 	import IntervalPlot from '../viz/IntervalPlot.svelte';
-	import { ledger } from '$lib/state';
+	import { ledger, toArmRows } from '$lib/state';
 
 	const claim = $derived(ledger.active);
 	const entry = $derived(ledger.latestFor(claim.id));
 	const fmt = (v: number) => (v > 0 ? '+' : '') + v.toFixed(1);
 
-	// The two arms in the compact ArmRow the shared IntervalPlot (and the Report) draw from.
-	const armRows = $derived(
-		(entry?.arms ?? []).map((a) => ({ label: a.label, mean: a.mean, lo: a.ci.lo, hi: a.ci.hi }))
-	);
+	const armRows = $derived(toArmRows(entry?.arms ?? []));
 </script>
 
 <div class="verdict">

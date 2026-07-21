@@ -8,7 +8,7 @@
 	import Figure from './Figure.svelte';
 	import DataTable from './DataTable.svelte';
 	import { formatSignedSeconds } from '$lib/format';
-	import type { EffectRow } from '$lib/lab/evidence';
+	import { isFlatEffect, type EffectRow } from '$lib/lab/evidence';
 
 	let { effects }: { effects: EffectRow[] } = $props();
 
@@ -20,17 +20,18 @@
 		)
 	);
 	const px = (v: number) => 50 + (v / max) * 50;
-	/** Muted when its interval can't clear zero (or it wasn't measured) — a knob that does nothing. */
-	const flatOf = (e: EffectRow) => Number.isNaN(e.delta) || (e.lo <= 0 && e.hi >= 0);
 	const barColor = (helps: boolean, flat: boolean) =>
 		flat ? 'var(--ink3)' : helps ? 'var(--data-teal)' : 'var(--data-coral)';
 
-	const movers = $derived(effects.filter((e) => !flatOf(e)));
+	const movers = $derived(effects.filter((e) => !isFlatEffect(e)));
+	const moversText = $derived(
+		movers.map((e) => `${e.label} ${formatSignedSeconds(e.delta)}`).join(', ')
+	);
 	const label = $derived(
 		effects.length === 0
 			? 'Main effect on survival: nothing measured yet.'
 			: movers.length
-				? `Main effect on survival: ${movers.map((e) => `${e.label} ${formatSignedSeconds(e.delta)}`).join(', ')} clears zero.`
+				? `Main effect on survival: ${moversText} clears zero.`
 				: 'Main effect on survival: no factor clears zero.'
 	);
 	const rows = $derived(
@@ -47,7 +48,7 @@
 		{#each effects as e (e.label)}
 			{@const missing = Number.isNaN(e.delta)}
 			{@const cost = e.delta < 0}
-			{@const flat = flatOf(e)}
+			{@const flat = isFlatEffect(e)}
 			<div class="row">
 				<span class="name">{e.label}</span>
 				<div class="track">

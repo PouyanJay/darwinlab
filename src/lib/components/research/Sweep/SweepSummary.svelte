@@ -6,21 +6,20 @@
 <script lang="ts">
 	import { sweep, app, findings } from '$lib/state';
 	import { configHash } from '$lib/lab/run';
+	import { toEffectRows } from '$lib/lab/sweep';
+	import { isFlatEffect, type EffectRow } from '$lib/lab/evidence';
 	import { formatSignedSeconds } from '$lib/format';
 	import SummaryPanel from '../SummaryPanel.svelte';
 	import ReportButton from '../ReportButton.svelte';
-	import type { FactorEffect } from '$lib/lab/sweep';
+
+	const effectRows = $derived(toEffectRows(sweep.effects));
 
 	/** The strongest factor whose 95% interval clears zero — or null when nothing did, which is itself
 	 *  a real result the Sweep keeps (a flat environment), not a gap to paper over. */
-	const lead = $derived.by<FactorEffect | null>(() => {
-		const movers = sweep.effects.filter(
-			(e) => !Number.isNaN(e.effect.delta) && !(e.effect.ci.lo <= 0 && e.effect.ci.hi >= 0)
-		);
+	const lead = $derived.by<EffectRow | null>(() => {
+		const movers = effectRows.filter((e) => !isFlatEffect(e));
 		if (movers.length === 0) return null;
-		return movers.reduce((best, e) =>
-			Math.abs(e.effect.delta) > Math.abs(best.effect.delta) ? e : best
-		);
+		return movers.reduce((best, e) => (Math.abs(e.delta) > Math.abs(best.delta) ? e : best));
 	});
 
 	// Whether this subject already has a Sweep finding in the notebook — so the button reads "in
@@ -31,24 +30,14 @@
 		findings.add({
 			source: 'sweep',
 			variant: '',
-			title: lead
-				? `${lead.label} ${formatSignedSeconds(lead.effect.delta)}`
-				: 'No factor cleared zero',
+			title: lead ? `${lead.label} ${formatSignedSeconds(lead.delta)}` : 'No factor cleared zero',
 			detail: lead
 				? 'the strongest factor whose interval clears zero'
 				: 'a flat environment — a real negative the Sweep keeps',
 			status: lead ? 'ok' : 'limit',
 			seeds: sweep.seeds,
 			configHash: configHash([app.subjectBase('Sweep')]),
-			evidence: {
-				kind: 'effects',
-				effects: sweep.effects.map((e) => ({
-					label: e.label,
-					delta: e.effect.delta,
-					lo: e.effect.ci.lo,
-					hi: e.effect.ci.hi
-				}))
-			}
+			evidence: { kind: 'effects', effects: effectRows }
 		});
 	}
 </script>
@@ -56,9 +45,7 @@
 {#if sweep.results}
 	<SummaryPanel
 		eyebrow="This run"
-		title={lead
-			? `${lead.label} ${formatSignedSeconds(lead.effect.delta)}`
-			: 'No factor cleared zero'}
+		title={lead ? `${lead.label} ${formatSignedSeconds(lead.delta)}` : 'No factor cleared zero'}
 		detail={lead
 			? 'the strongest factor whose interval clears zero'
 			: 'a flat environment — a real negative the Sweep keeps'}

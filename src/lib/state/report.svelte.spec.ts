@@ -88,13 +88,15 @@ describe('the Report', () => {
 		expect(sectionFor('Q7').answer).toBe('config a3f19c · 6 seeds'); // the method, not a conclusion
 	});
 
-	it('leads with the strongest real claim — a supported verdict over a sweep mover', () => {
-		findings.add(input({ source: 'sweep', title: 'Direction +2.4s' }));
+	it('leads with the strongest real claim — priority beats recency, not the newest finding', () => {
+		// Add the Ledger verdict FIRST, then the Sweep — so the sweep is the NEWEST but lower priority.
+		// If lead were merely "the most recent finding", the sweep would win; it must not.
 		findings.add(
 			input({ source: 'ledger', variant: 'dir', title: 'Direction pays', status: 'ok' })
 		);
+		findings.add(input({ source: 'sweep', title: 'Direction +2.4s' }));
 
-		expect(report.lead?.title).toBe('Direction pays'); // the Ledger verdict leads, not the sweep
+		expect(report.lead?.title).toBe('Direction pays'); // the Ledger verdict leads, despite being older
 	});
 
 	it('scopes to the current subject — a finding on another world does not fill this report', () => {

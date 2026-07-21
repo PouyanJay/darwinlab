@@ -1,6 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { gotoApp, openResearch, runMinimalSweep } from './helpers';
-import AxeBuilder from '@axe-core/playwright';
+import { gotoApp, openResearch, runMinimalSweep, scanForViolations } from './helpers';
 
 /**
  * The Report end to end (RC3): with a Sweep finding recorded, it renders the questions the Sweep
@@ -39,6 +38,10 @@ test('the Report answers what the Sweep settled and prompts for the rest', async
 	// Q7 always states the method that reproduces it — the config fingerprint + seeds.
 	await expect(page.getByTestId('report-qQ7')).toContainText('config');
 
+	// Q6 keeps the negatives (the honesty rule) — the "what did not work" note renders through the
+	// live sweep → notebook → evidence pipeline, in one of its honest states.
+	await expect(page.getByTestId('report-qQ6')).toContainText('did not work');
+
 	// The glance table lays out all seven, with the unanswered ones honestly "Not tested".
 	await expect(page.getByTestId('report')).toContainText('Not tested');
 });
@@ -63,8 +66,6 @@ test('the Report scans clean — the headings, the glance table and the graphs a
 	page
 }) => {
 	await reportWithASweep(page);
-	await page.waitForTimeout(500); // let the fade-in land before axe reads computed colours
-
-	const results = await new AxeBuilder({ page }).analyze();
-	expect(results.violations.map((v) => `${v.impact}: ${v.id}`)).toEqual([]);
+	// scanForViolations settles the fade-in (capped) before reading computed colours — no blind wait.
+	expect(await scanForViolations(page)).toEqual([]);
 });

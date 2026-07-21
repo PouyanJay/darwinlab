@@ -11,6 +11,7 @@
 import { findings, currentSubjectHash, type Finding } from './findings.svelte';
 import { app } from './app.svelte';
 import { QUESTIONS, type Question, type QuestionId } from '../lab/questions';
+import { isFlatEffect } from '../lab/evidence';
 
 /** Who answers each question — the instrument (or action) whose finding fills it, named for the prompt
  *  shown when it is unanswered. Q7 is provenance: any finding carries the fingerprint that reproduces it. */
@@ -38,9 +39,7 @@ export interface ReportSection {
 /** The Sweep's kept negatives — the factors whose interval can't clear zero (what did NOT work). */
 export function negativesOf(finding: Finding | null): string[] {
 	if (finding?.evidence?.kind !== 'effects') return [];
-	return finding.evidence.effects
-		.filter((e) => Number.isNaN(e.delta) || (e.lo <= 0 && e.hi >= 0))
-		.map((e) => e.label);
+	return finding.evidence.effects.filter(isFlatEffect).map((e) => e.label);
 }
 
 /** The method/provenance footer (Q7): the fingerprint + seed count any finding carries. */

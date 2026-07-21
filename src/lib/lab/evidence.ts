@@ -29,17 +29,17 @@ export interface BandPoint {
 	survival: number;
 }
 
-/** One bar of the behavioural signature: how the fish survived — the mechanism view (Q5). */
-export interface BehaviorBar {
-	label: string;
-	value: number;
-	/** The bar's full-scale value, so the Report can draw it without knowing the metric's units. */
-	max: number;
-}
-
 export type Evidence =
 	| { kind: 'effects'; effects: EffectRow[] }
 	| { kind: 'contrast'; arms: ArmRow[] }
 	| { kind: 'landscape'; axisLabel: string; axisKey: string; band: BandPoint[]; cliffX?: number }
-	| { kind: 'curve'; curve: number[] }
-	| { kind: 'behavior'; bars: BehaviorBar[] };
+	| { kind: 'curve'; curve: number[] };
+
+/**
+ * A factor's interval can't clear zero — the Sweep's "does nothing here" test, and the one that
+ * decides Q6's kept negatives. One definition, so the muted bar, the notebook and the Report can never
+ * disagree on what counts as a real mover.
+ */
+export function isFlatEffect(row: EffectRow): boolean {
+	return Number.isNaN(row.delta) || (row.lo <= 0 && row.hi >= 0);
+}

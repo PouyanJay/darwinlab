@@ -10,17 +10,9 @@
 	import EffectBars from '../viz/EffectBars.svelte';
 	import RunHeatmap from './RunHeatmap.svelte';
 	import { sweep } from '$lib/state';
+	import { toEffectRows } from '$lib/lab/sweep';
 
-	// The Sweep's effects carry more than the graph needs (keys, level labels); map to the compact
-	// EffectRow the shared EffectBars (and the Report) both draw from.
-	const effectRows = $derived(
-		sweep.effects.map((e) => ({
-			label: e.label,
-			delta: e.effect.delta,
-			lo: e.effect.ci.lo,
-			hi: e.effect.ci.hi
-		}))
-	);
+	const effectRows = $derived(toEffectRows(sweep.effects));
 </script>
 
 <div class="sweep" data-testid="sweep">

@@ -203,10 +203,10 @@ export function valueAt(field: LandscapeField, ix: number, iy: number): number {
  * largest DROP. Returns null when survival never falls along X (nothing to annotate) or the grid is
  * too narrow to have a slope — so a flat or rising landscape gets no fake cliff drawn on it.
  */
-export function steepestFalloff(field: LandscapeField): Falloff | null {
-	if (field.cols < 2) return null;
-
-	const columnMean = (ix: number): number => {
+/** Each column's mean survival, averaged over its FINITE rows (a dead cell must not drag a column to
+ *  NaN). Shared by the cliff finder and the Report's X-marginal, so the two can't average differently. */
+function columnMeans(field: LandscapeField): number[] {
+	return Array.from({ length: field.cols }, (_, ix) => {
 		let sum = 0;
 		let n = 0;
 		for (let iy = 0; iy < field.rows; iy++) {
@@ -217,9 +217,13 @@ export function steepestFalloff(field: LandscapeField): Falloff | null {
 			}
 		}
 		return n ? sum / n : NaN;
-	};
+	});
+}
 
-	const means = Array.from({ length: field.cols }, (_, ix) => columnMean(ix));
+export function steepestFalloff(field: LandscapeField): Falloff | null {
+	if (field.cols < 2) return null;
+
+	const means = columnMeans(field);
 	const xs = linspace(field.axisX.min, field.axisX.max, field.cols);
 
 	let best: Falloff | null = null;
@@ -238,18 +242,8 @@ export function steepestFalloff(field: LandscapeField): Falloff | null {
  */
 export function xMarginal(field: LandscapeField): { x: number; survival: number }[] {
 	const xs = linspace(field.axisX.min, field.axisX.max, field.cols);
-	return xs.map((x, ix) => {
-		let sum = 0;
-		let n = 0;
-		for (let iy = 0; iy < field.rows; iy++) {
-			const value = field.values[iy * field.cols + ix];
-			if (Number.isFinite(value)) {
-				sum += value;
-				n++;
-			}
-		}
-		return { x, survival: n ? sum / n : NaN };
-	});
+	const means = columnMeans(field);
+	return xs.map((x, ix) => ({ x, survival: means[ix] }));
 }
 
 /** The default per-cell run size, as a RunSize the batch spreads onto each request. */

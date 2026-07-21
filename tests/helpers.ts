@@ -1,4 +1,28 @@
 import { expect, type Page, type Locator } from '@playwright/test';
+import AxeBuilder from '@axe-core/playwright';
+
+/**
+ * Axe-scan the page, returning one line per violation (empty = clean). Settles FINITE animations first
+ * (capped at 2s in the browser, so a stuck transition can't wedge it) — axe reads computed colours, and
+ * text caught mid fade-up sits at partial opacity, a contrast failure that belongs to no real state.
+ * Shared so no spec reintroduces a blind `waitForTimeout` before scanning.
+ */
+export async function scanForViolations(page: Page): Promise<string[]> {
+	await page.evaluate(
+		() =>
+			Promise.race([
+				Promise.all(
+					document
+						.getAnimations()
+						.filter((a) => (a.effect?.getTiming().iterations ?? 1) !== Infinity)
+						.map((a) => a.finished.catch(() => {}))
+				),
+				new Promise((resolve) => setTimeout(resolve, 2000))
+			]) as Promise<unknown>
+	);
+	const results = await new AxeBuilder({ page }).analyze();
+	return results.violations.map((v) => `${v.impact}: ${v.id} (${v.nodes.length} node(s))`);
+}
 
 /**
  * Open the bench. "." resolves against baseURL, so the same suite passes whether the app is
