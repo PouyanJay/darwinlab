@@ -27,6 +27,15 @@ const TEAL: Rgb = [14, 148, 136];
 export const HEAT_LOW = `rgb(${CORAL[0]}, ${CORAL[1]}, ${CORAL[2]})`;
 export const HEAT_HIGH = `rgb(${TEAL[0]}, ${TEAL[1]}, ${TEAL[2]})`;
 
+/**
+ * A point on the survival ramp — coral (t=0, short) → teal (t=1, long). The ONE survival palette the
+ * whole platform speaks: the Atlas paints it on canvas, the Sweep's run grid and effect bars use it in
+ * the DOM. Returns a CSS `rgb(...)` string.
+ */
+export function heatColor(t: number): string {
+	return lerp(CORAL, TEAL, t);
+}
+
 interface Palette {
 	/** An unmeasured cell. */
 	empty: string;
