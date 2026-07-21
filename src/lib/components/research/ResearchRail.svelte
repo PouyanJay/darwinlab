@@ -14,7 +14,7 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
 	import SubjectCard from './SubjectCard.svelte';
-	import { INSTRUMENTS, type Instrument } from './instruments';
+	import { INSTRUMENTS, readyInstrumentKeys, type Instrument } from './instruments';
 	import { research } from '$lib/state';
 
 	let { active, onselect }: { active: Instrument; onselect: (key: Instrument) => void } = $props();
@@ -22,16 +22,15 @@
 	/** How many logical cores the worker pool can spread across — a static fact of the machine. */
 	const cores = browser ? navigator.hardwareConcurrency || null : null;
 
-	const readyKeys = INSTRUMENTS.filter((instrument) => instrument.ready).map((i) => i.key);
-
 	/**
 	 * Move the selection among the READY instruments and take focus with it — the roving-tabindex
-	 * model. Disabled instruments (the Report) are not in `readyKeys`, so ←/→ steps over them rather
-	 * than landing on a tab that does nothing.
+	 * model. Disabled instruments (the Report) are not in `readyInstrumentKeys`, so ←/→ steps over
+	 * them rather than landing on a tab that does nothing.
 	 */
 	function move(delta: number) {
-		const at = readyKeys.indexOf(active);
-		const next = readyKeys[(at + delta + readyKeys.length) % readyKeys.length];
+		const at = readyInstrumentKeys.indexOf(active);
+		const next =
+			readyInstrumentKeys[(at + delta + readyInstrumentKeys.length) % readyInstrumentKeys.length];
 		onselect(next);
 		document.getElementById(`rtab-${next}`)?.focus();
 	}
@@ -44,7 +43,7 @@
 	}
 </script>
 
-<div class="rail" data-testid="research-rail">
+<nav class="rail" data-testid="research-rail" aria-label="research">
 	<div class="brand">
 		<span class="brand-name">Research</span>
 	</div>
@@ -66,7 +65,7 @@
 					aria-selected={active === instrument.key}
 					aria-controls="research-panel"
 					tabindex={active === instrument.key ? 0 : -1}
-					disabled={!instrument.ready}
+					disabled={!instrument.isReady}
 					onclick={() => onselect(instrument.key)}
 					{onkeydown}
 				>
@@ -74,7 +73,7 @@
 						<b>{instrument.name}</b>
 						<span class="blurb">{instrument.blurb}</span>
 					</span>
-					{#if !instrument.ready}<span class="soon">soon</span>{/if}
+					{#if !instrument.isReady}<span class="soon">soon</span>{/if}
 				</button>
 			{/each}
 		</div>
@@ -90,7 +89,7 @@
 			{#if cores}<span class="cores tabular">{cores} cores</span>{/if}
 		</div>
 	</div>
-</div>
+</nav>
 
 <style>
 	.rail {

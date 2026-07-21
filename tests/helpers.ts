@@ -52,12 +52,18 @@ export async function openAnalysis(card: Locator): Promise<void> {
 	if ((await card.locator('details.analysis[open]').count()) === 0) await summary.click();
 }
 
-/** Switch the lab to Research and open the Atlas instrument. Assumes the bench is already open. */
-export async function openAtlas(page: Page): Promise<void> {
+/** Flip the lab into Research mode and wait for the console rail. Assumes the bench is already open. */
+export async function openResearch(page: Page): Promise<void> {
 	await page
 		.getByRole('radiogroup', { name: 'lab mode' })
 		.getByRole('radio', { name: 'Research' })
 		.click();
+	await page.getByTestId('research-rail').waitFor();
+}
+
+/** Switch the lab to Research and open the Atlas instrument. Assumes the bench is already open. */
+export async function openAtlas(page: Page): Promise<void> {
+	await openResearch(page);
 	await page.getByRole('tab', { name: 'The Atlas' }).click();
 	await page.getByTestId('atlas').waitFor();
 }
