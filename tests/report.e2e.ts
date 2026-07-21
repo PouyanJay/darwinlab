@@ -121,6 +121,21 @@ test('the Print action asks the browser to print — the "save as PDF" path', as
 	expect(await page.evaluate(() => (window as unknown as { __prints: number }).__prints)).toBe(1);
 });
 
+test('the print stylesheet isolates the report — only the brief is on the page', async ({
+	page
+}) => {
+	await reportWithASweep(page);
+
+	// Emulate the print medium and read computed visibility: the "hide everything, reveal one region"
+	// trick must actually hide the console chrome and show the report — the CSS itself under test, not
+	// just the button that triggers it. (A wrong selector or lost specificity would silently blank the
+	// wrong thing; the click test alone would never notice.)
+	await page.emulateMedia({ media: 'print' });
+	await expect(page.getByTestId('research-rail')).toHaveCSS('visibility', 'hidden');
+	await expect(page.getByTestId('research-sidebar')).toHaveCSS('visibility', 'hidden');
+	await expect(page.getByTestId('report')).toHaveCSS('visibility', 'visible');
+});
+
 test('"Watch in Studio" carries the report subject back into Studio', async ({ page }) => {
 	await reportWithASweep(page);
 

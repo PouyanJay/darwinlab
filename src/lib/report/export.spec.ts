@@ -174,8 +174,14 @@ describe('reportToMarkdown', () => {
 		`);
 	});
 
-	it('is byte-stable — the same snapshot renders identically every time', () => {
-		expect(reportToMarkdown(studiedSnapshot())).toBe(reportToMarkdown(studiedSnapshot()));
+	it('is byte-stable — pure, and free of the dates or ids that would make a report undiffable', () => {
+		const md = reportToMarkdown(studiedSnapshot());
+		expect(reportToMarkdown(studiedSnapshot())).toBe(md); // idempotent: same snapshot, same bytes
+		// And directly: nothing non-deterministic leaked in. Two same-millisecond calls would match even
+		// if a timestamp were stamped, so this guards the date-freedom the docstring claims — the fixture
+		// carries a `recorded` ISO date the formatter must never surface.
+		expect(md).not.toMatch(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/); // no ISO timestamp
+		expect(md).not.toContain('2020-01-01'); // nor the fixture's recorded date in any form
 	});
 
 	it('exports an unanswered question as a prompt, never a fabricated answer (the honesty rail)', () => {
