@@ -8,27 +8,33 @@
 -->
 <script lang="ts">
 	import DrillCard from './Atlas/DrillCard.svelte';
+	import LandscapeSummary from './Atlas/LandscapeSummary.svelte';
 	import SweepSummary from './Sweep/SweepSummary.svelte';
 	import ClaimSummary from './Ledger/ClaimSummary.svelte';
+	import SummaryPanel from './SummaryPanel.svelte';
 	import { landscape } from '$lib/state';
 	import type { Instrument } from './instruments';
 
 	let { active }: { active: Instrument } = $props();
 
+	const hasField = $derived(landscape.field !== null);
 	const drilled = $derived(landscape.selected !== null && landscape.field !== null);
 </script>
 
 <aside class="sidebar" data-testid="research-sidebar" aria-label="research context">
 	{#if active === 'atlas'}
-		{#if drilled}
-			<DrillCard />
+		{#if hasField}
+			<LandscapeSummary />
+			{#if drilled}
+				<DrillCard />
+			{:else}
+				<p class="empty">Click a cell on the map to open its world here — the door into Studio.</p>
+			{/if}
 		{:else}
-			<div class="panel">
-				<span class="eyebrow">Drilled point</span>
-				<p class="empty">
-					Click a cell on the map — its world opens here, with the door back into Studio.
-				</p>
-			</div>
+			<SummaryPanel
+				eyebrow="This landscape"
+				empty="Run a landscape — its threshold and drilled worlds appear here."
+			/>
 		{/if}
 	{:else if active === 'sweep'}
 		<SweepSummary />
@@ -49,20 +55,8 @@
 		border-left: 1px solid var(--line);
 	}
 
-	.panel {
-		display: flex;
-		flex-direction: column;
-		gap: var(--sp-3);
-	}
-
-	.eyebrow {
-		font-size: var(--fs-eyebrow);
-		font-weight: var(--fw-semibold);
-		letter-spacing: var(--tracking-wide);
-		text-transform: uppercase;
-		color: var(--ink3);
-	}
-
+	/* The one bit of prose the sidebar renders itself — the hint to drill a cell (the panels are their
+	   own components now). */
 	.empty {
 		margin: 0;
 		font-size: var(--fs-sm);

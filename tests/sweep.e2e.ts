@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { gotoApp } from './helpers';
+import { gotoApp, runMinimalSweep } from './helpers';
 
 /**
  * The Sweep instrument, end to end: that a real sweep runs through the worker pool in the built app
@@ -22,20 +22,10 @@ async function openSweep(page: Page): Promise<void> {
 
 test('a sweep runs and reports an effect with its run grid', async ({ page }) => {
 	await openSweep(page);
-
-	// Shrink to a single factor (Direction) and two seeds: two conditions, four jobs.
-	for (const factor of ['Distance', 'Walls', 'Predator speed']) {
-		await page.getByRole('button', { name: factor, exact: false }).first().click();
-	}
-	await page.locator('.seeds input').fill('2');
-	await page.locator('.seeds input').blur();
-	await expect(page.getByTestId('sweep-summary')).toContainText('2 conditions × 2 seeds');
-
-	await page.getByRole('button', { name: 'Run sweep' }).click();
+	await runMinimalSweep(page);
 
 	// The conclusion lands: a Direction effect row with a seconds value, over a 2×2 run grid.
 	const effects = page.locator('[data-testid="sweep"] .effects');
-	await expect(effects).toBeVisible({ timeout: 60_000 });
 	await expect(effects.locator('.row')).toHaveText(/Direction/);
 	await expect(effects.locator('.val')).toHaveText(/[−+]?\d/);
 	// The grid is a fixed shape (2 conditions × 2 seeds), not a live population — a real count is safe.

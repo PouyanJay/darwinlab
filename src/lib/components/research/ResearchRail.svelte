@@ -14,13 +14,18 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
 	import SubjectCard from './SubjectCard.svelte';
+	import Icon from '../common/Icon.svelte';
 	import { INSTRUMENTS, readyInstrumentKeys, type Instrument } from './instruments';
-	import { research } from '$lib/state';
+	import { research, findings, currentSubjectHash } from '$lib/state';
 
 	let { active, onselect }: { active: Instrument; onselect: (key: Instrument) => void } = $props();
 
 	/** How many logical cores the worker pool can spread across — a static fact of the machine. */
 	const cores = browser ? navigator.hardwareConcurrency || null : null;
+
+	// The notebook, scoped to the world the console is pointed at — the rail names that subject above,
+	// so the findings under it are the ones about it. Reactive on both the notebook and the subject.
+	const kept = $derived(findings.forSubject(currentSubjectHash()));
 
 	/**
 	 * Move the selection among the READY instruments and take focus with it — the roving-tabindex
@@ -77,6 +82,32 @@
 				</button>
 			{/each}
 		</div>
+	</section>
+
+	<section class="sec" data-testid="findings">
+		<span class="eyebrow"
+			>Findings{#if kept.length}
+				· {kept.length} kept{/if}</span
+		>
+		{#if kept.length}
+			<ul class="finding-list">
+				{#each kept as finding (finding.id)}
+					<li class="finding" class:limit={finding.status === 'limit'}>
+						<span class="fdot" aria-hidden="true"></span>
+						<span class="ftitle" title={finding.detail}>{finding.title}</span>
+						<button
+							class="fremove"
+							aria-label="remove finding {finding.title}"
+							onclick={() => findings.remove(finding.id)}
+						>
+							<Icon name="close" size={12} />
+						</button>
+					</li>
+				{/each}
+			</ul>
+		{:else}
+			<p class="findings-empty">Run an instrument and "add to report" to start the notebook.</p>
+		{/if}
 	</section>
 
 	<div class="foot">
@@ -205,6 +236,92 @@
 		border: 1px solid var(--line);
 		border-radius: var(--radius-chip);
 		padding: 2px 6px;
+	}
+
+	/* The notebook sits between the instruments and the foot. The RAIL itself is the scroll region (it
+	   holds the focusable tabs, so a keyboard user reaches its overflow) — the findings section is not a
+	   separate scroll container, which would be an empty, unfocusable one axe rightly flags. */
+	.finding-list {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 1px;
+	}
+
+	.finding {
+		display: flex;
+		align-items: center;
+		gap: var(--sp-3);
+		padding: var(--sp-2) var(--sp-2) var(--sp-2) 2px;
+		border-radius: var(--radius-sm);
+	}
+
+	.finding:hover {
+		background: var(--panel2);
+	}
+
+	.fdot {
+		flex: none;
+		width: 6px;
+		height: 6px;
+		border-radius: 50%;
+		background: var(--ink2);
+	}
+
+	/* A kept negative reads as an outline, not a fill — status through shape, monochrome. */
+	.finding.limit .fdot {
+		background: none;
+		box-shadow: inset 0 0 0 1.5px var(--ink3);
+	}
+
+	.ftitle {
+		flex: 1;
+		min-width: 0;
+		font-size: var(--fs-sm);
+		color: var(--ink2);
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.finding.limit .ftitle {
+		color: var(--ink3);
+	}
+
+	.fremove {
+		flex: none;
+		display: inline-flex;
+		padding: 2px;
+		border: none;
+		background: none;
+		color: var(--ink3);
+		cursor: pointer;
+		border-radius: var(--radius-chip);
+		opacity: 0;
+		transition: opacity var(--dur-fast) var(--ease);
+	}
+
+	.finding:hover .fremove,
+	.fremove:focus-visible {
+		opacity: 1;
+	}
+
+	.fremove:hover {
+		color: var(--ink);
+	}
+
+	.fremove:focus-visible {
+		outline: var(--focus-ring);
+		outline-offset: var(--focus-offset);
+	}
+
+	.findings-empty {
+		margin: 0;
+		font-size: var(--fs-sm);
+		line-height: var(--leading-body);
+		color: var(--ink3);
 	}
 
 	.foot {
