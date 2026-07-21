@@ -65,6 +65,29 @@ describe('the Report', () => {
 		expect(report.method).toEqual({ configHash: 'a3f19c', seeds: 40 });
 	});
 
+	it('answers a question in its OWN terms — Q7 the method, Q6 the negatives, not the sweep headline', () => {
+		findings.add(
+			input({
+				source: 'sweep',
+				title: 'Direction +2.4s',
+				configHash: 'a3f19c',
+				seeds: 6,
+				evidence: {
+					kind: 'effects',
+					effects: [
+						{ label: 'Direction', delta: 2.4, lo: 1.2, hi: 3.1 }, // a mover
+						{ label: 'Distance', delta: 0.1, lo: -0.9, hi: 1.1 } // straddles zero → a negative
+					]
+				}
+			})
+		);
+
+		expect(sectionFor('Q2').answer).toBe('Direction +2.4s'); // the headline, for "what moves survival"
+		expect(sectionFor('Q6').answer).toContain('Distance'); // the kept negative, not the mover
+		expect(sectionFor('Q6').answer).not.toContain('Direction +2.4s');
+		expect(sectionFor('Q7').answer).toBe('config a3f19c · 6 seeds'); // the method, not a conclusion
+	});
+
 	it('leads with the strongest real claim — a supported verdict over a sweep mover', () => {
 		findings.add(input({ source: 'sweep', title: 'Direction +2.4s' }));
 		findings.add(

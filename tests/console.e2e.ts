@@ -2,9 +2,9 @@ import { expect, test } from '@playwright/test';
 import { gotoApp, openResearch } from './helpers';
 
 /**
- * The Research console shell (RC0): the three zones and their landmarks exist, the persistent right
- * SIDEBAR adapts to whichever instrument the rail has active, and the rail nav is a real roving
- * tablist that steps over the not-yet-built Report. No existing spec guards any of this.
+ * The Research console shell: the three zones and their landmarks exist, the persistent right SIDEBAR
+ * adapts to whichever instrument the rail has active, and the rail nav is a real roving tablist over
+ * all four instruments.
  *
  * These assert STRUCTURE, not measurements: nothing is run, so every panel is in its empty state —
  * which is exactly the state whose copy must stay honest ("Not tested yet", "Run the Sweep …").
@@ -43,11 +43,13 @@ test('the console has three zones and the sidebar follows the active instrument'
 	await expect(page.getByTestId('atlas')).toBeVisible();
 	await expect(sidebar).toContainText('This landscape');
 
-	// The Report is shown as a not-yet-built instrument, disabled — never a dead tab that opens nothing.
-	await expect(page.getByRole('tab', { name: 'The Report' })).toBeDisabled();
+	// The Report — the seventh instrument opens the brief, and the sidebar becomes its contents outline.
+	await page.getByRole('tab', { name: 'The Report' }).click();
+	await expect(page.getByTestId('report')).toBeVisible();
+	await expect(sidebar).toContainText('Contents');
 });
 
-test('the rail nav is a roving tablist: arrows cycle the ready instruments and skip the disabled one', async ({
+test('the rail nav is a roving tablist: arrows cycle all four instruments and wrap', async ({
 	page
 }) => {
 	await gotoApp(page);
@@ -65,8 +67,11 @@ test('the rail nav is a roving tablist: arrows cycle the ready instruments and s
 	await page.keyboard.press('ArrowDown');
 	await expect(page.locator('#rtab-atlas')).toBeFocused();
 
-	// Past the last ready instrument it wraps straight back to the Sweep — the disabled Report is never
-	// landed on (it is not in the roving set), so it can never become the selection.
+	await page.keyboard.press('ArrowDown');
+	await expect(page.locator('#rtab-report')).toBeFocused();
+	await expect(page.getByTestId('report')).toBeVisible();
+
+	// Past the last instrument it wraps straight back to the Sweep.
 	await page.keyboard.press('ArrowDown');
 	await expect(page.locator('#rtab-sweep')).toBeFocused();
 	await expect(page.getByTestId('sweep')).toBeVisible();

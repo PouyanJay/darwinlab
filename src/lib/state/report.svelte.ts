@@ -30,6 +30,17 @@ export interface ReportSection {
 	finding: Finding | null;
 	/** The instrument/action that produces this answer — for the "run …" prompt when unanswered. */
 	producer: string;
+	/** The concise answer for the glance table — question-aware (Q7 the method, Q6 the negatives),
+	 *  null when unanswered. Never invented; derived from the finding. */
+	answer: string | null;
+}
+
+/** The Sweep's kept negatives — the factors whose interval can't clear zero (what did NOT work). */
+export function negativesOf(finding: Finding | null): string[] {
+	if (finding?.evidence?.kind !== 'effects') return [];
+	return finding.evidence.effects
+		.filter((e) => Number.isNaN(e.delta) || (e.lo <= 0 && e.hi >= 0))
+		.map((e) => e.label);
 }
 
 /** The method/provenance footer (Q7): the fingerprint + seed count any finding carries. */
@@ -62,12 +73,31 @@ class ReportStore {
 
 	/** The seven sections, in order — each answered or a prompt. */
 	get sections(): ReportSection[] {
-		return QUESTIONS.map((question) => ({
-			question,
+		return QUESTIONS.map((question) => {
 			// Q7 is provenance: it is "answered" whenever ANY finding exists (there is a run to cite).
-			finding: question.id === 'Q7' ? (this.findings[0] ?? null) : this.#answerTo(question.id),
-			producer: PRODUCER[question.id]
-		}));
+			const finding =
+				question.id === 'Q7' ? (this.findings[0] ?? null) : this.#answerTo(question.id);
+			return {
+				question,
+				finding,
+				producer: PRODUCER[question.id],
+				answer: this.#answer(question.id, finding)
+			};
+		});
+	}
+
+	/**
+	 * The concise answer text for a question — question-aware so the glance table reads right: Q7 states
+	 * the method that reproduces it, Q6 the kept negatives, everything else the finding's own headline.
+	 */
+	#answer(id: QuestionId, finding: Finding | null): string | null {
+		if (!finding) return null;
+		if (id === 'Q7') return `config ${finding.configHash} · ${finding.seeds} seeds`;
+		if (id === 'Q6') {
+			const negatives = negativesOf(finding);
+			return negatives.length ? `${negatives.join(', ')} — no gain` : 'every factor moved survival';
+		}
+		return finding.title;
 	}
 
 	/** How many of the seven are answered — the coverage the lede reports honestly. */
