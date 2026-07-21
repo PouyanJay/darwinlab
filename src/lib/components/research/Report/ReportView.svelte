@@ -25,7 +25,7 @@
 	const negatives = $derived(negativesOf(q6.finding));
 </script>
 
-<article class="report" data-testid="report">
+<article class="report" data-testid="report" data-print-region>
 	<p class="eyebrow">Synthesis · {report.subjectName} · seven questions</p>
 	<h2 class="headline">
 		{lead ? lead.title : `${report.subjectName} hasn't been studied yet.`}

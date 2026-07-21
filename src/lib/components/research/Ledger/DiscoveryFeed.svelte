@@ -6,15 +6,10 @@
 <script lang="ts">
 	import Button from '../../common/Button.svelte';
 	import { ledger } from '$lib/state';
+	import { downloadText } from '$lib/download';
 
 	function exportLedger() {
-		const blob = new Blob([ledger.toJson()], { type: 'application/json' });
-		const url = URL.createObjectURL(blob);
-		const link = document.createElement('a');
-		link.href = url;
-		link.download = 'darwin-lab-ledger.json';
-		link.click();
-		URL.revokeObjectURL(url);
+		downloadText('darwin-lab-ledger.json', ledger.toJson(), 'application/json');
 	}
 </script>
 

@@ -10,8 +10,10 @@
 
 import { findings, currentSubjectHash, type Finding } from './findings.svelte';
 import { app } from './app.svelte';
+import { bench } from './bench.svelte';
 import { QUESTIONS, type Question, type QuestionId } from '../lab/questions';
-import { isFlatEffect } from '../lab/evidence';
+import { negativesOf as negativesFromEvidence } from '../lab/evidence';
+import { reportToMarkdown, type ReportSnapshot } from '../report/export';
 
 /** Who answers each question — the instrument (or action) whose finding fills it, named for the prompt
  *  shown when it is unanswered. Q7 is provenance: any finding carries the fingerprint that reproduces it. */
@@ -36,10 +38,10 @@ export interface ReportSection {
 	answer: string | null;
 }
 
-/** The Sweep's kept negatives — the factors whose interval can't clear zero (what did NOT work). */
+/** The Sweep's kept negatives for a finding — a thin Finding-typed adapter over the one extractor in
+ *  `evidence.ts`, so the Report view and the Markdown export read the same "what did NOT work". */
 export function negativesOf(finding: Finding | null): string[] {
-	if (finding?.evidence?.kind !== 'effects') return [];
-	return finding.evidence.effects.filter(isFlatEffect).map((e) => e.label);
+	return negativesFromEvidence(finding?.evidence);
 }
 
 /** The method/provenance footer (Q7): the fingerprint + seed count any finding carries. */
@@ -126,6 +128,34 @@ class ReportStore {
 	get method(): ReportMethod | null {
 		const finding = this.findings[0];
 		return finding ? { configHash: finding.configHash, seeds: finding.seeds } : null;
+	}
+
+	/** The brief as plain data — everything the Markdown export needs, and nothing that isn't derivable
+	 *  from the findings (no dates, no ids), so a re-export of the same notebook is byte-identical. */
+	snapshot(): ReportSnapshot {
+		return {
+			subjectName: this.subjectName,
+			coverage: this.coverage,
+			leadTitle: this.lead?.title ?? null,
+			sections: this.sections,
+			method: this.method
+		};
+	}
+
+	/** The brief as a Markdown document — a file the study can be kept and shared as. */
+	toMarkdown(): string {
+		return reportToMarkdown(this.snapshot());
+	}
+
+	/**
+	 * Watch the report's subject evolve in Studio — the Report→Studio half of the round-trip, the same
+	 * shape as the Atlas's `watch`: drop the subject onto the bench as a fresh, named world and switch
+	 * modes. The report is always ABOUT one subject, so this reopens exactly that world.
+	 */
+	watch(): void {
+		const name = app.subject ? app.subject.name : 'Report subject';
+		bench.addWorld({ ...app.subjectBase(name), name });
+		app.setMode('studio');
 	}
 }
 

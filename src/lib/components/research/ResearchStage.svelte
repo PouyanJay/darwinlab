@@ -19,11 +19,13 @@
 	import Ledger from './Ledger/Ledger.svelte';
 	import Atlas from './Atlas/Atlas.svelte';
 	import ReportView from './Report/ReportView.svelte';
-	import { instrumentMeta, type Instrument } from './instruments';
+	import QuestionTags from './QuestionTags.svelte';
+	import { instrumentMeta, answersOf, type Instrument } from './instruments';
 	import { SCENARIO } from '$lib/lab/scenario';
 
 	let active = $state<Instrument>('sweep');
 	const meta = $derived(instrumentMeta(active));
+	const answers = $derived(answersOf(active));
 </script>
 
 <div class="console" data-testid="research-stage">
@@ -35,7 +37,10 @@
 		<ResearchWorkspace>
 			<header class="ws-head">
 				<span class="eyebrow">Research · {SCENARIO.index} · {SCENARIO.name}</span>
-				<h2>{meta.name}</h2>
+				<div class="ws-title">
+					<h2>{meta.name}</h2>
+					<QuestionTags questions={answers} />
+				</div>
 				<p class="blurb">{meta.blurb}</p>
 			</header>
 
@@ -94,6 +99,15 @@
 		letter-spacing: var(--tracking-wide);
 		text-transform: uppercase;
 		color: var(--ink3);
+	}
+
+	/* Title and its "answers Q…" tags on one line — the tags ride the heading's baseline, wrapping
+	   under it only when the workspace is too narrow to hold both. */
+	.ws-title {
+		display: flex;
+		align-items: baseline;
+		flex-wrap: wrap;
+		gap: var(--sp-3);
 	}
 
 	.ws-head h2 {
