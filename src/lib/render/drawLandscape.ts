@@ -23,16 +23,20 @@ const CORAL: Rgb = [232, 96, 76];
 /** Long survival — the ridge. */
 const TEAL: Rgb = [14, 148, 136];
 
+/** The ramp's ends as CSS strings — the single source of truth the Legend's gradient reuses. */
+export const HEAT_LOW = `rgb(${CORAL[0]}, ${CORAL[1]}, ${CORAL[2]})`;
+export const HEAT_HIGH = `rgb(${TEAL[0]}, ${TEAL[1]}, ${TEAL[2]})`;
+
 interface Palette {
-	grid: string;
+	/** An unmeasured cell. */
 	empty: string;
+	/** The cliff line and cell outlines. */
 	line: string;
-	lineText: string;
 }
 
 const PALETTES: Record<'light' | 'dark', Palette> = {
-	light: { grid: 'rgba(0,0,0,0.10)', empty: 'rgba(0,0,0,0.05)', line: '#111318', lineText: '#111318' },
-	dark: { grid: 'rgba(255,255,255,0.10)', empty: 'rgba(255,255,255,0.05)', line: '#e7e8ec', lineText: '#e7e8ec' }
+	light: { empty: 'rgba(0,0,0,0.05)', line: '#111318' },
+	dark: { empty: 'rgba(255,255,255,0.05)', line: '#e7e8ec' }
 };
 
 /** Coordinates of a cell the map wants to outline (hover) or drill (select). */
@@ -54,7 +58,8 @@ export interface LandscapePaint {
 
 function lerp(a: Rgb, b: Rgb, t: number): string {
 	const k = Math.max(0, Math.min(1, t));
-	return `rgb(${Math.round(a[0] + (b[0] - a[0]) * k)}, ${Math.round(a[1] + (b[1] - a[1]) * k)}, ${Math.round(a[2] + (b[2] - a[2]) * k)})`;
+	const channel = (i: number) => Math.round(a[i] + (b[i] - a[i]) * k);
+	return `rgb(${channel(0)}, ${channel(1)}, ${channel(2)})`;
 }
 
 export function drawLandscape(

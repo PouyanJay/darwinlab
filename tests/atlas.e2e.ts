@@ -1,5 +1,5 @@
-import { expect, test, type Page } from '@playwright/test';
-import { gotoApp } from './helpers';
+import { expect, test } from '@playwright/test';
+import { gotoApp, openAtlas, shrinkAtlasRun } from './helpers';
 
 /**
  * The Atlas instrument, end to end: that a real landscape runs through the worker pool in the built
@@ -11,31 +11,11 @@ import { gotoApp } from './helpers';
  * asserted is that the pipeline produced a painted map, a legend, a drill-in, and the hand-off.
  */
 
-async function openAtlas(page: Page): Promise<void> {
-	await gotoApp(page);
-	await page
-		.getByRole('radiogroup', { name: 'lab mode' })
-		.getByRole('radio', { name: 'Research' })
-		.click();
-	await page.getByRole('tab', { name: 'The Atlas' }).click();
-	await page.getByTestId('atlas').waitFor();
-}
-
-/** Shrink the grid and seeds to the smallest real run, making the change events the store listens for fire. */
-async function shrinkRun(page: Page): Promise<void> {
-	const grid = page.locator('[data-testid="atlas"] .num input').first();
-	const seeds = page.locator('[data-testid="atlas"] .num input').nth(1);
-	await grid.fill('3');
-	await grid.blur();
-	await seeds.fill('2');
-	await seeds.blur();
-	await expect(page.getByTestId('atlas-summary')).toContainText('9 cells × 2 seeds');
-}
-
 test('a landscape runs, paints a map with a legend, and drills a cell', async ({ page }) => {
 	test.setTimeout(120_000);
+	await gotoApp(page);
 	await openAtlas(page);
-	await shrinkRun(page);
+	await shrinkAtlasRun(page);
 
 	await page.getByRole('button', { name: 'Run landscape' }).click();
 
@@ -53,8 +33,9 @@ test('a landscape runs, paints a map with a legend, and drills a cell', async ({
 
 test('"Watch this world" carries the drilled config back into Studio', async ({ page }) => {
 	test.setTimeout(120_000);
+	await gotoApp(page);
 	await openAtlas(page);
-	await shrinkRun(page);
+	await shrinkAtlasRun(page);
 
 	await page.getByRole('button', { name: 'Run landscape' }).click();
 	await expect(page.locator('[data-testid="atlas"] canvas')).toBeVisible({ timeout: 90_000 });
@@ -72,4 +53,29 @@ test('"Watch this world" carries the drilled config back into Studio', async ({ 
 		page.getByRole('radiogroup', { name: 'lab mode' }).getByRole('radio', { name: 'Studio' })
 	).toBeChecked();
 	await expect(page.getByTestId('research-stage')).toHaveCount(0);
+});
+
+test('changing an axis after drilling does not relabel the measured cell', async ({ page }) => {
+	// The blocking bug this guards: the drill card once read the LIVE picker axis, so switching the X
+	// dropdown after a run relabelled the already-measured cell (e.g. "Vision 0.90×"). The card must
+	// stay pinned to the axis the cell was actually measured on.
+	test.setTimeout(120_000);
+	await gotoApp(page);
+	await openAtlas(page);
+	await shrinkAtlasRun(page); // X = Predator speed, Y = Mutation (the defaults)
+
+	await page.getByRole('button', { name: 'Run landscape' }).click();
+	await expect(page.locator('[data-testid="atlas"] canvas')).toBeVisible({ timeout: 90_000 });
+
+	await page.locator('[data-testid="atlas"] canvas').focus();
+	await page.keyboard.press('ArrowRight');
+	await page.keyboard.press('Enter');
+	await expect(page.getByTestId('atlas-drill')).toContainText('Predator speed'); // measured on this axis
+
+	// The pickers are NOT disabled once a field exists, so this change really happens — and must not
+	// relabel the frozen cell.
+	await page.getByLabel('horizontal axis').selectOption({ label: 'Vision' });
+	await expect(page.getByLabel('horizontal axis')).toHaveValue('vision'); // the picker moved
+	await expect(page.getByTestId('atlas-drill')).toContainText('Predator speed'); // the card did NOT
+	await expect(page.getByTestId('atlas-drill')).not.toContainText('Vision');
 });

@@ -85,12 +85,16 @@ export interface Falloff {
 	drop: number;
 }
 
-/** One numeric axis over a WorldConfig field. `round` snaps to the field's real step (integers, even prey). */
+/**
+ * One numeric axis over a WorldConfig field. The range is a `{ min, max }` object rather than two
+ * positional numbers on purpose: two adjacent same-typed args are a silent transposition risk (a
+ * swapped pair would paint a backwards axis with no error), and named properties make that a typo you
+ * can see. `round` snaps to the field's real step (integers, even prey).
+ */
 function numericAxis(
 	key: keyof WorldConfig & string,
 	label: string,
-	min: number,
-	max: number,
+	{ min, max }: { min: number; max: number },
 	format: (value: number) => string,
 	round: (value: number) => number = (value) => value
 ): LandscapeAxis {
@@ -103,11 +107,17 @@ function numericAxis(
  * ranges of what the Conditions dialog allows — chosen to sit the interesting region inside the grid.
  */
 export const CANDIDATE_AXES: LandscapeAxis[] = [
-	numericAxis('predSpeed', 'Predator speed', 0.6, 1.2, (v) => `${v.toFixed(2)}×`),
-	numericAxis('mutation', 'Mutation', 0.01, 0.15, (v) => v.toFixed(3)),
-	numericAxis('vision', 'Vision', 120, 280, (v) => `${Math.round(v)}px`, Math.round),
-	numericAxis('prey', 'Prey', 8, 40, (v) => `${Math.round(v)}`, (v) => Math.round(v / 2) * 2),
-	numericAxis('preds', 'Predators', 1, 5, (v) => `${Math.round(v)}`, Math.round)
+	numericAxis('predSpeed', 'Predator speed', { min: 0.6, max: 1.2 }, (v) => `${v.toFixed(2)}×`),
+	numericAxis('mutation', 'Mutation', { min: 0.01, max: 0.15 }, (v) => v.toFixed(3)),
+	numericAxis('vision', 'Vision', { min: 120, max: 280 }, (v) => `${Math.round(v)}px`, Math.round),
+	numericAxis(
+		'prey',
+		'Prey',
+		{ min: 8, max: 40 },
+		(v) => `${Math.round(v)}`,
+		(v) => Math.round(v / 2) * 2
+	),
+	numericAxis('preds', 'Predators', { min: 1, max: 5 }, (v) => `${Math.round(v)}`, Math.round)
 ];
 
 /** `n` values evenly spaced from `min` to `max` inclusive (just `min` when `n <= 1`). */

@@ -3,7 +3,7 @@ import { landscape } from './landscape.svelte';
 import { bench } from './bench.svelte';
 import { app } from './app.svelte';
 import type { JobExecutor } from '../lab/runner';
-import type { Evaluation } from '../lab/evaluator';
+import type { EvalRequest, Evaluation } from '../lab/evaluator';
 
 /**
  * The Atlas store, driven through a canned executor so the field is fixed and the cliff/selection
@@ -20,6 +20,22 @@ class CannedExecutor implements JobExecutor {
 	}
 	async submit(): Promise<Evaluation | null> {
 		return this.#queue.shift() ?? null;
+	}
+	dispose(): void {}
+}
+
+/** An executor whose jobs never settle on their own — only a cancel (signal abort) resolves them. */
+class HangingExecutor implements JobExecutor {
+	readonly concurrency = 1;
+	submit(
+		_req: EvalRequest,
+		_onProgress: (fraction: number) => void,
+		signal: AbortSignal
+	): Promise<Evaluation | null> {
+		return new Promise((resolve) => {
+			if (signal.aborted) return resolve(null);
+			signal.addEventListener('abort', () => resolve(null), { once: true });
+		});
 	}
 	dispose(): void {}
 }
@@ -58,22 +74,48 @@ describe('the Atlas store', () => {
 		expect(landscape.falloff?.drop).toBeCloseTo(5);
 	});
 
-	it('choosing an axis already on the other one swaps them, never plots a knob against itself', () => {
+	it('choosing X already on the Y axis swaps them, never plots a knob against itself', () => {
 		expect(landscape.axisX.key).toBe('predSpeed'); // the state we claim to change starts here
 		landscape.setX('mutation'); // X wants Y's axis
 		expect(landscape.axisX.key).toBe('mutation');
 		expect(landscape.axisY.key).toBe('predSpeed'); // Y took X's old axis
 	});
 
-	it('clamps resolution and seeds so a bad input never sizes a run', () => {
+	it('choosing Y already on the X axis swaps them too — setY is its own branch', () => {
+		expect(landscape.axisY.key).toBe('mutation'); // starts here
+		landscape.setY('predSpeed'); // Y wants X's axis
+		expect(landscape.axisY.key).toBe('predSpeed');
+		expect(landscape.axisX.key).toBe('mutation'); // X took Y's old axis
+	});
+
+	it('clamps and rounds resolution and seeds so a bad input never sizes a run', () => {
 		landscape.setResolution(99);
 		expect(landscape.resolution).toBe(8);
 		landscape.setResolution(1);
 		expect(landscape.resolution).toBe(3);
+		landscape.setResolution(5.6);
+		expect(landscape.resolution).toBe(6); // a fractional input rounds, it is not floored
 		landscape.setSeeds(99);
 		expect(landscape.seeds).toBe(8);
 		landscape.setSeeds(0);
 		expect(landscape.seeds).toBe(2);
+	});
+
+	it('keeps the field on the axes it was measured on when the picker moves after a run', async () => {
+		await landscape.run(cannedField()); // measured on predSpeed × mutation
+		expect(landscape.field?.axisX.key).toBe('predSpeed'); // it really measured this axis first
+		landscape.setX('vision'); // change the live picker AFTER the run (the pickers aren't disabled)
+		expect(landscape.axisX.key).toBe('vision'); // the picker moved…
+		expect(landscape.field?.axisX.key).toBe('predSpeed'); // …but the measured field's axis is frozen
+	});
+
+	it('a superseded run publishes nothing — the field is the newer run, not the hung one', async () => {
+		const first = landscape.run(new HangingExecutor()); // hangs, holding the store
+		const second = landscape.run(cannedField()); // aborts the first, then runs to a field
+		await second;
+		await expect(first).resolves.toBeUndefined(); // the old run resolved, did not throw
+		expect(landscape.field?.values[0]).toBeCloseTo(10); // the canned field, not a grid of NaNs
+		expect(landscape.field?.min).toBeCloseTo(4); // the second run's range, proving it owns the field
 	});
 
 	it('drills a cell by coordinate and reports its survival, then clears', async () => {

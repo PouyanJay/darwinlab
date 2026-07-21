@@ -14,7 +14,8 @@ import {
 import type { Evaluation } from './evaluator';
 
 const base = () => newWorldConfig('Base', '#888888');
-const axis = (key: string): LandscapeAxis => CANDIDATE_AXES.find((a) => a.key === key) as LandscapeAxis;
+const axis = (key: string): LandscapeAxis =>
+	CANDIDATE_AXES.find((a) => a.key === key) as LandscapeAxis;
 /** A fake evaluation carrying just the mean the field reads. */
 const evalMean = (meanReturn: number) => ({ meanReturn }) as Evaluation;
 
@@ -127,5 +128,36 @@ describe('steepestFalloff — the cliff, measured not assumed', () => {
 		const cliff = steepestFalloff(fieldWithColumnMeans([5, NaN, 8, 1]));
 		expect(cliff?.ix).toBe(2);
 		expect(cliff?.drop).toBeCloseTo(7);
+	});
+
+	it('averages a partially-dead column over its FINITE rows, not down to NaN', () => {
+		// col 1 has a single failed cell (row 1). Its column mean must be the surviving row's 4 — so the
+		// 10→4 drop is real. Drop the finite-row guard and col 1's mean collapses to NaN, both its drops
+		// vanish, and this returns null: this asymmetric case is what distinguishes the guard.
+		const field: LandscapeField = {
+			cols: 3,
+			rows: 2,
+			axisX: axis('predSpeed'),
+			axisY: axis('mutation'),
+			values: [10, 4, 3, 10, NaN, 3], // row 0: 10,4,3 · row 1: 10,NaN,3
+			min: 3,
+			max: 10
+		};
+		const cliff = steepestFalloff(field);
+		expect(cliff?.ix).toBe(0); // 10 → 4, using col 1's one live cell
+		expect(cliff?.drop).toBeCloseTo(6);
+	});
+
+	it('returns null for a single-column field — no slope to fall off', () => {
+		const field: LandscapeField = {
+			cols: 1,
+			rows: 3,
+			axisX: axis('predSpeed'),
+			axisY: axis('mutation'),
+			values: [5, 6, 7],
+			min: 5,
+			max: 7
+		};
+		expect(steepestFalloff(field)).toBeNull();
 	});
 });

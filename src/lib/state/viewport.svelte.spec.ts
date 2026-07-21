@@ -35,7 +35,7 @@ describe('Viewport', () => {
 		expect(view.toCanvas(100, 100).y).toBeCloseTo(before.y);
 	});
 
-	it('clamps scale to its bounds and does not drift the pan once pinned', () => {
+	it('clamps to the upper bound and does not drift the pan once pinned', () => {
 		const view = new Viewport({ minScale: 0.5, maxScale: 2 });
 		view.zoomAt(100, 100, 10); // asks for 10×, clamps to 2×
 		expect(view.scale).toBe(2);
@@ -43,6 +43,12 @@ describe('Viewport', () => {
 		view.zoomAt(100, 100, 10); // already at the max — must not move the pan for nothing
 		expect(view.tx).toBe(tx);
 		expect(view.ty).toBe(ty);
+	});
+
+	it('clamps to the lower bound too', () => {
+		const view = new Viewport({ minScale: 0.5, maxScale: 2 });
+		view.zoomAt(100, 100, 0.01); // asks to zoom far out, clamps to the 0.5 floor
+		expect(view.scale).toBe(0.5);
 	});
 
 	it('fitBox centres a box and scales it to fit the viewport', () => {
@@ -54,6 +60,16 @@ describe('Viewport', () => {
 		const centre = { x: view.tx + 50 * view.scale, y: view.ty + 50 * view.scale };
 		expect(centre.x).toBeCloseTo(150);
 		expect(centre.y).toBeCloseTo(150);
+	});
+
+	it('fitBox is limited by the tighter axis, not the looser one', () => {
+		const view = new Viewport({ minScale: 0.1, maxScale: 8 });
+		// a WIDE box (200×50) into a square 400×400 viewport: width limits at 400/200 = 2, not 400/50 = 8
+		view.fitBox(0, 0, 200, 50, 400, 400, 0);
+		expect(view.scale).toBeCloseTo(2);
+		// still centred: the box centre (100,25) lands at the viewport centre (200,200)
+		expect(view.tx + 100 * view.scale).toBeCloseTo(200);
+		expect(view.ty + 25 * view.scale).toBeCloseTo(200);
 	});
 
 	it('reset returns to the origin at 1:1', () => {

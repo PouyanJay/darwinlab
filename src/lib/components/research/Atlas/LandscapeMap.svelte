@@ -76,7 +76,11 @@
 		const onwheel = (event: WheelEvent) => {
 			event.preventDefault();
 			const rect = el.getBoundingClientRect();
-			view.zoomAt(event.clientX - rect.left, event.clientY - rect.top, Math.exp(-event.deltaY * 0.0015));
+			view.zoomAt(
+				event.clientX - rect.left,
+				event.clientY - rect.top,
+				Math.exp(-event.deltaY * 0.0015)
+			);
 		};
 		el.addEventListener('wheel', onwheel, { passive: false });
 		return () => el.removeEventListener('wheel', onwheel);
@@ -137,7 +141,8 @@
 	function endDrag(event: PointerEvent): void {
 		drag = null;
 		grabbing = false;
-		if (container?.hasPointerCapture(event.pointerId)) container.releasePointerCapture(event.pointerId);
+		if (container?.hasPointerCapture(event.pointerId))
+			container.releasePointerCapture(event.pointerId);
 	}
 
 	function onpointerleave(): void {
@@ -175,7 +180,11 @@
 		view.zoomAt(rect.width / 2, rect.height / 2, factor);
 	}
 
-	/** Axis values + survival at the focused cell — the tooltip's contents, matching the drill card. */
+	/**
+	 * The focused cell's labels, axis values and survival — the tooltip's contents, matching the drill
+	 * card. Everything reads the FIELD's own frozen axes, so touching the picker before the next run
+	 * never relabels the painted grid with an axis it was not measured on.
+	 */
 	const focusValues = $derived.by(() => {
 		const field = landscape.field;
 		if (!field || !focus) return null;
@@ -185,14 +194,15 @@
 		const x = xs.min + ((xs.max - xs.min) * focus.ix) / Math.max(1, field.cols - 1);
 		const y = ys.min + ((ys.max - ys.min) * focus.iy) / Math.max(1, field.rows - 1);
 		const value = field.values[focus.iy * field.cols + focus.ix];
-		return { x: xs.format(x), y: ys.format(y), value };
+		return { xLabel: xs.label, yLabel: ys.label, x: xs.format(x), y: ys.format(y), value };
 	});
 
-	const mapLabel = $derived(
-		landscape.field
-			? `Survival landscape, ${landscape.field.cols} by ${landscape.field.rows} grid of ${landscape.axisX.label} against ${landscape.axisY.label}. Drag to pan, scroll to zoom, arrow keys to move the cursor, Enter to open a cell.`
-			: 'Survival landscape — run the Atlas to fill it.'
-	);
+	const mapLabel = $derived.by(() => {
+		const field = landscape.field;
+		if (!field) return 'Survival landscape — run the Atlas to fill it.';
+		const grid = `${field.cols} by ${field.rows} grid of ${field.axisX.label} against ${field.axisY.label}`;
+		return `Survival landscape, ${grid}. Drag to pan, scroll to zoom, arrow keys to move the cursor, Enter to open a cell.`;
+	});
 </script>
 
 <!-- The wrapper carries the POINTER gestures (pan + hover + click-to-drill) as a role="group",
@@ -211,18 +221,12 @@
 	onpointercancel={endDrag}
 	{onpointerleave}
 >
-	<Canvas
-		{paint}
-		{register}
-		{onkeydown}
-		label={mapLabel}
-		cursor={grabbing ? 'grabbing' : 'grab'}
-	/>
+	<Canvas {paint} {register} {onkeydown} label={mapLabel} cursor={grabbing ? 'grabbing' : 'grab'} />
 
 	{#if focusValues && pointer && !grabbing}
 		<div class="tip" style:left="{pointer.px}px" style:top="{pointer.py}px" aria-hidden="true">
-			<span class="tip-line tabular">{landscape.axisX.label} {focusValues.x}</span>
-			<span class="tip-line tabular">{landscape.axisY.label} {focusValues.y}</span>
+			<span class="tip-line tabular">{focusValues.xLabel} {focusValues.x}</span>
+			<span class="tip-line tabular">{focusValues.yLabel} {focusValues.y}</span>
 			<span class="tip-val tabular"
 				>{Number.isFinite(focusValues.value) ? `${focusValues.value.toFixed(1)}s` : '—'}</span
 			>

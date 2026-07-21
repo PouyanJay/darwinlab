@@ -11,25 +11,32 @@
 
 	const cell = $derived(landscape.selected);
 	const value = $derived(landscape.selectedValue);
+	// The axes the FIELD was measured on — frozen with the data, so changing the picker before the
+	// next run cannot relabel this cell with an axis it was never measured against.
+	const field = $derived(landscape.field);
 </script>
 
-{#if cell}
+{#if cell && field}
 	<aside class="drill" data-testid="atlas-drill" aria-label="drilled point">
 		<div class="head">
 			<span class="eyebrow">Drilled point</span>
-			<button class="close" aria-label="close drilled point" onclick={() => landscape.clearSelection()}>
+			<button
+				class="close"
+				aria-label="close drilled point"
+				onclick={() => landscape.clearSelection()}
+			>
 				<Icon name="close" size={14} />
 			</button>
 		</div>
 
 		<dl class="stats">
 			<div>
-				<dt>{landscape.axisX.label}</dt>
-				<dd class="tabular">{landscape.axisX.format(cell.x)}</dd>
+				<dt>{field.axisX.label}</dt>
+				<dd class="tabular">{field.axisX.format(cell.x)}</dd>
 			</div>
 			<div>
-				<dt>{landscape.axisY.label}</dt>
-				<dd class="tabular">{landscape.axisY.format(cell.y)}</dd>
+				<dt>{field.axisY.label}</dt>
+				<dd class="tabular">{field.axisY.format(cell.y)}</dd>
 			</div>
 			<div>
 				<dt>Survival</dt>

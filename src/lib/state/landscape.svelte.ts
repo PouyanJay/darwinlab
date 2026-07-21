@@ -56,6 +56,9 @@ class LandscapeStore {
 	#field = $state.raw<LandscapeField | null>(null);
 	#selected = $state.raw<LandscapeCell | null>(null);
 
+	// Falls back to the first axis on an unknown key — deliberately defensive. The picker only ever
+	// passes a real `axis.key`, so this is unreachable today; it keeps a future renamed key from
+	// throwing rather than silently mislabelling, and the picker's own `selected` state stays honest.
 	#axis(key: string): LandscapeAxis {
 		return this.axes.find((axis) => axis.key === key) ?? this.axes[0];
 	}
@@ -136,8 +139,7 @@ class LandscapeStore {
 	/** Drill into a grid coordinate — opens the cell's world for a closer look. */
 	select(ix: number, iy: number): void {
 		if (!this.#plan) return;
-		this.#selected =
-			this.#plan.cells.find((cell) => cell.ix === ix && cell.iy === iy) ?? null;
+		this.#selected = this.#plan.cells.find((cell) => cell.ix === ix && cell.iy === iy) ?? null;
 	}
 
 	clearSelection(): void {
