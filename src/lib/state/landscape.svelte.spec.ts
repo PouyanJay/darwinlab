@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { landscape } from './landscape.svelte';
 import { bench } from './bench.svelte';
 import { app } from './app.svelte';
+import { newWorldConfig } from '../engine';
 import type { JobExecutor } from '../lab/runner';
 import type { EvalRequest, Evaluation } from '../lab/evaluator';
 
@@ -55,6 +56,7 @@ describe('the Atlas store', () => {
 		landscape.setSeeds(2);
 		landscape.clearSelection();
 		app.setMode('studio');
+		app.clearSubject();
 	});
 
 	it('runs the grid into a field of the canned means', async () => {
@@ -107,6 +109,14 @@ describe('the Atlas store', () => {
 		landscape.setX('vision'); // change the live picker AFTER the run (the pickers aren't disabled)
 		expect(landscape.axisX.key).toBe('vision'); // the picker moved…
 		expect(landscape.field?.axisX.key).toBe('predSpeed'); // …but the measured field's axis is frozen
+	});
+
+	it('runs on the analysis subject when Studio hands one over — its config reaches every cell', async () => {
+		// A world with a distinctive vision the default axes (predSpeed × mutation) never overwrite.
+		app.analyze({ ...newWorldConfig('Watched', '#123456'), vision: 999 });
+		await landscape.run(cannedField());
+		landscape.select(0, 0);
+		expect(landscape.selected?.cfg.vision).toBe(999); // the subject's own vision, not a generic default
 	});
 
 	it('a superseded run publishes nothing — the field is the newer run, not the hung one', async () => {

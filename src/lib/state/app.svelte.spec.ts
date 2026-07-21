@@ -1,5 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { app, MODE_STORAGE_KEY } from './app.svelte';
+import { bench } from './bench.svelte';
+import { newWorldConfig } from '../engine';
 
 /**
  * The mode store is a singleton; each test restores it to the studio default first, so a test that
@@ -10,6 +12,7 @@ describe('app mode', () => {
 	beforeEach(() => {
 		localStorage.removeItem(MODE_STORAGE_KEY);
 		app.setMode('studio');
+		app.clearSubject();
 	});
 
 	it('defaults to studio', () => {
@@ -49,5 +52,58 @@ describe('app mode', () => {
 		localStorage.removeItem(MODE_STORAGE_KEY);
 		app.init();
 		expect(app.mode).toBe('studio');
+	});
+});
+
+describe('the analysis subject (the Studio→Research round-trip)', () => {
+	beforeEach(() => {
+		app.setMode('studio');
+		app.clearSubject();
+	});
+
+	it('has no subject by default — Research explores a generic world', () => {
+		expect(app.subject).toBeNull();
+	});
+
+	it('analyze seeds the subject AND switches to Research in one move', () => {
+		expect(app.research).toBe(false); // the state we claim to change really starts here
+		const cfg = newWorldConfig('Corner-wise', '#e8604c');
+		app.analyze(cfg);
+		expect(app.subject).toBe(cfg);
+		expect(app.mode).toBe('research');
+	});
+
+	it('subjectBase returns the subject, relabelled for the instrument, when one is set', () => {
+		const cfg = { ...newWorldConfig('Corner-wise', '#e8604c'), vision: 999 };
+		app.analyze(cfg);
+		const base = app.subjectBase('Sweep', '#8b8b8b');
+		expect(base.vision).toBe(999); // the subject's own knobs carry through…
+		expect(base.name).toBe('Sweep'); // …but name/accent are the instrument's chrome
+		expect(base.accent).toBe('#8b8b8b');
+	});
+
+	it('subjectBase returns a fresh generic world when there is no subject', () => {
+		expect(app.subject).toBeNull(); // no subject to carry
+		const base = app.subjectBase('Sweep', '#8b8b8b');
+		expect(base.name).toBe('Sweep');
+		expect(base.senses).toEqual({ dist: true, dir: true, closing: true, walls: true }); // the default ocean
+	});
+
+	it('clearSubject drops the subject but leaves the mode where it is', () => {
+		app.analyze(newWorldConfig('Corner-wise', '#e8604c'));
+		expect(app.subject).not.toBeNull(); // it really was set before we clear it
+		app.clearSubject();
+		expect(app.subject).toBeNull();
+		expect(app.mode).toBe('research'); // clearing the subject is not leaving Research
+	});
+
+	it('bench.analyzeWorld hands a CLONE of the world over and switches to Research', () => {
+		bench.addWorld(newWorldConfig('Watched', '#123456'));
+		const added = bench.worlds[bench.worlds.length - 1];
+		bench.analyzeWorld(added.id);
+
+		expect(app.mode).toBe('research');
+		expect(app.subject).toEqual(added.world.cfg); // same config…
+		expect(app.subject).not.toBe(added.world.cfg); // …but a snapshot, so later edits don't mutate it
 	});
 });

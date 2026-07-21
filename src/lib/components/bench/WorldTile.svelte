@@ -200,6 +200,13 @@
 			<Icon name="sliders" size={13} />
 			<span>Conditions</span>
 		</Button>
+
+		<!-- The Studio→Research round-trip: take THIS world into Research as the subject every instrument
+		     then explores around. The mirror of the Atlas's "Watch this world" that comes back the other way. -->
+		<Button size="sm" onclick={() => bench.analyzeWorld(entry.id)}>
+			<Icon name="flask" size={13} />
+			<span>Analyse</span>
+		</Button>
 	</div>
 
 	<TileStats {entry} />

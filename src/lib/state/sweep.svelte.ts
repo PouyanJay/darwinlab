@@ -20,7 +20,8 @@ import {
 	type FactorEffect
 } from '../lab/sweep';
 import { research } from './research.svelte';
-import { newWorldConfig, seededRng } from '../engine';
+import { app } from './app.svelte';
+import { seededRng } from '../engine';
 import { SvelteSet } from 'svelte/reactivity';
 import type { Evaluation } from '../lab/evaluator';
 
@@ -125,7 +126,7 @@ class SweepStore {
 		const factors = this.#selectedFactors();
 		if (factors.length === 0) return;
 
-		const base = newWorldConfig('Sweep', '#8b8b8b');
+		const base = app.subjectBase('Sweep', '#8b8b8b');
 		const plan = planSweep(base, factors, { maxCells: SWEEP_DEFAULTS.maxCells, rng: seededRng(1) });
 		const jobs = sweepJobs(plan.cells, {
 			seeds: this.#seeds,

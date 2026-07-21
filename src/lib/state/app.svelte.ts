@@ -12,6 +12,7 @@
  */
 
 import { browser } from '$app/environment';
+import { newWorldConfig, type WorldConfig } from '../engine';
 
 export type AppMode = 'studio' | 'research';
 
@@ -24,6 +25,12 @@ function resolveMode(): AppMode {
 
 class AppStore {
 	#mode = $state<AppMode>('studio');
+
+	// The world Research is exploring around — set by "Analyse in Research" from a Studio world. Null
+	// means Research runs on a fresh, generic world. `$state.raw`: it is a whole config, only ever
+	// replaced, never mutated in place. Deliberately NOT persisted — a subject is a live hand-off from
+	// the world you were just watching, not a setting to restore into an empty next session.
+	#subject = $state.raw<WorldConfig | null>(null);
 
 	/** Adopt the persisted mode. Called once the browser is present (onMount). */
 	init(): void {
@@ -43,6 +50,37 @@ class AppStore {
 	setMode(mode: AppMode): void {
 		this.#mode = mode;
 		if (browser) localStorage.setItem(MODE_STORAGE_KEY, mode);
+	}
+
+	/** The world Research is currently analysing, or null when it explores a generic world. */
+	get subject(): WorldConfig | null {
+		return this.#subject;
+	}
+
+	/**
+	 * Carry a Studio world into Research: seed it as the subject and switch modes. This is the
+	 * Studio→Research half of the round-trip (the mirror of the Atlas's `watch`), the move that makes
+	 * "analyse the world I was just watching" one click instead of a manual reconstruction.
+	 */
+	analyze(cfg: WorldConfig): void {
+		this.#subject = cfg;
+		this.setMode('research');
+	}
+
+	/** Drop the subject — Research goes back to exploring a fresh, generic world. */
+	clearSubject(): void {
+		this.#subject = null;
+	}
+
+	/**
+	 * The base config a Research instrument builds its runs on: the analysed world (relabelled for the
+	 * instrument, since name/accent are chrome the science ignores) when one is set, otherwise a fresh
+	 * generic world. One source, so the Sweep, the Ledger and the Atlas all explore the SAME subject.
+	 */
+	subjectBase(label: string, accent: string): WorldConfig {
+		return this.#subject
+			? { ...this.#subject, name: label, accent }
+			: newWorldConfig(label, accent);
 	}
 }
 

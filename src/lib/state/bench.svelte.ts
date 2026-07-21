@@ -71,6 +71,7 @@ import {
 } from './views.svelte';
 import { story } from './story.svelte';
 import { evals } from './evals.svelte';
+import { app } from './app.svelte';
 
 export { WorldStats, WorldConfigView, MindView, EscapeMapView, type WorldEntry };
 
@@ -638,6 +639,17 @@ class BenchStore {
 		entry.lineage.x = this.worlds.length ? rightEdge + NODE_GAP_X : 0;
 		entry.lineage.y = 0;
 		this.#setWorlds([...this.worlds, entry]);
+	}
+
+	/**
+	 * Take this world into Research: hand its config to the app store as the analysis subject and
+	 * switch to Research. The Studio→Research half of the round-trip. A CLONE is handed over so the
+	 * subject is a frozen snapshot — later edits to the live world never mutate what Research measures.
+	 */
+	analyzeWorld(id: string): void {
+		const entry = this.find(id);
+		if (!entry) return;
+		app.analyze(structuredClone(entry.world.cfg));
 	}
 
 	/** Slide a node to a new canvas position (the drag handler's one job). View-only — no sim touched. */
