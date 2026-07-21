@@ -47,6 +47,26 @@ describe('evaluate — a result, not a lucky run', () => {
 		expect(result).toBeNull();
 	}, 20_000);
 
+	it('captures the learning curve only when asked, so the hot batch path pays nothing', async () => {
+		const without = await evaluate({ cfg: DEFAULT_WORLDS[2], ...tiny });
+		expect(without!.curve).toBeUndefined(); // a sweep/landscape run must not ship the curve
+
+		const withCurve = await evaluate({ cfg: DEFAULT_WORLDS[2], ...tiny, curve: true });
+		expect(withCurve!.curve).toBeDefined();
+		// One point per evolved generation — the per-gen survival fraction the UI plots.
+		expect(withCurve!.curve).toHaveLength(tiny.episodes);
+		for (const point of withCurve!.curve!) {
+			expect(point).toBeGreaterThanOrEqual(0);
+			expect(point).toBeLessThanOrEqual(1); // a smoothed survival FRACTION, not seconds
+		}
+	}, 60_000);
+
+	it('the captured curve is deterministic — the same run gives the same curve', async () => {
+		const a = await evaluate({ cfg: DEFAULT_WORLDS[2], ...tiny, curve: true });
+		const b = await evaluate({ cfg: DEFAULT_WORLDS[2], ...tiny, curve: true });
+		expect(a!.curve).toEqual(b!.curve);
+	}, 90_000);
+
 	it('carries the behavior signatures, so a card can say HOW the agents survived', async () => {
 		const result = await evaluate({ cfg: DEFAULT_WORLDS[2], ...tiny });
 

@@ -34,6 +34,13 @@ export interface Evaluation {
 	behavior: BehaviorStats;
 	/** Per-seed returns, so a card can plot the spread rather than assert it. */
 	returns: number[];
+	/**
+	 * The learning curve — mean per-generation survival fraction, averaged across the seeds — present
+	 * only when the request opted in (`curve: true`). It is a READ of `World.lifeCurve`, which the
+	 * engine already fills during evolution, taken after each seed is fully evolved: no extra evolving,
+	 * no touch of the RNG stream, so it cannot perturb anything the fidelity gate measures.
+	 */
+	curve?: number[];
 }
 
 export interface EvalRequest {
@@ -44,6 +51,12 @@ export interface EvalRequest {
 	episodes?: number;
 	/** Scoring bouts per replicate, each one generation long. */
 	bouts?: number;
+	/**
+	 * Capture the learning curve (`Evaluation.curve`). Off by default — a sweep or a landscape runs
+	 * hundreds of cells and does not need it (and would ship hundreds of arrays across the worker
+	 * boundary); the Ledger and behaviour runs, which answer "did it learn", turn it on.
+	 */
+	curve?: boolean;
 }
 
 /** The run size every batched experiment (the Sweep, the Ledger) sets on each of its requests. */
@@ -58,6 +71,21 @@ function stats(values: number[]): { mean: number; sd: number } {
 	const mean = values.reduce((a, b) => a + b, 0) / values.length;
 	const variance = values.reduce((a, v) => a + (v - mean) ** 2, 0) / values.length;
 	return { mean, sd: Math.sqrt(variance) };
+}
+
+/**
+ * Average the per-seed learning curves index-by-index into one curve. Truncates to the shortest
+ * (they are equal length in practice — every seed evolves the same number of generations — but a
+ * capped or cancelled curve must not read past its end).
+ */
+function averageCurves(curves: number[][]): number[] {
+	if (curves.length === 0) return [];
+	const length = Math.min(...curves.map((c) => c.length));
+	const out: number[] = [];
+	for (let i = 0; i < length; i++) {
+		out.push(curves.reduce((sum, c) => sum + c[i], 0) / curves.length);
+	}
+	return out;
 }
 
 /** Average the behavior signatures across replicates — each is already a mean over bouts. */
@@ -87,7 +115,7 @@ function meanBehavior(rows: BehaviorStats[]): BehaviorStats {
  * being measured.
  */
 export async function evaluate(
-	{ cfg, seeds = 5, episodes = 30, bouts = 6 }: EvalRequest,
+	{ cfg, seeds = 5, episodes = 30, bouts = 6, curve: captureCurve = false }: EvalRequest,
 	{
 		budgetMs = 12,
 		signal,
@@ -97,6 +125,8 @@ export async function evaluate(
 	const genDuration = cfg.genDuration ?? GEN_DURATION;
 	const returns: number[] = [];
 	const behaviors: BehaviorStats[] = [];
+	// Per-seed learning curves, captured read-only after each seed evolves (only when opted in).
+	const curves: number[][] = [];
 	// One yield point, reused: `await breathe()` hands the frame back so the tab keeps painting.
 	const breathe = () => new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -115,6 +145,10 @@ export async function evaluate(
 				sliceStart = performance.now();
 			}
 		}
+
+		// Capture this seed's learning curve — a pure read of state the engine already filled while it
+		// evolved. Done here, after the evolve loop, so it never sits on the RNG-driven hot path.
+		if (captureCurve) curves.push([...world.lifeCurve]);
 
 		// SCORE it frozen: the population is the result, so nothing may evolve while it is judged
 		const genomes: Genome[] = (world.roster.length ? world.roster : world.fish).map(
@@ -140,6 +174,7 @@ export async function evaluate(
 		meanReturn: mean,
 		sdReturn: sd,
 		behavior: meanBehavior(behaviors),
-		returns
+		returns,
+		...(captureCurve ? { curve: averageCurves(curves) } : {})
 	};
 }
