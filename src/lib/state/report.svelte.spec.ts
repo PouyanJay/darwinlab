@@ -104,7 +104,10 @@ describe('the Report', () => {
 			input({
 				source: 'sweep',
 				title: 'Direction +2.4s',
-				evidence: { kind: 'effects', effects: [{ label: 'Direction', delta: 2.4, lo: 1.2, hi: 3.1 }] }
+				evidence: {
+					kind: 'effects',
+					effects: [{ label: 'Direction', delta: 2.4, lo: 1.2, hi: 3.1 }]
+				}
 			})
 		);
 

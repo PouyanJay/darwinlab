@@ -10,7 +10,7 @@
  */
 
 import { CANDIDATE_AXES } from '../lab/landscape';
-import { SOURCE_LABEL, type QuestionId } from '../lab/questions';
+import { SOURCE_LABEL } from '../lab/questions';
 import { isFlatEffect, type Evidence } from '../lab/evidence';
 import { formatSeconds, formatSignedSeconds } from '../format';
 import type { ReportSection, ReportMethod } from '../state/report.svelte';
@@ -24,9 +24,6 @@ export interface ReportSnapshot {
 	sections: ReportSection[];
 	method: ReportMethod | null;
 }
-
-/** Q6 (negatives) and Q7 (method) get bespoke bodies; the rest render their evidence. Mirrors ReportView. */
-const SPECIAL: QuestionId[] = ['Q6', 'Q7'];
 
 /** Escape the one character that would break a Markdown table cell. Titles rarely contain it, but a
  *  finding's text is user-facing data, not a literal, so it is escaped rather than trusted. */
@@ -112,7 +109,10 @@ function methodMarkdown(method: ReportMethod | null): string {
 }
 
 /** One `## Q… · title` section — answered (with evidence) or an honest prompt. */
-function sectionMarkdown(section: ReportSnapshot['sections'][number], method: ReportMethod | null): string {
+function sectionMarkdown(
+	section: ReportSnapshot['sections'][number],
+	method: ReportMethod | null
+): string {
 	const { question, finding } = section;
 	const head = `## ${question.id} · ${question.title}`;
 

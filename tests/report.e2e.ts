@@ -70,7 +70,9 @@ test('the Report scans clean — the headings, the glance table and the graphs a
 	expect(await scanForViolations(page)).toEqual([]);
 });
 
-test('the workspace header tags each instrument with the questions it answers', async ({ page }) => {
+test('the workspace header tags each instrument with the questions it answers', async ({
+	page
+}) => {
 	await gotoApp(page);
 	await openResearch(page);
 

@@ -12,7 +12,8 @@
 <script lang="ts">
 	import { QUESTIONS, type QuestionId } from '$lib/lab/questions';
 
-	let { questions, decorative = false }: { questions: QuestionId[]; decorative?: boolean } = $props();
+	let { questions, decorative = false }: { questions: QuestionId[]; decorative?: boolean } =
+		$props();
 
 	/** The full question behind a tag — its title is the chip's tooltip, its short the spoken label. */
 	function question(id: QuestionId) {

@@ -49,7 +49,12 @@ const EFFECTS: Evidence = {
 /** A realistic brief: the Sweep (Q2/Q6), the Ledger (Q3) and the Atlas (Q4) answered; Q1/Q5 waiting on
  *  a trace; Q7 the method. The same shape the on-screen Report shows. */
 function studiedSnapshot(): ReportSnapshot {
-	const sweep = finding({ source: 'sweep', title: 'Direction +2.4s', detail: 'the strongest factor', evidence: EFFECTS });
+	const sweep = finding({
+		source: 'sweep',
+		title: 'Direction +2.4s',
+		detail: 'the strongest factor',
+		evidence: EFFECTS
+	});
 	const ledger = finding({
 		source: 'ledger',
 		title: 'Direction pays',
@@ -220,7 +225,12 @@ describe('reportToMarkdown', () => {
 			method: { configHash: 'a3f19c', seeds: 6 },
 			sections: QUESTIONS.map((q) =>
 				q.id === 'Q1'
-					? section('Q1', finding({ source: 'trace', title: 'It learned', evidence: curve }), 'It learned', 'a behaviour trace')
+					? section(
+							'Q1',
+							finding({ source: 'trace', title: 'It learned', evidence: curve }),
+							'It learned',
+							'a behaviour trace'
+						)
 					: section(q.id, null, null, 'a test')
 			)
 		};
