@@ -11,6 +11,9 @@
 import { makeWorld, stepWorld, seededRng, applyCfg, GEN_DURATION } from '../engine';
 import type { Genome, WorldConfig, Point } from '../engine';
 
+// Re-exported so a consumer of BoutTrace (the Trajectories chart) gets the point type from one import.
+export type { Point };
+
 const DT = 1 / 60;
 /** Sample a position every N steps — at 60fps, every 6 steps is ~10 samples a second. */
 const SAMPLE_EVERY = 6;
