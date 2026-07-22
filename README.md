@@ -99,7 +99,7 @@ instrument is tagged with the ones it settles:
   reads the **learning curve** (did it climb and converge?), then traces that evolved school against a
   **random-brain control** on the same bout — the mechanism (accurate fleeing, distance kept) reads as
   the gap between the two, in bars and in the paths each school actually swam.
-- **The Report** — the seventh instrument assembles the findings you keep into a **seven-question
+- **The Report** — the fifth instrument assembles the findings you keep into a **seven-question
   brief**: a headline, an answers-at-a-glance table, each question drawn from the evidence that settled
   it, and a method footer. Its honesty rail is the point — a question reads _answered_ **only** when a
   real finding backs it; the rest stay honest "run the test" prompts. Export it as **Markdown**, print

@@ -12,7 +12,12 @@
  * different graphs: the learning curve settles Q1, the evolved-vs-control mechanism settles Q5.
  */
 
-import { runTraceStudy, behaviorMetrics, type TraceStudy } from '../harness/traceStudy';
+import {
+	runTraceStudy,
+	behaviorMetrics,
+	traceSummary,
+	type TraceStudy
+} from '../harness/traceStudy';
 import { app } from './app.svelte';
 import { findings, type FindingInput } from './findings.svelte';
 import { configHash } from '../lab/run';
@@ -21,6 +26,10 @@ import { formatSurvivalPct } from '../format';
 /** Generations a trace evolves its population for — enough to climb and converge on this predator. */
 export const TRACE_EPISODES = 40;
 
+/** The two dedupe variants a trace contributes — one place, so `add` and `has` can never mistype them. */
+const CURVE = 'curve';
+const MECHANISM = 'mechanism';
+
 /**
  * A study's two report findings — the learning curve (Q1) and the evolved-vs-control mechanism (Q5).
  * TWO findings, not one: they answer different questions with different evidence, so each declares its
@@ -28,14 +37,12 @@ export const TRACE_EPISODES = 40;
  * `[Q1, Q5]` set. Pure, so the mapping is testable without a live evolve.
  */
 export function traceFindings(study: TraceStudy, hash: string): FindingInput[] {
-	const finalSurvival = study.curve.length ? study.curve[study.curve.length - 1] : 0;
-	const evolvedSurvivors = study.evolved.trace.fish.filter((f) => !f.died).length;
-	const total = study.evolved.trace.fish.length;
+	const { finalSurvival, evolvedSurvivors, total } = traceSummary(study);
 
 	return [
 		{
 			source: 'trace',
-			variant: 'curve',
+			variant: CURVE,
 			questions: ['Q1'],
 			title: `Learned to ${formatSurvivalPct(finalSurvival)} survival`,
 			detail: `climbed over ${study.episodes} generations of selection`,
@@ -46,7 +53,7 @@ export function traceFindings(study: TraceStudy, hash: string): FindingInput[] {
 		},
 		{
 			source: 'trace',
-			variant: 'mechanism',
+			variant: MECHANISM,
 			questions: ['Q5'],
 			title: `${evolvedSurvivors}/${total} survive where random brains don't`,
 			detail: 'evolved fish flee accurately and keep their distance from the predator',
@@ -110,7 +117,7 @@ class TraceStore {
 
 	/** Whether this subject already has the trace's findings in the notebook (both are added together). */
 	get inReport(): boolean {
-		return findings.has('trace', 'curve') && findings.has('trace', 'mechanism');
+		return findings.has('trace', CURVE) && findings.has('trace', MECHANISM);
 	}
 
 	/** Add the study's two findings — the learning curve (Q1) and the mechanism (Q5) — to the report. */

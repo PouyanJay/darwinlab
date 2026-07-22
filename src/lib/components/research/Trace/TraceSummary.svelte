@@ -5,31 +5,25 @@
 -->
 <script lang="ts">
 	import { trace } from '$lib/state';
+	import { traceSummary } from '$lib/harness/traceStudy';
 	import { formatSurvivalPct } from '$lib/format';
 	import SummaryPanel from '../SummaryPanel.svelte';
 	import ReportButton from '../ReportButton.svelte';
 
 	const result = $derived(trace.result);
-	const finalSurvival = $derived(
-		result && result.curve.length ? result.curve[result.curve.length - 1] : 0
-	);
-	const evolvedSurvivors = $derived(
-		result ? result.evolved.trace.fish.filter((f) => !f.died).length : 0
-	);
-	const controlSurvivors = $derived(
-		result ? result.control.trace.fish.filter((f) => !f.died).length : 0
-	);
-	const total = $derived(result ? result.evolved.trace.fish.length : 0);
+	// One reader for the study's headline numbers, shared with the notebook finding (traceFindings), so
+	// the sidebar and the report can never disagree about the same study.
+	const summary = $derived(result ? traceSummary(result) : null);
 </script>
 
-{#if result}
+{#if result && summary}
 	<SummaryPanel
 		eyebrow="This trace"
-		title={`Learned to ${formatSurvivalPct(finalSurvival)}`}
+		title={`Learned to ${formatSurvivalPct(summary.finalSurvival)}`}
 		detail={`over ${result.episodes} generations`}
 		stats={[
-			{ label: 'Evolved survive', value: `${evolvedSurvivors} / ${total}` },
-			{ label: 'Random survive', value: `${controlSurvivors} / ${total}` }
+			{ label: 'Evolved survive', value: `${summary.evolvedSurvivors} / ${summary.total}` },
+			{ label: 'Random survive', value: `${summary.controlSurvivors} / ${summary.total}` }
 		]}
 	>
 		<ReportButton inReport={trace.inReport} onadd={() => trace.addToReport()} />

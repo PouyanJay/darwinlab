@@ -14,13 +14,12 @@
  * deliberate, time-sliced action (like `evaluate`), never on the batch path.
  */
 
-import { makeWorld, stepWorld, seededRng, GEN_DURATION } from '../engine';
+import { GEN_DURATION } from '../engine';
 import type { WorldConfig, Genome } from '../engine';
 import { measureBout, type BehaviorStats } from './behavior';
 import { traceBout, type BoutTrace } from './trace';
+import { evolveInSlices, type EvolveOptions } from './evolve';
 import type { BehaviorMetric } from '../lab/evidence';
-
-const DT = 1 / 60;
 
 /** One population traced and scored on the frozen bout — the paths and the behaviour signature. */
 export interface TraceArm {
@@ -86,54 +85,66 @@ export function behaviorMetrics(evolved: BehaviorStats, control: BehaviorStats):
 }
 
 /**
- * Run one trace study in time-boxed slices, like `evaluate`. `onProgress` is 0–1 (the evolve loop is the
- * bulk of the work); `signal` cancels between slices, so a study the user walked away from stops.
+ * Trace and score one population on the frozen bout — the paths and the behaviour signature. Both arms
+ * of a study call this with the SAME study seed, so they run the identical bout (same predator, same
+ * spawn) and only the brains differ; that shared bout is what makes the evolved-vs-control gap honest.
+ */
+function traceArm(
+	cfg: WorldConfig,
+	genomes: Genome[] | undefined,
+	seed: number,
+	seconds: number
+): TraceArm {
+	return {
+		trace: traceBout({ cfg, genomes, seed: 7000 + seed, seconds }),
+		behavior: measureBout(cfg, genomes, 9000 + seed, seconds)
+	};
+}
+
+/**
+ * The headline numbers a study reports — read ONCE here, so the notebook finding and the sidebar
+ * summary can never disagree about the same study.
+ */
+export function traceSummary(study: TraceStudy): {
+	finalSurvival: number;
+	evolvedSurvivors: number;
+	controlSurvivors: number;
+	total: number;
+} {
+	return {
+		finalSurvival: study.curve.at(-1) ?? 0,
+		evolvedSurvivors: study.evolved.trace.fish.filter((f) => !f.died).length,
+		controlSurvivors: study.control.trace.fish.filter((f) => !f.died).length,
+		total: study.evolved.trace.fish.length
+	};
+}
+
+/**
+ * Run one trace study. Evolve one population in time-boxed slices keeping its genomes (the evaluator
+ * discards them), then trace it against a random-brain control. `onProgress` is 0–1 (the evolve loop is
+ * the bulk of the work); `signal` cancels between slices, so a study the user walked away from stops.
  */
 export async function runTraceStudy(
 	{ cfg, episodes = 40, seed = 1 }: TraceStudyRequest,
-	{
-		budgetMs = 12,
-		signal,
-		onProgress
-	}: { budgetMs?: number; signal?: AbortSignal; onProgress?: (fraction: number) => void } = {}
+	{ budgetMs = 12, signal, onProgress }: EvolveOptions = {}
 ): Promise<TraceStudy | null> {
-	const genDuration = cfg.genDuration ?? GEN_DURATION;
-	const breathe = () => new Promise((resolve) => setTimeout(resolve, 0));
+	const seconds = cfg.genDuration ?? GEN_DURATION;
 
-	// EVOLVE one population — its own world and seed, nothing shared with the bench.
-	const world = makeWorld(structuredClone(cfg), undefined, seededRng(1000 + seed));
-	let sliceStart = performance.now();
-	while (world.gen < episodes) {
-		stepWorld(world, DT);
-		if (performance.now() - sliceStart >= budgetMs) {
-			if (signal?.aborted) return null;
-			onProgress?.((world.gen / episodes) * 0.85); // the evolve loop is ~85% of the work
-			await breathe();
-			sliceStart = performance.now();
-		}
-	}
-	if (signal?.aborted) return null;
+	// Evolve, keeping the population — the evolve loop is ~85% of the work.
+	const world = await evolveInSlices(cfg, 1000 + seed, episodes, {
+		budgetMs,
+		signal,
+		onProgress: (fraction) => onProgress?.(fraction * 0.85)
+	});
+	if (!world) return null;
 
-	// Read the curve (pure, off the hot path) and KEEP the genomes the evaluator would have thrown away.
-	const curve = [...world.lifeCurve];
+	const curve = [...world.lifeCurve]; // pure read, off the hot path
 	const genomes: Genome[] = (world.roster.length ? world.roster : world.fish).map((f) => f.genome);
 
-	// TRACE + SCORE the evolved population and a random-brain control on the SAME bout seed, so the two
-	// small-multiples are directly comparable (same predator, same spawn — only the brains differ).
-	const traceSeed = 7000 + seed;
-	const behSeed = 9000 + seed;
-	const evolved: TraceArm = {
-		trace: traceBout({ cfg, genomes, seed: traceSeed, seconds: genDuration }),
-		behavior: measureBout(cfg, genomes, behSeed, genDuration)
-	};
+	const evolved = traceArm(cfg, genomes, seed, seconds);
 	onProgress?.(0.93);
-	await breathe();
 	if (signal?.aborted) return null;
-
-	const control: TraceArm = {
-		trace: traceBout({ cfg, genomes: undefined, seed: traceSeed, seconds: genDuration }),
-		behavior: measureBout(cfg, undefined, behSeed, genDuration)
-	};
+	const control = traceArm(cfg, undefined, seed, seconds);
 	onProgress?.(1);
 
 	return { episodes, curve, evolved, control };

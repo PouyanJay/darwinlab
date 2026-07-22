@@ -14,11 +14,10 @@
  * them away — the population you are watching keeps evolving, unobserved by the measurement.
  */
 
-import { makeWorld, stepWorld, seededRng, GEN_DURATION } from '../engine';
+import { GEN_DURATION } from '../engine';
 import type { WorldConfig, Genome } from '../engine';
 import { measureBout, type BehaviorStats } from '../harness/behavior';
-
-const DT = 1 / 60;
+import { evolveInSlices } from '../harness/evolve';
 
 /** One environment's evaluation: the numbers, and the honesty about how they were got. */
 export interface Evaluation {
@@ -133,18 +132,14 @@ export async function evaluate(
 	for (let s = 0; s < seeds; s++) {
 		if (signal?.aborted) return null;
 
-		// EVOLVE this replicate — its own world, its own seed, nothing shared with the bench
-		const world = makeWorld(structuredClone(cfg), undefined, seededRng(1000 + s));
-		let sliceStart = performance.now();
-		while (world.gen < episodes) {
-			stepWorld(world, DT);
-			if (performance.now() - sliceStart >= budgetMs) {
-				if (signal?.aborted) return null;
-				onProgress?.((s + world.gen / episodes) / seeds);
-				await breathe();
-				sliceStart = performance.now();
-			}
-		}
+		// EVOLVE this replicate in slices — its own seed, nothing shared with the bench. onProgress is
+		// remapped from this one evolution's 0–1 to its span of the whole run.
+		const world = await evolveInSlices(cfg, 1000 + s, episodes, {
+			budgetMs,
+			signal,
+			onProgress: (fraction) => onProgress?.((s + fraction) / seeds)
+		});
+		if (!world) return null;
 
 		// Capture this seed's learning curve — a pure read of state the engine already filled while it
 		// evolved. Done here, after the evolve loop, so it never sits on the RNG-driven hot path.
