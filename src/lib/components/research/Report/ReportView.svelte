@@ -98,7 +98,7 @@
 	.headline {
 		margin: 0;
 		font-family: var(--font-display);
-		font-size: var(--fs-report-headline, 26px);
+		font-size: var(--fs-report-headline);
 		font-weight: var(--fw-semibold);
 		letter-spacing: var(--tracking-tight);
 		line-height: 1.12;

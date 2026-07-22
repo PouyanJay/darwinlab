@@ -36,6 +36,7 @@
 	--fs-name: 15.5px; /* editable world name (display face) */
 	--fs-title: 16.5px; /* drawer + modal titles (display face) */
 	--fs-wordmark: 17.5px;
+	--fs-report-headline: 26px; /* the Report headline + the Ledger verdict-card headline */
 
 	--tracking-tight: -0.01em; /* display face at wordmark size */
 	--tracking-wide: 0.05em; /* uppercase stat captions */

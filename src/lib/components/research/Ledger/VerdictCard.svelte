@@ -18,12 +18,15 @@
 </script>
 
 <div class="verdict">
-	<span class="eyebrow">Verdict</span>
+	<div class="vhead">
+		<span class="eyebrow">Verdict</span>
+		{#if entry}<span class="badge verdict-{entry.verdict}">{entry.verdict.toUpperCase()}</span>{/if}
+	</div>
 	<!-- h2: the next heading level under the page's h1 (the wordmark), so the outline has no gap. -->
 	<h2>{claim.text}</h2>
 
 	{#if entry}
-		<div data-testid="verdict-plot">
+		<div class="plot" data-testid="verdict-plot">
 			<IntervalPlot arms={armRows} />
 		</div>
 
@@ -32,7 +35,6 @@
 		</div>
 
 		<div class="chips">
-			<span class="chip verdict-{entry.verdict}">{entry.verdict.toUpperCase()}</span>
 			<span class="chip">Δ {fmt(entry.delta)}s</span>
 			<span class="chip">95% [{fmt(entry.ci.lo)}, {fmt(entry.ci.hi)}]</span>
 			{#if !Number.isNaN(entry.d)}<span class="chip">d {entry.d.toFixed(1)}</span>{/if}
@@ -56,6 +58,8 @@
 </div>
 
 <style>
+	/* The centrepiece: full width below the claims, roomier than a summary card so the interval plot has
+	   the width to actually separate the two arms. */
 	.verdict {
 		display: flex;
 		flex-direction: column;
@@ -63,7 +67,13 @@
 		border: 1px solid var(--line);
 		border-radius: var(--radius-card);
 		background: var(--panel);
-		padding: var(--sp-5);
+		padding: var(--sp-6);
+	}
+
+	.vhead {
+		display: flex;
+		align-items: center;
+		gap: var(--sp-3);
 	}
 
 	.eyebrow {
@@ -74,14 +84,41 @@
 		color: var(--ink3);
 	}
 
+	/* The verdict word leads, prominent — supported wears the survival teal, refuted the danger hue. The
+	   tints are a touch stronger than the old inline chip's (20%/45% vs 18%/40%) so they read at the
+	   badge's larger size. */
+	.badge {
+		font-size: var(--fs-eyebrow);
+		font-weight: var(--fw-semibold);
+		letter-spacing: var(--tracking-wide);
+		border-radius: var(--radius-chip);
+		padding: 3px 10px;
+	}
+
+	.badge.verdict-supported {
+		color: var(--ink);
+		background: color-mix(in oklab, var(--data-teal) 20%, transparent);
+		border: 1px solid var(--data-teal);
+	}
+
+	.badge.verdict-refuted {
+		color: var(--danger-ink);
+		border: 1px solid color-mix(in oklab, var(--danger) 45%, transparent);
+	}
+
 	h2 {
 		font-family: var(--font-display);
-		font-size: var(--fs-title);
+		font-size: var(--fs-report-headline);
 		font-weight: var(--fw-semibold);
-		letter-spacing: -0.01em;
-		margin: -2px 0 0;
-		line-height: 1.25;
+		letter-spacing: var(--tracking-tight);
+		margin: 0;
+		line-height: 1.15;
 		color: var(--ink);
+		text-wrap: balance;
+	}
+
+	.plot {
+		margin: var(--sp-2) 0;
 	}
 
 	.design {
@@ -110,20 +147,6 @@
 		border-radius: var(--radius-chip);
 		padding: 3px 9px;
 		color: var(--ink2);
-	}
-
-	/* The verdict word carries the weight: supported wears the survival teal, refuted the danger hue. */
-	.chip.verdict-supported {
-		color: var(--ink);
-		background: color-mix(in oklab, var(--data-teal) 18%, transparent);
-		border-color: var(--data-teal);
-		font-weight: var(--fw-semibold);
-	}
-
-	.chip.verdict-refuted {
-		color: var(--danger-ink);
-		border-color: color-mix(in oklab, var(--danger) 40%, transparent);
-		font-weight: var(--fw-semibold);
 	}
 
 	.untested {
