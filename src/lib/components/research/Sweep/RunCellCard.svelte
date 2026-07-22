@@ -1,32 +1,48 @@
 <!--
-  A drilled cell of the run grid, opened below it: one CONDITION's world (the whole column shares it),
-  and the SEED you clicked within that condition's spread. It shows a peek at the arena, the factor
-  levels that define the condition, how this one run did against the condition's mean, and the
-  round-trip into Studio. A cell is a run; the world is the condition — so "Watch this world" opens the
-  condition, and the spread strip shows where this run sits among its siblings.
+  A drilled cell of the run grid, opened as a full-width card below both result cards. A cell is a RUN
+  (condition × seed), but the world is the CONDITION — so the card answers two scientific questions about
+  that condition, from data the sweep already measured (no re-run):
+
+    · HOW do the fish here survive? — the behavioural signature (flee accuracy, dodging, distance kept,
+      bolting, cornering), the mechanism behind the number. This is the product's whole thesis, per cell.
+    · Is this world any GOOD? — where its survival ranks among every condition the sweep measured, plus
+      how tightly its own seeds agree.
+
+  "Watch this world" opens the real, evolving tank in Studio — the card is the evidence, Studio is the
+  live thing. Nothing here is invented; every value is read from the condition's evaluation.
 -->
 <script lang="ts">
 	import Button from '../../common/Button.svelte';
 	import Icon from '../../common/Icon.svelte';
-	import Canvas from '../../common/Canvas.svelte';
-	import { sweep, theme } from '$lib/state';
-	import { previewWorld, heatColor } from '$lib/render';
+	import { sweep } from '$lib/state';
+	import { heatColor } from '$lib/render';
 	import { formatSeconds } from '$lib/format';
 	import type { SweepCell } from '$lib/lab/sweep';
 	import type { Evaluation } from '$lib/lab/evaluator';
+	import type { BehaviorStats } from '$lib/harness/behavior';
 
 	let {
 		cell,
+		conditionIndex,
 		seed,
 		evaluation,
+		allResults,
 		onclose
 	}: {
 		cell: SweepCell;
+		/** This condition's position in `allResults` — the identity for the "you are here" rank dot. */
+		conditionIndex: number;
 		/** 0-indexed seed row the cell sits on. */
 		seed: number;
 		evaluation: Evaluation | null;
+		/** Every condition's result, so this one can be placed among them (the rank + distribution). */
+		allResults: (Evaluation | null)[];
 		onclose: () => void;
 	} = $props();
+
+	const pct = (v: number) => `${Math.round(v * 100)}%`;
+	const deg = (v: number) => `${Math.round(v)}°`;
+	const px = (v: number) => `${Math.round(v)}px`;
 
 	/** This run's survival — the one seed clicked. */
 	const value = $derived(evaluation?.returns[seed]);
@@ -39,18 +55,90 @@
 		}))
 	);
 
-	// The condition's own spread, for placing this run among its siblings on a min→max scale.
-	const returns = $derived(evaluation?.returns ?? []);
-	const lo = $derived(returns.length ? Math.min(...returns) : 0);
-	const hi = $derived(returns.length ? Math.max(...returns) : 1);
-	const at = (v: number) => (hi > lo ? ((v - lo) / (hi - lo)) * 100 : 50);
+	/** The behavioural signature's rows — static config (label + meaning + how to read the field); only
+	 *  the value is reactive, so the rows live here and the derived below is just the formatting. Each
+	 *  `note` restates the field's own measured meaning (see harness/behavior.ts). */
+	const SIGNATURE_ROWS: { label: string; note: string; format: (b: BehaviorStats) => string }[] = [
+		{
+			label: 'Flee heading',
+			format: (b) => `${deg(b.fleeAngleErrorDeg)} off`,
+			note: '90° is aimless drift — lower is a true escape heading'
+		},
+		{
+			label: 'Dodge rate',
+			format: (b) => pct(b.dodgeRate),
+			note: 'share of the shark’s lunges that end in a whiff'
+		},
+		{
+			label: 'Distance kept',
+			format: (b) => px(b.meanPredDistance),
+			note: 'mean gap held to the nearest shark'
+		},
+		{
+			label: 'Bolt response',
+			format: (b) => `${b.boltRatio.toFixed(1)}×`,
+			note: 'speed near the shark vs. when it is unseen — over 1× bolts'
+		},
+		{
+			label: 'Cornering',
+			format: (b) => pct(b.cornerTimeShare),
+			note: 'time boxed against two walls — lower is safer'
+		}
+	];
 
-	// A peek at the arena for this condition — a preview of the place, not the evolved result; "Watch
-	// this world" opens the real, evolving tank in Studio. Painted once per drill (the block is keyed).
-	function paintMini(ctx: CanvasRenderingContext2D, w: number, h: number): void {
-		previewWorld(cell.cfg, ctx, w, h, theme.name);
-	}
+	/** How the fish in THIS condition survive — the measured mechanism, averaged over its seeds. */
+	const signature = $derived.by(() => {
+		const b = evaluation?.behavior;
+		return b
+			? SIGNATURE_ROWS.map((r) => ({ label: r.label, value: r.format(b), note: r.note }))
+			: [];
+	});
+
+	// This condition's seeds, for the "does it reproduce" spread.
+	const returns = $derived(evaluation?.returns ?? []);
+	const seedLo = $derived(returns.length ? Math.min(...returns) : 0);
+	const seedHi = $derived(returns.length ? Math.max(...returns) : 1);
+	const seedEntries = $derived(returns.map((value, index) => ({ index, value })));
+
+	// Every measured condition's mean survival, KEEPING its position so "you are here" is an identity
+	// (index) check, not a fragile float-equality on the means (which ties would double-ring).
+	const condEntries = $derived(
+		allResults
+			.map((r, index) => ({ index, value: r?.meanReturn }))
+			.filter((e): e is { index: number; value: number } => Number.isFinite(e.value))
+	);
+	const thisMean = $derived(evaluation?.meanReturn ?? NaN);
+	const condLo = $derived(condEntries.length ? Math.min(...condEntries.map((e) => e.value)) : 0);
+	const condHi = $derived(condEntries.length ? Math.max(...condEntries.map((e) => e.value)) : 1);
+	/** 1 = the best-surviving condition. Ties share the higher rank (standard competition ranking). */
+	const rank = $derived(condEntries.filter((e) => e.value > thisMean).length + 1);
+
+	/** Position a value along a [lo, hi] track as a percentage; centres a degenerate range. */
+	const along = (v: number, lo: number, hi: number) =>
+		hi > lo ? ((v - lo) / (hi - lo)) * 100 : 50;
+	const shade = (v: number, lo: number, hi: number) =>
+		heatColor(hi > lo ? (v - lo) / (hi - lo) : 0.5);
 </script>
+
+<!-- One dot-strip: a dot per entry positioned on [lo, hi] and coloured on the survival ramp, with the
+     "you are here" entry ringed. Shared by the rank strip and the seed strip. -->
+{#snippet dotTrack(
+	entries: { index: number; value: number }[],
+	lo: number,
+	hi: number,
+	isMe: (index: number) => boolean
+)}
+	<div class="track" aria-hidden="true">
+		{#each entries as entry (entry.index)}
+			<span
+				class="dot"
+				class:me={isMe(entry.index)}
+				style:left="{along(entry.value, lo, hi)}%"
+				style:background={shade(entry.value, lo, hi)}
+			></span>
+		{/each}
+	</div>
+{/snippet}
 
 <div class="cellcard" data-testid="sweep-cell">
 	<div class="head">
@@ -60,23 +148,38 @@
 		</button>
 	</div>
 
-	<div class="body">
-		<div class="mini">
-			{#key `${cell.index}-${theme.name}`}
-				<Canvas paint={paintMini} label="preview of the drilled condition's world" />
-			{/key}
+	{#if levels.length}
+		<div class="levels">
+			{#each levels as lv (lv.factor)}
+				<span class="lchip">{lv.factor} <b>{lv.level}</b></span>
+			{/each}
 		</div>
+	{:else}
+		<p class="levels-none">The base world — no factor varied in this cell.</p>
+	{/if}
 
-		<div class="info">
-			{#if levels.length}
-				<div class="levels">
-					{#each levels as lv (lv.factor)}
-						<span class="lchip">{lv.factor} <b>{lv.level}</b></span>
+	<div class="panels">
+		<!-- HOW they survive: the behavioural signature (the mechanism). -->
+		<section class="panel">
+			<span class="ptitle">How they survive · behavioural signature</span>
+			{#if signature.length}
+				<ul class="sig">
+					{#each signature as row (row.label)}
+						<li>
+							<span class="sig-label">{row.label}</span>
+							<span class="sig-val tabular">{row.value}</span>
+							<span class="sig-note">{row.note}</span>
+						</li>
 					{/each}
-				</div>
+				</ul>
 			{:else}
-				<p class="levels-none">The base world — no factor varied in this cell.</p>
+				<p class="empty">This condition was not measured, so it has no behavioural signature.</p>
 			{/if}
+		</section>
+
+		<!-- Is this world any good: rank among all conditions, and its own seed spread. -->
+		<section class="panel">
+			<span class="ptitle">Survival, in context</span>
 
 			<dl class="stats">
 				<div>
@@ -96,31 +199,38 @@
 				</div>
 			</dl>
 
-			{#if returns.length > 1}
-				<div class="spread">
-					<span class="spread-label">this run in the condition's spread</span>
-					<div class="track" aria-hidden="true">
-						{#each returns as r, i (i)}
-							<span
-								class="dot"
-								class:me={i === seed}
-								style:left="{at(r)}%"
-								style:background={heatColor(hi > lo ? (r - lo) / (hi - lo) : 0.5)}
-							></span>
-						{/each}
-					</div>
+			{#if condEntries.length > 1 && Number.isFinite(thisMean)}
+				<div class="strip">
+					<span class="strip-label">
+						ranks <b>{rank} of {condEntries.length}</b> conditions for survival
+					</span>
+					{@render dotTrack(condEntries, condLo, condHi, (i) => i === conditionIndex)}
 					<div class="ends tabular" aria-hidden="true">
-						<span>{formatSeconds(lo)}</span>
-						<span>{formatSeconds(hi)}</span>
+						<span>{formatSeconds(condLo)}</span>
+						<span>worst → best condition</span>
+						<span>{formatSeconds(condHi)}</span>
 					</div>
 				</div>
 			{/if}
 
-			<Button variant="primary" size="sm" onclick={() => sweep.watch(cell)}>
-				<Icon name="forward" size={13} />
-				<span>Watch this world</span>
-			</Button>
-		</div>
+			{#if returns.length > 1}
+				<div class="strip">
+					<span class="strip-label">this run among the condition’s {returns.length} seeds</span>
+					{@render dotTrack(seedEntries, seedLo, seedHi, (i) => i === seed)}
+					<div class="ends tabular" aria-hidden="true">
+						<span>{formatSeconds(seedLo)}</span>
+						<span>{formatSeconds(seedHi)}</span>
+					</div>
+				</div>
+			{/if}
+		</section>
+	</div>
+
+	<div class="foot">
+		<Button variant="primary" size="sm" onclick={() => sweep.watch(cell)}>
+			<Icon name="forward" size={13} />
+			<span>Watch this world evolve</span>
+		</Button>
 	</div>
 </div>
 
@@ -128,11 +238,11 @@
 	.cellcard {
 		display: flex;
 		flex-direction: column;
-		gap: var(--sp-3);
-		padding: var(--sp-4);
+		gap: var(--sp-4);
+		padding: var(--sp-5);
 		border: 1px solid var(--line);
 		border-radius: var(--radius-card);
-		background: var(--panel2);
+		background: var(--panel);
 	}
 
 	.head {
@@ -141,7 +251,8 @@
 		justify-content: space-between;
 	}
 
-	.eyebrow {
+	.eyebrow,
+	.ptitle {
 		font-size: var(--fs-eyebrow);
 		font-weight: var(--fw-semibold);
 		letter-spacing: var(--tracking-wide);
@@ -168,29 +279,6 @@
 		outline-offset: var(--focus-offset);
 	}
 
-	.body {
-		display: grid;
-		grid-template-columns: minmax(0, 200px) minmax(0, 1fr);
-		gap: var(--sp-4);
-		align-items: start;
-	}
-
-	.mini {
-		aspect-ratio: 8 / 5;
-		width: 100%;
-		border-radius: var(--radius-sm);
-		overflow: hidden;
-		background: var(--canvas-bg);
-		border: 1px solid var(--line);
-	}
-
-	.info {
-		display: flex;
-		flex-direction: column;
-		gap: var(--sp-3);
-		min-width: 0;
-	}
-
 	.levels {
 		display: flex;
 		flex-wrap: wrap;
@@ -213,6 +301,65 @@
 	.levels-none {
 		margin: 0;
 		font-size: var(--fs-sm);
+		color: var(--ink3);
+	}
+
+	/* Two science panels side by side; they stack when the card is narrow (container query on .sweep). */
+	.panels {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+		gap: var(--sp-5) var(--sp-7);
+	}
+
+	@container (max-width: 620px) {
+		.panels {
+			grid-template-columns: 1fr;
+		}
+	}
+
+	.panel {
+		display: flex;
+		flex-direction: column;
+		gap: var(--sp-4);
+		min-width: 0;
+	}
+
+	.sig {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+		gap: var(--sp-3);
+	}
+
+	.sig li {
+		display: grid;
+		grid-template-columns: minmax(0, 108px) 64px;
+		grid-template-areas: 'label val' 'note note';
+		align-items: baseline;
+		gap: 1px var(--sp-3);
+	}
+
+	.sig-label {
+		grid-area: label;
+		font-size: var(--fs-sm);
+		color: var(--ink);
+	}
+
+	.sig-val {
+		grid-area: val;
+		text-align: right;
+		font-size: var(--fs-sm);
+		font-weight: var(--fw-semibold);
+		color: var(--ink);
+		font-variant-numeric: tabular-nums;
+	}
+
+	.sig-note {
+		grid-area: note;
+		font-size: var(--fs-eyebrow);
+		line-height: var(--leading-body);
 		color: var(--ink3);
 	}
 
@@ -250,22 +397,27 @@
 		color: var(--ink3);
 	}
 
-	.spread {
+	.strip {
 		display: flex;
 		flex-direction: column;
-		gap: 4px;
+		gap: 5px;
 	}
 
-	.spread-label {
+	.strip-label {
 		font-size: var(--fs-eyebrow);
 		color: var(--ink3);
+	}
+
+	.strip-label b {
+		color: var(--ink);
+		font-weight: var(--fw-semibold);
 	}
 
 	.track {
 		position: relative;
 		height: 12px;
 		border-radius: var(--radius-pill);
-		background: var(--panel);
+		background: var(--panel2);
 		border: 1px solid var(--line);
 	}
 
@@ -278,7 +430,7 @@
 		transform: translate(-50%, -50%);
 	}
 
-	/* This run is ringed in ink — a lightness cue that says "you are here", the colour still the data. */
+	/* This run / this condition is ringed in ink — a "you are here" lightness cue, the colour still data. */
 	.dot.me {
 		width: 9px;
 		height: 9px;
@@ -290,14 +442,20 @@
 	.ends {
 		display: flex;
 		justify-content: space-between;
+		gap: var(--sp-3);
 		font-size: var(--fs-eyebrow);
 		color: var(--ink3);
 		font-variant-numeric: tabular-nums;
 	}
 
-	@container (max-width: 460px) {
-		.body {
-			grid-template-columns: 1fr;
-		}
+	.empty {
+		margin: 0;
+		font-size: var(--fs-sm);
+		color: var(--ink3);
+	}
+
+	.foot {
+		display: flex;
+		justify-content: flex-end;
 	}
 </style>

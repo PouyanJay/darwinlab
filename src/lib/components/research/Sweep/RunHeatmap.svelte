@@ -14,7 +14,6 @@
 <script lang="ts">
 	import Canvas from '../../common/Canvas.svelte';
 	import ChartTooltip from '../../common/ChartTooltip.svelte';
-	import RunCellCard from './RunCellCard.svelte';
 	import { ARROW_STEP } from '../gridCursor';
 	import { sweep, theme } from '$lib/state';
 	import { heatColor, THEMES } from '$lib/render';
@@ -196,17 +195,8 @@
 			<span>{lo.toFixed(1)}s</span>
 			<span class="ramp"></span>
 			<span>{hi.toFixed(1)}s</span>
-			<span class="scale-note">shortest → longest survived</span>
+			<span class="scale-note">shortest → longest survived · click a cell to drill in</span>
 		</div>
-
-		{#if sweep.selected && cells[sweep.selected.condition]}
-			<RunCellCard
-				cell={cells[sweep.selected.condition]}
-				seed={sweep.selected.seed}
-				evaluation={results[sweep.selected.condition] ?? null}
-				onclose={() => sweep.clearSelection()}
-			/>
-		{/if}
 	</div>
 {/if}
 

@@ -10,10 +10,17 @@
 	import FactorBar from './FactorBar.svelte';
 	import EffectBars from '../viz/EffectBars.svelte';
 	import RunHeatmap from './RunHeatmap.svelte';
+	import RunCellCard from './RunCellCard.svelte';
 	import { sweep } from '$lib/state';
 	import { toEffectRows } from '$lib/lab/sweep';
 
 	const effectRows = $derived(toEffectRows(sweep.effects));
+
+	// The drilled cell, resolved against the current grid — a full-width detail card renders below both
+	// result cards. Selection is store-owned, so a new run clears it.
+	const drilled = $derived(
+		sweep.selected && sweep.cells[sweep.selected.condition] ? sweep.selected : null
+	);
 </script>
 
 <div class="sweep" data-testid="sweep">
@@ -48,6 +55,17 @@
 				<RunHeatmap cells={sweep.cells} results={sweep.results} />
 			</section>
 		</div>
+
+		{#if drilled}
+			<RunCellCard
+				cell={sweep.cells[drilled.condition]}
+				conditionIndex={drilled.condition}
+				seed={drilled.seed}
+				evaluation={sweep.results[drilled.condition] ?? null}
+				allResults={sweep.results}
+				onclose={() => sweep.clearSelection()}
+			/>
+		{/if}
 	{:else}
 		<section class="card empty">
 			<p class="hint">

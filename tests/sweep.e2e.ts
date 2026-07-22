@@ -90,8 +90,10 @@ test('drilling a cell opens its world below the grid, and watches it in Studio',
 	await expect(card).toContainText('This run'); // this seed's survival
 	await expect(card).toContainText('Condition mean'); // the aggregate it sits within
 	await expect(card).toContainText('Direction'); // the factor level that defines the condition
-	await expect(card.locator('.mini canvas')).toBeVisible(); // the mini-tank preview painted
-	await expect(card.locator('.spread .dot.me')).toBeVisible(); // this run, ringed in its spread
+	await expect(card).toContainText('behavioural signature'); // the measured mechanism (how they survive)
+	await expect(card).toContainText('Flee heading');
+	await expect(card).toContainText(/ranks .* condition/); // where this world sits among the conditions
+	await expect(card.locator('.dot.me').first()).toBeVisible(); // "you are here" ringed in a strip
 
 	// "Watch this world" carries the condition into Studio — the round-trip out of the run grid.
 	await card.getByRole('button', { name: 'Watch this world' }).click();
