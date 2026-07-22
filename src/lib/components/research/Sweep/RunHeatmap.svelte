@@ -10,6 +10,7 @@
 -->
 <script lang="ts">
 	import Canvas from '../../common/Canvas.svelte';
+	import ChartTooltip from '../../common/ChartTooltip.svelte';
 	import { theme } from '$lib/state';
 	import { heatColor, THEMES } from '$lib/render';
 	import type { SweepCell } from '$lib/lab/sweep';
@@ -17,8 +18,14 @@
 
 	let { cells, results }: { cells: SweepCell[]; results: (Evaluation | null)[] } = $props();
 
+	/** A cell of the run grid — its condition column and seed row (mirrors the Atlas's `CellRef`). */
+	interface RunCellRef {
+		condition: number;
+		seed: number;
+	}
+
 	let chart = $state<HTMLDivElement>();
-	let hovered = $state<{ c: number; s: number } | null>(null);
+	let hovered = $state<RunCellRef | null>(null);
 	let pointer = $state<{ x: number; y: number } | null>(null);
 	let repaint = $state<(() => void) | undefined>();
 
@@ -61,7 +68,13 @@
 			ctx.strokeStyle = THEMES[theme.name].ink;
 			ctx.lineWidth = 1.5;
 			ctx.beginPath();
-			ctx.roundRect(hovered.c * cw + GAP / 2, hovered.s * ch + GAP / 2, cw - GAP, ch - GAP, RADIUS);
+			ctx.roundRect(
+				hovered.condition * cw + GAP / 2,
+				hovered.seed * ch + GAP / 2,
+				cw - GAP,
+				ch - GAP,
+				RADIUS
+			);
 			ctx.stroke();
 		}
 	}
@@ -76,13 +89,15 @@
 		repaint?.();
 	});
 
-	/** Which cell a chart-relative point falls on, or null if outside the grid. */
-	function cellAt(x: number, y: number): { c: number; s: number } | null {
+	/** Which cell a chart-relative point falls on, or null if outside the grid. `.chart` has no padding,
+	 *  so its client box IS the canvas box `paint` draws in — the two spaces line up, so a hover resolves
+	 *  to the cell under the pointer. */
+	function cellAt(x: number, y: number): RunCellRef | null {
 		if (!chart || !cells.length || !seeds) return null;
-		const c = Math.floor(x / (chart.clientWidth / cells.length));
-		const s = Math.floor(y / (chart.clientHeight / seeds));
-		if (c < 0 || s < 0 || c >= cells.length || s >= seeds) return null;
-		return { c, s };
+		const condition = Math.floor(x / (chart.clientWidth / cells.length));
+		const seed = Math.floor(y / (chart.clientHeight / seeds));
+		if (condition < 0 || seed < 0 || condition >= cells.length || seed >= seeds) return null;
+		return { condition, seed };
 	}
 
 	function onhover(x: number, y: number): void {
@@ -90,7 +105,7 @@
 		hovered = cellAt(x, y);
 	}
 
-	const describe = (cell: SweepCell) =>
+	const describeCondition = (cell: SweepCell) =>
 		Object.entries(cell.levels)
 			.map(([key, level]) => `${key} ${level}`)
 			.join(' · ');
@@ -98,10 +113,10 @@
 	/** The hovered cell's condition, seed and survival — the tooltip's contents. */
 	const tip = $derived.by(() => {
 		if (!hovered) return null;
-		const value = results[hovered.c]?.returns[hovered.s];
+		const value = results[hovered.condition]?.returns[hovered.seed];
 		return {
-			condition: describe(cells[hovered.c]),
-			seed: hovered.s + 1,
+			condition: describeCondition(cells[hovered.condition]),
+			seed: hovered.seed + 1,
 			value: value != null ? `${value.toFixed(1)}s` : '—'
 		};
 	});
@@ -121,10 +136,10 @@
 			<Canvas {paint} {register} {onhover} onleave={() => (hovered = null)} {label} />
 
 			{#if tip && pointer}
-				<div class="tip" style:left="{pointer.x}px" style:top="{pointer.y}px" aria-hidden="true">
+				<ChartTooltip x={pointer.x} y={pointer.y}>
 					<span class="tip-cond">{tip.condition}</span>
 					<span class="tip-val tabular">seed {tip.seed} · {tip.value}</span>
-				</div>
+				</ChartTooltip>
 			{/if}
 		</div>
 
@@ -148,31 +163,15 @@
 	.chart {
 		position: relative;
 		/* Fills the card's width; the height gives the seed rows room to read as squares-ish across the
-		   run sizes the cap allows (2–32 conditions × 2–12 seeds). */
+		   run sizes the cap allows (2–32 conditions × 2–12 seeds). NO padding on purpose: the canvas
+		   fills this box exactly, so `cellAt` (which measures this box) and `paint` (which draws in the
+		   canvas box) share one coordinate space and a hover resolves to the cell under the pointer. */
 		width: 100%;
 		height: clamp(140px, 22vh, 220px);
 		border: 1px solid var(--line);
 		border-radius: var(--radius-card);
 		background: var(--panel2);
-		padding: var(--sp-2);
 		overflow: hidden;
-	}
-
-	.tip {
-		position: absolute;
-		z-index: 3;
-		transform: translate(12px, 12px);
-		display: flex;
-		flex-direction: column;
-		gap: 1px;
-		padding: 6px 9px;
-		border: 1px solid var(--line);
-		border-radius: var(--radius-sm);
-		background: var(--glass);
-		backdrop-filter: blur(var(--blur-glass));
-		box-shadow: var(--shadow-pill);
-		pointer-events: none;
-		white-space: nowrap;
 	}
 
 	.tip-cond {

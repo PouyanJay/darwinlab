@@ -10,6 +10,7 @@
 -->
 <script lang="ts">
 	import Canvas from '../../common/Canvas.svelte';
+	import ChartTooltip from '../../common/ChartTooltip.svelte';
 	import { landscape, theme } from '$lib/state';
 	import { drawLandscape, type CellRef } from '$lib/render';
 
@@ -42,9 +43,13 @@
 		});
 	}
 
-	// Research has no per-frame loop, so the map repaints off its own reactive dependencies.
+	// Research has no per-frame loop, so the map repaints off its own reactive dependencies. Reading each
+	// here is what subscribes this effect to it; `void` marks them read-for-tracking only.
 	$effect(() => {
-		void (landscape.field, landscape.selected, focus, theme.name);
+		void landscape.field;
+		void landscape.selected;
+		void focus;
+		void theme.name;
 		repaint?.();
 	});
 
@@ -159,13 +164,13 @@
 			{/if}
 
 			{#if focusValues && pointer}
-				<div class="tip" style:left="{pointer.x}px" style:top="{pointer.y}px" aria-hidden="true">
+				<ChartTooltip x={pointer.x} y={pointer.y}>
 					<span class="tip-line tabular">{focusValues.xLabel} {focusValues.x}</span>
 					<span class="tip-line tabular">{focusValues.yLabel} {focusValues.y}</span>
 					<span class="tip-val tabular"
 						>{Number.isFinite(focusValues.value) ? `${focusValues.value.toFixed(1)}s` : '—'}</span
 					>
-				</div>
+				</ChartTooltip>
 			{/if}
 		</div>
 
@@ -259,23 +264,6 @@
 		color: var(--ink);
 		white-space: nowrap;
 		pointer-events: none;
-	}
-
-	.tip {
-		position: absolute;
-		z-index: 3;
-		transform: translate(12px, 12px);
-		display: flex;
-		flex-direction: column;
-		gap: 1px;
-		padding: 6px 9px;
-		border: 1px solid var(--line);
-		border-radius: var(--radius-sm);
-		background: var(--glass);
-		backdrop-filter: blur(var(--blur-glass));
-		box-shadow: var(--shadow-pill);
-		pointer-events: none;
-		white-space: nowrap;
 	}
 
 	.tip-line {
