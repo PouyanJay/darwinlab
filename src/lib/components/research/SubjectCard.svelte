@@ -13,8 +13,8 @@
 <script lang="ts">
 	import Canvas from '../common/Canvas.svelte';
 	import { app, theme } from '$lib/state';
-	import { makeWorld, stepWorld, seededRng, type Senses } from '$lib/engine';
-	import { drawWorld } from '$lib/render';
+	import type { Senses } from '$lib/engine';
+	import { previewWorld } from '$lib/render';
 
 	// The analysis subject (null on a generic world), and the base every instrument actually runs on.
 	// Both are derived so the card follows an "Analyse" hand-off or a "use a generic world" without a
@@ -41,9 +41,7 @@
 	 * per base (the block is keyed), so there is no loop to tear down.
 	 */
 	function paintMini(ctx: CanvasRenderingContext2D, w: number, h: number): void {
-		const world = makeWorld(structuredClone(base), undefined, seededRng(7));
-		for (let i = 0; i < 120; i++) stepWorld(world, 1 / 60);
-		drawWorld(world, ctx, w, h, { theme: theme.name, detail: 'performance' });
+		previewWorld(base, ctx, w, h, theme.name);
 	}
 </script>
 

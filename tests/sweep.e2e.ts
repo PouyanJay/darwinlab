@@ -52,7 +52,7 @@ test('a sweep runs and reports an effect with its run grid', async ({ page }) =>
 	expect(painted).toBe(true);
 
 	// The redesigned toolbar, the two result cards and the canvas heatmap are all new surface — the
-	// painted Sweep must scan axe-clean (the canvas is a role=img graphic with a text label).
+	// painted Sweep must scan axe-clean (the drillable canvas is a role=application widget with a label).
 	expect(await scanForViolations(page)).toEqual([]);
 });
 
@@ -72,6 +72,54 @@ test('hovering the run grid reads out the cell under the pointer', async ({ page
 
 	await canvas.hover({ position: { x: 12, y: box.height - 8 } });
 	await expect(page.locator('.tip-val')).toContainText('seed 2'); // 2 seeds → the bottom row is seed 2
+});
+
+test('drilling a cell opens its world below the grid, and watches it in Studio', async ({
+	page
+}) => {
+	await openSweep(page);
+	await runMinimalSweep(page);
+
+	// Click a cell → the drilled-run card opens below the grid with that condition's world and numbers.
+	const canvas = page.locator('[data-testid="sweep-heat"] canvas');
+	const box = (await canvas.boundingBox())!;
+	await canvas.click({ position: { x: box.width * 0.25, y: box.height * 0.25 } });
+
+	const card = page.getByTestId('sweep-cell');
+	await expect(card).toBeVisible();
+	await expect(card).toContainText('This run'); // this seed's survival
+	await expect(card).toContainText('Condition mean'); // the aggregate it sits within
+	await expect(card).toContainText('Direction'); // the factor level that defines the condition
+	await expect(card.locator('.mini canvas')).toBeVisible(); // the mini-tank preview painted
+	await expect(card.locator('.spread .dot.me')).toBeVisible(); // this run, ringed in its spread
+
+	// "Watch this world" carries the condition into Studio — the round-trip out of the run grid.
+	await card.getByRole('button', { name: 'Watch this world' }).click();
+	await expect(page.getByTestId('research-stage')).toBeHidden();
+	await expect(
+		page.getByRole('radiogroup', { name: 'lab mode' }).getByRole('radio', { name: 'Studio' })
+	).toBeChecked();
+	// …and the world that landed is THIS condition, named for its factor — not just a mode flip. (The
+	// minimal sweep varies only Direction, so the new Studio world is named "Direction off/on".)
+	await expect(page.getByRole('textbox', { name: 'world name' }).last()).toHaveValue(/Direction/);
+});
+
+test('the run grid is keyboard-drillable — arrow to a cell, Enter opens it', async ({ page }) => {
+	await openSweep(page);
+	await runMinimalSweep(page);
+
+	// The canvas is an application widget (it has a keyboard handler), so it takes focus and the arrows.
+	await page.locator('[data-testid="sweep-heat"] canvas').focus();
+	await page.keyboard.press('ArrowRight'); // move the cursor onto a cell
+	await page.keyboard.press('Enter'); // …and drill it
+	await expect(page.getByTestId('sweep-cell')).toBeVisible();
+
+	// The drilled card + its mini-tank are new surface — scan clean.
+	expect(await scanForViolations(page)).toEqual([]);
+
+	// The close control dismisses it again.
+	await page.getByRole('button', { name: 'close drilled run' }).click();
+	await expect(page.getByTestId('sweep-cell')).toBeHidden();
 });
 
 test('the summary warns when the grid would overflow the cap', async ({ page }) => {

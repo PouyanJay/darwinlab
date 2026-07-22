@@ -1,9 +1,11 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { sweep } from './sweep.svelte';
 import { app } from './app.svelte';
+import { bench } from './bench.svelte';
 import { newWorldConfig } from '../engine';
 import type { JobExecutor } from '../lab/runner';
 import type { Evaluation } from '../lab/evaluator';
+import type { SweepCell } from '../lab/sweep';
 
 /**
  * The selection → grid-size logic, kept fast and free of any run. The store is a singleton, so each
@@ -65,5 +67,45 @@ describe('sweep selection', () => {
 		await sweep.run(new NullExecutor());
 		expect(sweep.cells.length).toBeGreaterThan(0); // it really planned and ran a grid
 		expect(sweep.cells.every((cell) => cell.cfg.vision === 999)).toBe(true); // the subject's vision, not a default
+	});
+});
+
+describe('sweep drill + watch', () => {
+	beforeEach(() => {
+		sweep.clearSelection();
+		app.setMode('research');
+	});
+
+	const cell = (over: Partial<SweepCell> = {}): SweepCell => ({
+		index: 0,
+		levels: { dir: 'on' },
+		cfg: { ...newWorldConfig('cell', '#123456'), predSpeed: 3.3 },
+		...over
+	});
+
+	it('select opens a cell and clearSelection closes it', () => {
+		expect(sweep.selected).toBeNull();
+		sweep.select(2, 1);
+		expect(sweep.selected).toEqual({ condition: 2, seed: 1 });
+		sweep.clearSelection();
+		expect(sweep.selected).toBeNull();
+	});
+
+	it('watch drops the condition onto the bench, named for its levels, and switches to Studio', () => {
+		const before = bench.worlds.length;
+
+		sweep.watch(cell());
+
+		expect(bench.worlds.length).toBe(before + 1);
+		expect(app.mode).toBe('studio');
+		const added = bench.worlds[bench.worlds.length - 1];
+		expect(added.world.cfg.predSpeed).toBeCloseTo(3.3); // the cell's config, not a fresh default
+		expect(added.world.cfg.name).toContain('Direction on'); // the factor LABEL, not the key 'dir'
+	});
+
+	it('names a cell that varied no factor plainly, rather than an empty string', () => {
+		sweep.watch(cell({ levels: {} }));
+		const added = bench.worlds[bench.worlds.length - 1];
+		expect(added.world.cfg.name).toBe('Sweep world');
 	});
 });

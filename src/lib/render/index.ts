@@ -11,6 +11,7 @@
  */
 export * from './theme';
 export * from './drawWorld';
+export * from './previewWorld';
 export * from './drawBrain';
 export * from './drawEscapeMap';
 export * from './drawCurve';
