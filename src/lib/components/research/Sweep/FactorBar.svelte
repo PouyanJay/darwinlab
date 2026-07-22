@@ -1,7 +1,9 @@
 <!--
-  The sweep's controls: which factors are in the grid, how many seeds each condition runs, and the
-  Run button. Each chip is a factor and its levels; toggling it in or out changes the grid, and the
-  summary says how big that grid is — with an honest note when it would overflow the cap and be sampled.
+  The Sweep's control toolbar: which factors are in the grid on the left, the run controls grouped on
+  the right (how many seeds each condition runs, the grid size, and Run). One bordered bar, so the
+  controls read as a single instrument panel rather than loose parts, and the Run button sits WITH the
+  seeds and the size readout it acts on — not floating off on its own. Everything wraps down cleanly on
+  a narrow stage; the chrome is monochrome, an on-factor reads through a full-ink hairline, not a colour.
 -->
 <script lang="ts">
 	import Button from '../../common/Button.svelte';
@@ -13,19 +15,22 @@
 	const SEED_RANGE = { min: 2, max: 12 };
 </script>
 
-<div class="factorbar">
-	<div class="factors" role="group" aria-label="factors in the sweep">
-		{#each sweep.factors as factor (factor.key)}
-			<button
-				class="chip"
-				class:on={sweep.isSelected(factor.key)}
-				aria-pressed={sweep.isSelected(factor.key)}
-				onclick={() => sweep.toggle(factor.key)}
-			>
-				<span class="fname">{factor.label}</span>
-				<span class="flevels">{factor.levels.map((level) => level.label).join(' / ')}</span>
-			</button>
-		{/each}
+<div class="toolbar">
+	<div class="factors">
+		<span class="eyebrow">Factors</span>
+		<div class="chips" role="group" aria-label="factors in the sweep">
+			{#each sweep.factors as factor (factor.key)}
+				<button
+					class="chip"
+					class:on={sweep.isSelected(factor.key)}
+					aria-pressed={sweep.isSelected(factor.key)}
+					onclick={() => sweep.toggle(factor.key)}
+				>
+					<span class="fname">{factor.label}</span>
+					<span class="flevels">{factor.levels.map((level) => level.label).join(' / ')}</span>
+				</button>
+			{/each}
+		</div>
 	</div>
 
 	<div class="run">
@@ -42,20 +47,15 @@
 		</label>
 
 		<span class="summary" data-testid="sweep-summary">
-			= {sweep.plannedCells} conditions × {sweep.seeds} seeds{#if sweep.willSample}
+			{sweep.plannedCells} conditions × {sweep.seeds} seeds{#if sweep.willSample}
 				<span class="cap">· capped to 32</span>{/if}
 		</span>
 
 		{#if sweep.running}
 			<RunProgress progress={sweep.progress} oncancel={() => sweep.cancel()} />
 		{:else}
-			<Button
-				variant="primary"
-				size="sm"
-				disabled={sweep.plannedCells === 0}
-				onclick={() => sweep.run()}
-			>
-				<Icon name="forward" size={13} />
+			<Button variant="primary" disabled={sweep.plannedCells === 0} onclick={() => sweep.run()}>
+				<Icon name="forward" size={14} />
 				<span>Run sweep</span>
 			</Button>
 		{/if}
@@ -63,13 +63,35 @@
 </div>
 
 <style>
-	.factorbar {
+	.toolbar {
 		display: flex;
-		flex-direction: column;
-		gap: var(--sp-4);
+		align-items: flex-end;
+		justify-content: space-between;
+		gap: var(--sp-5) var(--sp-6);
+		flex-wrap: wrap;
+		padding: var(--sp-5);
+		border: 1px solid var(--line);
+		border-radius: var(--radius-card);
+		background: var(--panel);
 	}
 
 	.factors {
+		display: flex;
+		flex-direction: column;
+		gap: var(--sp-3);
+		flex: 1 1 380px;
+		min-width: 0;
+	}
+
+	.eyebrow {
+		font-size: var(--fs-eyebrow);
+		font-weight: var(--fw-semibold);
+		letter-spacing: var(--tracking-wide);
+		text-transform: uppercase;
+		color: var(--ink3);
+	}
+
+	.chips {
 		display: flex;
 		flex-wrap: wrap;
 		gap: var(--sp-2);
@@ -79,27 +101,29 @@
 		display: flex;
 		flex-direction: column;
 		gap: 1px;
-		padding: 6px 11px;
+		padding: 7px 12px;
 		border: 1px solid var(--line);
 		border-radius: var(--radius-input);
-		background: var(--panel);
+		background: var(--panel2);
 		color: var(--ink3);
 		cursor: pointer;
 		text-align: left;
 		transition:
 			border-color var(--dur-fast) var(--ease),
+			background var(--dur-fast) var(--ease),
 			color var(--dur-fast) var(--ease);
 	}
 
 	.chip:hover {
 		border-color: var(--ink3);
+		color: var(--ink2);
 	}
 
-	/* In the sweep, an on-state is a full-ink hairline — the same emphasis-by-lightness the rest of
-	   the platform uses instead of colour. */
+	/* An on-state is a full-ink hairline, the emphasis-by-lightness the platform uses instead of colour. */
 	.chip.on {
 		border-color: var(--ink);
-		box-shadow: 0 0 0 1px var(--ink);
+		box-shadow: inset 0 0 0 1px var(--ink);
+		background: var(--panel);
 		color: var(--ink);
 	}
 
@@ -119,6 +143,7 @@
 		font-variant-numeric: tabular-nums;
 	}
 
+	/* The run group stays together, bottom-aligned with the chips, and holds its own on a wide stage. */
 	.run {
 		display: flex;
 		align-items: center;
@@ -135,8 +160,8 @@
 	}
 
 	.seeds input {
-		width: 52px;
-		padding: 5px 8px;
+		width: 56px;
+		padding: 7px 10px;
 		border: 1px solid var(--line);
 		border-radius: var(--radius-sm);
 		background: var(--panel2);
@@ -144,7 +169,7 @@
 		font-size: var(--fs-md);
 		font-weight: var(--fw-semibold);
 		font-variant-numeric: tabular-nums;
-		text-align: right;
+		text-align: center;
 	}
 
 	.seeds input:focus {
@@ -156,10 +181,19 @@
 		font-size: var(--fs-sm);
 		color: var(--ink2);
 		font-variant-numeric: tabular-nums;
-		margin-right: auto;
+		white-space: nowrap;
 	}
 
 	.summary .cap {
 		color: var(--danger-ink);
+	}
+
+	/* On a narrow Sweep the run group drops below the factors and spans the bar, so the Run button never
+	   crowds into a corner. Keyed off the Sweep's own width (its `.sweep` container), not the viewport. */
+	@container (max-width: 560px) {
+		.run {
+			flex: 1 1 100%;
+			justify-content: space-between;
+		}
 	}
 </style>
