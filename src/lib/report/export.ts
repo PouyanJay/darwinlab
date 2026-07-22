@@ -12,7 +12,7 @@
 import { CANDIDATE_AXES } from '../lab/landscape';
 import { SOURCE_LABEL } from '../lab/questions';
 import { negativesOf, type Evidence } from '../lab/evidence';
-import { formatSeconds, formatSignedSeconds } from '../format';
+import { formatSeconds, formatSignedSeconds, formatSurvivalPct, formatBehavior } from '../format';
 import type { ReportSection, ReportMethod } from '../state/report.svelte';
 
 /** Everything the Markdown needs, lifted off the report store so the formatter stays pure + testable. */
@@ -78,9 +78,20 @@ function evidenceMarkdown(evidence: Evidence | undefined): string {
 		case 'curve': {
 			const c = evidence.curve;
 			if (!c.length) return '';
+			// The curve is survival FRACTIONS (0–1), the same as the on-screen LearningCurve reads — a
+			// percent, never seconds.
 			const peak = Math.max(...c);
-			return `Learning curve over ${c.length} generations: ${formatSeconds(c[0])} → ${formatSeconds(c[c.length - 1])} (peak ${formatSeconds(peak)}).`;
+			return `Learning curve over ${c.length} generations: ${formatSurvivalPct(c[0])} → ${formatSurvivalPct(c[c.length - 1])} (peak ${formatSurvivalPct(peak)}).`;
 		}
+		case 'behavior':
+			return [
+				'| Signature | Evolved | Random | Better when |',
+				'| --- | --- | --- | --- |',
+				...evidence.metrics.map(
+					(m) =>
+						`| ${cell(m.label)} | ${formatBehavior(m.evolved, m.unit)} | ${formatBehavior(m.control, m.unit)} | ${m.higherIsBetter ? 'higher' : 'lower'} |`
+				)
+			].join('\n');
 	}
 }
 

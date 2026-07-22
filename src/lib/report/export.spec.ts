@@ -223,7 +223,8 @@ describe('reportToMarkdown', () => {
 	});
 
 	it('summarises a learning curve when a trace has answered Q1', () => {
-		const curve: Evidence = { kind: 'curve', curve: [1.2, 2.0, 3.6, 3.4] };
+		// The curve is survival FRACTIONS (0–1) — rendered as a percent, matching the on-screen graph.
+		const curve: Evidence = { kind: 'curve', curve: [0.12, 0.3, 0.62, 0.58] };
 		const snap: ReportSnapshot = {
 			subjectName: 'a generic world',
 			coverage: { answered: 1, total: 7 },
@@ -241,7 +242,7 @@ describe('reportToMarkdown', () => {
 			)
 		};
 		expect(reportToMarkdown(snap)).toContain(
-			'Learning curve over 4 generations: 1.2s → 3.4s (peak 3.6s).'
+			'Learning curve over 4 generations: 12% → 58% (peak 62%).'
 		);
 	});
 
