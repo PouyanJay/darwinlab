@@ -34,7 +34,9 @@ src/
 │  ├─ render/     Pure canvas painters: drawWorld, drawBrain, drawCurve, hit-testing (pick),
 │  │              theme palettes (kept in sync with the CSS tokens). State in, pixels out.
 │  ├─ harness/    The honesty gates: the bit-exact fidelity spec against reference/engine2.js,
-│  │              and the headless survival sweep the science claims are measured with.
+│  │              and the headless survival sweep the science claims are measured with. Also the
+│  │              behaviour recorders — trace.ts (one bout's paths) + traceStudy.ts (evolve → the
+│  │              learning curve + an evolved-vs-control study), read-only so fidelity stays green.
 │  ├─ state/      Svelte 5 runes stores — THE only seam between UI and simulation.
 │  │              app.svelte.ts       the MODE (Studio | Research, persisted) + the analysis
 │  │                                  SUBJECT (a Studio world handed to Research to explore)
@@ -46,8 +48,11 @@ src/
 │  │              viewport.svelte.ts  the generic pan/zoom CAMERA; the lineage tree (canvas.svelte)
 │  │                                  and the Atlas each own one instance, never shared
 │  │              research.svelte.ts  the ONE running batch (progress, cancel-on-new)
-│  │              sweep / ledger /     the three Research instruments' state (factors →
-│  │              landscape.svelte     effects · claims → verdicts+persistence · axes → landscape)
+│  │              sweep / ledger /     the instruments' state: factors→effects · claims→verdicts ·
+│  │              landscape / trace     axes→landscape · evolve→learning-curve+mechanism (trace runs
+│  │                                    its OWN time-sliced study, not the worker batch)
+│  │              findings.svelte.ts  the persisted findings NOTEBOOK (any instrument writes to it)
+│  │              report.svelte.ts    the seven-question brief derived from the notebook (honesty rail)
 │  │              playback.svelte.ts  play / pause / speed / turbo training
 │  │              story.svelte.ts     scenes, the scene clock, NEW-sense tagging
 │  │              theme / motion      theme (DARK by default, monochrome) + reduced-motion
@@ -60,8 +65,10 @@ src/
 │  │              common. intro/Intro — the full-screen welcome; the first interaction fades it
 │  │              out over the already-running platform. bench/LineageCanvas — the pannable plane;
 │  │              worlds are draggable nodes (WorldTile) wired parent→child by branch edges.
-│  │              research/ — the Research stage + the three instruments (Sweep, Ledger, Atlas)
-│  │              and RunProgress; topbar/ModeSwitch flips Studio ⇄ Research.
+│  │              research/ — the three-zone CONSOLE (ResearchRail · ResearchWorkspace ·
+│  │              ResearchSidebar) over five instruments (Sweep, Ledger, Atlas, Trace, Report),
+│  │              the shared viz/ graph library + QuestionTags + RunProgress; topbar/ModeSwitch
+│  │              flips Studio ⇄ Research.
 │  ├─ lab/        The Research SCIENCE (pure, no Svelte/DOM), + the batch pipeline:
 │  │              evaluator.ts        n-seed measurement of a config (mean ± sd survival)
 │  │              runner.ts +         the off-main-thread worker POOL and its protocol;
@@ -70,6 +77,9 @@ src/
 │  │              stats.ts            bootstrap CIs, Cohen's d, two-arm contrast (seeded)
 │  │              sweep / hypothesis / the instruments' pure cores (factorial · claim→contrast ·
 │  │              landscape.ts          2D grid + measured cliff)
+│  │              questions.ts        the seven-question model (which test answers which Q; ANSWERS)
+│  │              evidence.ts         the small persisted graph payloads a finding carries + the
+│  │                                  kept-negatives predicate the Report/Sweep share
 │  │              run.ts              configHash + manifest (an experiment you can cite)
 │  │              lineage.ts          canvas geometry (node sizes, the parent→child edge curve)
 │  └─ styles/     Design tokens (both themes as CSS custom properties) + global styles.
@@ -96,23 +106,36 @@ camera (one `translate…scale` transform) lives in `canvas.svelte.ts`, separate
 because moving the camera touches no genome.
 
 **Studio + Research:** the lab is one place with two modes (`app.svelte.ts`, flipped from the top
-bar). **Studio** is the spatial tree above — watch a world evolve, read one brain. **Research** runs
-MANY simulations to extract conclusions, across three instruments: **the Sweep** (a factorial → each
-factor's effect on survival, with intervals), **the Ledger** (a claim → one pre-registered contrast →
-a supported/refuted verdict, kept as a dated, reproducible, localStorage-persisted record), and **the
-Atlas** (two parameters → a pannable survival landscape with the cliff drawn where it measures, not
-where it's assumed). All three are thin UIs over one spine: the pure `evaluator` moved onto a **Web
-Worker pool** (`runner.ts`) so a thousand-bout batch never blocks the frame, aggregated by honest
-`stats.ts`. **The engine and the fidelity gate are never touched** — Research only ever _reads_ the
-engine. The two modes are stitched by a round-trip: Studio's **Analyse** hands a world to Research as
-the subject every instrument then explores (`app.analyze` / `bench.analyzeWorld`), and the Atlas's
-**Watch this world** drops a drilled point back onto the bench (`landscape.watch`).
+bar). **Studio** is the spatial tree above — watch a world evolve, read one brain. **Research** is a
+three-zone **console** (`ResearchRail` · `ResearchWorkspace` · `ResearchSidebar`) organised around the
+**seven questions a rigorous study must answer** (`lab/questions.ts`; each instrument declares which it
+settles via the `ANSWERS` map, shown as `QuestionTags`). Five instruments fill them in:
+
+- **The Sweep** _(Q2 · Q6)_ — a factorial → each factor's effect on survival, with intervals.
+- **The Ledger** _(Q3)_ — a claim → one pre-registered contrast → a supported/refuted verdict, kept.
+- **The Atlas** _(Q4)_ — two parameters → a pannable survival landscape with the measured cliff.
+- **The Trace** _(Q1 · Q5)_ — the SECOND discovery type: evolve one population keeping its genomes,
+  read the learning curve, then trace it against a random-brain control (the mechanism is the contrast).
+- **The Report** — assembles the **findings notebook** (`state/findings.svelte.ts`, a persisted
+  envelope any instrument writes to) into a seven-question brief (`state/report.svelte.ts`), each
+  answer drawn from the evidence that settled it; exportable to Markdown/PDF.
+
+The measuring instruments are thin UIs over one spine: the pure `evaluator` on a **Web Worker pool**
+(`runner.ts`) aggregated by honest `stats.ts`. The Trace is the exception — a deliberate, time-sliced
+main-thread study (`harness/traceStudy.ts`) that evolves-and-KEEPS a population (the evaluator discards
+it) and reads `World.lifeCurve` **read-only**, plus `harness/trace.ts` for one bout's paths. **The
+engine and the fidelity gate are never touched** — Research, the curve capture included, only ever
+_reads_ the engine. A round-trip stitches the modes: **Analyse** hands a Studio world to Research as the
+subject every instrument explores (`app.analyze`), and **Watch this world** drops an Atlas point or the
+Report's subject back onto the bench (`landscape.watch` / `report.watch`).
 
 **Honesty rails (load-bearing):** an exploratory Sweep shows effect **intervals only** — no
 significance badge, because it is many comparisons. A verdict WORD ("supported"/"refuted") is emitted
 **only** by the Ledger, and only from a single contrast fixed before the run. The Atlas's cliff is the
 steepest measured fall-off, and it draws **nothing** on a flat or rising field rather than inventing a
-threshold.
+threshold. **The Report answers a question only when a real finding backs it** — every other question
+stays an honest "run the test" prompt; it can never say more than was measured, because it renders the
+same snapshot the screen does (`state/report.svelte.ts` is the one place this rail lives).
 
 ## Honesty gates
 
