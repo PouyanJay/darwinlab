@@ -13,6 +13,9 @@ import { gotoApp, openResearch, scanForViolations } from './helpers';
  */
 
 async function runATrace(page: Page): Promise<void> {
+	// A real 40-generation evolve runs on the main thread; give the whole test real headroom (the
+	// default 30s per-test cap would fire long before the 60s assertion wait on a starved CI worker).
+	test.setTimeout(90_000);
 	await gotoApp(page);
 	await openResearch(page);
 	await page.getByRole('tab', { name: 'The Trace' }).click();

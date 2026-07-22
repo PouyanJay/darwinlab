@@ -30,7 +30,7 @@ export interface BandPoint {
 }
 
 /** How to read a behaviour number — the unit its bar and label are formatted in. */
-export type BehaviorUnit = 'deg' | 'frac' | 'px' | 's';
+export type BehaviorUnit = 'deg' | 'frac' | 'px';
 
 /**
  * One behavioural signature, evolved against a random-brain control — the mechanism IS the contrast

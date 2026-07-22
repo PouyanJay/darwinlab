@@ -21,9 +21,9 @@ export function formatSurvivalPct(value: number): string {
 	return `${Math.round(Math.max(0, Math.min(1, value)) * 100)}%`;
 }
 
-/** A behaviour signature, in the unit it was measured in — `48°`, `35%`, `72px`, `3.1s`. One place, so
- *  the mechanism bars and the Markdown export read a behaviour the same way. */
-export function formatBehavior(value: number, unit: 'deg' | 'frac' | 'px' | 's'): string {
+/** A behaviour signature, in the unit it was measured in — `48°`, `35%`, `72px`. One place, so the
+ *  mechanism bars and the Markdown export read a behaviour the same way. */
+export function formatBehavior(value: number, unit: 'deg' | 'frac' | 'px'): string {
 	switch (unit) {
 		case 'deg':
 			return `${Math.round(value)}°`;
@@ -31,7 +31,5 @@ export function formatBehavior(value: number, unit: 'deg' | 'frac' | 'px' | 's')
 			return formatSurvivalPct(value);
 		case 'px':
 			return `${Math.round(value)}px`;
-		case 's':
-			return formatSeconds(value);
 	}
 }

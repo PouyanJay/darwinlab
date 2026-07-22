@@ -32,10 +32,7 @@ describe('runTraceStudy', () => {
 		const study = await runTraceStudy({ cfg: cfg(), episodes: 8, seed: 1 });
 
 		expect(study!.curve).toHaveLength(8);
-		for (const v of study!.curve) {
-			expect(v).toBeGreaterThanOrEqual(0);
-			expect(v).toBeLessThanOrEqual(1);
-		}
+		expect(study!.curve.every((v) => v >= 0 && v <= 1)).toBe(true);
 	});
 
 	it('traces the evolved population against a random-brain control on the same arena', async () => {
@@ -45,6 +42,16 @@ describe('runTraceStudy', () => {
 		expect(study!.evolved.trace.fish.length).toBe(study!.control.trace.fish.length);
 		expect(study!.evolved.trace.bw).toBe(study!.control.trace.bw);
 		expect(study!.evolved.trace.bh).toBe(study!.control.trace.bh);
+	});
+
+	it('the evolved arm really differs from its control — the genomes are kept, not dropped', async () => {
+		// The two arms run the SAME bout seed, so if a regression dropped the evolved arm's genomes (both
+		// arms random-brained) the traces would be byte-identical and the same-arena checks above would
+		// still pass. Q5 IS this contrast, so it must be asserted directly, not assumed.
+		const study = await runTraceStudy({ cfg: cfg(), episodes: 8, seed: 3 });
+		const evolvedLives = study!.evolved.trace.fish.map((f) => f.life);
+		const controlLives = study!.control.trace.fish.map((f) => f.life);
+		expect(evolvedLives).not.toEqual(controlLives);
 	});
 
 	it('returns null when cancelled — an aborted study yields no result', async () => {

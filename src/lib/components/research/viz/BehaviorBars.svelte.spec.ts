@@ -16,21 +16,31 @@ describe('BehaviorBars', () => {
 
 		const rows = container.querySelectorAll('.metric');
 		expect(rows).toHaveLength(3);
-		// Flee error is in degrees; the dodge rate is a fraction shown as a percent.
+		// Each unit renders its own way: degrees, a fraction as a percent, and pixels.
 		expect(container.textContent).toContain('20°');
 		expect(container.textContent).toContain('90°');
 		expect(container.textContent).toContain('50%');
+		expect(container.textContent).toContain('80px');
 	});
 
-	it('scales the two bars of a row to their own larger value, so the gap is honest', () => {
+	it('scales the two bars of a row to their own larger value — control-max and evolved-max both', () => {
 		const { container } = render(BehaviorBars, { metrics });
-		const flee = container.querySelectorAll('.metric')[0];
+		const rows = container.querySelectorAll('.metric');
 
-		// Row max is 90 (control): control fills the track, evolved is 20/90 ≈ 22%.
-		const evolved = flee.querySelector('.fill.evolved') as HTMLElement;
-		const control = flee.querySelector('.fill.control') as HTMLElement;
-		expect(control.style.width).toBe('100%');
-		expect(parseFloat(evolved.style.width)).toBeCloseTo((20 / 90) * 100, 1);
+		// Flee error: control (90) is the row max — it fills the track, evolved is 20/90 ≈ 22%.
+		const flee = rows[0];
+		expect((flee.querySelector('.fill.control') as HTMLElement).style.width).toBe('100%');
+		expect(
+			parseFloat((flee.querySelector('.fill.evolved') as HTMLElement).style.width)
+		).toBeCloseTo((20 / 90) * 100, 1);
+
+		// Distance kept: evolved (80) is the row max — so THIS row proves the scale follows the larger
+		// side, not always the control (a bug that scaled by control would still pass the flee row).
+		const dist = rows[2];
+		expect((dist.querySelector('.fill.evolved') as HTMLElement).style.width).toBe('100%');
+		expect(
+			parseFloat((dist.querySelector('.fill.control') as HTMLElement).style.width)
+		).toBeCloseTo(50, 1);
 	});
 
 	it('backs the bars with a table naming both populations for a screen reader', () => {
