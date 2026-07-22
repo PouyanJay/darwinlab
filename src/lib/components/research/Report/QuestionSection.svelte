@@ -9,6 +9,7 @@
 	import IntervalPlot from '../viz/IntervalPlot.svelte';
 	import LandscapeStrip from '../viz/LandscapeStrip.svelte';
 	import LearningCurve from '../viz/LearningCurve.svelte';
+	import BehaviorBars from '../viz/BehaviorBars.svelte';
 	import { CANDIDATE_AXES } from '$lib/lab/landscape';
 	import { SOURCE_LABEL } from '$lib/lab/questions';
 	import type { ReportSection } from '$lib/state';
@@ -47,6 +48,8 @@
 				/>
 			{:else if evidence?.kind === 'curve'}
 				<LearningCurve curve={evidence.curve} />
+			{:else if evidence?.kind === 'behavior'}
+				<BehaviorBars metrics={evidence.metrics} />
 			{/if}
 		</div>
 	{:else}

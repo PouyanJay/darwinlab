@@ -7,7 +7,7 @@
 
 import { ANSWERS, type QuestionId } from '../../lab/questions';
 
-export type Instrument = 'sweep' | 'ledger' | 'atlas' | 'report';
+export type Instrument = 'sweep' | 'ledger' | 'atlas' | 'trace' | 'report';
 
 export interface InstrumentMeta {
 	key: Instrument;
@@ -23,6 +23,7 @@ export const INSTRUMENTS: InstrumentMeta[] = [
 	{ key: 'sweep', name: 'The Sweep', blurb: 'factorial → effects', isReady: true },
 	{ key: 'ledger', name: 'The Ledger', blurb: 'claim → verdict', isReady: true },
 	{ key: 'atlas', name: 'The Atlas', blurb: 'two axes → landscape', isReady: true },
+	{ key: 'trace', name: 'The Trace', blurb: 'evolve → learn + mechanism', isReady: true },
 	{ key: 'report', name: 'The Report', blurb: 'findings → a brief', isReady: true }
 ];
 
