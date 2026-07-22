@@ -59,6 +59,7 @@
 		{#if drilled}
 			<RunCellCard
 				cell={sweep.cells[drilled.condition]}
+				conditionIndex={drilled.condition}
 				seed={drilled.seed}
 				evaluation={sweep.results[drilled.condition] ?? null}
 				allResults={sweep.results}

@@ -19,15 +19,19 @@
 	import { formatSeconds } from '$lib/format';
 	import type { SweepCell } from '$lib/lab/sweep';
 	import type { Evaluation } from '$lib/lab/evaluator';
+	import type { BehaviorStats } from '$lib/harness/behavior';
 
 	let {
 		cell,
+		conditionIndex,
 		seed,
 		evaluation,
 		allResults,
 		onclose
 	}: {
 		cell: SweepCell;
+		/** This condition's position in `allResults` — the identity for the "you are here" rank dot. */
+		conditionIndex: number;
 		/** 0-indexed seed row the cell sits on. */
 		seed: number;
 		evaluation: Evaluation | null;
@@ -51,54 +55,63 @@
 		}))
 	);
 
-	/** How the fish in THIS condition survive — the measured mechanism (behaviour.ts), averaged over its
-	 *  seeds. Each row is a value plus what it MEANS, so a reader knows which direction is competence. */
+	/** The behavioural signature's rows — static config (label + meaning + how to read the field); only
+	 *  the value is reactive, so the rows live here and the derived below is just the formatting. Each
+	 *  `note` restates the field's own measured meaning (see harness/behavior.ts). */
+	const SIGNATURE_ROWS: { label: string; note: string; format: (b: BehaviorStats) => string }[] = [
+		{
+			label: 'Flee heading',
+			format: (b) => `${deg(b.fleeAngleErrorDeg)} off`,
+			note: '90° is aimless drift — lower is a true escape heading'
+		},
+		{
+			label: 'Dodge rate',
+			format: (b) => pct(b.dodgeRate),
+			note: 'share of the shark’s lunges that end in a whiff'
+		},
+		{
+			label: 'Distance kept',
+			format: (b) => px(b.meanPredDistance),
+			note: 'mean gap held to the nearest shark'
+		},
+		{
+			label: 'Bolt response',
+			format: (b) => `${b.boltRatio.toFixed(1)}×`,
+			note: 'speed near the shark vs. when it is unseen — over 1× bolts'
+		},
+		{
+			label: 'Cornering',
+			format: (b) => pct(b.cornerTimeShare),
+			note: 'time boxed against two walls — lower is safer'
+		}
+	];
+
+	/** How the fish in THIS condition survive — the measured mechanism, averaged over its seeds. */
 	const signature = $derived.by(() => {
 		const b = evaluation?.behavior;
-		if (!b) return [];
-		return [
-			{
-				label: 'Flee heading',
-				value: `${deg(b.fleeAngleErrorDeg)} off`,
-				note: '90° is aimless drift — lower is a true escape heading'
-			},
-			{
-				label: 'Dodge rate',
-				value: pct(b.dodgeRate),
-				note: 'share of the shark’s lunges that end in a whiff'
-			},
-			{
-				label: 'Distance kept',
-				value: px(b.meanPredDistance),
-				note: 'mean gap held to the nearest shark'
-			},
-			{
-				label: 'Bolt response',
-				value: `${b.boltRatio.toFixed(1)}×`,
-				note: 'speed near the shark vs. when it is unseen — over 1× bolts'
-			},
-			{
-				label: 'Cornering',
-				value: pct(b.cornerTimeShare),
-				note: 'time boxed against two walls — lower is safer'
-			}
-		];
+		return b
+			? SIGNATURE_ROWS.map((r) => ({ label: r.label, value: r.format(b), note: r.note }))
+			: [];
 	});
 
 	// This condition's seeds, for the "does it reproduce" spread.
 	const returns = $derived(evaluation?.returns ?? []);
 	const seedLo = $derived(returns.length ? Math.min(...returns) : 0);
 	const seedHi = $derived(returns.length ? Math.max(...returns) : 1);
+	const seedEntries = $derived(returns.map((value, index) => ({ index, value })));
 
-	// Every measured condition's mean survival, for the "is this world any good" rank + distribution.
-	const condMeans = $derived(
-		allResults.map((r) => r?.meanReturn).filter((m): m is number => m != null && Number.isFinite(m))
+	// Every measured condition's mean survival, KEEPING its position so "you are here" is an identity
+	// (index) check, not a fragile float-equality on the means (which ties would double-ring).
+	const condEntries = $derived(
+		allResults
+			.map((r, index) => ({ index, value: r?.meanReturn }))
+			.filter((e): e is { index: number; value: number } => Number.isFinite(e.value))
 	);
 	const thisMean = $derived(evaluation?.meanReturn ?? NaN);
-	const condLo = $derived(condMeans.length ? Math.min(...condMeans) : 0);
-	const condHi = $derived(condMeans.length ? Math.max(...condMeans) : 1);
-	/** 1 = the best-surviving condition. Ties share the higher rank. */
-	const rank = $derived(condMeans.filter((m) => m > thisMean).length + 1);
+	const condLo = $derived(condEntries.length ? Math.min(...condEntries.map((e) => e.value)) : 0);
+	const condHi = $derived(condEntries.length ? Math.max(...condEntries.map((e) => e.value)) : 1);
+	/** 1 = the best-surviving condition. Ties share the higher rank (standard competition ranking). */
+	const rank = $derived(condEntries.filter((e) => e.value > thisMean).length + 1);
 
 	/** Position a value along a [lo, hi] track as a percentage; centres a degenerate range. */
 	const along = (v: number, lo: number, hi: number) =>
@@ -106,6 +119,26 @@
 	const shade = (v: number, lo: number, hi: number) =>
 		heatColor(hi > lo ? (v - lo) / (hi - lo) : 0.5);
 </script>
+
+<!-- One dot-strip: a dot per entry positioned on [lo, hi] and coloured on the survival ramp, with the
+     "you are here" entry ringed. Shared by the rank strip and the seed strip. -->
+{#snippet dotTrack(
+	entries: { index: number; value: number }[],
+	lo: number,
+	hi: number,
+	isMe: (index: number) => boolean
+)}
+	<div class="track" aria-hidden="true">
+		{#each entries as entry (entry.index)}
+			<span
+				class="dot"
+				class:me={isMe(entry.index)}
+				style:left="{along(entry.value, lo, hi)}%"
+				style:background={shade(entry.value, lo, hi)}
+			></span>
+		{/each}
+	</div>
+{/snippet}
 
 <div class="cellcard" data-testid="sweep-cell">
 	<div class="head">
@@ -166,21 +199,12 @@
 				</div>
 			</dl>
 
-			{#if condMeans.length > 1 && Number.isFinite(thisMean)}
+			{#if condEntries.length > 1 && Number.isFinite(thisMean)}
 				<div class="strip">
 					<span class="strip-label">
-						ranks <b>{rank} of {condMeans.length}</b> conditions for survival
+						ranks <b>{rank} of {condEntries.length}</b> conditions for survival
 					</span>
-					<div class="track" aria-hidden="true">
-						{#each condMeans as m, i (i)}
-							<span
-								class="dot"
-								class:me={m === thisMean}
-								style:left="{along(m, condLo, condHi)}%"
-								style:background={shade(m, condLo, condHi)}
-							></span>
-						{/each}
-					</div>
+					{@render dotTrack(condEntries, condLo, condHi, (i) => i === conditionIndex)}
 					<div class="ends tabular" aria-hidden="true">
 						<span>{formatSeconds(condLo)}</span>
 						<span>worst → best condition</span>
@@ -192,16 +216,7 @@
 			{#if returns.length > 1}
 				<div class="strip">
 					<span class="strip-label">this run among the condition’s {returns.length} seeds</span>
-					<div class="track" aria-hidden="true">
-						{#each returns as r, i (i)}
-							<span
-								class="dot"
-								class:me={i === seed}
-								style:left="{along(r, seedLo, seedHi)}%"
-								style:background={shade(r, seedLo, seedHi)}
-							></span>
-						{/each}
-					</div>
+					{@render dotTrack(seedEntries, seedLo, seedHi, (i) => i === seed)}
 					<div class="ends tabular" aria-hidden="true">
 						<span>{formatSeconds(seedLo)}</span>
 						<span>{formatSeconds(seedHi)}</span>
