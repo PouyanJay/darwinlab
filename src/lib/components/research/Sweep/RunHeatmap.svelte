@@ -7,10 +7,14 @@
   The colour is a RELATIVE scale (the run's own min→max), not absolute-from-zero — survival here is a
   flat band a few seconds wide, so mapping it from zero would wash every cell to the same shade. Canvas,
   not a grid of DOM cells, so a 32×12 run stays sharp and cheap and the cells never reflow.
+
+  Cells are drillable: click one (or arrow-move the cursor and press Enter) to open it below the grid —
+  the condition's world, this run's survival against the condition's spread, and the door into Studio.
 -->
 <script lang="ts">
 	import Canvas from '../../common/Canvas.svelte';
 	import ChartTooltip from '../../common/ChartTooltip.svelte';
+	import RunCellCard from './RunCellCard.svelte';
 	import { theme } from '$lib/state';
 	import { heatColor, THEMES } from '$lib/render';
 	import type { SweepCell } from '$lib/lab/sweep';
@@ -25,7 +29,10 @@
 	}
 
 	let chart = $state<HTMLDivElement>();
-	let hovered = $state<RunCellRef | null>(null);
+	/** The cell the cursor is on — set by hover AND by keyboard; drives the outline and the tooltip. */
+	let cursor = $state<RunCellRef | null>(null);
+	/** The drilled cell, opened in the card below the grid. */
+	let selected = $state<RunCellRef | null>(null);
 	let pointer = $state<{ x: number; y: number } | null>(null);
 	let repaint = $state<(() => void) | undefined>();
 
@@ -42,6 +49,27 @@
 
 	const GAP = 2;
 	const RADIUS = 2;
+
+	function outline(
+		ctx: CanvasRenderingContext2D,
+		ref: RunCellRef,
+		cw: number,
+		ch: number,
+		color: string,
+		lineWidth: number
+	): void {
+		ctx.strokeStyle = color;
+		ctx.lineWidth = lineWidth;
+		ctx.beginPath();
+		ctx.roundRect(
+			ref.condition * cw + GAP / 2,
+			ref.seed * ch + GAP / 2,
+			cw - GAP,
+			ch - GAP,
+			RADIUS
+		);
+		ctx.stroke();
+	}
 
 	function paint(ctx: CanvasRenderingContext2D, width: number, height: number): void {
 		ctx.clearRect(0, 0, width, height);
@@ -63,30 +91,30 @@
 			}
 		}
 
-		// The hovered cell gets an ink outline — a lightness cue, never a colour (the colour is the data).
-		if (hovered) {
-			ctx.strokeStyle = THEMES[theme.name].ink;
-			ctx.lineWidth = 1.5;
-			ctx.beginPath();
-			ctx.roundRect(
-				hovered.condition * cw + GAP / 2,
-				hovered.seed * ch + GAP / 2,
-				cw - GAP,
-				ch - GAP,
-				RADIUS
-			);
-			ctx.stroke();
-		}
+		// Cursor (soft) and drilled (strong) outlines — a lightness cue, never a colour (the cell colour
+		// is the data). The drilled outline is drawn last so it wins when the cursor sits on it.
+		const palette = THEMES[theme.name];
+		if (cursor) outline(ctx, cursor, cw, ch, palette.inkSoft, 1.5);
+		if (selected) outline(ctx, selected, cw, ch, palette.ink, 2);
 	}
 
-	// Research has no per-frame loop — repaint off the reactive deps (a new run, hover, theme). Reading
-	// each here is what subscribes this effect to it; `void` marks them read-for-tracking only.
+	// Research has no per-frame loop — repaint off the reactive deps (a new run, the cursor, the drilled
+	// cell, the theme). Reading each here is what subscribes this effect to it; `void` marks them
+	// read-for-tracking only.
 	$effect(() => {
 		void cells;
 		void results;
-		void hovered;
+		void cursor;
+		void selected;
 		void theme.name;
 		repaint?.();
+	});
+
+	// A new run replaces the cells — drop any cursor/drill, whose indices belonged to the old grid.
+	$effect(() => {
+		void cells;
+		cursor = null;
+		selected = null;
 	});
 
 	/** Which cell a chart-relative point falls on, or null if outside the grid. `.chart` has no padding,
@@ -102,7 +130,36 @@
 
 	function onhover(x: number, y: number): void {
 		pointer = { x, y };
-		hovered = cellAt(x, y);
+		cursor = cellAt(x, y);
+	}
+
+	function onpick(x: number, y: number): void {
+		const cell = cellAt(x, y);
+		if (cell) selected = cell;
+	}
+
+	/** Arrow keys move the cursor cell; Enter/Space drill it — the keyboard path to the same open. */
+	function onkeydown(event: KeyboardEvent): void {
+		if (!cells.length || !seeds) return;
+		const step: Record<string, [number, number]> = {
+			ArrowRight: [1, 0],
+			ArrowLeft: [-1, 0],
+			ArrowDown: [0, 1],
+			ArrowUp: [0, -1]
+		};
+		if (event.key in step) {
+			const [dx, dy] = step[event.key];
+			const base = cursor ?? selected ?? { condition: 0, seed: 0 };
+			cursor = {
+				condition: Math.max(0, Math.min(cells.length - 1, base.condition + dx)),
+				seed: Math.max(0, Math.min(seeds - 1, base.seed + dy))
+			};
+			pointer = null; // keyboard moves have no pointer position, so no tooltip — the outline leads
+			event.preventDefault();
+		} else if ((event.key === 'Enter' || event.key === ' ') && cursor) {
+			selected = cursor;
+			event.preventDefault();
+		}
 	}
 
 	const describeCondition = (cell: SweepCell) =>
@@ -110,13 +167,13 @@
 			.map(([key, level]) => `${key} ${level}`)
 			.join(' · ');
 
-	/** The hovered cell's condition, seed and survival — the tooltip's contents. */
+	/** The cursor cell's condition, seed and survival — the tooltip's contents. */
 	const tip = $derived.by(() => {
-		if (!hovered) return null;
-		const value = results[hovered.condition]?.returns[hovered.seed];
+		if (!cursor) return null;
+		const value = results[cursor.condition]?.returns[cursor.seed];
 		return {
-			condition: describeCondition(cells[hovered.condition]),
-			seed: hovered.seed + 1,
+			condition: describeCondition(cells[cursor.condition]),
+			seed: cursor.seed + 1,
 			value: value != null ? `${value.toFixed(1)}s` : '—'
 		};
 	});
@@ -124,7 +181,7 @@
 	const label = $derived(
 		seeds === 0
 			? 'No conditions completed.'
-			: `Survival across ${cells.length} conditions and ${seeds} seeds; teal squares survived longer, coral shorter.`
+			: `Survival across ${cells.length} conditions and ${seeds} seeds; teal squares survived longer, coral shorter. Arrow keys move the cursor, Enter opens a cell.`
 	);
 </script>
 
@@ -133,7 +190,16 @@
 {:else}
 	<div class="heat" data-testid="sweep-heat" data-conds={cells.length} data-seeds={seeds}>
 		<div class="chart" bind:this={chart}>
-			<Canvas {paint} {register} {onhover} onleave={() => (hovered = null)} {label} />
+			<Canvas
+				{paint}
+				{register}
+				{onhover}
+				{onpick}
+				{onkeydown}
+				onleave={() => (cursor = null)}
+				{label}
+				cursor="pointer"
+			/>
 
 			{#if tip && pointer}
 				<ChartTooltip x={pointer.x} y={pointer.y}>
@@ -149,6 +215,15 @@
 			<span>{hi.toFixed(1)}s</span>
 			<span class="scale-note">shortest → longest survived</span>
 		</div>
+
+		{#if selected && cells[selected.condition]}
+			<RunCellCard
+				cell={cells[selected.condition]}
+				seed={selected.seed}
+				evaluation={results[selected.condition] ?? null}
+				onclose={() => (selected = null)}
+			/>
+		{/if}
 	</div>
 {/if}
 
@@ -172,6 +247,11 @@
 		border-radius: var(--radius-card);
 		background: var(--panel2);
 		overflow: hidden;
+	}
+
+	.chart :global(canvas:focus-visible) {
+		outline: var(--focus-ring);
+		outline-offset: -2px;
 	}
 
 	.tip-cond {

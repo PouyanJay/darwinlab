@@ -21,6 +21,7 @@ import {
 } from '../lab/sweep';
 import { research } from './research.svelte';
 import { app } from './app.svelte';
+import { bench } from './bench.svelte';
 import { seededRng } from '../engine';
 import { SvelteSet } from 'svelte/reactivity';
 import type { JobExecutor } from '../lab/runner';
@@ -147,6 +148,21 @@ class SweepStore {
 
 	cancel(): void {
 		research.cancel();
+	}
+
+	/**
+	 * Watch a drilled condition evolve in Studio — the Sweep→Studio round-trip, the same shape as the
+	 * Atlas's `watch`: drop the condition's config onto the bench as a fresh, named world and switch
+	 * modes, so a cell in the run grid becomes a world you can actually watch. The name encodes the
+	 * factor levels that define the condition, so the new node says which cell it came from.
+	 */
+	watch(cell: SweepCell): void {
+		const name =
+			Object.entries(cell.levels)
+				.map(([factor, level]) => `${factor} ${level}`)
+				.join(' · ') || 'Sweep world';
+		bench.addWorld({ ...cell.cfg, name });
+		app.setMode('studio');
 	}
 }
 
