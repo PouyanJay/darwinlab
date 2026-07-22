@@ -28,6 +28,16 @@ describe('EffectBars', () => {
 		expect(rows[0].querySelector('.val')?.classList.contains('flat')).toBe(false);
 	});
 
+	it('draws a magnitude axis sized to the widest bar or whisker', () => {
+		const { container } = render(EffectBars, { effects });
+
+		// The symmetric axis spans ±max, where max is the largest |value| across every delta and whisker
+		// end — here Predator speed's lo of −6. So the ends read a negative and a positive 6.0s, 0 between.
+		expect(container.querySelector('.tick.lo')?.textContent).toContain('6.0s');
+		expect(container.querySelector('.tick.hi')?.textContent?.trim()).toBe('+6.0s');
+		expect(container.querySelector('.tick.mid')?.textContent?.trim()).toBe('0');
+	});
+
 	it('backs the bars with a table, and names the movers for a screen reader', () => {
 		const { container } = render(EffectBars, { effects });
 

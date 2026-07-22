@@ -1,9 +1,10 @@
 <!--
   The Sweep instrument — factors in, effect sizes out.
 
-  The factor bar runs the grid; when the results are in, the conclusion (each factor's main effect on
-  survival, with intervals) leads, and the raw run grid sits beneath it as the evidence. Until then it
-  says plainly what to do. Everything reads off the sweep store; nothing measures here.
+  A control TOOLBAR runs the grid; when the results are in, they land as two cards: the conclusion
+  (each factor's main effect on survival, with intervals) leads, and the raw run grid sits beside it as
+  the evidence. Until then it says plainly what to do. Everything reads off the sweep store; nothing
+  measures here.
 -->
 <script lang="ts">
 	import FactorBar from './FactorBar.svelte';
@@ -20,10 +21,11 @@
 
 	{#if sweep.results}
 		<div class="results">
-			<section class="block conclusion">
-				<div class="head">
-					<span class="eyebrow">Main effect on survival · 95% interval</span>
-				</div>
+			<section class="card conclusion">
+				<header class="card-head">
+					<span class="eyebrow">Main effect on survival</span>
+					<span class="meta">95% interval</span>
+				</header>
 				<EffectBars effects={effectRows} />
 				<p class="read">
 					A bar clears zero when a factor reliably moves survival — <b>teal</b> if it helps,
@@ -32,57 +34,68 @@
 				</p>
 			</section>
 
-			<section class="block evidence">
-				<div class="head">
+			<section class="card evidence">
+				<header class="card-head">
 					<span class="eyebrow">Runs · condition × seed</span>
 					{#if sweep.sampled}
-						<span class="sampled" data-testid="sweep-sampled">
-							sampled {sweep.cells.length} of {sweep.total} conditions
+						<span class="meta sampled" data-testid="sweep-sampled">
+							sampled {sweep.cells.length} of {sweep.total}
 						</span>
+					{:else}
+						<span class="meta">{sweep.cells.length} × {sweep.seeds}</span>
 					{/if}
-				</div>
+				</header>
 				<RunHeatmap cells={sweep.cells} results={sweep.results} />
 			</section>
 		</div>
 	{:else}
-		<p class="hint">
-			Pick the factors to vary and run the sweep. Every combination is measured across your chosen
-			seeds, and each factor's effect on seconds survived is reported with an error bar.
-		</p>
+		<section class="card empty">
+			<p class="hint">
+				Pick the factors to vary and run the sweep. Every combination is measured across your chosen
+				seeds, and each factor's effect on seconds survived is reported with an error bar.
+			</p>
+		</section>
 	{/if}
 </div>
 
 <style>
+	/* A CONTAINER, so the cards below reflow on the Sweep's OWN width — it sits in a workspace whose
+	   width the rail and sidebar change independently of the viewport, so a viewport query would stack
+	   too early or too late. */
 	.sweep {
 		display: flex;
 		flex-direction: column;
-		gap: var(--sp-6);
+		gap: var(--sp-5);
+		container-type: inline-size;
 	}
 
-	/* Conclusion beside evidence on a wide stage — the effect chart (the answer) leads and takes the
-	   room its bars need; the run grid (the evidence) sits alongside. They stack on a narrow stage. */
+	/* Two equal cards on a wide stage — the conclusion (the answer) beside the evidence (the run grid);
+	   they stack when the Sweep can no longer hold two comfortable columns. */
 	.results {
 		display: grid;
-		grid-template-columns: minmax(0, 1fr) minmax(0, 340px);
-		gap: var(--sp-7);
+		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+		gap: var(--sp-5);
 		align-items: start;
 	}
 
-	@media (max-width: 760px) {
+	@container (max-width: 720px) {
 		.results {
 			grid-template-columns: 1fr;
-			gap: var(--sp-6);
 		}
 	}
 
-	.block {
+	.card {
 		display: flex;
 		flex-direction: column;
 		gap: var(--sp-4);
 		min-width: 0;
+		padding: var(--sp-5);
+		border: 1px solid var(--line);
+		border-radius: var(--radius-card);
+		background: var(--panel);
 	}
 
-	.head {
+	.card-head {
 		display: flex;
 		align-items: baseline;
 		justify-content: space-between;
@@ -97,10 +110,15 @@
 		color: var(--ink3);
 	}
 
-	.sampled {
+	.meta {
 		font-size: var(--fs-sm);
-		color: var(--danger-ink);
+		color: var(--ink3);
 		font-variant-numeric: tabular-nums;
+		white-space: nowrap;
+	}
+
+	.meta.sampled {
+		color: var(--danger-ink);
 	}
 
 	.read {
@@ -110,6 +128,7 @@
 		color: var(--ink3);
 	}
 
+	.empty .hint,
 	.hint {
 		margin: 0;
 		font-size: var(--fs-body);

@@ -68,6 +68,18 @@
 				</span>
 			</div>
 		{/each}
+
+		<!-- The magnitude axis: the symmetric survival-seconds scale the bars are drawn against, so a
+		     reader can read a bar's length as a number, not just a direction. -->
+		<div class="axis" aria-hidden="true">
+			<span></span>
+			<div class="ticks">
+				<span class="tick lo">−{max.toFixed(1)}s</span>
+				<span class="tick mid">0</span>
+				<span class="tick hi">+{max.toFixed(1)}s</span>
+			</div>
+			<span></span>
+		</div>
 	</div>
 
 	{#snippet table()}
@@ -90,9 +102,10 @@
 		gap: var(--sp-3);
 	}
 
-	.row {
+	.row,
+	.axis {
 		display: grid;
-		grid-template-columns: 92px 1fr 52px;
+		grid-template-columns: 104px 1fr 56px;
 		align-items: center;
 		gap: var(--sp-3);
 	}
@@ -108,7 +121,7 @@
 
 	.track {
 		position: relative;
-		height: 20px;
+		height: 24px;
 	}
 
 	.zero {
@@ -124,14 +137,14 @@
 	/* Colour is set inline from the survival palette (teal helps / coral costs / muted when flat). */
 	.bar {
 		position: absolute;
-		top: 4px;
-		height: 12px;
+		top: 5px;
+		height: 14px;
 		border-radius: 3px;
 	}
 
 	.whisk {
 		position: absolute;
-		top: 9px;
+		top: 11px;
 		height: 1px;
 		background: var(--ink2);
 	}
@@ -168,5 +181,39 @@
 
 	.val.flat {
 		color: var(--ink3);
+	}
+
+	/* The scale under the bars — its middle column lines up with the tracks above it, so its 0 sits on
+	   the zero line and its ends mark the widest bar the axis can hold. */
+	.axis {
+		margin-top: 2px;
+		padding-top: var(--sp-2);
+		border-top: 1px solid var(--line);
+	}
+
+	.ticks {
+		position: relative;
+		height: 12px;
+		font-size: var(--fs-eyebrow);
+		color: var(--ink3);
+		font-variant-numeric: tabular-nums;
+	}
+
+	.tick {
+		position: absolute;
+		top: 0;
+	}
+
+	.tick.lo {
+		left: 0;
+	}
+
+	.tick.mid {
+		left: 50%;
+		transform: translateX(-50%);
+	}
+
+	.tick.hi {
+		right: 0;
 	}
 </style>
