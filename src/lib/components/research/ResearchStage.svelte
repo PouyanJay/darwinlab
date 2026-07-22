@@ -18,6 +18,7 @@
 	import Sweep from './Sweep/Sweep.svelte';
 	import Ledger from './Ledger/Ledger.svelte';
 	import Atlas from './Atlas/Atlas.svelte';
+	import Trace from './Trace/Trace.svelte';
 	import ReportView from './Report/ReportView.svelte';
 	import QuestionTags from './QuestionTags.svelte';
 	import { instrumentMeta, answersOf, type Instrument } from './instruments';
@@ -51,6 +52,8 @@
 					<Ledger />
 				{:else if active === 'atlas'}
 					<Atlas />
+				{:else if active === 'trace'}
+					<Trace />
 				{:else if active === 'report'}
 					<ReportView />
 				{/if}

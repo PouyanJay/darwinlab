@@ -55,6 +55,10 @@ export interface FindingInput {
 	/** Distinguishes findings from the same source about the same subject (the Ledger's claimId); '' when
 	 *  a source contributes one finding per subject (the Sweep, the Atlas). */
 	variant: string;
+	/** The questions THIS finding settles — defaults to every question the source can answer
+	 *  (`ANSWERS[source]`). A trace overrides it: its two findings answer different questions with
+	 *  different graphs (the curve settles Q1, the mechanism Q5), so they can't share one question set. */
+	questions?: QuestionId[];
 	title: string;
 	detail: string;
 	status: FindingStatus;
@@ -154,7 +158,7 @@ class FindingsStore {
 			id: crypto.randomUUID(),
 			key,
 			source: input.source,
-			questions: ANSWERS[input.source],
+			questions: input.questions ?? ANSWERS[input.source],
 			title: input.title,
 			detail: input.detail,
 			status: input.status,

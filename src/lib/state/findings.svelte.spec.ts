@@ -64,6 +64,13 @@ describe('the Findings notebook', () => {
 		expect(stored().entries[0].title).toBe('Direction +2.4s');
 	});
 
+	it('lets a finding override the questions it settles — a trace curve answers only Q1', () => {
+		// A trace produces two findings from one source; each answers a subset of ANSWERS.trace ([Q1,Q5]),
+		// so the store honours an explicit `questions` rather than always tagging the source's whole set.
+		findings.add(input({ source: 'trace', variant: 'curve', questions: ['Q1'] }));
+		expect(findings.entries[0].questions).toEqual(['Q1']);
+	});
+
 	it('re-adding the same source + variant on the same subject updates in place, not duplicates', () => {
 		findings.add(input({ title: 'Direction +2.4s' }));
 		findings.add(input({ title: 'Direction +2.6s' })); // the same sweep, re-added after another run

@@ -9,9 +9,9 @@ import { ANSWERS } from '../../lab/questions';
  */
 
 describe('the console instruments', () => {
-	it('lists the four instruments, all ready', () => {
-		expect(INSTRUMENTS.map((i) => i.key)).toEqual(['sweep', 'ledger', 'atlas', 'report']);
-		expect(readyInstrumentKeys).toEqual(['sweep', 'ledger', 'atlas', 'report']);
+	it('lists the five instruments, all ready, with the Report last', () => {
+		expect(INSTRUMENTS.map((i) => i.key)).toEqual(['sweep', 'ledger', 'atlas', 'trace', 'report']);
+		expect(readyInstrumentKeys).toEqual(['sweep', 'ledger', 'atlas', 'trace', 'report']);
 	});
 
 	it('resolves each key to its metadata, and falls back rather than throwing', () => {
@@ -24,6 +24,7 @@ describe('the console instruments', () => {
 		expect(answersOf('sweep')).toEqual(ANSWERS.sweep);
 		expect(answersOf('ledger')).toEqual(ANSWERS.ledger);
 		expect(answersOf('atlas')).toEqual(ANSWERS.atlas);
+		expect(answersOf('trace')).toEqual(ANSWERS.trace); // the Trace settles Q1 + Q5
 	});
 
 	it('gives the Report no tag — it assembles the seven, it does not answer one', () => {

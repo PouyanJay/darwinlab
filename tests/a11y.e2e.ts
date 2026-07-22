@@ -109,6 +109,11 @@ test('the Research stage scans clean — the instrument tabs, the Sweep and the 
 	await page.getByRole('tab', { name: 'The Atlas' }).click();
 	await page.getByTestId('atlas').waitFor();
 	expect(await violations(page)).toEqual([]);
+
+	// and the Trace's empty state — its run control and prompt, before a study is run
+	await page.getByRole('tab', { name: 'The Trace' }).click();
+	await page.getByTestId('trace').waitFor();
+	expect(await violations(page)).toEqual([]);
 });
 
 test('the Research subject banner scans clean — "Analysing <world>" is new surface', async ({

@@ -29,11 +29,29 @@ export interface BandPoint {
 	survival: number;
 }
 
+/** How to read a behaviour number — the unit its bar and label are formatted in. */
+export type BehaviorUnit = 'deg' | 'frac' | 'px';
+
+/**
+ * One behavioural signature, evolved against a random-brain control — the mechanism IS the contrast
+ * (Q5). A trace measures both populations on the same frozen bout, so "evolved flees more accurately"
+ * is the gap between the two bars, not an absolute a reader has no baseline for.
+ */
+export interface BehaviorMetric {
+	label: string;
+	evolved: number;
+	control: number;
+	unit: BehaviorUnit;
+	/** True when a HIGHER number is better behaviour (dodge rate); false when lower is (flee error). */
+	higherIsBetter: boolean;
+}
+
 export type Evidence =
 	| { kind: 'effects'; effects: EffectRow[] }
 	| { kind: 'contrast'; arms: ArmRow[] }
 	| { kind: 'landscape'; axisLabel: string; axisKey: string; band: BandPoint[]; cliffX?: number }
-	| { kind: 'curve'; curve: number[] };
+	| { kind: 'curve'; curve: number[] }
+	| { kind: 'behavior'; metrics: BehaviorMetric[] };
 
 /**
  * A factor's interval can't clear zero — the Sweep's "does nothing here" test, and the one that
