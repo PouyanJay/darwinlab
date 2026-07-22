@@ -14,12 +14,52 @@
 
 import { runTraceStudy, behaviorMetrics, type TraceStudy } from '../harness/traceStudy';
 import { app } from './app.svelte';
-import { findings } from './findings.svelte';
+import { findings, type FindingInput } from './findings.svelte';
 import { configHash } from '../lab/run';
 import { formatSurvivalPct } from '../format';
 
 /** Generations a trace evolves its population for — enough to climb and converge on this predator. */
 export const TRACE_EPISODES = 40;
+
+/**
+ * A study's two report findings — the learning curve (Q1) and the evolved-vs-control mechanism (Q5).
+ * TWO findings, not one: they answer different questions with different evidence, so each declares its
+ * own single question via the notebook's `questions` override rather than sharing the source's whole
+ * `[Q1, Q5]` set. Pure, so the mapping is testable without a live evolve.
+ */
+export function traceFindings(study: TraceStudy, hash: string): FindingInput[] {
+	const finalSurvival = study.curve.length ? study.curve[study.curve.length - 1] : 0;
+	const evolvedSurvivors = study.evolved.trace.fish.filter((f) => !f.died).length;
+	const total = study.evolved.trace.fish.length;
+
+	return [
+		{
+			source: 'trace',
+			variant: 'curve',
+			questions: ['Q1'],
+			title: `Learned to ${formatSurvivalPct(finalSurvival)} survival`,
+			detail: `climbed over ${study.episodes} generations of selection`,
+			status: 'ok',
+			seeds: 1,
+			configHash: hash,
+			evidence: { kind: 'curve', curve: study.curve }
+		},
+		{
+			source: 'trace',
+			variant: 'mechanism',
+			questions: ['Q5'],
+			title: `${evolvedSurvivors}/${total} survive where random brains don't`,
+			detail: 'evolved fish flee accurately and keep their distance from the predator',
+			status: 'ok',
+			seeds: 1,
+			configHash: hash,
+			evidence: {
+				kind: 'behavior',
+				metrics: behaviorMetrics(study.evolved.behavior, study.control.behavior)
+			}
+		}
+	];
+}
 
 class TraceStore {
 	#result = $state.raw<TraceStudy | null>(null);
@@ -73,45 +113,11 @@ class TraceStore {
 		return findings.has('trace', 'curve') && findings.has('trace', 'mechanism');
 	}
 
-	/**
-	 * Add the study's two findings — the learning curve (Q1) and the mechanism (Q5) — to the report.
-	 * Two findings, not one: they answer different questions with different evidence, so each declares
-	 * its own single question rather than sharing the source's whole `[Q1, Q5]` set.
-	 */
+	/** Add the study's two findings — the learning curve (Q1) and the mechanism (Q5) — to the report. */
 	addToReport(): void {
-		const study = this.#result;
-		if (!study) return;
+		if (!this.#result) return;
 		const hash = configHash([app.subjectBase('Trace')]);
-		const finalSurvival = study.curve.length ? study.curve[study.curve.length - 1] : 0;
-		const evolvedSurvivors = study.evolved.trace.fish.filter((f) => !f.died).length;
-		const total = study.evolved.trace.fish.length;
-
-		findings.add({
-			source: 'trace',
-			variant: 'curve',
-			questions: ['Q1'],
-			title: `Learned to ${formatSurvivalPct(finalSurvival)} survival`,
-			detail: `climbed over ${study.episodes} generations of selection`,
-			status: 'ok',
-			seeds: 1,
-			configHash: hash,
-			evidence: { kind: 'curve', curve: study.curve }
-		});
-
-		findings.add({
-			source: 'trace',
-			variant: 'mechanism',
-			questions: ['Q5'],
-			title: `${evolvedSurvivors}/${total} survive where random brains don't`,
-			detail: 'evolved fish flee accurately and keep their distance from the predator',
-			status: 'ok',
-			seeds: 1,
-			configHash: hash,
-			evidence: {
-				kind: 'behavior',
-				metrics: behaviorMetrics(study.evolved.behavior, study.control.behavior)
-			}
-		});
+		for (const finding of traceFindings(this.#result, hash)) findings.add(finding);
 	}
 }
 

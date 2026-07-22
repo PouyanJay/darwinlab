@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { gotoApp, openResearch } from './helpers';
+import { gotoApp, openResearch, scanForViolations } from './helpers';
 
 /**
  * The Trace instrument end to end (RC5): the console's second discovery type. Running it evolves one
@@ -36,6 +36,10 @@ test('a trace runs, draws its curve and mechanism, and shows the evolved-vs-cont
 	// (Each label appears in a visible panel and again in the collapsed data-table, so scope to the first.)
 	await expect(trace.getByText('evolved', { exact: true }).first()).toBeVisible();
 	await expect(trace.getByText('Random control').first()).toBeVisible();
+
+	// The populated result — the learning curve, the mechanism bars and the trajectories — is new
+	// surface; it must scan clean too (these viz are only ever mounted here and in the Report).
+	expect(await scanForViolations(page)).toEqual([]);
 });
 
 test('a trace answers Q1 and Q5 in the Report — and nothing else', async ({ page }) => {
