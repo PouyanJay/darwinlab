@@ -84,7 +84,9 @@
 		color: var(--ink3);
 	}
 
-	/* The verdict word leads, prominent — supported wears the survival teal, refuted the danger hue. */
+	/* The verdict word leads, prominent — supported wears the survival teal, refuted the danger hue. The
+	   tints are a touch stronger than the old inline chip's (20%/45% vs 18%/40%) so they read at the
+	   badge's larger size. */
 	.badge {
 		font-size: var(--fs-eyebrow);
 		font-weight: var(--fw-semibold);
@@ -106,7 +108,7 @@
 
 	h2 {
 		font-family: var(--font-display);
-		font-size: var(--fs-report-headline, 26px);
+		font-size: var(--fs-report-headline);
 		font-weight: var(--fw-semibold);
 		letter-spacing: var(--tracking-tight);
 		margin: 0;
