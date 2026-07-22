@@ -15,7 +15,8 @@
 	import Canvas from '../../common/Canvas.svelte';
 	import ChartTooltip from '../../common/ChartTooltip.svelte';
 	import RunCellCard from './RunCellCard.svelte';
-	import { theme } from '$lib/state';
+	import { ARROW_STEP } from '../gridCursor';
+	import { sweep, theme } from '$lib/state';
 	import { heatColor, THEMES } from '$lib/render';
 	import type { SweepCell } from '$lib/lab/sweep';
 	import type { Evaluation } from '$lib/lab/evaluator';
@@ -29,10 +30,10 @@
 	}
 
 	let chart = $state<HTMLDivElement>();
-	/** The cell the cursor is on — set by hover AND by keyboard; drives the outline and the tooltip. */
+	/** The cell the cursor is on — set by hover AND by keyboard; drives the outline and the tooltip.
+	 *  Ephemeral view state, kept local (the Atlas's `focus` is the same). The DRILLED cell, by contrast,
+	 *  is store-owned (`sweep.selected`) so a new run clears it as part of the run. */
 	let cursor = $state<RunCellRef | null>(null);
-	/** The drilled cell, opened in the card below the grid. */
-	let selected = $state<RunCellRef | null>(null);
 	let pointer = $state<{ x: number; y: number } | null>(null);
 	let repaint = $state<(() => void) | undefined>();
 
@@ -49,27 +50,6 @@
 
 	const GAP = 2;
 	const RADIUS = 2;
-
-	function outline(
-		ctx: CanvasRenderingContext2D,
-		ref: RunCellRef,
-		cw: number,
-		ch: number,
-		color: string,
-		lineWidth: number
-	): void {
-		ctx.strokeStyle = color;
-		ctx.lineWidth = lineWidth;
-		ctx.beginPath();
-		ctx.roundRect(
-			ref.condition * cw + GAP / 2,
-			ref.seed * ch + GAP / 2,
-			cw - GAP,
-			ch - GAP,
-			RADIUS
-		);
-		ctx.stroke();
-	}
 
 	function paint(ctx: CanvasRenderingContext2D, width: number, height: number): void {
 		ctx.clearRect(0, 0, width, height);
@@ -91,30 +71,39 @@
 			}
 		}
 
-		// Cursor (soft) and drilled (strong) outlines — a lightness cue, never a colour (the cell colour
-		// is the data). The drilled outline is drawn last so it wins when the cursor sits on it.
+		// Outline a cell — a lightness cue, never a colour (the cell colour is the data). Closes over the
+		// cell geometry, so it stays a small, few-argument call.
+		const stroke = (ref: RunCellRef, color: string, lineWidth: number) => {
+			ctx.strokeStyle = color;
+			ctx.lineWidth = lineWidth;
+			ctx.beginPath();
+			ctx.roundRect(
+				ref.condition * cw + GAP / 2,
+				ref.seed * ch + GAP / 2,
+				cw - GAP,
+				ch - GAP,
+				RADIUS
+			);
+			ctx.stroke();
+		};
+
+		// Cursor (soft) then drilled (strong) — the drilled outline is drawn last so it wins when the
+		// cursor sits on it.
 		const palette = THEMES[theme.name];
-		if (cursor) outline(ctx, cursor, cw, ch, palette.inkSoft, 1.5);
-		if (selected) outline(ctx, selected, cw, ch, palette.ink, 2);
+		if (cursor) stroke(cursor, palette.inkSoft, 1.5);
+		if (sweep.selected) stroke(sweep.selected, palette.ink, 2);
 	}
 
 	// Research has no per-frame loop — repaint off the reactive deps (a new run, the cursor, the drilled
 	// cell, the theme). Reading each here is what subscribes this effect to it; `void` marks them
-	// read-for-tracking only.
+	// read-for-tracking only. `sweep.selected` is cleared by the store on a new run, so no reset here.
 	$effect(() => {
 		void cells;
 		void results;
 		void cursor;
-		void selected;
+		void sweep.selected;
 		void theme.name;
 		repaint?.();
-	});
-
-	// A new run replaces the cells — drop any cursor/drill, whose indices belonged to the old grid.
-	$effect(() => {
-		void cells;
-		cursor = null;
-		selected = null;
 	});
 
 	/** Which cell a chart-relative point falls on, or null if outside the grid. `.chart` has no padding,
@@ -135,21 +124,15 @@
 
 	function onpick(x: number, y: number): void {
 		const cell = cellAt(x, y);
-		if (cell) selected = cell;
+		if (cell) sweep.select(cell.condition, cell.seed);
 	}
 
 	/** Arrow keys move the cursor cell; Enter/Space drill it — the keyboard path to the same open. */
 	function onkeydown(event: KeyboardEvent): void {
 		if (!cells.length || !seeds) return;
-		const step: Record<string, [number, number]> = {
-			ArrowRight: [1, 0],
-			ArrowLeft: [-1, 0],
-			ArrowDown: [0, 1],
-			ArrowUp: [0, -1]
-		};
-		if (event.key in step) {
-			const [dx, dy] = step[event.key];
-			const base = cursor ?? selected ?? { condition: 0, seed: 0 };
+		if (event.key in ARROW_STEP) {
+			const [dx, dy] = ARROW_STEP[event.key];
+			const base = cursor ?? sweep.selected ?? { condition: 0, seed: 0 };
 			cursor = {
 				condition: Math.max(0, Math.min(cells.length - 1, base.condition + dx)),
 				seed: Math.max(0, Math.min(seeds - 1, base.seed + dy))
@@ -157,7 +140,7 @@
 			pointer = null; // keyboard moves have no pointer position, so no tooltip — the outline leads
 			event.preventDefault();
 		} else if ((event.key === 'Enter' || event.key === ' ') && cursor) {
-			selected = cursor;
+			sweep.select(cursor.condition, cursor.seed);
 			event.preventDefault();
 		}
 	}
@@ -216,12 +199,12 @@
 			<span class="scale-note">shortest → longest survived</span>
 		</div>
 
-		{#if selected && cells[selected.condition]}
+		{#if sweep.selected && cells[sweep.selected.condition]}
 			<RunCellCard
-				cell={cells[selected.condition]}
-				seed={selected.seed}
-				evaluation={results[selected.condition] ?? null}
-				onclose={() => (selected = null)}
+				cell={cells[sweep.selected.condition]}
+				seed={sweep.selected.seed}
+				evaluation={results[sweep.selected.condition] ?? null}
+				onclose={() => sweep.clearSelection()}
 			/>
 		{/if}
 	</div>

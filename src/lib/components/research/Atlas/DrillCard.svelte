@@ -9,8 +9,7 @@
 	import Icon from '../../common/Icon.svelte';
 	import Canvas from '../../common/Canvas.svelte';
 	import { landscape, theme } from '$lib/state';
-	import { makeWorld, stepWorld, seededRng } from '$lib/engine';
-	import { drawWorld } from '$lib/render';
+	import { previewWorld } from '$lib/render';
 
 	const cell = $derived(landscape.selected);
 	const value = $derived(landscape.selectedValue);
@@ -27,9 +26,7 @@
 	function paintMini(ctx: CanvasRenderingContext2D, w: number, h: number): void {
 		const drilled = landscape.selected;
 		if (!drilled) return;
-		const world = makeWorld(structuredClone(drilled.cfg), undefined, seededRng(7));
-		for (let i = 0; i < 120; i++) stepWorld(world, 1 / 60);
-		drawWorld(world, ctx, w, h, { theme: theme.name, detail: 'performance' });
+		previewWorld(drilled.cfg, ctx, w, h, theme.name);
 	}
 </script>
 

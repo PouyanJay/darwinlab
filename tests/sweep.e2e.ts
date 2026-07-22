@@ -91,6 +91,7 @@ test('drilling a cell opens its world below the grid, and watches it in Studio',
 	await expect(card).toContainText('Condition mean'); // the aggregate it sits within
 	await expect(card).toContainText('Direction'); // the factor level that defines the condition
 	await expect(card.locator('.mini canvas')).toBeVisible(); // the mini-tank preview painted
+	await expect(card.locator('.spread .dot.me')).toBeVisible(); // this run, ringed in its spread
 
 	// "Watch this world" carries the condition into Studio — the round-trip out of the run grid.
 	await card.getByRole('button', { name: 'Watch this world' }).click();
@@ -98,6 +99,9 @@ test('drilling a cell opens its world below the grid, and watches it in Studio',
 	await expect(
 		page.getByRole('radiogroup', { name: 'lab mode' }).getByRole('radio', { name: 'Studio' })
 	).toBeChecked();
+	// …and the world that landed is THIS condition, named for its factor — not just a mode flip. (The
+	// minimal sweep varies only Direction, so the new Studio world is named "Direction off/on".)
+	await expect(page.getByRole('textbox', { name: 'world name' }).last()).toHaveValue(/Direction/);
 });
 
 test('the run grid is keyboard-drillable — arrow to a cell, Enter opens it', async ({ page }) => {

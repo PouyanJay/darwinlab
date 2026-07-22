@@ -10,8 +10,7 @@
 	import Icon from '../../common/Icon.svelte';
 	import Canvas from '../../common/Canvas.svelte';
 	import { sweep, theme } from '$lib/state';
-	import { makeWorld, stepWorld, seededRng } from '$lib/engine';
-	import { drawWorld, heatColor } from '$lib/render';
+	import { previewWorld, heatColor } from '$lib/render';
 	import { formatSeconds } from '$lib/format';
 	import type { SweepCell } from '$lib/lab/sweep';
 	import type { Evaluation } from '$lib/lab/evaluator';
@@ -46,15 +45,10 @@
 	const hi = $derived(returns.length ? Math.max(...returns) : 1);
 	const at = (v: number) => (hi > lo ? ((v - lo) / (hi - lo)) * 100 : 50);
 
-	/**
-	 * A peek at the arena for this condition: a FRESH world at its config, stepped a couple of sim-
-	 * seconds so the fish scatter and the shark hunts. A preview of the place, not the evolved result —
-	 * "Watch this world" opens the real, evolving tank in Studio. Painted once per drill (keyed).
-	 */
+	// A peek at the arena for this condition — a preview of the place, not the evolved result; "Watch
+	// this world" opens the real, evolving tank in Studio. Painted once per drill (the block is keyed).
 	function paintMini(ctx: CanvasRenderingContext2D, w: number, h: number): void {
-		const world = makeWorld(structuredClone(cell.cfg), undefined, seededRng(7));
-		for (let i = 0; i < 120; i++) stepWorld(world, 1 / 60);
-		drawWorld(world, ctx, w, h, { theme: theme.name, detail: 'performance' });
+		previewWorld(cell.cfg, ctx, w, h, theme.name);
 	}
 </script>
 

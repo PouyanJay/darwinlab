@@ -11,6 +11,7 @@
 <script lang="ts">
 	import Canvas from '../../common/Canvas.svelte';
 	import ChartTooltip from '../../common/ChartTooltip.svelte';
+	import { ARROW_STEP } from '../gridCursor';
 	import { landscape, theme } from '$lib/state';
 	import { drawLandscape, type CellRef } from '$lib/render';
 
@@ -77,14 +78,8 @@
 	function onkeydown(event: KeyboardEvent): void {
 		const field = landscape.field;
 		if (!field) return;
-		const step: Record<string, [number, number]> = {
-			ArrowRight: [1, 0],
-			ArrowLeft: [-1, 0],
-			ArrowDown: [0, 1],
-			ArrowUp: [0, -1]
-		};
-		if (event.key in step) {
-			const [dx, dy] = step[event.key];
+		if (event.key in ARROW_STEP) {
+			const [dx, dy] = ARROW_STEP[event.key];
 			const base = focus ?? { ix: 0, iy: 0 };
 			focus = {
 				ix: Math.max(0, Math.min(field.cols - 1, base.ix + dx)),

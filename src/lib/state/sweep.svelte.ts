@@ -27,6 +27,12 @@ import { SvelteSet } from 'svelte/reactivity';
 import type { JobExecutor } from '../lab/runner';
 import type { Evaluation } from '../lab/evaluator';
 
+/** A drilled cell of the run grid — its condition column and seed row. */
+export interface SweepSelection {
+	condition: number;
+	seed: number;
+}
+
 /** The factors the sweep starts with selected — a real but bounded grid (2×2×2×3 = 24 cells). */
 const DEFAULT_SELECTED = ['dir', 'dist', 'walls', 'predSpeed'];
 
@@ -48,6 +54,10 @@ class SweepStore {
 	// The factors the current results were computed for, captured at run time so a toggle after a run
 	// does not re-pool the old results against a factor set they were never measured on.
 	#lastFactors: Factor[] = [];
+
+	// The drilled cell of the run grid, or null. Store-owned (like the Atlas's `selected`) so a new run
+	// clears it AS PART of the run — its indices belonged to the old grid.
+	#drilled = $state.raw<SweepSelection | null>(null);
 
 	/** Every factor the sweep could include, in offered order. */
 	get factors(): Factor[] {
@@ -113,6 +123,20 @@ class SweepStore {
 		return this.#sampled;
 	}
 
+	/** The drilled cell of the run grid, or null — the one the RunCellCard opens below the grid. */
+	get selected(): SweepSelection | null {
+		return this.#drilled;
+	}
+
+	/** Drill into a cell — open its condition's world below the grid. */
+	select(condition: number, seed: number): void {
+		this.#drilled = { condition, seed };
+	}
+
+	clearSelection(): void {
+		this.#drilled = null;
+	}
+
 	/** The per-factor main effects of the last run — empty until there is a result. */
 	get effects(): FactorEffect[] {
 		if (!this.#results) return [];
@@ -144,6 +168,7 @@ class SweepStore {
 		this.#total = plan.total;
 		this.#sampled = plan.sampled;
 		this.#results = results;
+		this.#drilled = null; // a fresh grid — the old drilled cell is gone
 	}
 
 	cancel(): void {
@@ -159,7 +184,10 @@ class SweepStore {
 	watch(cell: SweepCell): void {
 		const name =
 			Object.entries(cell.levels)
-				.map(([factor, level]) => `${factor} ${level}`)
+				.map(([key, level]) => {
+					const factor = CANDIDATE_FACTORS.find((f) => f.key === key)?.label ?? key;
+					return `${factor} ${level}`;
+				})
 				.join(' · ') || 'Sweep world';
 		bench.addWorld({ ...cell.cfg, name });
 		app.setMode('studio');
