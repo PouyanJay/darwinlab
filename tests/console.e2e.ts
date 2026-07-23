@@ -39,10 +39,12 @@ test('the console has three zones and the sidebar follows the active instrument'
 	await expect(page.getByTestId('ledger-design')).toBeVisible();
 	await expect(sidebar).toContainText('Test a claim and its record opens here');
 
-	// The Atlas — the sidebar becomes the landscape panel (its empty state until a landscape is run).
+	// The Atlas — the landscape panel docks as the second sidebar; the context sidebar prompts the
+	// drill until a landscape is painted.
 	await page.getByRole('tab', { name: 'The Atlas' }).click();
 	await expect(page.getByTestId('atlas')).toBeVisible();
-	await expect(sidebar).toContainText('This landscape');
+	await expect(page.getByTestId('atlas-design')).toBeVisible();
+	await expect(sidebar).toContainText('Paint a landscape and drill any cell');
 
 	// The Trace — the second discovery type; the sidebar becomes its study summary (empty until run).
 	await page.getByRole('tab', { name: 'The Trace' }).click();

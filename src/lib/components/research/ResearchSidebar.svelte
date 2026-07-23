@@ -1,20 +1,19 @@
 <!--
   The console's right zone: context for whatever the workspace is showing.
 
-  A thin switch, one panel per instrument — the Atlas's drilled point (the DrillCard, or an empty
-  prompt), the Sweep's run summary, the Ledger's claim summary. Each panel is its own component that
-  reads its own store, so they grow independently in later phases without this file changing for
-  unrelated reasons. A `complementary` landmark, since it is supporting context beside the workspace.
+  A thin switch, one panel per instrument — the Atlas's and the Ledger's drilled records, the
+  Sweep's run summary + drill, the Trace's study, the Report's contents. Each panel is its own
+  component that reads its own store, so they grow independently in later phases without this file
+  changing for unrelated reasons. A `complementary` landmark, since it is supporting context beside
+  the workspace.
 -->
 <script lang="ts">
 	import DrillCard from './Atlas/DrillCard.svelte';
-	import LandscapeSummary from './Atlas/LandscapeSummary.svelte';
 	import SweepSummary from './Sweep/SweepSummary.svelte';
 	import SweepDrillCard from './Sweep/SweepDrillCard.svelte';
 	import LedgerDrillCard from './Ledger/LedgerDrillCard.svelte';
 	import TraceSummary from './Trace/TraceSummary.svelte';
 	import ReportContents from './Report/ReportContents.svelte';
-	import SummaryPanel from './SummaryPanel.svelte';
 	import { landscape, ledger, sweep } from '$lib/state';
 	import type { Instrument } from './instruments';
 
@@ -33,18 +32,15 @@
 
 <aside class="sidebar no-scrollbar" data-testid="research-sidebar" aria-label="research context">
 	{#if active === 'atlas'}
-		{#if hasField}
-			<LandscapeSummary />
-			{#if drilled}
-				<DrillCard />
-			{:else}
-				<p class="empty">Click a cell on the map to open its world here — the door into Studio.</p>
-			{/if}
+		{#if drilled}
+			<DrillCard />
+		{:else if hasField}
+			<p class="empty">Click a cell on the map to open its world here — the door into Studio.</p>
 		{:else}
-			<SummaryPanel
-				eyebrow="This landscape"
-				empty="Run a landscape — its threshold and drilled worlds appear here."
-			/>
+			<p class="empty">
+				Paint a landscape and drill any cell — its place on the plane, its neighbours, and the door
+				into Studio open here.
+			</p>
 		{/if}
 	{:else if active === 'sweep'}
 		<SweepSummary />

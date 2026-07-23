@@ -40,7 +40,7 @@
 			theme: theme.name,
 			hovered: focus,
 			selected: landscape.selected,
-			falloff: landscape.falloff
+			cliffRows: landscape.cliffRows
 		});
 	}
 
@@ -54,12 +54,13 @@
 		repaint?.();
 	});
 
-	/** Which grid cell a chart-relative point falls on, or null if outside. */
+	/** Which grid cell a chart-relative point falls on, or null if outside. Row iy=0 sits at the
+	 *  BOTTOM (Y grows upward, like a chart) — the same flip drawLandscape paints with. */
 	function cellAt(x: number, y: number): CellRef | null {
 		const field = landscape.field;
 		if (!field || !chart) return null;
 		const ix = Math.floor(x / (chart.clientWidth / field.cols));
-		const iy = Math.floor(y / (chart.clientHeight / field.rows));
+		const iy = field.rows - 1 - Math.floor(y / (chart.clientHeight / field.rows));
 		if (ix < 0 || iy < 0 || ix >= field.cols || iy >= field.rows) return null;
 		return { ix, iy };
 	}
@@ -81,9 +82,10 @@
 		if (event.key in ARROW_STEP) {
 			const [dx, dy] = ARROW_STEP[event.key];
 			const base = focus ?? { ix: 0, iy: 0 };
+			// ARROW_STEP speaks screen-down-positive; this map's rows grow UPWARD, so dy flips.
 			focus = {
 				ix: Math.max(0, Math.min(field.cols - 1, base.ix + dx)),
-				iy: Math.max(0, Math.min(field.rows - 1, base.iy + dy))
+				iy: Math.max(0, Math.min(field.rows - 1, base.iy - dy))
 			};
 			event.preventDefault();
 		} else if ((event.key === 'Enter' || event.key === ' ') && focus) {
@@ -104,6 +106,10 @@
 	const xTicks = $derived(
 		field ? axisTicks(field.axisX.min, field.axisX.max, field.axisX.format) : []
 	);
+	// Y ticks read top-down (the map's row 0 is the top), so the list is reversed for display.
+	const yTicks = $derived(
+		field ? [...axisTicks(field.axisY.min, field.axisY.max, field.axisY.format)].reverse() : []
+	);
 
 	/** The focused cell's labels, axis values and survival — the tooltip's contents. */
 	const focusValues = $derived.by(() => {
@@ -116,11 +122,6 @@
 		return { xLabel: xs.label, yLabel: ys.label, x: xs.format(x), y: ys.format(y), value };
 	});
 
-	/** Where along the width the cliff line sits, as a percentage — for the on-map label. */
-	const cliffPct = $derived(
-		field && landscape.falloff ? ((landscape.falloff.ix + 1) / field.cols) * 100 : null
-	);
-
 	const mapLabel = $derived(
 		field
 			? `Survival landscape, ${field.cols} by ${field.rows} grid of ${field.axisX.label} against ${field.axisY.label}. Arrow keys move the cursor, Enter opens a cell.`
@@ -131,6 +132,12 @@
 {#if field}
 	<div class="map">
 		<div class="ylabel"><span>{field.axisY.label} →</span></div>
+
+		<div class="yticks" aria-hidden="true">
+			{#each yTicks as tick (tick.frac)}
+				<span class="tabular">{tick.label}</span>
+			{/each}
+		</div>
 
 		<div class="chart" bind:this={chart}>
 			<Canvas
@@ -150,13 +157,6 @@
 				<span class="ramp"></span>
 				<span>{field.max.toFixed(1)}s</span>
 			</div>
-
-			<!-- The measured cliff, named at the line. -->
-			{#if cliffPct !== null && landscape.falloff}
-				<span class="cliff-label" style:left="{cliffPct}%" aria-hidden="true">
-					the cliff · {field.axisX.format(landscape.falloff.x)}
-				</span>
-			{/if}
 
 			{#if focusValues && pointer}
 				<ChartTooltip x={pointer.x} y={pointer.y}>
@@ -183,7 +183,7 @@
 <style>
 	.map {
 		display: grid;
-		grid-template-columns: 20px minmax(0, 1fr);
+		grid-template-columns: 20px auto minmax(0, 1fr);
 		grid-template-rows: minmax(0, 1fr) auto;
 		gap: var(--sp-2);
 	}
@@ -194,6 +194,24 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
+	}
+
+	/* The Y tick values, top-down beside the frame — the mock's second difference from the old map
+	   (the first is the row-traced cliff). */
+	.yticks {
+		grid-column: 2;
+		grid-row: 1;
+		display: flex;
+		flex-direction: column;
+		justify-content: space-between;
+		align-items: flex-end;
+		padding: 2px 0;
+	}
+
+	.yticks span {
+		font-size: var(--fs-eyebrow);
+		color: var(--ink3);
+		font-variant-numeric: tabular-nums;
 	}
 
 	.ylabel span {
@@ -207,7 +225,7 @@
 	}
 
 	.chart {
-		grid-column: 2;
+		grid-column: 3;
 		grid-row: 1;
 		position: relative;
 		height: clamp(300px, 44vh, 460px);
@@ -246,21 +264,6 @@
 		background: linear-gradient(90deg, var(--data-coral), var(--data-teal));
 	}
 
-	.cliff-label {
-		position: absolute;
-		top: var(--sp-2);
-		transform: translateX(-50%);
-		padding: 2px 7px;
-		border-radius: var(--radius-chip);
-		background: var(--glass);
-		backdrop-filter: blur(var(--blur-glass));
-		font-size: var(--fs-eyebrow);
-		font-weight: var(--fw-semibold);
-		color: var(--ink);
-		white-space: nowrap;
-		pointer-events: none;
-	}
-
 	.tip-line {
 		font-size: var(--fs-eyebrow);
 		color: var(--ink3);
@@ -273,7 +276,7 @@
 	}
 
 	.xaxis {
-		grid-column: 2;
+		grid-column: 3;
 		grid-row: 2;
 		display: flex;
 		flex-direction: column;
