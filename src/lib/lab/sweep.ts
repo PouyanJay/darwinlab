@@ -106,6 +106,8 @@ export interface GradedKnob {
 	values: number[];
 	/** One chip = pinned at that value; two or more = swept as a factor. */
 	defaultSelected: number[];
+	/** The plan line's plural — "3 pred speeds", "2 prey sizes". */
+	short: string;
 	format: (value: number) => string;
 	apply: (cfg: WorldConfig, value: number) => WorldConfig;
 }
@@ -197,6 +199,7 @@ export const GRADED_KNOBS: GradedKnob[] = [
 	{
 		key: 'predSpeed',
 		label: 'Predator speed ×',
+		short: 'pred speeds',
 		values: [0.6, 0.7, 0.8, 0.9, 1.0, 1.1],
 		defaultSelected: [0.6, 0.8, 1.0],
 		format: (v) => `${v.toFixed(1)}×`,
@@ -205,6 +208,7 @@ export const GRADED_KNOBS: GradedKnob[] = [
 	{
 		key: 'preyPct',
 		label: 'Prey population % of base',
+		short: 'prey sizes',
 		values: [50, 75, 100, 150],
 		defaultSelected: [50, 100],
 		format: (v) => `${v}%`,
@@ -213,6 +217,7 @@ export const GRADED_KNOBS: GradedKnob[] = [
 	{
 		key: 'vision',
 		label: 'Vision px',
+		short: 'visions',
 		values: [120, 160, 200, 240],
 		defaultSelected: [200],
 		format: (v) => String(v),
@@ -221,6 +226,7 @@ export const GRADED_KNOBS: GradedKnob[] = [
 	{
 		key: 'maxSpeed',
 		label: 'Top speed px/s',
+		short: 'fish speeds',
 		values: [132, 154, 176, 198],
 		defaultSelected: [176],
 		format: (v) => String(v),
@@ -229,6 +235,7 @@ export const GRADED_KNOBS: GradedKnob[] = [
 	{
 		key: 'agility',
 		label: 'Agility ×',
+		short: 'agilities',
 		values: [0.8, 1.0, 1.2],
 		defaultSelected: [1.0],
 		format: (v) => `${v.toFixed(1)}×`,
@@ -237,6 +244,7 @@ export const GRADED_KNOBS: GradedKnob[] = [
 	{
 		key: 'mutation',
 		label: 'Mutation rate',
+		short: 'mutation rates',
 		values: [0.03, 0.06, 0.12],
 		defaultSelected: [0.06],
 		format: (v) => v.toFixed(2),

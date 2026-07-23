@@ -35,14 +35,20 @@ describe('SweepDesignPanel', () => {
 	it('pinning a swept knob through its three-state reaches the store', async () => {
 		render(SweepDesignPanel);
 		expect(sweep.boolState('dist')).toBe('sweep'); // the state we claim to change starts swept
-		await page.getByRole('radiogroup', { name: 'Distance' }).getByRole('radio', { name: 'on' }).click();
+		await page
+			.getByRole('radiogroup', { name: 'Distance' })
+			.getByRole('radio', { name: 'on' })
+			.click();
 		expect(sweep.boolState('dist')).toBe('on');
 	});
 
 	it('a level chip click sweeps the graded knob in the store', async () => {
 		render(SweepDesignPanel);
 		expect(sweep.plannedCells).toBe(48); // the size we claim to double starts here
-		await page.getByRole('group', { name: 'Vision px' }).getByRole('button', { name: '240' }).click();
+		await page
+			.getByRole('group', { name: 'Vision px' })
+			.getByRole('button', { name: '240' })
+			.click();
 		expect(sweep.isLevelSelected('vision', 240)).toBe(true);
 		expect(sweep.plannedCells).toBe(96);
 	});

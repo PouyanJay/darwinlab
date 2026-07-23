@@ -36,12 +36,18 @@
 
 	const nineWired = $derived((app.base.brainInputs ?? 8) === 9);
 
-	// The plan, in the commit bar's words. Factor counts fold into "2³ × 3 speeds"-style parts.
-	const boolCount = $derived(sweep.plannedFactors.filter((f) => f.levels.length === 2).length);
+	// The plan, in the commit bar's words. Bool vs graded is decided by KEY, never by level count —
+	// a two-chip graded knob has two levels exactly like a bool, and folding it into the exponent
+	// once mislabelled the default design "2⁴ × 3 predators".
+	const boolKeys = new Set(sweep.boolKnobs.map((k) => k.key));
+	const boolCount = $derived(sweep.plannedFactors.filter((f) => boolKeys.has(f.key)).length);
 	const gradedParts = $derived(
 		sweep.plannedFactors
-			.filter((f) => f.levels.length > 2)
-			.map((f) => `${f.levels.length} ${f.label.split(' ')[0].toLowerCase()}s`)
+			.filter((f) => !boolKeys.has(f.key))
+			.map(
+				(f) =>
+					`${f.levels.length} ${sweep.gradedKnobs.find((k) => k.key === f.key)?.short ?? f.key}`
+			)
 	);
 	const SUP = ['⁰', '¹', '²', '³', '⁴', '⁵', '⁶', '⁷', '⁸', '⁹'];
 	const sup = (n: number) =>
