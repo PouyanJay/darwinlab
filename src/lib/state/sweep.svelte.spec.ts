@@ -154,6 +154,20 @@ describe('sweep design (pin-or-sweep + budget)', () => {
 		await sweep.run(new NullExecutor());
 		expect(sweep.cells.every((cell) => cell.cfg.genDuration === 20)).toBe(true);
 	});
+
+	it('the receipt freezes the budget at run time — later panel edits cannot relabel the run', async () => {
+		sweep.setSeeds(4);
+		sweep.setEpisodes(30);
+		await sweep.run(new NullExecutor());
+		expect(sweep.receipt?.seeds).toBe(4); // the receipt says what ran…
+		expect(sweep.receipt?.episodes).toBe(30);
+		expect(sweep.receipt?.wallSeconds).toBeGreaterThanOrEqual(0);
+
+		sweep.setSeeds(12); // …and an edit AFTER the run…
+		sweep.setEpisodes(120);
+		expect(sweep.receipt?.seeds).toBe(4); // …does not rewrite history
+		expect(sweep.receipt?.episodes).toBe(30);
+	});
 });
 
 describe('sweep drill + watch', () => {

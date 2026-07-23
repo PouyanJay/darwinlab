@@ -53,6 +53,18 @@ export interface SweepSelection {
 	seed: number;
 }
 
+/**
+ * The receipt of the last run — its budget and wall clock FROZEN at run time, so the honesty tiles
+ * describe the run that happened even after the panel's inputs move on (the same rule as
+ * `#lastFactors`: results are never re-described against a design they were not measured on).
+ */
+export interface SweepRunReceipt {
+	seeds: number;
+	episodes: number;
+	genDuration: number;
+	wallSeconds: number;
+}
+
 /** The store's own clamps — a bad input never reaches a job. */
 const SEED_RANGE = { min: 2, max: 12 };
 const EPISODE_RANGE = { min: 5, max: 120 };
@@ -105,6 +117,9 @@ class SweepStore {
 	// The factors the current results were computed for, captured at run time so a panel edit after
 	// a run does not re-pool the old results against a design they were never measured on.
 	#lastFactors: Factor[] = [];
+
+	// The last run's receipt (budget + wall clock, frozen) — what the honesty tiles print.
+	#receipt = $state.raw<SweepRunReceipt | null>(null);
 
 	// The drilled cell of the run grid, or null. Store-owned so a new run clears it AS PART of the
 	// run — its indices belonged to the old grid.
@@ -293,6 +308,11 @@ class SweepStore {
 		return this.#sampled;
 	}
 
+	/** The last run's frozen budget + wall clock, or null before any run. */
+	get receipt(): SweepRunReceipt | null {
+		return this.#receipt;
+	}
+
 	get selected(): SweepSelection | null {
 		return this.#drilled;
 	}
@@ -343,10 +363,17 @@ class SweepStore {
 		const started = performance.now();
 		const results = await research.run(jobs, executor);
 		if (!results) return;
+		const wallSeconds = (performance.now() - started) / 1000;
 		this.#recordSimRate(
 			plan.cells.length * this.#seeds * (this.#episodes + SWEEP_DEFAULTS.bouts) * this.#genDuration,
-			(performance.now() - started) / 1000
+			wallSeconds
 		);
+		this.#receipt = {
+			seeds: this.#seeds,
+			episodes: this.#episodes,
+			genDuration: this.#genDuration,
+			wallSeconds
+		};
 
 		this.#lastFactors = factors;
 		this.#cells = plan.cells;

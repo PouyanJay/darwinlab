@@ -24,6 +24,14 @@ test('a sweep runs and reports an effect with its run grid', async ({ page }) =>
 	await openSweep(page);
 	await runMinimalSweep(page);
 
+	// The honesty tiles lead: the receipts of the run that actually happened — cells vs planned,
+	// seeds from the FROZEN receipt, and a wall clock. Values that vary (the clock) are not pinned.
+	const tiles = page.getByTestId('sweep-tiles');
+	await expect(tiles).toContainText('cells · full factorial');
+	await expect(tiles).toContainText('2 seeds each');
+	await expect(tiles).toContainText('wall clock');
+	await expect(tiles).toContainText('strongest effect · direction');
+
 	// The conclusion lands: exactly one effect row (Direction — the only factor left in the grid), with
 	// a seconds value. One row, asserted — a second unwanted row would fail loudly, not slip past.
 	const effects = page.locator('[data-testid="sweep"] .effects');
