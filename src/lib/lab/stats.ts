@@ -118,6 +118,51 @@ export function cohensD(a: number[], b: number[]): number {
 	return pooledSd === 0 ? 0 : (mean(a) - mean(b)) / pooledSd;
 }
 
+/** A contrast with no standardized effect size — the interaction's shape (Cohen's d has no clean
+ *  meaning for a difference of differences, so none is invented). */
+export interface DifferenceContrast {
+	delta: number;
+	ci: Interval;
+}
+
+/**
+ * The 2×2 INTERACTION contrast: (A's effect with B at its top) − (A's effect with B at its bottom),
+ * i.e. (mean(tt) − mean(bt)) − (mean(tb) − mean(bb)) where the first letter is A's level and the
+ * second is B's. The bootstrap resamples all four pools independently. An interval clearing zero
+ * means A's value genuinely DEPENDS on B — parallel lines are the null.
+ */
+export function interactionContrast(
+	tt: number[],
+	tb: number[],
+	bt: number[],
+	bb: number[],
+	options: BootstrapOptions = {}
+): DifferenceContrast {
+	if ([tt, tb, bt, bb].some((arm) => arm.length === 0)) {
+		return { delta: NaN, ci: { lo: NaN, hi: NaN } };
+	}
+	const { alpha, resamples, rng } = resolveOptions(options);
+	// tt − bt − tb + bb. NOTE: algebraically SYMMETRIC under tb↔bt — "A's dependence on B" and
+	// "B's dependence on A" are the same interaction, so a swapped middle pair is not a bug a
+	// delta assertion could ever catch (and not a bug at all).
+	const statistic = (a: number, b: number, c: number, d: number) => a - c - (b - d);
+	const delta = statistic(mean(tt), mean(tb), mean(bt), mean(bb));
+
+	const deltas: number[] = [];
+	for (let r = 0; r < resamples; r++) {
+		deltas.push(
+			statistic(
+				resampleMean(tt, rng),
+				resampleMean(tb, rng),
+				resampleMean(bt, rng),
+				resampleMean(bb, rng)
+			)
+		);
+	}
+	deltas.sort((x, y) => x - y);
+	return { delta, ci: boundsFrom(deltas, alpha) };
+}
+
 /**
  * The two-arm contrast a verdict is built on: the difference of means, a bootstrap interval on that
  * difference (resampling each arm independently), and Cohen's d. The interval clearing zero is what

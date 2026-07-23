@@ -149,6 +149,23 @@
 	</section>
 
 	<section class="dsec">
+		<header class="dsec-head"><span class="eyebrow">Measurement</span></header>
+		<div class="brow">
+			<span class="bl"
+				>Score the champion (“live”)
+				<i>a sealed tank of best-brain clones, scored beside the population — every cell</i></span
+			>
+			<button
+				class="switch"
+				role="switch"
+				aria-checked={sweep.championOn}
+				aria-label="score champion clones"
+				onclick={() => sweep.setChampionOn(!sweep.championOn)}
+			></button>
+		</div>
+	</section>
+
+	<section class="dsec">
 		<header class="dsec-head"><span class="eyebrow">Budget</span></header>
 
 		<label class="brow">

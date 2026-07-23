@@ -31,13 +31,15 @@ import {
 	planSweep,
 	sweepJobs,
 	sweepEffects,
+	sweepInteractions,
 	SWEEP_DEFAULTS,
 	type KnobState,
 	type KnobChoices,
 	type Factor,
 	type SweepCell,
 	type SweepPlan,
-	type FactorEffect
+	type FactorEffect,
+	type InteractionEffect
 } from '../lab/sweep';
 import { research } from './research.svelte';
 import { app } from './app.svelte';
@@ -64,6 +66,8 @@ export interface SweepRunReceipt {
 	episodes: number;
 	genDuration: number;
 	wallSeconds: number;
+	/** Whether champion clones were scored beside the population (the "live" toggle). */
+	championOn: boolean;
 }
 
 /** The store's own clamps — a bad input never reaches a job. */
@@ -103,6 +107,9 @@ class SweepStore {
 	// The cap: off runs the FULL factorial (the honest default); on samples down to #capN.
 	#capOn = $state(false);
 	#capN = $state<number>(SWEEP_DEFAULTS.maxCells);
+
+	// The Measurement toggle: score champion clones beside the population, every cell ("live").
+	#championOn = $state(false);
 
 	// The calibrated estimate's rate — replaced after every real run (see #recordSimRate).
 	#simRate = $state<number>(loadSimRate());
@@ -229,6 +236,14 @@ class SweepStore {
 		return this.#capN;
 	}
 
+	get championOn(): boolean {
+		return this.#championOn;
+	}
+
+	setChampionOn(on: boolean): void {
+		this.#championOn = on;
+	}
+
 	setCapN(value: number): void {
 		if (!Number.isFinite(value)) return;
 		this.#capN = clampToRange(Math.round(value), CAP_RANGE);
@@ -256,11 +271,17 @@ class SweepStore {
 		return this.#capOn && this.plannedCells > this.#capN;
 	}
 
-	/** Total sim-seconds the design asks for — training plus the scoring bouts. */
+	/** ONE sim-seconds formula for the estimate AND the calibration — champion doubles the bouts,
+	 *  and pricing a finished run with fewer seconds than it spent would silently skew every
+	 *  estimate after it (the drift the calibration exists to prevent). */
+	#simSecondsFor(cells: number, championOn: boolean): number {
+		const bouts = SWEEP_DEFAULTS.bouts * (championOn ? 2 : 1);
+		return cells * this.#seeds * (this.#episodes + bouts) * this.#genDuration;
+	}
+
+	/** Total sim-seconds the design asks for — the estimate must price what the toggle costs. */
 	get plannedSimSeconds(): number {
-		return (
-			this.cellsToRun * this.#seeds * (this.#episodes + SWEEP_DEFAULTS.bouts) * this.#genDuration
-		);
+		return this.#simSecondsFor(this.cellsToRun, this.#championOn);
 	}
 
 	/** Estimated wall-clock seconds, priced by the calibrated (or fallback) sim-rate. */
@@ -271,6 +292,14 @@ class SweepStore {
 	/** True once a real run has calibrated the estimate — before that the panel hedges with "≈". */
 	get estimateCalibrated(): boolean {
 		return this.#calibrated;
+	}
+
+	/** Forget the calibrated rate and fall back to the conservative default — the door a
+	 *  recalibration control (and the test kit) uses. */
+	resetCalibration(): void {
+		this.#simRate = FALLBACK_SIM_RATE;
+		this.#calibrated = false;
+		if (browser) localStorage.removeItem(SIM_RATE_KEY);
 	}
 
 	/** The run-size tier: none, warn (medium), or confirm (large — run() demands the cell count). */
@@ -332,6 +361,17 @@ class SweepStore {
 		return sweepEffects(this.#lastFactors, this.#cells, this.#results);
 	}
 
+	/** Every factor pair's interaction from the last run — empty until there are two factors. */
+	get interactions(): InteractionEffect[] {
+		if (!this.#results) return [];
+		return sweepInteractions(this.#lastFactors, this.#cells, this.#results);
+	}
+
+	/** The factors the last run measured — what the convergence card picks its arms from. */
+	get lastFactors(): Factor[] {
+		return this.#lastFactors;
+	}
+
 	/** Price a finished run and remember it — the next estimate is bought with this one's receipt. */
 	#recordSimRate(simSeconds: number, wallSeconds: number): void {
 		if (wallSeconds < 1) return; // a test executor settling in microseconds is not a price
@@ -355,16 +395,19 @@ class SweepStore {
 			maxCells: this.#capOn ? this.#capN : Number.POSITIVE_INFINITY,
 			rng: seededRng(1)
 		});
-		const jobs = sweepJobs(plan.cells, {
-			seeds: this.#seeds,
-			episodes: this.#episodes,
-			bouts: SWEEP_DEFAULTS.bouts
-		});
+		// FROZEN at launch: a toggle flipped mid-run must not relabel the receipt or the calibration
+		// of the run that was actually submitted.
+		const championOn = this.#championOn;
+		const jobs = sweepJobs(
+			plan.cells,
+			{ seeds: this.#seeds, episodes: this.#episodes, bouts: SWEEP_DEFAULTS.bouts },
+			{ champion: championOn }
+		);
 
 		const started = performance.now();
 		const results = await research.run(jobs, executor);
 		if (!results) return;
-		this.#commitRun(plan, factors, results, (performance.now() - started) / 1000);
+		this.#commitRun(plan, factors, results, (performance.now() - started) / 1000, championOn);
 	}
 
 	/** Publish a finished run in one move: price it, freeze its receipt, land its outputs. */
@@ -372,17 +415,16 @@ class SweepStore {
 		plan: SweepPlan,
 		factors: Factor[],
 		results: (Evaluation | null)[],
-		wallSeconds: number
+		wallSeconds: number,
+		championOn: boolean
 	): void {
-		this.#recordSimRate(
-			plan.cells.length * this.#seeds * (this.#episodes + SWEEP_DEFAULTS.bouts) * this.#genDuration,
-			wallSeconds
-		);
+		this.#recordSimRate(this.#simSecondsFor(plan.cells.length, championOn), wallSeconds);
 		this.#receipt = {
 			seeds: this.#seeds,
 			episodes: this.#episodes,
 			genDuration: this.#genDuration,
-			wallSeconds
+			wallSeconds,
+			championOn
 		};
 		this.#lastFactors = factors;
 		this.#cells = plan.cells;

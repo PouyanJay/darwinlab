@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { seededRng } from '../engine';
-import { mean, stdev, cohensD, bootstrapCI, contrast } from './stats';
+import { mean, stdev, cohensD, bootstrapCI, contrast, interactionContrast } from './stats';
 
 /**
  * These are the numbers a Research conclusion is built from, so they are pinned to values worked out
@@ -84,5 +84,37 @@ describe('contrast', () => {
 		expect(ci.lo).toBeNaN();
 		expect(ci.hi).toBeNaN();
 		expect(d).toBeNaN();
+	});
+});
+
+describe('interactionContrast', () => {
+	it('computes (A-effect at B-top) − (A-effect at B-bottom), pinning the structure', () => {
+		// A's effect is 6 when B is top (8 vs 2) and 1 when B is bottom (5 vs 4) → interaction 5.
+		const result = interactionContrast([8], [5], [2], [4]);
+		expect(result.delta).toBeCloseTo(5, 9);
+		// swapping tt↔tb (the ASYMMETRIC pair) must change the answer — the structure is real
+		expect(interactionContrast([5], [8], [2], [4]).delta).toBeCloseTo(-1, 9);
+	});
+
+	it('collapses to the value itself when the arms have no variation', () => {
+		const result = interactionContrast([8, 8], [5, 5], [2, 2], [4, 4]);
+		expect(result.ci.lo).toBeCloseTo(5, 9);
+		expect(result.ci.hi).toBeCloseTo(5, 9);
+	});
+
+	it('an empty arm yields NaN, not a number in costume', () => {
+		const result = interactionContrast([], [5], [2], [4]);
+		expect(result.delta).toBeNaN();
+		expect(result.ci.lo).toBeNaN();
+	});
+
+	it('is reproducible: the same arms yield the same interval', () => {
+		const arms: [number[], number[], number[], number[]] = [
+			[8, 9, 7],
+			[5, 6, 4],
+			[2, 3, 1],
+			[4, 5, 3]
+		];
+		expect(interactionContrast(...arms)).toEqual(interactionContrast(...arms));
 	});
 });

@@ -12,8 +12,8 @@
  */
 
 import type { WorldConfig } from '../engine';
-import type { EvalRequest, Evaluation, RunSize } from './evaluator';
-import { contrast, type Contrast } from './stats';
+import { averageCurves, type EvalRequest, type Evaluation, type RunSize } from './evaluator';
+import { contrast, interactionContrast, type Contrast, type DifferenceContrast } from './stats';
 import type { EffectRow } from './evidence';
 
 /** Sensible defaults for a sweep — smaller than a single Evaluate, because there are many cells. */
@@ -379,9 +379,14 @@ export function planSweep(
 	return { cells, total: all.length, sampled: true };
 }
 
-/** One evaluation request per cell — the whole plan becomes one batch. */
-export function sweepJobs(cells: SweepCell[], size: RunSize): EvalRequest[] {
-	return cells.map((cell) => ({ cfg: cell.cfg, ...size }));
+/** One evaluation request per cell — the whole plan becomes one batch. The sweep always captures
+ *  curves (the convergence card and the drill need them); champion scoring is the panel's opt-in. */
+export function sweepJobs(
+	cells: SweepCell[],
+	size: RunSize,
+	{ champion = false }: { champion?: boolean } = {}
+): EvalRequest[] {
+	return cells.map((cell) => ({ cfg: cell.cfg, ...size, curve: true, champion }));
 }
 
 /**
@@ -409,4 +414,163 @@ export function sweepEffects(
 
 		return { key: factor.key, label: factor.label, from, to, effect: contrast(high, low) };
 	});
+}
+
+/* ==================================== interactions (P4) ====================================== */
+
+/** One factor pair's interaction: does A's value depend on B? (A 2×2 on each factor's bottom/top
+ *  levels, marginalising over everything else — the same pooling rule as the main effects.) */
+export interface InteractionEffect {
+	keyA: string;
+	keyB: string;
+	/** "Direction × Predator speed ×" reads badly — the pair label drops trailing unit marks. */
+	label: string;
+	effect: DifferenceContrast;
+}
+
+/** Pool the per-seed returns of every cell whose levels match the given factor-level pairs. */
+function poolReturns(
+	cells: SweepCell[],
+	results: (Evaluation | null)[],
+	wants: [string, string][]
+): number[] {
+	const out: number[] = [];
+	cells.forEach((cell, i) => {
+		const result = results[i];
+		if (!result) return;
+		if (wants.every(([key, level]) => cell.levels[key] === level)) out.push(...result.returns);
+	});
+	return out;
+}
+
+/** A factor label without its trailing unit glyph — "Predator speed ×" reads badly mid-sentence. */
+export function plainLabel(label: string): string {
+	return label.replace(/ ×$/, '');
+}
+
+const pairLabel = (a: Factor, b: Factor) => `${plainLabel(a.label)} × ${plainLabel(b.label)}`;
+
+/** One pair's 2×2: pool each corner (marginalising over everything else) and contrast them. */
+function pairInteraction(
+	a: Factor,
+	b: Factor,
+	cells: SweepCell[],
+	results: (Evaluation | null)[]
+): InteractionEffect {
+	const [aBot, aTop] = [a.levels[0].label, a.levels[a.levels.length - 1].label];
+	const [bBot, bTop] = [b.levels[0].label, b.levels[b.levels.length - 1].label];
+	const poolAt = (aLevel: string, bLevel: string) =>
+		poolReturns(cells, results, [
+			[a.key, aLevel],
+			[b.key, bLevel]
+		]);
+	return {
+		keyA: a.key,
+		keyB: b.key,
+		label: pairLabel(a, b),
+		effect: interactionContrast(
+			poolAt(aTop, bTop),
+			poolAt(aTop, bBot),
+			poolAt(aBot, bTop),
+			poolAt(aBot, bBot)
+		)
+	};
+}
+
+/**
+ * Every unordered factor pair's interaction contrast. Bottom/top levels follow the main effects'
+ * convention (first/last level), so "the effect of A" means the same move in both readouts.
+ */
+export function sweepInteractions(
+	factors: Factor[],
+	cells: SweepCell[],
+	results: (Evaluation | null)[]
+): InteractionEffect[] {
+	const out: InteractionEffect[] = [];
+	for (let i = 0; i < factors.length; i++) {
+		for (let j = i + 1; j < factors.length; j++) {
+			out.push(pairInteraction(factors[i], factors[j], cells, results));
+		}
+	}
+	return out;
+}
+
+/** The interactions as the compact EffectRow the rank/flatness rules read — ONE converter, the
+ *  same discipline as toEffectRows, so no component shapes the evidence by hand. */
+export function toInteractionRows(interactions: InteractionEffect[]): EffectRow[] {
+	return interactions.map((pair) => ({
+		label: pair.label,
+		delta: pair.effect.delta,
+		lo: pair.effect.ci.lo,
+		hi: pair.effect.ci.hi
+	}));
+}
+
+/** The top interaction pair's plot: mean survival at each of A's levels, one series per B extreme —
+ *  diverging lines are the interaction the contrast quantified. Null where a pool is empty. */
+export function interactionPlotData(
+	a: Factor,
+	b: Factor,
+	cells: SweepCell[],
+	results: (Evaluation | null)[]
+): { x: string[]; bottom: (number | null)[]; top: (number | null)[]; bFrom: string; bTo: string } {
+	const bBot = b.levels[0].label;
+	const bTop = b.levels[b.levels.length - 1].label;
+	const meanOf = (pool: number[]) =>
+		pool.length ? pool.reduce((sum, v) => sum + v, 0) / pool.length : null;
+	const seriesFor = (bLevel: string) =>
+		a.levels.map((level) =>
+			meanOf(
+				poolReturns(cells, results, [
+					[a.key, level.label],
+					[b.key, bLevel]
+				])
+			)
+		);
+	return {
+		x: a.levels.map((l) => l.label),
+		bottom: seriesFor(bBot),
+		top: seriesFor(bTop),
+		bFrom: bBot,
+		bTo: bTop
+	};
+}
+
+/* ==================================== convergence (P4) ======================================= */
+
+/**
+ * Is a learning curve still CLIMBING at its end? The tail's gain (mean of the last quarter minus
+ * the quarter before it) is compared against the curve's total rise: still gaining more than a
+ * tenth of everything it ever gained, per quarter, means the budget cut training short. A short or
+ * flat curve is NOT flagged — there is nothing to cry wolf about.
+ */
+export function isUnderTrained(curve: number[]): boolean {
+	if (curve.length < 8) return false;
+	const quarter = Math.floor(curve.length / 4);
+	const meanOf = (xs: number[]) => xs.reduce((sum, v) => sum + v, 0) / xs.length;
+	const tail = meanOf(curve.slice(-quarter));
+	const previous = meanOf(curve.slice(-2 * quarter, -quarter));
+	const rise = Math.max(...curve) - curve[0];
+	if (rise <= 1e-9) return false;
+	return tail - previous > 0.1 * rise;
+}
+
+/** A factor's two arms' averaged learning curves — the convergence card's two lines. Empty when
+ *  the run captured no curves. */
+export function levelCurves(
+	factor: Factor,
+	cells: SweepCell[],
+	results: (Evaluation | null)[]
+): { from: number[]; to: number[] } {
+	const bottom = factor.levels[0].label;
+	const top = factor.levels[factor.levels.length - 1].label;
+	const armCurves = (level: string): number[][] => {
+		const out: number[][] = [];
+		cells.forEach((cell, i) => {
+			const curve = results[i]?.curve;
+			if (curve && cell.levels[factor.key] === level) out.push(curve);
+		});
+		return out;
+	};
+	return { from: averageCurves(armCurves(bottom)), to: averageCurves(armCurves(top)) };
 }
