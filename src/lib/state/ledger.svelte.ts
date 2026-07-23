@@ -1,22 +1,37 @@
 /**
  * The Ledger store — claims in, a dated record of verdicts out.
  *
- * Running a claim designs its two arms (hypothesis.ts), measures them through the shared `research`
- * lifecycle, reads the verdict off the pre-registered contrast, and writes a RECORD: what was
- * claimed, how it came out, the effect and its interval, and the config fingerprint + seed count
- * that reproduce it. The records PERSIST to localStorage, so the ledger is the same the next time you
- * open the lab — a growing, dated notebook of what this world has been shown to do.
+ * Since the composer redesign the store owns the COMPOSER: the picked template, its slot values,
+ * and the seeds-per-arm budget. `active` is always a runnable claim — slot resolution (defaults,
+ * wiring gates, no-self-rivalry) happens on read against the current subject, so the panel can
+ * never hold an impossible sentence. Running the claim designs its two arms (hypothesis.ts),
+ * measures them through the shared `research` lifecycle, reads the verdict off the pre-registered
+ * contrast, and writes a RECORD: what was claimed, how it came out, the effect and its interval,
+ * the shared background both arms stood on, and the config fingerprint + seed count that reproduce
+ * it. The records PERSIST to localStorage, so the ledger is the same the next time you open the
+ * lab — a growing, dated notebook of what this world has been shown to do.
  *
  * This is the platform's persistence layer, and it lives here (not in R1) because the Ledger is its
  * first real consumer: a generic store with nothing to keep would have been speculative.
  */
 
 import { browser } from '$app/environment';
+import type { WorldConfig } from '../engine';
 import {
-	CANDIDATE_CLAIMS,
+	LIBRARY,
+	TEMPLATES,
+	buildClaim,
 	designFor,
+	resolveSlots,
+	sharedBackground,
+	templateById,
 	verdictFrom,
 	type Claim,
+	type ClaimExpectation,
+	type ClaimTemplate,
+	type LibraryItem,
+	type SlotValues,
+	type TemplateId,
 	type Verdict
 } from '../lab/hypothesis';
 import { research } from './research.svelte';
@@ -26,14 +41,21 @@ import { contrast, mean, bootstrapCI, type Interval } from '../lab/stats';
 import type { ArmRow } from '../lab/evidence';
 import type { JobExecutor } from '../lab/runner';
 import type { Evaluation } from '../lab/evaluator';
+import { loadSimRate } from './sweep.svelte';
 
 export const LEDGER_STORAGE_KEY = 'darwinlab:ledger';
 const STORAGE_VERSION = 1;
-/** The record is bounded; over this, the oldest entries are evicted. */
-export const MAX_ENTRIES = 50;
+/** The record is bounded; over this, the oldest entries are evicted. The composer opened the claim
+ *  space wide, so the bound is generous — 50 was right for a three-claim menu, not for this one. */
+export const MAX_ENTRIES = 200;
 
-/** A ledger run's size — more seeds per arm than a sweep cell, since there are only two arms. */
-const LEDGER_RUN = { seeds: 8, episodes: 30, bouts: 4 };
+/** A ledger run's fixed shape — training and scoring never vary, so every record in the feed stays
+ *  comparable to every other. Seeds per arm is the ONE budget knob, and it lives on the store. */
+export const LEDGER_RUN_SHAPE = { episodes: 30, bouts: 4 } as const;
+export const LEDGER_SEED_LIMITS = { min: 4, max: 16, fallback: 8 } as const;
+/** Sim-seconds one arm-seed costs: training generations plus scoring bouts, at the default
+ *  10-sim-second generation the evaluator runs. */
+const SIM_SECONDS_PER_RUN = (LEDGER_RUN_SHAPE.episodes + LEDGER_RUN_SHAPE.bouts) * 10;
 
 /** One arm's summary — mean seconds survived and its interval, for the A/B plot. */
 export interface ArmSummary {
@@ -64,6 +86,16 @@ export interface LedgerEntry {
 	configHash: string;
 	/** ISO timestamp of when it was measured. Metadata, not part of what reproduces the run. */
 	recorded: string;
+	/** The pre-registered reading this verdict was taken by. Absent on records from before the
+	 *  composer — the drill then skips the rationale line rather than guessing. */
+	expect?: ClaimExpectation;
+	/** The composer pick that rebuilds this claim — "load into composer" needs both. Absent on
+	 *  pre-composer records, whose claims may no longer be composable. */
+	templateId?: TemplateId;
+	slots?: SlotValues;
+	/** The background both arms shared, frozen at measurement — a later subject edit must not
+	 *  relabel an old verdict. */
+	shared?: string[];
 }
 
 /** A runtime shape check on ONE entry — a persisted record can be hand-edited, half-written or from a
@@ -79,7 +111,9 @@ function isLedgerEntry(value: unknown): value is LedgerEntry {
 		(e.verdict === 'supported' || e.verdict === 'refuted') &&
 		typeof e.delta === 'number' &&
 		Array.isArray(e.arms) &&
-		typeof e.configHash === 'string'
+		typeof e.configHash === 'string' &&
+		(e.shared === undefined || Array.isArray(e.shared)) &&
+		(e.slots === undefined || (typeof e.slots === 'object' && e.slots !== null))
 	);
 }
 
@@ -99,23 +133,67 @@ export function loadEntries(): LedgerEntry[] {
 }
 
 class LedgerStore {
-	readonly claims: Claim[] = CANDIDATE_CLAIMS;
+	readonly templates: ClaimTemplate[] = TEMPLATES;
+	readonly library: LibraryItem[] = LIBRARY;
 
-	#activeId = $state<string>(CANDIDATE_CLAIMS[0].id);
+	// The composer: the picked family and its raw slot picks. Picks are RESOLVED on read (defaults,
+	// wiring gates, exclusivity) so `values`/`active` are always legal for the current subject.
+	// The default is Under pressure at 1.4× — a compound template, so a fresh panel demonstrates
+	// slots rather than opening on the simplest sentence.
+	#templateId = $state<TemplateId>('pressure');
+	#slots = $state.raw<SlotValues>({});
+
+	#seeds = $state<number>(LEDGER_SEED_LIMITS.fallback);
 	#entries = $state.raw<LedgerEntry[]>(loadEntries());
+	// The record row the drill sidebar is opened on; null falls back to the newest record.
+	#selectedId = $state<string | null>(null);
 
-	/** The claim whose verdict card is open. */
+	get template(): ClaimTemplate {
+		return templateById(this.#templateId) ?? this.templates[0];
+	}
+
+	/** The slot picks, resolved to a legal combination for the current subject. */
+	get values(): SlotValues {
+		return resolveSlots(this.template, this.#slots, app.base);
+	}
+
+	/** The composed claim the panel is holding — always runnable. */
 	get active(): Claim {
-		return this.claims.find((claim) => claim.id === this.#activeId) ?? this.claims[0];
+		return buildClaim(this.template, this.values);
 	}
 
-	select(id: string): void {
-		this.#activeId = id;
+	/** Switch families. Slots reset to the template's defaults — picks do not carry across shapes. */
+	selectTemplate(id: TemplateId): void {
+		this.#templateId = id;
+		this.#slots = {};
 	}
 
-	/** How many seeds each arm runs — shown on the card before a run, stored on each entry after. */
-	get runSeeds(): number {
-		return LEDGER_RUN.seeds;
+	/** Pick one slot's option, keeping every other slot's current (resolved) pick. */
+	setSlot(key: string, optionId: string): void {
+		this.#slots = { ...this.values, [key]: optionId };
+	}
+
+	/** Refill the composer from a shelf item or a drilled record's stored pick. */
+	compose(templateId: TemplateId, slots: SlotValues): void {
+		if (!templateById(templateId)) return;
+		this.#templateId = templateId;
+		this.#slots = { ...slots };
+	}
+
+	/** How many seeds each arm runs — the one budget knob, shown on the plan and stored per record. */
+	get seeds(): number {
+		return this.#seeds;
+	}
+
+	setSeeds(value: number): void {
+		if (!Number.isFinite(value)) return; // an emptied number input is not an edit
+		const { min, max } = LEDGER_SEED_LIMITS;
+		this.#seeds = Math.min(max, Math.max(min, Math.round(value)));
+	}
+
+	/** Estimated wall-clock seconds for one verdict, priced by the sweep-calibrated sim rate. */
+	get estimatedSeconds(): number {
+		return (this.#seeds * 2 * SIM_SECONDS_PER_RUN) / loadSimRate();
 	}
 
 	get running(): boolean {
@@ -136,28 +214,53 @@ class LedgerStore {
 		return this.#entries.find((entry) => entry.claimId === claimId) ?? null;
 	}
 
-	/**
-	 * Test the claim: design its arms, measure them, and record the verdict. Publishes nothing if a
-	 * newer run superseded this one (`research.run` returns null). `executor` overrides the pool for
-	 * tests, exactly as it does on the research store.
-	 */
-	async run(claimId: string, executor?: JobExecutor): Promise<void> {
-		const claim = this.claims.find((c) => c.id === claimId);
-		if (!claim) return;
+	/** The record the drill sidebar shows — the picked row, falling back to the newest record. */
+	get selected(): LedgerEntry | null {
+		return this.#entries.find((entry) => entry.id === this.#selectedId) ?? this.#entries[0] ?? null;
+	}
 
-		const design = designFor(claim, app.subjectBase('Ledger'), LEDGER_RUN);
+	select(entryId: string): void {
+		this.#selectedId = entryId;
+	}
+
+	/** The feed's honesty tally — how the settled record splits. */
+	get tally(): { claims: number; supported: number; refuted: number } {
+		return {
+			claims: new Set(this.#entries.map((entry) => entry.claimId)).size,
+			supported: this.#entries.filter((entry) => entry.verdict === 'supported').length,
+			refuted: this.#entries.filter((entry) => entry.verdict === 'refuted').length
+		};
+	}
+
+	/**
+	 * Test the composed claim: design its arms, measure them, and record the verdict. Publishes
+	 * nothing if a newer run superseded this one (`research.run` returns null). `executor` overrides
+	 * the pool for tests, exactly as it does on the research store.
+	 */
+	async run(executor?: JobExecutor): Promise<void> {
+		const template = this.template;
+		const values = this.values;
+		const claim = buildClaim(template, values);
+		const base = app.subjectBase('Ledger');
+
+		const design = designFor(claim, base, { seeds: this.#seeds, ...LEDGER_RUN_SHAPE });
 		const results = await research.run([design.a, design.b], executor);
 		if (!results) return;
 
-		const entry = this.#toEntry(claim, design, results);
+		const entry = this.#toEntry(claim, template, values, base, design, results);
 		this.#entries = [entry, ...this.#entries].slice(0, MAX_ENTRIES);
+		this.#selectedId = entry.id; // the drill opens on what was just settled
 		this.#persist();
 	}
 
-	/** Assemble the record: the verdict, each arm's interval, and the config fingerprint that reruns it. */
+	/** Assemble the record: the verdict, each arm's interval, the shared background, and the
+	 *  fingerprint + composer pick that rerun it. */
 	#toEntry(
 		claim: Claim,
-		design: ReturnType<typeof designFor>,
+		template: ClaimTemplate,
+		values: SlotValues,
+		base: WorldConfig,
+		design: { a: { cfg: WorldConfig }; b: { cfg: WorldConfig } },
 		[armA, armB]: (Evaluation | null)[]
 	): LedgerEntry {
 		const c = contrast(armA?.returns ?? [], armB?.returns ?? []);
@@ -177,10 +280,14 @@ class LedgerStore {
 			ci: c.ci,
 			d: c.d,
 			arms: [summarise(claim.a.label, armA), summarise(claim.b.label, armB)],
-			seeds: LEDGER_RUN.seeds,
+			seeds: this.#seeds,
 			configHash: configHash([design.a.cfg, design.b.cfg]),
 			// run() is only ever called from a client button handler, so the browser clock is present.
-			recorded: new Date().toISOString()
+			recorded: new Date().toISOString(),
+			expect: claim.expect,
+			templateId: template.id,
+			slots: { ...values },
+			shared: sharedBackground(base)
 		};
 	}
 
@@ -196,6 +303,7 @@ class LedgerStore {
 	/** Forget every record. */
 	clear(): void {
 		this.#entries = [];
+		this.#selectedId = null;
 		if (browser) localStorage.removeItem(LEDGER_STORAGE_KEY);
 	}
 

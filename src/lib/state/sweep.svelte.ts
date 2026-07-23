@@ -87,7 +87,9 @@ export const GUARD_CONFIRM_MINUTES = 45;
 const FALLBACK_SIM_RATE = 300;
 const SIM_RATE_KEY = 'darwinlab:sweep-sim-rate';
 
-function loadSimRate(): number {
+/** The calibrated (or fallback) sim rate — exported so the Ledger's estimate is priced by the same
+ *  measurement as the Sweep's, instead of keeping a second, drifting constant. */
+export function loadSimRate(): number {
 	if (!browser) return FALLBACK_SIM_RATE;
 	const raw = Number(localStorage.getItem(SIM_RATE_KEY));
 	return Number.isFinite(raw) && raw > 0 ? raw : FALLBACK_SIM_RATE;
