@@ -68,8 +68,10 @@
 
 <style>
 	.console {
-		--rail-w: 260px;
-		--side-w: 300px;
+		/* The redesign's zone widths (the mock is the contract): a slimmer rail and sidebar buy the
+		   workspace room — the design panel joins as a fourth zone in the next phase. */
+		--rail-w: 240px;
+		--side-w: 276px;
 		flex: 1;
 		min-width: 0;
 		min-height: 0;

@@ -130,8 +130,15 @@
 		flex-direction: column;
 		min-height: 0;
 		overflow-y: auto;
+		/* The console is a fixed-height instrument: zones scroll in place, chrome-free — the content
+		   is the affordance, not a scrollbar (the mock is the contract). */
+		scrollbar-width: none;
 		background: var(--panel);
 		border-right: 1px solid var(--line);
+	}
+
+	.rail::-webkit-scrollbar {
+		display: none;
 	}
 
 	.brand {

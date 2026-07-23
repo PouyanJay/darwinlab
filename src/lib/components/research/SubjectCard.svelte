@@ -67,11 +67,18 @@
 	<div class="body">
 		<div class="name">
 			<span class="dot" aria-hidden="true"></span>
-			<EditableLabel value={base.name} label="subject name" onchange={(name) => app.renameBase(name)} />
+			<EditableLabel
+				value={base.name}
+				label="subject name"
+				onchange={(name) => app.renameBase(name)}
+			/>
 		</div>
 
 		<details class="grp" open>
-			<summary><span class="eyebrow">Population</span><span class="chev" aria-hidden="true">›</span></summary>
+			<summary
+				><span class="eyebrow">Population</span><span class="chev" aria-hidden="true">›</span
+				></summary
+			>
 			<div class="grp-body">
 				<label class="frow">
 					<span>prey</span>
@@ -99,7 +106,9 @@
 		</details>
 
 		<details class="grp" open>
-			<summary><span class="eyebrow">Tank</span><span class="chev" aria-hidden="true">›</span></summary>
+			<summary
+				><span class="eyebrow">Tank</span><span class="chev" aria-hidden="true">›</span></summary
+			>
 			<div class="grp-body">
 				<div class="frow">
 					<span id="tank-size-label">size <i class="unit">px</i></span>
@@ -131,7 +140,9 @@
 		</details>
 
 		<details class="grp">
-			<summary><span class="eyebrow">Brain</span><span class="chev" aria-hidden="true">›</span></summary>
+			<summary
+				><span class="eyebrow">Brain</span><span class="chev" aria-hidden="true">›</span></summary
+			>
 			<div class="grp-body">
 				<div class="frow">
 					<span>inputs</span>

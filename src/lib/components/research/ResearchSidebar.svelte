@@ -56,9 +56,15 @@
 		gap: var(--sp-4);
 		min-height: 0;
 		overflow-y: auto;
+		/* Zones scroll in place, chrome-free — see the rail's note; the mock is the contract. */
+		scrollbar-width: none;
 		padding: var(--sp-6) var(--sp-5);
 		background: var(--panel);
 		border-left: 1px solid var(--line);
+	}
+
+	.sidebar::-webkit-scrollbar {
+		display: none;
 	}
 
 	/* The one bit of prose the sidebar renders itself — the hint to drill a cell (the panels are their
