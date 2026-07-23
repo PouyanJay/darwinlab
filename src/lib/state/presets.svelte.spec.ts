@@ -65,6 +65,16 @@ describe('base presets', () => {
 		expect(loadPresets()).toHaveLength(0);
 	});
 
+	it('the list caps at twelve — the rail is a shelf of favourites, not an archive', () => {
+		for (let i = 0; i < 14; i++) {
+			app.renameBase(`World ${i}`);
+			presets.saveCurrent();
+		}
+		expect(presets.entries).toHaveLength(12);
+		expect(presets.entries[0].name).toBe('World 13'); // newest first…
+		expect(presets.entries.at(-1)?.name).toBe('World 2'); // …oldest two fell off
+	});
+
 	it('loadPresets drops garbage instead of throwing', () => {
 		localStorage.setItem(PRESETS_STORAGE_KEY, 'not json');
 		expect(loadPresets()).toEqual([]);

@@ -166,9 +166,11 @@ describe('the editable base (the subject card is a real editor)', () => {
 	});
 
 	it('setBaseBrainInputs(8) strips the speed sense — no 9th-slot sense on an 8-wire brain', () => {
+		// adoptBase is the public door that can genuinely set speed:true — without it this test
+		// passed with the strip deleted (speed was undefined before AND after: the 13th theater test).
 		app.setBaseBrainInputs(9);
-		expect(app.base.brainInputs).toBe(9); // the state we strip from really existed
-		app.setBaseCondition('prey', 20);
+		app.adoptBase({ ...app.base, senses: { ...app.base.senses, speed: true } });
+		expect(app.base.senses.speed).toBe(true); // the state we strip from really existed
 		app.setBaseBrainInputs(8);
 		expect(app.base.brainInputs).toBeUndefined();
 		expect(app.base.senses.speed).toBeUndefined();
