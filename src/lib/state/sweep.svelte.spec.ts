@@ -23,6 +23,21 @@ class NullExecutor implements JobExecutor {
 	dispose(): void {}
 }
 
+/** An executor whose FIRST submit takes real wall time — the only way to reach the calibration
+ *  path, which (by design) refuses sub-second walls as prices. */
+class SlowFirstExecutor implements JobExecutor {
+	readonly concurrency = 1;
+	#slept = false;
+	async submit(): Promise<Evaluation | null> {
+		if (!this.#slept) {
+			this.#slept = true;
+			await new Promise((resolve) => setTimeout(resolve, 1100));
+		}
+		return null;
+	}
+	dispose(): void {}
+}
+
 /** An executor that RECORDS every request — how a spec proves what the store actually asked for. */
 class RecordingExecutor implements JobExecutor {
 	readonly concurrency = 1;
@@ -119,8 +134,11 @@ describe('sweep design (pin-or-sweep + budget)', () => {
 		sweep.setGenDuration(60); // 48 × 12 × 124 × 60 sim-s ≈ hours at the fallback rate
 		expect(sweep.guard).toBe('confirm');
 
+		// Order-immune refusal assertion: whatever results the singleton held BEFORE (null, or a
+		// previous test's publish under shuffle), a refused run must leave the SAME reference.
+		const before = sweep.results;
 		await sweep.run(new NullExecutor());
-		expect(sweep.results).toBeNull(); // refused — nothing was published
+		expect(sweep.results).toBe(before); // refused — nothing was published
 
 		await sweep.run(new NullExecutor(), { confirmedCells: sweep.cellsToRun });
 		expect(sweep.cells.length).toBe(48); // the same design, confirmed, runs
@@ -168,7 +186,7 @@ describe('sweep design (pin-or-sweep + budget)', () => {
 
 	it('the champion toggle reaches every job, doubles the estimate, and lands in the receipt', async () => {
 		const before = sweep.plannedSimSeconds; // the price we claim doubles the bouts of
-		sweep.setChampion(true);
+		sweep.setChampionOn(true);
 		expect(sweep.plannedSimSeconds).toBeGreaterThan(before); // the toggle costs, honestly
 
 		const recorder = new RecordingExecutor();
@@ -176,13 +194,27 @@ describe('sweep design (pin-or-sweep + budget)', () => {
 		expect(recorder.requests.length).toBeGreaterThan(0); // jobs were really submitted
 		expect(recorder.requests.every((req) => req.champion === true)).toBe(true);
 		expect(recorder.requests.every((req) => req.curve === true)).toBe(true); // curves always ride
-		expect(sweep.receipt?.champion).toBe(true);
+		expect(sweep.receipt?.championOn).toBe(true);
 
-		sweep.setChampion(false);
+		sweep.setChampionOn(false);
 		const plain = new RecordingExecutor();
 		await sweep.run(plain);
 		expect(plain.requests.every((req) => req.champion === false)).toBe(true);
+		expect(sweep.receipt?.championOn).toBe(false); // the off path lands in the receipt too
 	});
+
+	it('a champion run calibrates with its doubled bouts priced in', async () => {
+		sweep.setChampionOn(true);
+		const started = performance.now();
+		await sweep.run(new SlowFirstExecutor());
+		const wall = (performance.now() - started) / 1000;
+		expect(sweep.estimateCalibrated).toBe(true); // the slow wall really was taken as a price
+
+		// The rate was calibrated on EXACTLY this design, so repricing the same design must land on
+		// the wall it just took. A calibration credited with champion-LESS sim-seconds would predict
+		// (episodes+8)/(episodes+4) ≈ 17% high — well outside this tolerance.
+		expect(Math.abs(sweep.estimatedSeconds - wall) / wall).toBeLessThan(0.08);
+	}, 15_000);
 
 	it('the receipt freezes the budget at run time — later panel edits cannot relabel the run', async () => {
 		sweep.setSeeds(4);

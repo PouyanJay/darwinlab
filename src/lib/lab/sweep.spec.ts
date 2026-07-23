@@ -11,6 +11,7 @@ import {
 	sweepJobs,
 	sweepEffects,
 	sweepInteractions,
+	toInteractionRows,
 	interactionPlotData,
 	isUnderTrained,
 	levelCurves,
@@ -282,6 +283,12 @@ describe('isUnderTrained (P4)', () => {
 		expect(isUnderTrained(saturating)).toBe(false);
 	});
 
+	it('pins the still-climbing threshold at a tenth of the total rise per quarter', () => {
+		// quarter = 2; rise = 1; the tail gains 0.12 vs 0.08 — straddling the 0.1 line.
+		expect(isUnderTrained([0, 0.2, 0.4, 0.6, 0.88, 0.88, 1, 1])).toBe(true); // gain 0.12
+		expect(isUnderTrained([0, 0.2, 0.4, 0.6, 0.92, 0.92, 1, 1])).toBe(false); // gain 0.08
+	});
+
 	it('never cries wolf on a flat or short curve', () => {
 		expect(isUnderTrained(Array(24).fill(0.4))).toBe(false); // flat — nothing was learned
 		expect(isUnderTrained([0.2, 0.3, 0.4])).toBe(false); // too short to judge
@@ -311,6 +318,20 @@ describe('levelCurves (P4)', () => {
 		);
 		expect(arms.from).toEqual([]);
 		expect(arms.to).toEqual([]);
+	});
+});
+
+describe('toInteractionRows', () => {
+	it('is the ONE shape the rank/flatness rules read — label, delta, and the interval', () => {
+		const rows = toInteractionRows([
+			{
+				keyA: 'dir',
+				keyB: 'walls',
+				label: 'Direction × Walls',
+				effect: { delta: 1.5, ci: { lo: 0.5, hi: 2.5 } }
+			}
+		]);
+		expect(rows).toEqual([{ label: 'Direction × Walls', delta: 1.5, lo: 0.5, hi: 2.5 }]);
 	});
 });
 

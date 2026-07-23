@@ -15,12 +15,17 @@
 	import RunHeatmap from './RunHeatmap.svelte';
 	import RunCellCard from './RunCellCard.svelte';
 	import { sweep } from '$lib/state';
-	import { toEffectRows, interactionPlotData, isUnderTrained, levelCurves } from '$lib/lab/sweep';
+	import {
+		toEffectRows,
+		toInteractionRows,
+		interactionPlotData,
+		isUnderTrained,
+		levelCurves,
+		plainLabel
+	} from '$lib/lab/sweep';
 	import { rankEffectRows, strongestEffect, isFlatEffect } from '$lib/lab/evidence';
 	import { formatSignedSeconds, formatWallClock } from '$lib/format';
 
-	// RANKED by effect size, so the answer reads top-down (the mock's rule). NaN deltas (an arm with
-	// no results) sink to the bottom rather than poisoning the sort.
 	// RANKED by effect size, so the answer reads top-down (the mock's rule) — the shared sorter,
 	// so the chart and any other consumer rank identically.
 	const effectRows = $derived(rankEffectRows(toEffectRows(sweep.effects)));
@@ -34,24 +39,21 @@
 	 *  over a bar the card beneath it mutes. Null = a flat environment, itself a real result. */
 	const strongest = $derived(strongestEffect(effectRows));
 
-	// The interactions as EffectRow shapes, so the SAME ranking and flatness rules the main effects
-	// obey (rankEffectRows / isFlatEffect) apply to the pairs — one honesty rule everywhere.
-	const interactionRows = $derived(
-		rankEffectRows(
-			sweep.interactions.map((pair) => ({
-				label: pair.label,
-				delta: pair.effect.delta,
-				lo: pair.effect.ci.lo,
-				hi: pair.effect.ci.hi
-			}))
-		)
-	);
+	// The interactions as EffectRow shapes through the ONE converter, so the same ranking and
+	// flatness rules the main effects obey (rankEffectRows / isFlatEffect) apply to the pairs.
+	const interactionRows = $derived(rankEffectRows(toInteractionRows(sweep.interactions)));
 
-	/** The pair the plot draws: the strongest REAL interaction, else the largest overall. */
+	/** The pair the plot draws: the strongest REAL interaction, else the largest overall — picked
+	 *  by the pair's own KEYS, not its rendered label. */
 	const topPair = $derived.by(() => {
-		if (sweep.interactions.length === 0) return null;
-		const lead = strongestEffect(interactionRows) ?? interactionRows[0];
-		return sweep.interactions.find((pair) => pair.label === lead.label) ?? null;
+		const pairs = sweep.interactions;
+		if (pairs.length === 0) return null;
+		const rowOf = (pair: (typeof pairs)[number]) => toInteractionRows([pair])[0];
+		const magnitude = (pair: (typeof pairs)[number]) =>
+			Number.isNaN(pair.effect.delta) ? -1 : Math.abs(pair.effect.delta);
+		const real = pairs.filter((pair) => !isFlatEffect(rowOf(pair)));
+		const pool = real.length ? real : pairs;
+		return pool.reduce((best, pair) => (magnitude(pair) > magnitude(best) ? pair : best));
 	});
 
 	const plot = $derived.by(() => {
@@ -59,7 +61,10 @@
 		const a = sweep.lastFactors.find((f) => f.key === topPair.keyA);
 		const b = sweep.lastFactors.find((f) => f.key === topPair.keyB);
 		if (!a || !b) return null;
-		return { ...interactionPlotData(a, b, sweep.cells, sweep.results), bLabel: b.label };
+		return {
+			...interactionPlotData(a, b, sweep.cells, sweep.results),
+			bLabel: plainLabel(b.label)
+		};
 	});
 
 	/** The convergence card's factor: the strongest effect's, else the first swept factor. */

@@ -158,9 +158,9 @@
 			<button
 				class="switch"
 				role="switch"
-				aria-checked={sweep.champion}
+				aria-checked={sweep.championOn}
 				aria-label="score champion clones"
-				onclick={() => sweep.setChampion(!sweep.champion)}
+				onclick={() => sweep.setChampionOn(!sweep.championOn)}
 			></button>
 		</div>
 	</section>

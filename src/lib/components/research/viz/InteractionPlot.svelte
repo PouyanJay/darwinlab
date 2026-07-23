@@ -5,6 +5,9 @@
   B's top arm, ink for its bottom (identity is never colour-alone: the labels name the arms).
 -->
 <script lang="ts">
+	import Figure from './Figure.svelte';
+	import DataTable from './DataTable.svelte';
+
 	let {
 		x,
 		bottom,
@@ -50,35 +53,55 @@
 	};
 </script>
 
-<svg viewBox="0 0 {W} {H}" role="img" aria-label="interaction: one line per {bLabel} extreme">
-	<!-- recessive grid: the floor and a midline -->
-	<line x1={PAD.left} y1={H - PAD.bottom} x2={W - PAD.right} y2={H - PAD.bottom} class="axis" />
-	<line
-		x1={PAD.left}
-		y1={py(lo + span / 2)}
-		x2={W - PAD.right}
-		y2={py(lo + span / 2)}
-		class="grid"
-	/>
-	<text x={PAD.left - 6} y={py(lo) + 3} class="tick" text-anchor="end">{lo.toFixed(1)}s</text>
-	<text x={PAD.left - 6} y={py(hi) + 3} class="tick" text-anchor="end">{hi.toFixed(1)}s</text>
+<Figure
+	label="Interaction: mean survival at each level, one line per {bLabel} extreme — diverging lines mean the factors depend on each other."
+>
+	<svg viewBox="0 0 {W} {H}">
+		<!-- recessive grid: the floor and a midline -->
+		<line x1={PAD.left} y1={H - PAD.bottom} x2={W - PAD.right} y2={H - PAD.bottom} class="axis" />
+		<line
+			x1={PAD.left}
+			y1={py(lo + span / 2)}
+			x2={W - PAD.right}
+			y2={py(lo + span / 2)}
+			class="grid"
+		/>
+		<text x={PAD.left - 6} y={py(lo) + 3} class="tick" text-anchor="end">{lo.toFixed(1)}s</text>
+		<text x={PAD.left - 6} y={py(hi) + 3} class="tick" text-anchor="end">{hi.toFixed(1)}s</text>
 
-	{#each x as label, i (label)}
-		<text x={px(i)} y={H - PAD.bottom + 16} class="tick" text-anchor="middle">{label}</text>
-	{/each}
+		{#each x as label, i (label)}
+			<text x={px(i)} y={H - PAD.bottom + 16} class="tick" text-anchor="middle">{label}</text>
+		{/each}
 
-	<polyline points={path(bottom)} class="arm from" />
-	{#each bottom as v, i (i)}
-		{#if v != null}<circle cx={px(i)} cy={py(v)} r="3.5" class="dot from" />{/if}
-	{/each}
-	<text x={W - PAD.right + 8} y={labelY(bottom) + 3} class="arm-label from">{bFrom}</text>
+		<polyline points={path(bottom)} class="arm from" />
+		{#each bottom as v, i (i)}
+			{#if v != null}<circle cx={px(i)} cy={py(v)} r="3.5" class="dot from" />{/if}
+		{/each}
+		<text x={W - PAD.right + 8} y={labelY(bottom) + 3} class="arm-label from">{bFrom}</text>
 
-	<polyline points={path(top)} class="arm to" />
-	{#each top as v, i (i)}
-		{#if v != null}<circle cx={px(i)} cy={py(v)} r="3.5" class="dot to" />{/if}
-	{/each}
-	<text x={W - PAD.right + 8} y={labelY(top) + 3} class="arm-label to">{bTo}</text>
-</svg>
+		<polyline points={path(top)} class="arm to" />
+		{#each top as v, i (i)}
+			{#if v != null}<circle cx={px(i)} cy={py(v)} r="3.5" class="dot to" />{/if}
+		{/each}
+		<text x={W - PAD.right + 8} y={labelY(top) + 3} class="arm-label to">{bTo}</text>
+	</svg>
+
+	{#snippet table()}
+		<DataTable
+			caption="Mean seconds survived per level, one column per {bLabel} extreme"
+			columns={[
+				{ key: 'level', label: 'Level', numeric: false },
+				{ key: 'bottom', label: bFrom },
+				{ key: 'top', label: bTo }
+			]}
+			rows={x.map((level, i) => ({
+				level,
+				bottom: bottom[i] == null ? '—' : bottom[i]!.toFixed(2),
+				top: top[i] == null ? '—' : top[i]!.toFixed(2)
+			}))}
+		/>
+	{/snippet}
+</Figure>
 
 <style>
 	svg {

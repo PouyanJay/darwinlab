@@ -443,8 +443,39 @@ function poolReturns(
 	return out;
 }
 
-const pairLabel = (a: Factor, b: Factor) =>
-	`${a.label.replace(/ ×$/, '')} × ${b.label.replace(/ ×$/, '')}`;
+/** A factor label without its trailing unit glyph — "Predator speed ×" reads badly mid-sentence. */
+export function plainLabel(label: string): string {
+	return label.replace(/ ×$/, '');
+}
+
+const pairLabel = (a: Factor, b: Factor) => `${plainLabel(a.label)} × ${plainLabel(b.label)}`;
+
+/** One pair's 2×2: pool each corner (marginalising over everything else) and contrast them. */
+function pairInteraction(
+	a: Factor,
+	b: Factor,
+	cells: SweepCell[],
+	results: (Evaluation | null)[]
+): InteractionEffect {
+	const [aBot, aTop] = [a.levels[0].label, a.levels[a.levels.length - 1].label];
+	const [bBot, bTop] = [b.levels[0].label, b.levels[b.levels.length - 1].label];
+	const poolAt = (aLevel: string, bLevel: string) =>
+		poolReturns(cells, results, [
+			[a.key, aLevel],
+			[b.key, bLevel]
+		]);
+	return {
+		keyA: a.key,
+		keyB: b.key,
+		label: pairLabel(a, b),
+		effect: interactionContrast(
+			poolAt(aTop, bTop),
+			poolAt(aTop, bBot),
+			poolAt(aBot, bTop),
+			poolAt(aBot, bBot)
+		)
+	};
+}
 
 /**
  * Every unordered factor pair's interaction contrast. Bottom/top levels follow the main effects'
@@ -458,36 +489,21 @@ export function sweepInteractions(
 	const out: InteractionEffect[] = [];
 	for (let i = 0; i < factors.length; i++) {
 		for (let j = i + 1; j < factors.length; j++) {
-			const a = factors[i];
-			const b = factors[j];
-			const [aBot, aTop] = [a.levels[0].label, a.levels[a.levels.length - 1].label];
-			const [bBot, bTop] = [b.levels[0].label, b.levels[b.levels.length - 1].label];
-			out.push({
-				keyA: a.key,
-				keyB: b.key,
-				label: pairLabel(a, b),
-				effect: interactionContrast(
-					poolReturns(cells, results, [
-						[a.key, aTop],
-						[b.key, bTop]
-					]),
-					poolReturns(cells, results, [
-						[a.key, aTop],
-						[b.key, bBot]
-					]),
-					poolReturns(cells, results, [
-						[a.key, aBot],
-						[b.key, bTop]
-					]),
-					poolReturns(cells, results, [
-						[a.key, aBot],
-						[b.key, bBot]
-					])
-				)
-			});
+			out.push(pairInteraction(factors[i], factors[j], cells, results));
 		}
 	}
 	return out;
+}
+
+/** The interactions as the compact EffectRow the rank/flatness rules read — ONE converter, the
+ *  same discipline as toEffectRows, so no component shapes the evidence by hand. */
+export function toInteractionRows(interactions: InteractionEffect[]): EffectRow[] {
+	return interactions.map((pair) => ({
+		label: pair.label,
+		delta: pair.effect.delta,
+		lo: pair.effect.ci.lo,
+		hi: pair.effect.ci.hi
+	}));
 }
 
 /** The top interaction pair's plot: mean survival at each of A's levels, one series per B extreme —
@@ -502,24 +518,19 @@ export function interactionPlotData(
 	const bTop = b.levels[b.levels.length - 1].label;
 	const meanOf = (pool: number[]) =>
 		pool.length ? pool.reduce((sum, v) => sum + v, 0) / pool.length : null;
+	const seriesFor = (bLevel: string) =>
+		a.levels.map((level) =>
+			meanOf(
+				poolReturns(cells, results, [
+					[a.key, level.label],
+					[b.key, bLevel]
+				])
+			)
+		);
 	return {
-		x: a.levels.map((level) => level.label),
-		bottom: a.levels.map((level) =>
-			meanOf(
-				poolReturns(cells, results, [
-					[a.key, level.label],
-					[b.key, bBot]
-				])
-			)
-		),
-		top: a.levels.map((level) =>
-			meanOf(
-				poolReturns(cells, results, [
-					[a.key, level.label],
-					[b.key, bTop]
-				])
-			)
-		),
+		x: a.levels.map((l) => l.label),
+		bottom: seriesFor(bBot),
+		top: seriesFor(bTop),
 		bFrom: bBot,
 		bTo: bTop
 	};

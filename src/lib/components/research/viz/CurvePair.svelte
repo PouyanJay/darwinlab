@@ -5,6 +5,9 @@
   lifeCurve), generations on x. Direct labels at the right ends; teal = the factor's top arm.
 -->
 <script lang="ts">
+	import Figure from './Figure.svelte';
+	import DataTable from './DataTable.svelte';
+
 	let {
 		from,
 		to,
@@ -30,22 +33,42 @@
 	const pct = (v: number) => `${Math.round(v * 100)}%`;
 </script>
 
-<svg viewBox="0 0 {W} {H}" role="img" aria-label="learning curves, {toLabel} vs {fromLabel}">
-	<line x1={PAD.left} y1={H - PAD.bottom} x2={W - PAD.right} y2={H - PAD.bottom} class="axis" />
-	<text x={PAD.left - 6} y={py(lo) + 3} class="tick" text-anchor="end">{pct(lo)}</text>
-	<text x={PAD.left - 6} y={py(hi) + 3} class="tick" text-anchor="end">{pct(hi)}</text>
-	<text x={PAD.left} y={H - PAD.bottom + 16} class="tick">gen 1</text>
-	<text x={W - PAD.right} y={H - PAD.bottom + 16} class="tick" text-anchor="end">gen {gens}</text>
+<Figure
+	label="Learning curves over the training generations: {toLabel} against {fromLabel} — a curve still climbing at the right edge is under-trained."
+>
+	<svg viewBox="0 0 {W} {H}">
+		<line x1={PAD.left} y1={H - PAD.bottom} x2={W - PAD.right} y2={H - PAD.bottom} class="axis" />
+		<text x={PAD.left - 6} y={py(lo) + 3} class="tick" text-anchor="end">{pct(lo)}</text>
+		<text x={PAD.left - 6} y={py(hi) + 3} class="tick" text-anchor="end">{pct(hi)}</text>
+		<text x={PAD.left} y={H - PAD.bottom + 16} class="tick">gen 1</text>
+		<text x={W - PAD.right} y={H - PAD.bottom + 16} class="tick" text-anchor="end">gen {gens}</text>
 
-	{#if from.length}
-		<polyline points={path(from)} class="arm from" />
-		<text x={W - PAD.right + 8} y={endY(from) + 3} class="arm-label from">{fromLabel}</text>
-	{/if}
-	{#if to.length}
-		<polyline points={path(to)} class="arm to" />
-		<text x={W - PAD.right + 8} y={endY(to) + 3} class="arm-label to">{toLabel}</text>
-	{/if}
-</svg>
+		{#if from.length}
+			<polyline points={path(from)} class="arm from" />
+			<text x={W - PAD.right + 8} y={endY(from) + 3} class="arm-label from">{fromLabel}</text>
+		{/if}
+		{#if to.length}
+			<polyline points={path(to)} class="arm to" />
+			<text x={W - PAD.right + 8} y={endY(to) + 3} class="arm-label to">{toLabel}</text>
+		{/if}
+	</svg>
+
+	{#snippet table()}
+		<DataTable
+			caption="Mean survival fraction per generation, one column per arm"
+			columns={[
+				{ key: 'gen', label: 'Gen' },
+				{ key: 'from', label: fromLabel },
+				{ key: 'to', label: toLabel }
+			]}
+			rows={Array.from({ length: gens }, (_, i) => ({
+				gen: i + 1,
+				from: from[i] == null ? '—' : `${Math.round(from[i] * 100)}%`,
+				to: to[i] == null ? '—' : `${Math.round(to[i] * 100)}%`
+			}))}
+		/>
+	{/snippet}
+</Figure>
 
 <style>
 	svg {

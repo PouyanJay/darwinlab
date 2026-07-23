@@ -44,7 +44,8 @@ export interface Evaluation {
 	 * Per-seed mean survival of a sealed population of CHAMPION CLONES — the best genome of each
 	 * replicate, cloned to the population size and scored on the SAME bout seeds as the evolved
 	 * population (a paired comparison: the arena is identical, only the genomes differ). Present
-	 * only when the request opted in (`champion: true`).
+	 * only when the request opted in (`champion: true`) AND at least one replicate had a champion
+	 * to clone (a world evolved for zero generations has none).
 	 */
 	championReturns?: number[];
 }
@@ -147,6 +148,21 @@ export async function evaluate(
 	// One yield point, reused: `await breathe()` hands the frame back so the tab keeps painting.
 	const breathe = () => new Promise((resolve) => setTimeout(resolve, 0));
 
+	/** Score one frozen roster over the bouts — the SAME loop for the population and the champion
+	 *  clones, so the two passes cannot drift; the seed base is the caller's pairing decision. */
+	const scoreBouts = async (
+		genomes: Genome[],
+		seedBase: number
+	): Promise<BehaviorStats[] | null> => {
+		const rows: BehaviorStats[] = [];
+		for (let b = 0; b < bouts; b++) {
+			if (signal?.aborted) return null;
+			rows.push(measureBout(cfg, genomes, seedBase + b, genDuration));
+			await breathe();
+		}
+		return rows;
+	};
+
 	for (let s = 0; s < seeds; s++) {
 		if (signal?.aborted) return null;
 
@@ -167,29 +183,23 @@ export async function evaluate(
 		const genomes: Genome[] = (world.roster.length ? world.roster : world.fish).map(
 			(f) => f.genome
 		);
-		const rows: BehaviorStats[] = [];
-		for (let b = 0; b < bouts; b++) {
-			if (signal?.aborted) return null;
-			rows.push(measureBout(cfg, genomes, 5000 + s * 100 + b, genDuration));
-			await breathe();
-		}
+		const rows = await scoreBouts(genomes, 5000 + s * 100);
+		if (!rows) return null;
 
 		const row = meanBehavior(rows);
 		behaviors.push(row);
 		returns.push(row.meanLife);
 
 		// CHAMPION CLONES, when asked: the replicate's best genome cloned to the population size and
-		// scored on the SAME bout seeds — a paired comparison, so the arena cannot take the credit.
+		// scored on the SAME bout seed base — a paired comparison, so the arena cannot take the credit.
 		if (scoreChampion) {
 			const best = championGenome(world);
 			if (best) {
-				const clones = genomes.map(() => cloneGenome(best));
-				const champRows: BehaviorStats[] = [];
-				for (let b = 0; b < bouts; b++) {
-					if (signal?.aborted) return null;
-					champRows.push(measureBout(cfg, clones, 5000 + s * 100 + b, genDuration));
-					await breathe();
-				}
+				const champRows = await scoreBouts(
+					genomes.map(() => cloneGenome(best)),
+					5000 + s * 100
+				);
+				if (!champRows) return null;
 				championReturns.push(meanBehavior(champRows).meanLife);
 			}
 		}

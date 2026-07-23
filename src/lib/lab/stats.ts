@@ -142,6 +142,9 @@ export function interactionContrast(
 		return { delta: NaN, ci: { lo: NaN, hi: NaN } };
 	}
 	const { alpha, resamples, rng } = resolveOptions(options);
+	// tt − bt − tb + bb. NOTE: algebraically SYMMETRIC under tb↔bt — "A's dependence on B" and
+	// "B's dependence on A" are the same interaction, so a swapped middle pair is not a bug a
+	// delta assertion could ever catch (and not a bug at all).
 	const statistic = (a: number, b: number, c: number, d: number) => a - c - (b - d);
 	const delta = statistic(mean(tt), mean(tb), mean(bt), mean(bb));
 

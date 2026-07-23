@@ -23,7 +23,8 @@ export function restoreSweepDefaults(): void {
 	sweep.setGenDuration(10);
 	sweep.setCapOn(false);
 	sweep.setCapN(32);
-	sweep.setChampion(false);
+	sweep.setChampionOn(false);
+	sweep.resetCalibration(); // a prior test's real-wall run must not leak its price
 }
 
 /** Collapse every knob to a single pinned value — the zero-factor, one-cell design. */
