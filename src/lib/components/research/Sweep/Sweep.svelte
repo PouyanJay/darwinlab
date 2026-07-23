@@ -1,13 +1,13 @@
 <!--
   The Sweep instrument — factors in, effect sizes out.
 
-  A control TOOLBAR runs the grid; when the results are in, they land as two cards: the conclusion
+  The DESIGN PANEL (the console's second sidebar) runs the grid; when the results are in, they land
+  as two cards: the conclusion
   (each factor's main effect on survival, with intervals) leads, and the raw run grid sits beside it as
   the evidence. Until then it says plainly what to do. Everything reads off the sweep store; nothing
   measures here.
 -->
 <script lang="ts">
-	import FactorBar from './FactorBar.svelte';
 	import EffectBars from '../viz/EffectBars.svelte';
 	import RunHeatmap from './RunHeatmap.svelte';
 	import RunCellCard from './RunCellCard.svelte';
@@ -24,8 +24,6 @@
 </script>
 
 <div class="sweep" data-testid="sweep">
-	<FactorBar />
-
 	{#if sweep.results}
 		<div class="results">
 			<section class="card conclusion">
@@ -69,8 +67,9 @@
 	{:else}
 		<section class="card empty">
 			<p class="hint">
-				Pick the factors to vary and run the sweep. Every combination is measured across your chosen
-				seeds, and each factor's effect on seconds survived is reported with an error bar.
+				Design the sweep in the panel: pin what should hold, sweep what should vary, set the budget,
+				and Run. Every combination is measured across your chosen seeds, and each factor's effect on
+				seconds survived is reported with an error bar.
 			</p>
 		</section>
 	{/if}

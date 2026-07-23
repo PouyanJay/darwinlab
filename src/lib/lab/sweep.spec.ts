@@ -18,7 +18,7 @@ const base = () => newWorldConfig('Base', '#888888');
 
 /** Factor fixtures COMPILED from the real catalog — the same door the store uses. */
 const boolFactor = (key: string) => sweptFactors({ bools: { [key]: 'sweep' }, graded: {} })[0];
-const senseFactor = (key: string, _label?: string) => boolFactor(key);
+const senseFactor = (key: string) => boolFactor(key);
 const predSpeedFactor = sweptFactors({ bools: {}, graded: { predSpeed: [0.6, 0.8, 1.0] } })[0];
 
 /** A stand-in evaluation carrying only the per-seed returns sweepEffects actually reads. */
@@ -26,11 +26,7 @@ const withReturns = (returns: number[]) => ({ returns }) as unknown as Evaluatio
 
 describe('expandSweep', () => {
 	it('expands the full cross-product of the factors', () => {
-		const factors = [
-			senseFactor('dir', 'Direction'),
-			senseFactor('walls', 'Walls'),
-			predSpeedFactor
-		];
+		const factors = [senseFactor('dir'), senseFactor('walls'), predSpeedFactor];
 		const cells = expandSweep(base(), factors);
 		expect(cells).toHaveLength(2 * 2 * 3);
 		for (const cell of cells) {
@@ -39,7 +35,7 @@ describe('expandSweep', () => {
 	});
 
 	it('applies each level as a real config patch', () => {
-		const cells = expandSweep(base(), [senseFactor('dir', 'Direction'), predSpeedFactor]);
+		const cells = expandSweep(base(), [senseFactor('dir'), predSpeedFactor]);
 		const dirOff = cells.find((cell) => cell.levels.dir === 'off');
 		const fast = cells.find((cell) => cell.levels.predSpeed === '1.0×');
 		expect(dirOff?.cfg.senses.dir).toBe(false);
@@ -56,22 +52,18 @@ describe('expandSweep', () => {
 
 describe('planSweep', () => {
 	const fourSensesAndSpeed = [
-		senseFactor('dir', 'Direction'),
-		senseFactor('dist', 'Distance'),
-		senseFactor('walls', 'Walls'),
-		senseFactor('closing', 'Closing'),
+		senseFactor('dir'),
+		senseFactor('dist'),
+		senseFactor('walls'),
+		senseFactor('closing'),
 		predSpeedFactor
 	]; // 2×2×2×2×3 = 48 cells
 
 	it('runs the full factorial when it fits under the cap', () => {
-		const plan = planSweep(
-			base(),
-			[senseFactor('dir', 'Direction'), senseFactor('walls', 'Walls')],
-			{
-				maxCells: 32,
-				rng: seededRng(1)
-			}
-		);
+		const plan = planSweep(base(), [senseFactor('dir'), senseFactor('walls')], {
+			maxCells: 32,
+			rng: seededRng(1)
+		});
 		expect(plan.total).toBe(4);
 		expect(plan.sampled).toBe(false);
 		expect(plan.cells).toHaveLength(4);
@@ -94,7 +86,7 @@ describe('planSweep', () => {
 
 describe('sweepJobs', () => {
 	it('makes one job per cell, carrying its config and the run sizes', () => {
-		const cells = expandSweep(base(), [senseFactor('dir', 'Direction')]);
+		const cells = expandSweep(base(), [senseFactor('dir')]);
 		const jobs = sweepJobs(cells, { seeds: 5, episodes: 20, bouts: 4 });
 		expect(jobs).toHaveLength(2);
 		expect(jobs[0].seeds).toBe(5);
@@ -105,7 +97,7 @@ describe('sweepJobs', () => {
 
 describe('sweepEffects', () => {
 	it('reports a positive effect for a factor whose top level survives longer', () => {
-		const factors = [senseFactor('dir', 'Direction')];
+		const factors = [senseFactor('dir')];
 		const cells = expandSweep(base(), factors); // [dir off, dir on]
 		const results = [withReturns([3, 3, 3]), withReturns([4, 4, 4])];
 		const [effect] = sweepEffects(factors, cells, results);
@@ -119,7 +111,7 @@ describe('sweepEffects', () => {
 
 	it('marginalises over the other factors when pooling a level', () => {
 		// dir × walls: dir's effect should pool BOTH walls settings into each dir arm.
-		const factors = [senseFactor('dir', 'Direction'), senseFactor('walls', 'Walls')];
+		const factors = [senseFactor('dir'), senseFactor('walls')];
 		const cells = expandSweep(base(), factors); // 4 cells: dir/walls in {off,on}
 		// give every dir-on cell returns of 5 and every dir-off cell returns of 3, regardless of walls
 		const results = cells.map((cell) => withReturns(cell.levels.dir === 'on' ? [5] : [3]));
@@ -128,7 +120,7 @@ describe('sweepEffects', () => {
 	});
 
 	it('skips cells with no result', () => {
-		const factors = [senseFactor('dir', 'Direction')];
+		const factors = [senseFactor('dir')];
 		const cells = expandSweep(base(), factors);
 		const [effect] = sweepEffects(factors, cells, [null, withReturns([4, 4])]);
 		expect(effect.effect.delta).toBeNaN(); // the off arm is empty, so there is no contrast
@@ -151,7 +143,13 @@ describe('the pin-or-sweep knob model', () => {
 	it('the default design is the mock’s 48-cell factorial: 2³ bools × 3 speeds × 2 prey sizes', () => {
 		const factors = sweptFactors(defaultChoices());
 		const cells = factors.reduce((n, f) => n * f.levels.length, 1);
-		expect(factors.map((f) => f.key).sort()).toEqual(['dir', 'dist', 'persistence', 'predSpeed', 'preyPct']);
+		expect(factors.map((f) => f.key).sort()).toEqual([
+			'dir',
+			'dist',
+			'persistence',
+			'predSpeed',
+			'preyPct'
+		]);
 		expect(cells).toBe(48);
 	});
 
