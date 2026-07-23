@@ -187,8 +187,10 @@
 	</section>
 
 	<div class="commit">
-		<div class="plan" aria-live="polite">
-			<span class="cells" data-testid="atlas-plan">
+		<!-- The testid sits on the whole readout: the guards assert the cells line AND the budget
+		     detail, and a testid scoped to one span made the second assertion unmatchable. -->
+		<div class="plan" aria-live="polite" data-testid="atlas-plan">
+			<span class="cells">
 				{landscape.resolution} × {landscape.resolution} =
 				<b class="tabular">{landscape.plannedCells}</b> cells × {landscape.seeds} seeds
 			</span>
