@@ -59,6 +59,7 @@ describe('the analysis subject (the Studio→Research round-trip)', () => {
 	beforeEach(() => {
 		app.setMode('studio');
 		app.clearSubject();
+		app.resetBase(); // the editable generic is a singleton too — start every test from the factory base
 	});
 
 	// These tests add a world to the shared bench singleton — clear it so a later test never starts
@@ -118,5 +119,87 @@ describe('the analysis subject (the Studio→Research round-trip)', () => {
 		bench.analyzeWorld('does-not-exist');
 		expect(app.subject).toBeNull(); // nothing was handed over
 		expect(app.mode).toBe('studio'); // and we did not lurch into Research on a bad id
+	});
+});
+
+describe('the editable base (the subject card is a real editor)', () => {
+	beforeEach(() => {
+		app.setMode('studio');
+		app.clearSubject();
+		app.resetBase();
+	});
+
+	it('setBaseCondition edits the generic base and the edit reaches every instrument', () => {
+		expect(app.base.prey).not.toBe(40); // the state we claim to change really starts elsewhere
+		app.setBaseCondition('prey', 40);
+		expect(app.base.prey).toBe(40);
+		expect(app.subjectBase('Sweep').prey).toBe(40); // the run base carries the edit
+	});
+
+	it('setBaseCondition clamps to WORLD_LIMITS — the store owns the clamp, not the input', () => {
+		app.setBaseCondition('prey', 9999);
+		expect(app.base.prey).toBe(80);
+		app.setBaseCondition('bw', 1);
+		expect(app.base.bw).toBe(320);
+	});
+
+	it('setBaseCondition ignores a non-finite value — an emptied input is not an edit', () => {
+		const before = app.base.prey;
+		app.setBaseCondition('prey', NaN);
+		expect(app.base.prey).toBe(before);
+	});
+
+	it('edits land on the SUBJECT when one is analysed, and the generic keeps its own edits', () => {
+		app.setBaseCondition('prey', 40); // an edit on the generic…
+		app.analyze(newWorldConfig('Watched', '#123456'));
+		app.setBaseCondition('prey', 12); // …and a different edit on the subject
+		expect(app.base.prey).toBe(12);
+		app.clearSubject();
+		expect(app.base.prey).toBe(40); // the generic's edit survived the analyse detour
+	});
+
+	it('setBaseBrainLayers clamps layer sizes and layer count, and never leaves zero layers', () => {
+		app.setBaseBrainLayers([500, 1, 6, 8, 10, 12]);
+		expect(app.base.brainHidden).toEqual([32, 4, 6, 8]); // clamped sizes, capped at 4 layers
+		app.setBaseBrainLayers([]);
+		expect(app.base.brainHidden).toEqual([4]); // a brain with no hidden layer is not offered
+	});
+
+	it('setBaseBrainInputs(8) strips the speed sense — no 9th-slot sense on an 8-wire brain', () => {
+		app.setBaseBrainInputs(9);
+		expect(app.base.brainInputs).toBe(9); // the state we strip from really existed
+		app.setBaseCondition('prey', 20);
+		app.setBaseBrainInputs(8);
+		expect(app.base.brainInputs).toBeUndefined();
+		expect(app.base.senses.speed).toBeUndefined();
+	});
+
+	it('renameBase renames, trims, and refuses an empty name', () => {
+		app.renameBase('  Reef  ');
+		expect(app.base.name).toBe('Reef');
+		app.renameBase('   ');
+		expect(app.base.name).toBe('Reef');
+	});
+
+	it('resetBase returns the generic to factory settings', () => {
+		app.setBaseCondition('prey', 40);
+		expect(app.base.prey).toBe(40); // the edit really existed before the reset
+		app.resetBase();
+		expect(app.base.prey).toBe(newWorldConfig('x', '#000').prey);
+	});
+
+	it('adoptBase replaces the generic AND drops any analysed subject — a preset IS the base', () => {
+		app.analyze(newWorldConfig('Watched', '#123456'));
+		const preset = { ...newWorldConfig('Reef', '#8b8b8b'), prey: 36 };
+		app.adoptBase(preset);
+		expect(app.subject).toBeNull();
+		expect(app.base.prey).toBe(36);
+		expect(app.base.senses).not.toBe(preset.senses); // a copy — the preset can't be mutated through us
+	});
+
+	it('subjectBase hands out a COPY of the senses, so an instrument cannot mutate the base', () => {
+		const handout = app.subjectBase('Sweep');
+		handout.senses.dir = false;
+		expect(app.base.senses.dir).toBe(true);
 	});
 });
