@@ -32,6 +32,7 @@
 
 	/** Download the run as CSV — built by the lab's one builder, named for its design. */
 	function exportCsv(): void {
+		// defensive: #commitRun always sets these together, but this fn shouldn't assume its caller
 		if (!sweep.results || !sweep.receipt) return;
 		const csv = sweepCsv(sweep.lastFactors, sweep.cells, sweep.results, sweep.receipt);
 		const blob = new Blob([csv], { type: 'text/csv' });

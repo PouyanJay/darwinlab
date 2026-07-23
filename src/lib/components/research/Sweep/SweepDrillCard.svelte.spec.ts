@@ -57,12 +57,14 @@ const props = {
 };
 
 describe('SweepDrillCard', () => {
-	beforeEach(() => {
-		// the notebook is a persisted singleton — start each test without this card's finding
+	/** Surgical, not clear(): sibling spec files share the persisted notebook in this worker. */
+	const removeCellFinding = (variantKey: string) => {
 		for (const finding of [...findings.entries]) {
-			if (finding.key.includes('cell-0')) findings.remove(finding.id);
+			if (finding.key.includes(variantKey)) findings.remove(finding.id);
 		}
-	});
+	};
+
+	beforeEach(() => removeCellFinding('cell-0'));
 
 	it('shows THIS run against the CELL mean — two distinct numbers, bound to the right source', () => {
 		const { container } = render(SweepDrillCard, props);

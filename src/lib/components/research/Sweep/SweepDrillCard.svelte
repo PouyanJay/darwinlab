@@ -131,10 +131,11 @@
 
 	function addToReport(): void {
 		if (!evaluation) return;
+		const meanLabel = `${formatSeconds(evaluation.meanReturn)} ± ${evaluation.sdReturn.toFixed(1)}`;
 		findings.add({
 			source: 'sweep',
 			variant: `cell-${conditionIndex}`,
-			title: `Condition ${conditionIndex + 1} · ${formatSeconds(evaluation.meanReturn)} ± ${evaluation.sdReturn.toFixed(1)}`,
+			title: `Condition ${conditionIndex + 1} · ${meanLabel}`,
 			detail: chips
 				.filter((c) => c.swept)
 				.map((c) => c.text)

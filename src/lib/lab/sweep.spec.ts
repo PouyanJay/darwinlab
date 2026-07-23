@@ -415,11 +415,18 @@ describe('sweepCsv (P6)', () => {
 		expect(live).toContain('4.500,5.500');
 	});
 
-	it('leaves an unmeasured cell as honest blanks, and escapes commas in labels', () => {
+	it('leaves an unmeasured cell as honest blanks, not zeros', () => {
 		const factors = [sweptFactors({ bools: {}, graded: { predSpeed: [0.6, 1.0] } })[0]];
 		const cells = expandSweep(base(), factors);
 		const csv = sweepCsv(factors, cells, [null, null], receipt);
-		const lines = csv.split('\n');
-		expect(lines[2]).toBe('1,0.6×,,,,'); // blanks, not zeros — nothing was measured
+		expect(csv.split('\n')[2]).toBe('1,0.6×,,,,'); // nothing was measured, so nothing is claimed
+	});
+
+	it('quotes a field containing a comma so the column count survives', () => {
+		// both reviews sabotaged the escaping and NOTHING failed — this fixture is that guard armed
+		const weird = { ...boolFactor('dir'), label: 'Direction, "sensed"' };
+		const csv = sweepCsv([weird], expandSweep(base(), [weird]), [null, null], receipt);
+		expect(csv.split('\n')[1]).toContain('"Direction, ""sensed"""');
+		expect(csv.split('\n')[1].split(',').length).toBe(7); // 6 columns + the ONE quoted comma
 	});
 });
