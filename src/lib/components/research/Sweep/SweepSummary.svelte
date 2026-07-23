@@ -7,20 +7,16 @@
 	import { sweep, app, findings } from '$lib/state';
 	import { configHash } from '$lib/lab/run';
 	import { toEffectRows } from '$lib/lab/sweep';
-	import { isFlatEffect, type EffectRow } from '$lib/lab/evidence';
+	import { strongestEffect, type EffectRow } from '$lib/lab/evidence';
 	import { formatSignedSeconds } from '$lib/format';
 	import SummaryPanel from '../SummaryPanel.svelte';
 	import ReportButton from '../ReportButton.svelte';
 
 	const effectRows = $derived(toEffectRows(sweep.effects));
 
-	/** The strongest factor whose 95% interval clears zero — or null when nothing did, which is itself
-	 *  a real result the Sweep keeps (a flat environment), not a gap to paper over. */
-	const lead = $derived.by<EffectRow | null>(() => {
-		const movers = effectRows.filter((e) => !isFlatEffect(e));
-		if (movers.length === 0) return null;
-		return movers.reduce((best, e) => (Math.abs(e.delta) > Math.abs(best.delta) ? e : best));
-	});
+	/** The strongest factor whose 95% interval clears zero — the SHARED selector, so this lead and
+	 *  the workspace's headline tile can never disagree. Null = a flat environment, a real result. */
+	const lead = $derived.by<EffectRow | null>(() => strongestEffect(effectRows));
 
 	// Whether this subject already has a Sweep finding in the notebook — so the button reads "in
 	// report" rather than inviting a duplicate. Reactive on both the notebook and the subject.
@@ -35,7 +31,8 @@
 				? 'the strongest factor whose interval clears zero'
 				: 'a flat environment — a real negative the Sweep keeps',
 			status: lead ? 'ok' : 'limit',
-			seeds: sweep.seeds,
+			// the RECEIPT's seeds — the run that happened, not wherever the panel's input sits now
+			seeds: sweep.receipt?.seeds ?? sweep.seeds,
 			configHash: configHash([app.subjectBase('Sweep')]),
 			evidence: { kind: 'effects', effects: effectRows }
 		});
@@ -51,7 +48,7 @@
 			: 'a flat environment — a real negative the Sweep keeps'}
 		stats={[
 			{ label: 'Conditions', value: String(sweep.cells.length) },
-			{ label: 'Seeds', value: String(sweep.seeds) }
+			{ label: 'Seeds', value: String(sweep.receipt?.seeds ?? sweep.seeds) }
 		]}
 	>
 		{#if sweep.sampled}

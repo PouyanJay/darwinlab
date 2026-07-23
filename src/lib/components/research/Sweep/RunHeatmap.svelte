@@ -171,24 +171,33 @@
 	<p class="empty">No conditions completed.</p>
 {:else}
 	<div class="heat" data-testid="sweep-heat" data-conds={cells.length} data-seeds={seeds}>
-		<div class="chart" bind:this={chart}>
-			<Canvas
-				{paint}
-				{register}
-				{onhover}
-				{onpick}
-				{onkeydown}
-				onleave={() => (cursor = null)}
-				{label}
-				cursor="pointer"
-			/>
+		<div class="gridwrap">
+			<!-- Seed row labels sit OUTSIDE the chart box on purpose: `cellAt` measures the chart's own
+			     client box, so nothing may pad or shift it. Each label flexes to one row's height. -->
+			<div class="seedcol" aria-hidden="true">
+				{#each { length: seeds }, s (s)}
+					<span class="tabular">s{s + 1}</span>
+				{/each}
+			</div>
+			<div class="chart" bind:this={chart}>
+				<Canvas
+					{paint}
+					{register}
+					{onhover}
+					{onpick}
+					{onkeydown}
+					onleave={() => (cursor = null)}
+					{label}
+					cursor="pointer"
+				/>
 
-			{#if tip && pointer}
-				<ChartTooltip x={pointer.x} y={pointer.y}>
-					<span class="tip-cond">{tip.condition}</span>
-					<span class="tip-val tabular">seed {tip.seed} · {tip.value}</span>
-				</ChartTooltip>
-			{/if}
+				{#if tip && pointer}
+					<ChartTooltip x={pointer.x} y={pointer.y}>
+						<span class="tip-cond">{tip.condition}</span>
+						<span class="tip-val tabular">seed {tip.seed} · {tip.value}</span>
+					</ChartTooltip>
+				{/if}
+			</div>
 		</div>
 
 		<div class="scale" aria-hidden="true">
@@ -208,14 +217,37 @@
 		min-width: 0;
 	}
 
+	.gridwrap {
+		display: flex;
+		gap: var(--sp-2);
+		min-width: 0;
+	}
+
+	.seedcol {
+		display: flex;
+		flex-direction: column;
+		flex: none;
+	}
+
+	.seedcol span {
+		flex: 1;
+		display: flex;
+		align-items: center;
+		font-size: var(--fs-eyebrow);
+		color: var(--ink3);
+		font-variant-numeric: tabular-nums;
+	}
+
 	.chart {
 		position: relative;
 		/* Fills the card's width; the height gives the seed rows room to read as squares-ish across the
 		   run sizes the cap allows (2–32 conditions × 2–12 seeds). NO padding on purpose: the canvas
 		   fills this box exactly, so `cellAt` (which measures this box) and `paint` (which draws in the
 		   canvas box) share one coordinate space and a hover resolves to the cell under the pointer. */
-		width: 100%;
-		height: clamp(140px, 22vh, 220px);
+		flex: 1;
+		min-width: 0;
+		/* Full-width now (the mock's rule: the clickable chart gets the room to be a real target). */
+		height: clamp(160px, 26vh, 260px);
 		border: 1px solid var(--line);
 		border-radius: var(--radius-card);
 		background: var(--panel2);

@@ -63,6 +63,27 @@ export function isFlatEffect(row: EffectRow): boolean {
 }
 
 /**
+ * Effect rows RANKED by size, so the answer reads top-down; NaN arms (an empty contrast) sink to
+ * the bottom rather than poisoning the sort. Pure and shared — one sorter, so the chart and any
+ * other consumer rank identically. Returns a new array; the input is untouched.
+ */
+export function rankEffectRows(rows: EffectRow[]): EffectRow[] {
+	const magnitude = (row: EffectRow) => (Number.isNaN(row.delta) ? -1 : Math.abs(row.delta));
+	return [...rows].sort((a, b) => magnitude(b) - magnitude(a));
+}
+
+/**
+ * The strongest factor whose interval clears zero — or null when nothing did, which is itself a
+ * real result (a flat environment), not a gap to paper over. ONE selector on top of isFlatEffect,
+ * so the workspace's headline tile and the sidebar's lead can never disagree about the winner.
+ */
+export function strongestEffect(rows: EffectRow[]): EffectRow | null {
+	const movers = rows.filter((row) => !isFlatEffect(row));
+	if (movers.length === 0) return null;
+	return movers.reduce((best, row) => (Math.abs(row.delta) > Math.abs(best.delta) ? row : best));
+}
+
+/**
  * The kept negatives in a piece of evidence — the factors whose interval can't clear zero (Q6). ONE
  * extractor, so the on-screen note and the Markdown export can never disagree about what "did not work";
  * evidence that isn't a Sweep's effects has no negatives to keep.
