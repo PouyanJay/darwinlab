@@ -1,118 +1,179 @@
 <!--
   The Atlas instrument — two knobs in, a survival landscape out.
 
-  A control TOOLBAR runs the plane — the two axes on the left, the run controls (grid size, seeds, the
-  cell-count readout, and Run) grouped on the right, one bordered instrument panel like the Sweep's.
-  Running paints the plane. Once a field is in, the map fills the workspace and the legend reads it; the
-  drilled point you open lives in the console's right sidebar (the DrillCard) — the door back into
-  Studio. Until then it says plainly what to do. Everything reads off the landscape store; nothing
-  measures here.
+  Since the landscape-panel redesign the workspace holds only EVIDENCE: the honesty tiles (the
+  run's receipts, with the measured fall-off as the headline), the painted landscape with its
+  row-traced cliff, the cross-section that reads the edge as a curve, and the exports. Designing
+  and firing live in the design panel (the console's second zone); the drilled cell opens in the
+  right sidebar. Everything reads off the landscape store; nothing measures here.
 -->
 <script lang="ts">
-	import AxisPicker from './AxisPicker.svelte';
 	import LandscapeMap from './LandscapeMap.svelte';
+	import CliffSection from './CliffSection.svelte';
 	import Button from '../../common/Button.svelte';
-	import Icon from '../../common/Icon.svelte';
-	import RunProgress from '../RunProgress.svelte';
-	import { landscape } from '$lib/state';
-	import { LANDSCAPE_DEFAULTS } from '$lib/lab/landscape';
+	import ReportButton from '../ReportButton.svelte';
+	import { landscape, findings } from '$lib/state';
+	import { landscapeCsv } from '$lib/lab/landscape';
+	import { addLandscapeFinding } from './landscapeFinding';
+	import { downloadText } from '$lib/download';
+	import { formatWallClock } from '$lib/format';
+
+	const field = $derived(landscape.field);
+	const receipt = $derived(landscape.receipt);
+	const falloff = $derived(landscape.falloff);
+	const inReport = $derived(findings.has('atlas'));
+
+	function exportCsv(): void {
+		if (!field || !receipt) return;
+		downloadText('darwin-lab-atlas.csv', landscapeCsv(field, receipt), 'text/csv');
+	}
 </script>
 
 <div class="atlas" data-testid="atlas">
-	<div class="toolbar">
-		<div class="axes-group">
-			<span class="eyebrow">Axes</span>
-			<AxisPicker />
+	{#if field}
+		<!-- The experiment's receipts, always visible above the conclusions. -->
+		<div class="tiles" data-testid="atlas-tiles">
+			<div class="tile">
+				<span class="tv">{field.cols * field.rows}</span>
+				<span class="ts">cells · {field.cols} × {field.rows}</span>
+			</div>
+			<div class="tile">
+				<span class="tv">{field.cols * field.rows * (receipt?.seeds ?? 0)}</span>
+				<span class="ts">runs · {receipt?.seeds ?? 0} seeds each</span>
+			</div>
+			<div class="tile">
+				<span class="tv">{receipt?.episodes ?? 0} × 10s</span>
+				<span class="ts">gens × gen length</span>
+			</div>
+			<div class="tile">
+				<span class="tv">{formatWallClock(receipt?.wallSeconds ?? 0)}</span>
+				<span class="ts">wall clock</span>
+			</div>
+			<div class="tile headline">
+				{#if falloff}
+					<span class="tv">{field.axisX.format(falloff.x)}</span>
+					<span class="ts">steepest fall-off · −{falloff.drop.toFixed(1)}s per step</span>
+				{:else}
+					<span class="tv">—</span>
+					<span class="ts">no sharp fall-off along {field.axisX.label.toLowerCase()}</span>
+				{/if}
+			</div>
 		</div>
 
-		<div class="run">
-			<label class="num">
-				<span>grid</span>
-				<input
-					type="number"
-					inputmode="numeric"
-					min={LANDSCAPE_DEFAULTS.minRes}
-					max={LANDSCAPE_DEFAULTS.maxRes}
-					value={landscape.resolution}
-					disabled={landscape.running}
-					onchange={(event) => landscape.setResolution(Number(event.currentTarget.value))}
-				/>
-			</label>
-			<label class="num">
-				<span>seeds</span>
-				<input
-					type="number"
-					inputmode="numeric"
-					min={LANDSCAPE_DEFAULTS.minSeeds}
-					max={LANDSCAPE_DEFAULTS.maxSeeds}
-					value={landscape.seeds}
-					disabled={landscape.running}
-					onchange={(event) => landscape.setSeeds(Number(event.currentTarget.value))}
-				/>
-			</label>
-
-			<span class="summary" data-testid="atlas-summary">
-				= {landscape.plannedCells} cells × {landscape.seeds} seeds
-			</span>
-
-			{#if landscape.running}
-				<RunProgress progress={landscape.progress} oncancel={() => landscape.cancel()} />
-			{:else}
-				<Button variant="primary" onclick={() => landscape.run()}>
-					<Icon name="compass" size={14} />
-					<span>Run landscape</span>
-				</Button>
-			{/if}
-		</div>
-	</div>
-
-	{#if landscape.field}
-		<div class="map">
+		<!-- THE MAP — the instrument itself. -->
+		<section class="card">
+			<header class="card-head">
+				<span class="eyebrow">The landscape</span>
+				<span class="meta">mean seconds survived · click a cell to drill</span>
+			</header>
 			<LandscapeMap />
+			<p class="read">
+				Every cell is a full evolution experiment on the subject, coloured by mean survival. The
+				<b>gold dashes trace the cliff</b> — each row's steepest survival drop, found by the run, not
+				drawn by hand. This is the Q4 answer as a picture: the region where the world holds, and the edge
+				where it stops holding.
+			</p>
+		</section>
+
+		<!-- THE CROSS-SECTION — the map's geometry as the Q4 sentence. -->
+		<section class="card" data-testid="atlas-section-card">
+			<header class="card-head">
+				<span class="eyebrow">The cliff, read as a curve</span>
+				<span class="meta">the map's low and high {field.axisY.label.toLowerCase()} rows</span>
+			</header>
+			<CliffSection />
+			<p class="read">
+				Two rows of the map, read as curves, each with its own measured edge marked. If the edges
+				sit apart, <b>{field.axisY.label.toLowerCase()} moves the cliff</b> — that sentence, where the
+				edge is and what moves it, is the finding the notebook receives.
+			</p>
+		</section>
+
+		<div class="exports">
+			<Button variant="ghost" size="sm" onclick={exportCsv}>Export CSV</Button>
+			<ReportButton {inReport} onadd={addLandscapeFinding} />
+			<span class="note"
+				>every export carries the design: subject, axes + ranges, resolution, seeds</span
+			>
 		</div>
 	{:else}
 		<section class="card empty">
 			<p class="hint">
-				Pick two parameters and run the landscape. Every cell of the grid is a world measured across
-				your chosen seeds, coloured by how long its fish survive — so a threshold like the ~0.88×
-				predator-speed cliff shows up as a line the colour falls off. Hover a cell for its numbers,
-				click to drill in — the drilled point opens in the sidebar, and you can watch that exact
-				world back in Studio.
+				Design the plane on the left — two axes with real ranges, the resolution, the pinned
+				background — and paint it. Every cell of the grid is a world measured across your chosen
+				seeds, coloured by how long its fish survive; the cliff where survival falls off is traced
+				in gold. Click any cell to drill in, and watch that exact world back in Studio.
 			</p>
 		</section>
 	{/if}
 </div>
 
 <style>
-	/* A CONTAINER, so the toolbar reflows on the Atlas's OWN width — it sits in a workspace whose width
-	   the rail and sidebar change independently of the viewport, matching the Sweep. */
+	/* A CONTAINER, so the tiles reflow on the Atlas's OWN width — it sits in a workspace whose width
+	   the rail, panel and sidebar change independently of the viewport. */
 	.atlas {
 		display: flex;
 		flex-direction: column;
-		gap: var(--sp-6);
+		gap: var(--sp-5);
 		container-type: inline-size;
 	}
 
-	/* One bordered bar — the axes on the left, the run group (grid, seeds, size readout, Run) on the
-	   right — so the controls read as a single instrument panel, the same shape as the Sweep's FactorBar
-	   rather than loose parts on the page. */
-	.toolbar {
+	/* ---- the honesty tiles: the experiment's receipts in one row ---- */
+	.tiles {
+		display: grid;
+		grid-template-columns: repeat(5, minmax(0, 1fr));
+		gap: var(--sp-3);
+	}
+
+	.tile {
 		display: flex;
-		align-items: flex-end;
-		justify-content: space-between;
-		gap: var(--sp-5) var(--sp-6);
-		flex-wrap: wrap;
+		flex-direction: column;
+		gap: 2px;
+		border: 1px solid var(--line);
+		border-radius: var(--radius-panel);
+		background: var(--panel);
+		padding: var(--sp-3) var(--sp-4);
+	}
+
+	.tv {
+		font-size: var(--fs-stat);
+		font-weight: var(--fw-bold);
+		font-variant-numeric: tabular-nums;
+		color: var(--ink);
+	}
+
+	.tile.headline .tv {
+		color: var(--gold-ink);
+	}
+
+	.ts {
+		font-size: var(--fs-eyebrow);
+		color: var(--ink3);
+	}
+
+	@container (max-width: 720px) {
+		.tiles {
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+		}
+	}
+
+	/* ---- the evidence cards ---- */
+	.card {
+		display: flex;
+		flex-direction: column;
+		gap: var(--sp-4);
+		min-width: 0;
 		padding: var(--sp-5);
 		border: 1px solid var(--line);
 		border-radius: var(--radius-card);
 		background: var(--panel);
 	}
 
-	.axes-group {
+	.card-head {
 		display: flex;
-		flex-direction: column;
+		justify-content: space-between;
+		align-items: baseline;
 		gap: var(--sp-3);
-		min-width: 0;
 	}
 
 	.eyebrow {
@@ -123,79 +184,34 @@
 		color: var(--ink3);
 	}
 
-	/* The run group stays together, bottom-aligned with the axes, and holds its own on a wide stage. */
-	.run {
-		display: flex;
-		align-items: center;
-		gap: var(--sp-4);
-		flex-wrap: wrap;
-	}
-
-	.num {
-		display: flex;
-		align-items: center;
-		gap: var(--sp-2);
+	.meta {
 		font-size: var(--fs-sm);
 		color: var(--ink3);
-	}
-
-	.num input {
-		width: 56px;
-		padding: 7px 10px;
-		border: 1px solid var(--line);
-		border-radius: var(--radius-sm);
-		background: var(--panel2);
-		color: var(--ink);
-		font-size: var(--fs-md);
-		font-weight: var(--fw-semibold);
-		font-variant-numeric: tabular-nums;
-		text-align: center;
-	}
-
-	.num input:focus {
-		outline: none;
-		border-color: var(--accent);
-	}
-
-	.num input:disabled {
-		opacity: 0.6;
-	}
-
-	.summary {
-		font-size: var(--fs-sm);
-		color: var(--ink2);
 		font-variant-numeric: tabular-nums;
 		white-space: nowrap;
 	}
 
-	/* On a narrow Atlas the run group drops below the axes and spans the bar, so Run never crowds into a
-	   corner. Keyed off the Atlas's own width (its `.atlas` container), not the viewport — mirrors the
-	   Sweep. */
-	@container (max-width: 560px) {
-		.run {
-			flex: 1 1 100%;
-			justify-content: space-between;
-		}
+	.read {
+		margin: 0;
+		font-size: var(--fs-sm);
+		line-height: var(--leading-body);
+		color: var(--ink3);
 	}
 
-	/* The map fills the workspace now that the drilled point lives in the console's right sidebar. */
-	.map {
-		display: flex;
-		flex-direction: column;
-		gap: var(--sp-4);
-		min-width: 0;
+	.read b {
+		color: var(--ink2);
 	}
 
-	/* The empty-state prompt sits in a bordered card, the same evidence-card shell the Sweep uses. */
-	.card {
+	.exports {
 		display: flex;
-		flex-direction: column;
-		gap: var(--sp-4);
-		min-width: 0;
-		padding: var(--sp-5);
-		border: 1px solid var(--line);
-		border-radius: var(--radius-card);
-		background: var(--panel);
+		align-items: center;
+		gap: var(--sp-3);
+	}
+
+	.note {
+		margin-left: auto;
+		font-size: var(--fs-xs);
+		color: var(--ink3);
 	}
 
 	.hint {

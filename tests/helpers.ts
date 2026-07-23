@@ -121,16 +121,19 @@ export async function runMinimalSweep(page: Page): Promise<void> {
 }
 
 /**
- * Shrink the Atlas to the smallest real grid (3×3 at two seeds) and PROVE it applied before running.
- * The store reads the inputs on `change`, so this waits for the summary to confirm the new size — a
- * run kicked off on the assumption the change fired could silently measure the full default grid.
+ * Shrink the Atlas to the smallest honest design — the 5×5 chip, two seeds, minimum training — and
+ * PROVE it applied before running. The store reads the inputs on `change`, so this waits for the
+ * plan readout to confirm the new size — a run kicked off on the assumption the change fired could
+ * silently measure the full default grid.
  */
 export async function shrinkAtlasRun(page: Page): Promise<void> {
-	const grid = page.locator('[data-testid="atlas"] .num input').first();
-	const seeds = page.locator('[data-testid="atlas"] .num input').nth(1);
-	await grid.fill('3');
-	await grid.blur();
+	await page.getByRole('button', { name: '5 × 5' }).click();
+	const seeds = page.getByTestId('atlas-seeds');
 	await seeds.fill('2');
 	await seeds.blur();
-	await expect(page.getByTestId('atlas-summary')).toContainText('9 cells × 2 seeds');
+	const gens = page.getByTestId('atlas-episodes');
+	await gens.fill('5');
+	await gens.blur();
+	await expect(page.getByTestId('atlas-plan')).toContainText('5 × 5 = 25 cells × 2 seeds');
+	await expect(page.getByTestId('atlas-plan')).toContainText('5 gens');
 }

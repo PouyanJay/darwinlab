@@ -2,13 +2,15 @@ import { expect, test } from '@playwright/test';
 import { gotoApp, openAtlas, shrinkAtlasRun } from './helpers';
 
 /**
- * The Atlas instrument, end to end: that a real landscape runs through the worker pool in the built
- * app and paints a survival map, and that drilling a cell and choosing "Watch this world" carries
- * that exact config back into Studio — the Research→Studio round-trip.
+ * The Atlas instrument, end to end: that a landscape DESIGNED in the panel (resolution, seeds,
+ * training length) runs through the worker pool in the built app and paints a survival map, and
+ * that drilling a cell and choosing "Watch this world" carries that exact config back into Studio
+ * — the Research→Studio round-trip.
  *
- * The run is shrunk to the smallest real grid (3×3 at two seeds) so it is a handful of worker jobs,
- * not a full landscape. The survival VALUES are a live measurement and are not asserted; what is
- * asserted is that the pipeline produced a painted map, a legend, a drill-in, and the hand-off.
+ * The run is shrunk to the smallest honest design (5×5 at two seeds, minimum training) so it is a
+ * modest batch, not a full landscape. The survival VALUES are a live measurement and are not
+ * asserted; what is asserted is that the pipeline produced a painted map, a legend, tiles, a
+ * drill-in, and the hand-off.
  */
 
 test('a landscape runs, paints a map with a legend, and drills a cell', async ({ page }) => {
@@ -17,7 +19,7 @@ test('a landscape runs, paints a map with a legend, and drills a cell', async ({
 	await openAtlas(page);
 	await shrinkAtlasRun(page);
 
-	await page.getByRole('button', { name: 'Run landscape' }).click();
+	await page.getByTestId('atlas-run').click();
 
 	// The map paints when the field lands, with its axis labelled and the colour scale read on it.
 	await expect(page.locator('[data-testid="atlas"] canvas').first()).toBeVisible({
@@ -25,6 +27,8 @@ test('a landscape runs, paints a map with a legend, and drills a cell', async ({
 	});
 	await expect(page.getByTestId('atlas-legend')).toBeVisible();
 	await expect(page.getByTestId('atlas')).toContainText('Predator speed →');
+	await expect(page.getByTestId('atlas-tiles')).toContainText('25');
+	await expect(page.getByTestId('atlas-tiles')).toContainText('runs · 2 seeds each');
 
 	// The landscape's threshold feeds the report notebook: "add to report" records it in the rail.
 	await page.getByTestId('add-to-report').click();
@@ -35,7 +39,8 @@ test('a landscape runs, paints a map with a legend, and drills a cell', async ({
 	await page.keyboard.press('ArrowRight');
 	await page.keyboard.press('Enter');
 	await expect(page.getByTestId('atlas-drill')).toBeVisible();
-	await expect(page.getByTestId('atlas-drill')).toContainText('Predator speed');
+	await expect(page.getByTestId('atlas-drill')).toContainText('predator speed'); // the axis chip
+	await expect(page.getByTestId('drill-where')).toBeVisible(); // the measured where-line rendered
 });
 
 test('"Watch this world" carries the drilled config back into Studio', async ({ page }) => {
@@ -44,7 +49,7 @@ test('"Watch this world" carries the drilled config back into Studio', async ({ 
 	await openAtlas(page);
 	await shrinkAtlasRun(page);
 
-	await page.getByRole('button', { name: 'Run landscape' }).click();
+	await page.getByTestId('atlas-run').click();
 	await expect(page.locator('[data-testid="atlas"] canvas').first()).toBeVisible({
 		timeout: 90_000
 	});
@@ -73,7 +78,7 @@ test('changing an axis after drilling does not relabel the measured cell', async
 	await openAtlas(page);
 	await shrinkAtlasRun(page); // X = Predator speed, Y = Mutation (the defaults)
 
-	await page.getByRole('button', { name: 'Run landscape' }).click();
+	await page.getByTestId('atlas-run').click();
 	await expect(page.locator('[data-testid="atlas"] canvas').first()).toBeVisible({
 		timeout: 90_000
 	});
@@ -81,12 +86,12 @@ test('changing an axis after drilling does not relabel the measured cell', async
 	await page.locator('[data-testid="atlas"] canvas').first().focus();
 	await page.keyboard.press('ArrowRight');
 	await page.keyboard.press('Enter');
-	await expect(page.getByTestId('atlas-drill')).toContainText('Predator speed'); // measured on this axis
+	await expect(page.getByTestId('atlas-drill')).toContainText('predator speed'); // measured on this axis
 
 	// The pickers are NOT disabled once a field exists, so this change really happens — and must not
 	// relabel the frozen cell.
-	await page.getByLabel('horizontal axis').selectOption({ label: 'Vision' });
-	await expect(page.getByLabel('horizontal axis')).toHaveValue('vision'); // the picker moved
-	await expect(page.getByTestId('atlas-drill')).toContainText('Predator speed'); // the card did NOT
-	await expect(page.getByTestId('atlas-drill')).not.toContainText('Vision');
+	await page.getByLabel('x axis', { exact: true }).selectOption({ label: 'Vision' });
+	await expect(page.getByLabel('x axis', { exact: true })).toHaveValue('vision'); // the picker moved
+	await expect(page.getByTestId('atlas-drill')).toContainText('predator speed'); // the card did NOT
+	await expect(page.getByTestId('atlas-drill')).not.toContainText('vision');
 });

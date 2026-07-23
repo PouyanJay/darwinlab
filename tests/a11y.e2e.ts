@@ -139,7 +139,7 @@ test('the painted Atlas scans clean — the map, legend and drill card are new s
 	test.setTimeout(120_000);
 	await openAtlas(page);
 	await shrinkAtlasRun(page);
-	await page.getByRole('button', { name: 'Run landscape' }).click();
+	await page.getByTestId('atlas-run').click();
 	await expect(page.locator('[data-testid="atlas"] canvas').first()).toBeVisible({
 		timeout: 90_000
 	});

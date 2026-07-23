@@ -15,6 +15,7 @@ import type { WorldConfig } from '../engine';
 import { averageCurves, type EvalRequest, type Evaluation, type RunSize } from './evaluator';
 import { contrast, interactionContrast, type Contrast, type DifferenceContrast } from './stats';
 import type { EffectRow } from './evidence';
+import { csvField } from './csv';
 
 /** Sensible defaults for a sweep — smaller than a single Evaluate, because there are many cells. */
 export const SWEEP_DEFAULTS = { seeds: 6, episodes: 20, bouts: 4, maxCells: 32 } as const;
@@ -630,12 +631,6 @@ export function cellRecipe(cell: SweepCell): RecipeChip[] {
 }
 
 /* ==================================== the CSV export (P6) ==================================== */
-
-/** Escape one CSV field — quotes doubled, wrapped when the text needs it. */
-function csvField(value: string | number): string {
-	const text = String(value);
-	return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
-}
 
 /**
  * The whole run as CSV, one row per cell: the design (every factor's level), the numbers (per-seed

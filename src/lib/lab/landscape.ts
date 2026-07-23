@@ -16,16 +16,23 @@
 
 import type { WorldConfig } from '../engine';
 import type { EvalRequest, Evaluation, RunSize } from './evaluator';
+import { BOOL_KNOBS } from './sweep';
+import { csvField } from './csv';
 
-/** Grid resolution and per-cell run size — a landscape has many cells, so each one is cheaper than a sweep cell. */
+/**
+ * Grid resolution and per-cell run size — a landscape has many cells, so each one is cheaper than a
+ * sweep cell. Resolution is a fixed menu (finer costs quadratically, and the panel prices it);
+ * training length is editable so a quick look and a careful map are both honest choices.
+ */
 export const LANDSCAPE_DEFAULTS = {
-	resolution: 6,
-	minRes: 3,
-	maxRes: 8,
+	resolutions: [5, 7, 9] as const,
+	resolution: 7,
 	seeds: 4,
 	minSeeds: 2,
-	maxSeeds: 8,
-	episodes: 18,
+	maxSeeds: 10,
+	episodes: 20,
+	minEpisodes: 5,
+	maxEpisodes: 60,
 	bouts: 3
 } as const;
 
@@ -94,31 +101,71 @@ export interface Falloff {
 function numericAxis(
 	key: keyof WorldConfig & string,
 	label: string,
-	{ min, max }: { min: number; max: number },
-	format: (value: number) => string,
-	round: (value: number) => number = (value) => value
+	{
+		min,
+		max,
+		format,
+		round = (value) => value
+	}: {
+		min: number;
+		max: number;
+		format: (value: number) => string;
+		round?: (value: number) => number;
+	}
 ): LandscapeAxis {
 	return { key, label, min, max, apply: (cfg, value) => ({ ...cfg, [key]: round(value) }), format };
 }
 
 /**
- * The axes the predator-prey scenario offers, most-interesting first. Predator speed spans the 0.88
- * cliff; mutation is the drift knob; vision, prey and predators reshape the hunt. Ranges are sub-
- * ranges of what the Conditions dialog allows — chosen to sit the interesting region inside the grid.
+ * The axes the predator-prey scenario offers, most-interesting first — the same knob vocabulary as
+ * the Sweep's graded set (the mock's call). Predator speed spans the cliff; mutation is the drift
+ * knob; vision, top speed, agility and prey reshape the hunt. Each axis's min/max is BOTH its
+ * default range and the hard bound an edited range is clamped to.
  */
 export const CANDIDATE_AXES: LandscapeAxis[] = [
-	numericAxis('predSpeed', 'Predator speed', { min: 0.6, max: 1.2 }, (v) => `${v.toFixed(2)}×`),
-	numericAxis('mutation', 'Mutation', { min: 0.01, max: 0.15 }, (v) => v.toFixed(3)),
-	numericAxis('vision', 'Vision', { min: 120, max: 280 }, (v) => `${Math.round(v)}px`, Math.round),
-	numericAxis(
-		'prey',
-		'Prey',
-		{ min: 8, max: 40 },
-		(v) => `${Math.round(v)}`,
-		(v) => Math.round(v / 2) * 2
-	),
-	numericAxis('preds', 'Predators', { min: 1, max: 5 }, (v) => `${Math.round(v)}`, Math.round)
+	numericAxis('predSpeed', 'Predator speed', {
+		min: 0.6,
+		max: 1.4,
+		format: (v) => `${v.toFixed(2)}×`
+	}),
+	numericAxis('mutation', 'Mutation', { min: 0.02, max: 0.14, format: (v) => v.toFixed(3) }),
+	numericAxis('vision', 'Vision', {
+		min: 120,
+		max: 280,
+		format: (v) => `${Math.round(v)}px`,
+		round: Math.round
+	}),
+	numericAxis('maxSpeed', 'Top speed', {
+		min: 130,
+		max: 200,
+		format: (v) => `${Math.round(v)}px/s`,
+		round: Math.round
+	}),
+	numericAxis('agility', 'Agility', { min: 0.8, max: 1.2, format: (v) => `${v.toFixed(2)}×` }),
+	numericAxis('prey', 'Prey', {
+		min: 8,
+		max: 40,
+		format: (v) => `${Math.round(v)} fish`,
+		round: (v) => Math.round(v / 2) * 2
+	})
 ];
+
+/**
+ * An axis narrowed to an edited range: clamped into the axis's own bounds, ordered, and — when the
+ * edit collapses to a point or inverts into nothing — reset to the full default range rather than
+ * planning a zero-width map. Returns a normal LandscapeAxis, so everything downstream (the plan,
+ * the field, the ticks, the marginal) works on spans without knowing they were edited.
+ */
+export function spanAxis(axis: LandscapeAxis, from: number, to: number): LandscapeAxis {
+	const clamp = (v: number) => Math.min(axis.max, Math.max(axis.min, v));
+	let lo = clamp(Math.min(from, to));
+	let hi = clamp(Math.max(from, to));
+	if (!Number.isFinite(lo) || !Number.isFinite(hi) || hi - lo < 1e-9) {
+		lo = axis.min;
+		hi = axis.max;
+	}
+	return { ...axis, min: lo, max: hi };
+}
 
 /** `n` values evenly spaced from `min` to `max` inclusive (just `min` when `n <= 1`). */
 function linspace(min: number, max: number, n: number): number[] {
@@ -126,11 +173,18 @@ function linspace(min: number, max: number, n: number): number[] {
 	return Array.from({ length: n }, (_, i) => min + ((max - min) * i) / (n - 1));
 }
 
+/** The plane a landscape is planned over: the world it starts from and the two axes that vary.
+ *  One object, not positional args — two adjacent same-typed axes would be a silent transposition
+ *  risk (the same reasoning numericAxis gives for its {min, max}). */
+export interface LandscapePlane {
+	base: WorldConfig;
+	axisX: LandscapeAxis;
+	axisY: LandscapeAxis;
+}
+
 /** The full grid: every (x, y) pair, each a config built by writing both axes onto the base. */
 export function expandLandscape(
-	base: WorldConfig,
-	axisX: LandscapeAxis,
-	axisY: LandscapeAxis,
+	{ base, axisX, axisY }: LandscapePlane,
 	cols: number,
 	rows: number
 ): LandscapeCell[] {
@@ -152,19 +206,15 @@ export function expandLandscape(
 	return cells;
 }
 
-/** Plan a square landscape at the given resolution — no cap, because a full grid never explodes the way a factorial does. */
-export function planLandscape(
-	base: WorldConfig,
-	axisX: LandscapeAxis,
-	axisY: LandscapeAxis,
-	resolution: number
-): LandscapePlan {
+/** Plan a square landscape at the given resolution — no cap, because a full grid never explodes
+ *  the way a factorial does. */
+export function planLandscape(plane: LandscapePlane, resolution: number): LandscapePlan {
 	return {
-		cells: expandLandscape(base, axisX, axisY, resolution, resolution),
+		cells: expandLandscape(plane, resolution, resolution),
 		cols: resolution,
 		rows: resolution,
-		axisX,
-		axisY
+		axisX: plane.axisX,
+		axisY: plane.axisY
 	};
 }
 
@@ -220,19 +270,22 @@ function columnMeans(field: LandscapeField): number[] {
 	});
 }
 
-export function steepestFalloff(field: LandscapeField): Falloff | null {
-	if (field.cols < 2) return null;
-
-	const means = columnMeans(field);
-	const xs = linspace(field.axisX.min, field.axisX.max, field.cols);
-
+/** The steepest positive adjacent DROP along one line of values, or null when the line never
+ *  falls — the one walker the whole-field cliff and the row tracer share, so the headline and the
+ *  gold dashes can't disagree about what "falling" means. NaN pairs are skipped, not read as drops. */
+function steepestDrop(values: number[], xs: number[]): Falloff | null {
 	let best: Falloff | null = null;
-	for (let ix = 0; ix < field.cols - 1; ix++) {
-		const drop = means[ix] - means[ix + 1]; // survival falling as X rises
+	for (let ix = 0; ix < values.length - 1; ix++) {
+		const drop = values[ix] - values[ix + 1]; // survival falling as X rises
 		if (!Number.isFinite(drop) || drop <= 0) continue;
 		if (!best || drop > best.drop) best = { ix, x: (xs[ix] + xs[ix + 1]) / 2, drop };
 	}
 	return best;
+}
+
+export function steepestFalloff(field: LandscapeField): Falloff | null {
+	if (field.cols < 2) return null;
+	return steepestDrop(columnMeans(field), linspace(field.axisX.min, field.axisX.max, field.cols));
 }
 
 /**
@@ -252,3 +305,79 @@ export const LANDSCAPE_RUN: RunSize = {
 	episodes: LANDSCAPE_DEFAULTS.episodes,
 	bouts: LANDSCAPE_DEFAULTS.bouts
 };
+
+/* ================================= the cliff, row by row ====================================== */
+
+/**
+ * Each ROW's steepest fall-off along +X — the gold dashes the map traces. Null for a row where
+ * survival never falls (a flat or rising row gets no fake cliff), and NaN cells are skipped rather
+ * than poisoning their neighbours. The whole-field `steepestFalloff` stays the headline; this is
+ * its geometry, made visible cell by cell.
+ */
+export function rowCliffs(field: LandscapeField): (Falloff | null)[] {
+	const xs = linspace(field.axisX.min, field.axisX.max, field.cols);
+	return Array.from({ length: field.rows }, (_, iy) =>
+		steepestDrop(
+			Array.from({ length: field.cols }, (_, ix) => valueAt(field, ix, iy)),
+			xs
+		)
+	);
+}
+
+/** One row of the field as a curve over X — the cross-section card reads the bottom and top rows,
+ *  so the edge's movement along Y is visible as two lines. NaN where a cell was never measured. */
+export function rowSection(field: LandscapeField, iy: number): { x: number; survival: number }[] {
+	const xs = linspace(field.axisX.min, field.axisX.max, field.cols);
+	return xs.map((x, ix) => ({ x, survival: valueAt(field, ix, iy) }));
+}
+
+/* ================================== the pinned background ===================================== */
+
+/** The panel's pin sections, in the mock's grouping — each key is a Sweep BOOL_KNOB, reused so a
+ *  pin means the same patch in both instruments. Own speed is absent on purpose: it follows the
+ *  subject's wiring, and a landscape never varies it. */
+export const ATLAS_PIN_GROUPS: { label: string; keys: string[] }[] = [
+	{ label: 'Prey senses', keys: ['dir', 'dist', 'walls', 'closing'] },
+	{ label: 'Predator', keys: ['persistence', 'lunge', 'lungeCommit'] },
+	{ label: 'Body · shoal', keys: ['stamina', 'wallInstinct', 'confusion'] }
+];
+
+/** Apply the two-state pins onto the base — the world every cell starts from before the axes write
+ *  their values. A key with no explicit pin is left as the base already has it. */
+export function pinnedBase(base: WorldConfig, pins: Record<string, boolean>): WorldConfig {
+	let cfg = base;
+	for (const knob of BOOL_KNOBS) {
+		if (knob.key in pins) cfg = knob.apply(cfg, pins[knob.key]);
+	}
+	return cfg;
+}
+
+/* ===================================== the CSV export ========================================= */
+
+/**
+ * The measured landscape as CSV, one row per cell: grid coordinates, both axis values, and the mean
+ * survival. The header carries the design — axes with their (possibly edited) ranges, resolution,
+ * seeds and training length — so a file on someone's disk still says how it was measured.
+ */
+export function landscapeCsv(
+	field: LandscapeField,
+	receipt: { seeds: number; episodes: number }
+): string {
+	const xs = linspace(field.axisX.min, field.axisX.max, field.cols);
+	const ys = linspace(field.axisY.min, field.axisY.max, field.rows);
+	const meta =
+		`# darwinlab atlas · ${field.axisX.label} ${field.axisX.format(field.axisX.min)}→${field.axisX.format(field.axisX.max)}` +
+		` × ${field.axisY.label} ${field.axisY.format(field.axisY.min)}→${field.axisY.format(field.axisY.max)}` +
+		` · ${field.cols}×${field.rows} cells · ${receipt.seeds} seeds · ${receipt.episodes} gens`;
+	const header = ['ix', 'iy', field.axisX.label, field.axisY.label, 'mean_s'];
+	const rows: (string | number)[][] = [];
+	for (let iy = 0; iy < field.rows; iy++) {
+		for (let ix = 0; ix < field.cols; ix++) {
+			const value = valueAt(field, ix, iy);
+			rows.push([ix, iy, xs[ix], ys[iy], Number.isFinite(value) ? value.toFixed(3) : '']);
+		}
+	}
+	return [meta, header.map(csvField).join(','), ...rows.map((r) => r.map(csvField).join(','))].join(
+		'\n'
+	);
+}
