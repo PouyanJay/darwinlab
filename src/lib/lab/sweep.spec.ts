@@ -1,17 +1,25 @@
 import { describe, it, expect } from 'vitest';
 import { newWorldConfig, seededRng } from '../engine';
 import {
-	senseFactor,
-	CANDIDATE_FACTORS,
+	BOOL_KNOBS,
+	GRADED_KNOBS,
+	defaultChoices,
+	pinBase,
+	sweptFactors,
 	expandSweep,
 	planSweep,
 	sweepJobs,
-	sweepEffects
+	sweepEffects,
+	type KnobChoices
 } from './sweep';
 import type { Evaluation } from './evaluator';
 
 const base = () => newWorldConfig('Base', '#888888');
-const predSpeedFactor = CANDIDATE_FACTORS.find((f) => f.key === 'predSpeed')!;
+
+/** Factor fixtures COMPILED from the real catalog — the same door the store uses. */
+const boolFactor = (key: string) => sweptFactors({ bools: { [key]: 'sweep' }, graded: {} })[0];
+const senseFactor = (key: string, _label?: string) => boolFactor(key);
+const predSpeedFactor = sweptFactors({ bools: {}, graded: { predSpeed: [0.6, 0.8, 1.0] } })[0];
 
 /** A stand-in evaluation carrying only the per-seed returns sweepEffects actually reads. */
 const withReturns = (returns: number[]) => ({ returns }) as unknown as Evaluation;
@@ -124,5 +132,63 @@ describe('sweepEffects', () => {
 		const cells = expandSweep(base(), factors);
 		const [effect] = sweepEffects(factors, cells, [null, withReturns([4, 4])]);
 		expect(effect.effect.delta).toBeNaN(); // the off arm is empty, so there is no contrast
+	});
+});
+
+describe('the pin-or-sweep knob model', () => {
+	/** Choices with everything PINNED to catalog defaults except the overrides given. */
+	const pinnedExcept = (over: Partial<KnobChoices> = {}): KnobChoices => ({
+		bools: {
+			...Object.fromEntries(BOOL_KNOBS.map((k) => [k.key, 'off' as const])),
+			...over.bools
+		},
+		graded: {
+			...Object.fromEntries(GRADED_KNOBS.map((k) => [k.key, [k.values[0]]])),
+			...over.graded
+		}
+	});
+
+	it('the default design is the mock’s 48-cell factorial: 2³ bools × 3 speeds × 2 prey sizes', () => {
+		const factors = sweptFactors(defaultChoices());
+		const cells = factors.reduce((n, f) => n * f.levels.length, 1);
+		expect(factors.map((f) => f.key).sort()).toEqual(['dir', 'dist', 'persistence', 'predSpeed', 'preyPct']);
+		expect(cells).toBe(48);
+	});
+
+	it('pinBase applies pinned booleans and single-chip graded values to every cell’s base', () => {
+		const cfg = pinBase(base(), pinnedExcept({ graded: { vision: [240] } }));
+		expect(cfg.senses.walls).toBe(false); // pinned off — overriding the generic’s on
+		expect(cfg.stamina).toBe(false);
+		expect(cfg.vision).toBe(240); // the single chip IS the pin
+	});
+
+	it('pinBase leaves swept knobs alone — the factorial owns them', () => {
+		const cfg = pinBase(base(), pinnedExcept({ bools: { dir: 'sweep' } }));
+		expect(cfg.senses.dir).toBe(base().senses.dir); // untouched, not pinned
+	});
+
+	it('a pinned prey % scales the SUBJECT’s base count, floored at a real population', () => {
+		const cfg = pinBase({ ...base(), prey: 20 }, pinnedExcept({ graded: { preyPct: [50] } }));
+		expect(cfg.prey).toBe(10);
+		const tiny = pinBase({ ...base(), prey: 2 }, pinnedExcept({ graded: { preyPct: [50] } }));
+		expect(tiny.prey).toBe(2); // never rounds a world down to no fish
+	});
+
+	it('swept graded levels sort ascending, so effects read bottom → top', () => {
+		const [factor] = sweptFactors({ bools: {}, graded: { predSpeed: [1.1, 0.6, 0.9] } });
+		expect(factor.levels.map((l) => l.label)).toEqual(['0.6×', '0.9×', '1.1×']);
+		expect(factor.levels[0].apply(base()).predSpeed).toBe(0.6);
+	});
+
+	it('one chip is a pin, not a one-level factor', () => {
+		expect(sweptFactors({ bools: {}, graded: { predSpeed: [0.8] } })).toEqual([]);
+	});
+
+	it('the catalogs’ keys are unique and every default chip is a real offered value', () => {
+		const keys = [...BOOL_KNOBS.map((k) => k.key), ...GRADED_KNOBS.map((k) => k.key)];
+		expect(new Set(keys).size).toBe(keys.length);
+		for (const knob of GRADED_KNOBS) {
+			for (const v of knob.defaultSelected) expect(knob.values).toContain(v);
+		}
 	});
 });
