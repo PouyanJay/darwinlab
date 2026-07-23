@@ -12,7 +12,8 @@
 <script lang="ts">
 	import Button from '../../common/Button.svelte';
 	import Icon from '../../common/Icon.svelte';
-	import { sweep } from '$lib/state';
+	import { sweep, findings } from '$lib/state';
+	import { configHash } from '$lib/lab/run';
 	import { cellRecipe, isUnderTrained } from '$lib/lab/sweep';
 	import { mean } from '$lib/lab/stats';
 	import { formatSeconds, formatSignedSeconds } from '$lib/format';
@@ -123,6 +124,28 @@
 			};
 		});
 	});
+
+	// The notebook door: one finding per drilled CONDITION (variant-keyed), its own curve as the
+	// evidence — a cell the drill found interesting becomes citable in the Report.
+	const inReport = $derived(findings.has('sweep', `cell-${conditionIndex}`));
+
+	function addToReport(): void {
+		if (!evaluation) return;
+		const meanLabel = `${formatSeconds(evaluation.meanReturn)} ± ${evaluation.sdReturn.toFixed(1)}`;
+		findings.add({
+			source: 'sweep',
+			variant: `cell-${conditionIndex}`,
+			title: `Condition ${conditionIndex + 1} · ${meanLabel}`,
+			detail: chips
+				.filter((c) => c.swept)
+				.map((c) => c.text)
+				.join(' · '),
+			status: 'ok',
+			seeds: evaluation.n,
+			configHash: configHash([cell.cfg]),
+			...(evaluation.curve ? { evidence: { kind: 'curve', curve: evaluation.curve } } : {})
+		});
+	}
 
 	const curve = $derived(evaluation?.curve ?? []);
 	const underTrained = $derived(isUnderTrained(curve));
@@ -245,12 +268,17 @@
 		</p>
 	{/if}
 
-	<!-- 5 · the door -->
+	<!-- 5 · the doors -->
 	<div class="doors">
 		<Button variant="primary" class="wide" onclick={() => sweep.watch(cell)}>
 			<span>Watch this world</span>
 			<Icon name="forward" size={13} />
 		</Button>
+		{#if evaluation}
+			<Button class="wide" disabled={inReport} onclick={addToReport} data-testid="drill-add-report">
+				<span>{inReport ? 'In the report' : 'Send to notebook'}</span>
+			</Button>
+		{/if}
 	</div>
 </div>
 

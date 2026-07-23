@@ -113,6 +113,13 @@ test('drilling a cell opens its world in the sidebar, and watches it in Studio',
 	await expect(card).toContainText('enable Live scoring'); // champion honesty: not measured, says so
 	await expect(card.locator('.dot.me').first()).toBeVisible(); // "you are here" ringed in the strip
 
+	// The drill's notebook door files THIS cell — the rail's notebook counts it.
+	await card.getByRole('button', { name: 'Send to notebook' }).click();
+	await expect(page.getByTestId('findings')).toContainText('kept');
+
+	// And the workspace offers the CSV export, its note naming what the file carries.
+	await expect(page.getByRole('button', { name: 'Export CSV' })).toBeVisible();
+
 	// "Watch this world" carries the condition into Studio — the round-trip out of the run grid.
 	await card.getByRole('button', { name: 'Watch this world' }).click();
 	await expect(page.getByTestId('research-stage')).toBeHidden();

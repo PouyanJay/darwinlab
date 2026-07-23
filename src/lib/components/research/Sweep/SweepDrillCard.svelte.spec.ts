@@ -1,6 +1,8 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { render } from 'vitest-browser-svelte';
+import { page } from 'vitest/browser';
 import SweepDrillCard from './SweepDrillCard.svelte';
+import { findings } from '$lib/state';
 import { newWorldConfig } from '$lib/engine';
 import type { SweepCell } from '$lib/lab/sweep';
 import type { Evaluation } from '$lib/lab/evaluator';
@@ -55,6 +57,15 @@ const props = {
 };
 
 describe('SweepDrillCard', () => {
+	/** Surgical, not clear(): sibling spec files share the persisted notebook in this worker. */
+	const removeCellFinding = (variantKey: string) => {
+		for (const finding of [...findings.entries]) {
+			if (finding.key.includes(variantKey)) findings.remove(finding.id);
+		}
+	};
+
+	beforeEach(() => removeCellFinding('cell-0'));
+
 	it('shows THIS run against the CELL mean — two distinct numbers, bound to the right source', () => {
 		const { container } = render(SweepDrillCard, props);
 		const rows = [...container.querySelectorAll('.row')].map((r) => r.textContent ?? '');
@@ -126,6 +137,21 @@ describe('SweepDrillCard', () => {
 			evaluation: { ...evaluation, curve: Array.from({ length: 24 }, () => 0.5) }
 		});
 		expect(flatCase.container.textContent).toContain('converged ✓');
+	});
+
+	it('the notebook door files the CELL as a finding once, then says so', async () => {
+		render(SweepDrillCard, {
+			...props,
+			evaluation: { ...evaluation, curve: [0.2, 0.5, 0.5] }
+		});
+		expect(findings.has('sweep', 'cell-0')).toBe(false); // the state we claim to create starts absent
+
+		await page.getByRole('button', { name: 'Send to notebook' }).click();
+		expect(findings.has('sweep', 'cell-0')).toBe(true);
+		const filed = findings.entries.find((f) => f.key.includes('cell-0'));
+		expect(filed?.title).toContain('Condition 1'); // the cell's identity, not the sweep's headline
+		expect(filed?.detail).toContain('Direction on'); // the swept recipe as the description
+		await expect.element(page.getByRole('button', { name: 'In the report' })).toBeDisabled();
 	});
 
 	it('says plainly when the condition was not measured — no invented numbers', () => {
