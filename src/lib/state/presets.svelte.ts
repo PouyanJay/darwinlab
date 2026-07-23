@@ -84,7 +84,11 @@ class PresetsStore {
 		this.#persist();
 	}
 
-	/** Adopt a preset as the editable base (drops any analysed subject — see app.adoptBase). */
+	/**
+	 * Adopt a preset as the editable base (drops any analysed subject — see app.adoptBase). A miss
+	 * is a deliberate no-op, not a throw: unlike a bench id (always a caller bug), a preset name can
+	 * arrive from stale UI or another tab's deletion — data, not a bug.
+	 */
 	apply(name: string): void {
 		const preset = this.#entries.find((p) => p.name === name);
 		if (preset) app.adoptBase(preset.cfg);

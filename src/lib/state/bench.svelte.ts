@@ -37,8 +37,9 @@ import {
 	WORLD_LIMITS,
 	PERSISTENCE_DEFAULTS,
 	SCHOOLING_PARAMS,
-	BRAIN_MAX_LAYERS,
-	MAX_GENERATIONS
+	MAX_GENERATIONS,
+	clampToRange as clamp,
+	sanitizeBrainLayers
 } from '../engine';
 import {
 	seededRng,
@@ -128,10 +129,6 @@ export interface BenchInit {
 }
 
 /** Hold a value inside the range the lab offers. The engine does not validate; the store must. */
-function clamp(value: number, { min, max }: { min: number; max: number }): number {
-	return Math.min(max, Math.max(min, value));
-}
-
 /** Thrown when a caller passes an id the bench doesn't know — always a caller bug, never data. */
 function assertEntry(entry: WorldEntry | undefined, id: string): WorldEntry {
 	if (!entry) throw new Error(`bench: no world with id "${id}"`);
@@ -805,8 +802,7 @@ class BenchStore {
 	 */
 	setBrainLayers(id: string, layers: number[]): void {
 		const { world } = this.entry(id);
-		const clean = layers.slice(0, BRAIN_MAX_LAYERS).map((n) => clamp(n, WORLD_LIMITS.brainHidden));
-		world.cfg.brainHidden = clean.length ? clean : [WORLD_LIMITS.brainHidden.min];
+		world.cfg.brainHidden = sanitizeBrainLayers(layers);
 		this.resetWorld(id);
 		this.#publishConfig(id);
 	}

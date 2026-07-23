@@ -19,8 +19,10 @@
 	import EditableLabel from '../common/EditableLabel.svelte';
 	import Segmented from '../common/Segmented.svelte';
 	import Icon from '../common/Icon.svelte';
+	import KnobGroup from './KnobGroup.svelte';
+	import ConditionInput from './ConditionInput.svelte';
 	import { app, theme, presets } from '$lib/state';
-	import { WORLD_LIMITS } from '$lib/engine';
+	import { NHID } from '$lib/engine';
 	import { previewWorld } from '$lib/render';
 
 	// The analysis subject (null on a generic world), and the base every instrument actually runs on.
@@ -32,9 +34,7 @@
 	// The hidden layers as the text the input shows — "6", or "16, 8" for a deep brain. The store
 	// clamps on the way back in, and this derived echoes the clamped truth after every commit.
 	const layersText = $derived(
-		Array.isArray(base.brainHidden)
-			? base.brainHidden.join(', ')
-			: String(base.brainHidden ?? WORLD_LIMITS.brainHidden.min + 2)
+		Array.isArray(base.brainHidden) ? base.brainHidden.join(', ') : String(base.brainHidden ?? NHID)
 	);
 
 	/** Parse "16, 8"-style text into layer sizes; the store owns the real clamp. */
@@ -74,99 +74,45 @@
 			/>
 		</div>
 
-		<details class="grp" open>
-			<summary
-				><span class="eyebrow">Population</span><span class="chev" aria-hidden="true">›</span
-				></summary
-			>
-			<div class="grp-body">
-				<label class="frow">
-					<span>prey</span>
-					<input
-						type="number"
-						inputmode="numeric"
-						min={WORLD_LIMITS.prey.min}
-						max={WORLD_LIMITS.prey.max}
-						value={base.prey}
-						onchange={(e) => app.setBaseCondition('prey', Number(e.currentTarget.value))}
-					/>
-				</label>
-				<label class="frow">
-					<span>predators</span>
-					<input
-						type="number"
-						inputmode="numeric"
-						min={WORLD_LIMITS.preds.min}
-						max={WORLD_LIMITS.preds.max}
-						value={base.preds}
-						onchange={(e) => app.setBaseCondition('preds', Number(e.currentTarget.value))}
-					/>
-				</label>
-			</div>
-		</details>
+		<KnobGroup title="Population" open>
+			<label class="frow"><span>prey</span><ConditionInput key="prey" /></label>
+			<label class="frow"><span>predators</span><ConditionInput key="preds" /></label>
+		</KnobGroup>
 
-		<details class="grp" open>
-			<summary
-				><span class="eyebrow">Tank</span><span class="chev" aria-hidden="true">›</span></summary
-			>
-			<div class="grp-body">
-				<div class="frow">
-					<span id="tank-size-label">size <i class="unit">px</i></span>
-					<span class="duo" role="group" aria-labelledby="tank-size-label">
-						<input
-							type="number"
-							inputmode="numeric"
-							aria-label="tank width"
-							min={WORLD_LIMITS.bw.min}
-							max={WORLD_LIMITS.bw.max}
-							step={WORLD_LIMITS.bw.step}
-							value={base.bw}
-							onchange={(e) => app.setBaseCondition('bw', Number(e.currentTarget.value))}
-						/>
-						<span class="x" aria-hidden="true">×</span>
-						<input
-							type="number"
-							inputmode="numeric"
-							aria-label="tank height"
-							min={WORLD_LIMITS.bh.min}
-							max={WORLD_LIMITS.bh.max}
-							step={WORLD_LIMITS.bh.step}
-							value={base.bh}
-							onchange={(e) => app.setBaseCondition('bh', Number(e.currentTarget.value))}
-						/>
-					</span>
-				</div>
+		<KnobGroup title="Tank" open>
+			<div class="frow">
+				<span id="tank-size-label">size <i class="unit">px</i></span>
+				<span class="duo" role="group" aria-labelledby="tank-size-label">
+					<ConditionInput key="bw" label="tank width" />
+					<span class="x" aria-hidden="true">×</span>
+					<ConditionInput key="bh" label="tank height" />
+				</span>
 			</div>
-		</details>
+		</KnobGroup>
 
-		<details class="grp">
-			<summary
-				><span class="eyebrow">Brain</span><span class="chev" aria-hidden="true">›</span></summary
-			>
-			<div class="grp-body">
-				<div class="frow">
-					<span>inputs</span>
-					<Segmented
-						label="brain input slots"
-						options={[
-							{ value: 8, label: '8' },
-							{ value: 9, label: '9 +own speed' }
-						]}
-						value={base.brainInputs ?? 8}
-						onchange={(inputs) => app.setBaseBrainInputs(inputs as 8 | 9)}
-					/>
-				</div>
-				<label class="frow">
-					<span>hidden layers</span>
-					<input
-						type="text"
-						class="wide"
-						value={layersText}
-						onchange={(e) => commitLayers(e.currentTarget.value)}
-					/>
-				</label>
+		<KnobGroup title="Brain">
+			<div class="frow">
+				<span>inputs</span>
+				<Segmented
+					label="brain input slots"
+					options={[
+						{ value: 8, label: '8' },
+						{ value: 9, label: '9 +own speed' }
+					]}
+					value={base.brainInputs ?? 8}
+					onchange={(inputs) => app.setBaseBrainInputs(inputs as 8 | 9)}
+				/>
 			</div>
-		</details>
+			<label class="frow">
+				<span>hidden layers</span>
+				<input
+					type="text"
+					class="wide"
+					value={layersText}
+					onchange={(e) => commitLayers(e.currentTarget.value)}
+				/>
+			</label>
+		</KnobGroup>
 
 		{#if subject}
 			<!-- Only when a Studio world was carried in: name it as the subject and offer the way back.
@@ -253,55 +199,6 @@
 		background: var(--ink3);
 	}
 
-	/* ---- collapsible knob groups, the mock's rail pattern ---- */
-	details.grp {
-		border-top: 1px solid var(--line);
-	}
-
-	details.grp summary {
-		list-style: none;
-		cursor: pointer;
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		padding: var(--sp-3) 0;
-		user-select: none;
-	}
-
-	details.grp summary::-webkit-details-marker {
-		display: none;
-	}
-
-	details.grp summary:focus-visible {
-		outline: var(--focus-ring);
-		outline-offset: var(--focus-offset);
-	}
-
-	.chev {
-		color: var(--ink3);
-		font-size: var(--fs-xs);
-		transition: transform var(--dur-fast) var(--ease);
-	}
-
-	details.grp[open] .chev {
-		transform: rotate(90deg);
-	}
-
-	.grp-body {
-		display: flex;
-		flex-direction: column;
-		gap: var(--sp-2);
-		padding: 0 0 var(--sp-4);
-	}
-
-	.eyebrow {
-		font-size: var(--fs-eyebrow);
-		font-weight: var(--fw-semibold);
-		letter-spacing: var(--tracking-wide);
-		text-transform: uppercase;
-		color: var(--ink3);
-	}
-
 	.frow {
 		display: flex;
 		align-items: center;
@@ -317,8 +214,9 @@
 		color: var(--ink3);
 	}
 
-	.frow input {
-		width: 58px;
+	/* the one input the card still renders itself — the hidden-layers text field */
+	.frow input.wide {
+		width: 76px;
 		padding: 5px 8px;
 		border: 1px solid var(--line);
 		border-radius: var(--radius-sm);
@@ -330,11 +228,7 @@
 		text-align: center;
 	}
 
-	.frow input.wide {
-		width: 76px;
-	}
-
-	.frow input:focus {
+	.frow input.wide:focus {
 		outline: none;
 		border-color: var(--accent);
 	}

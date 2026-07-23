@@ -12,7 +12,7 @@
 	let { children }: { children: Snippet } = $props();
 </script>
 
-<div class="workspace" data-testid="research-workspace">
+<div class="workspace no-scrollbar" data-testid="research-workspace">
 	<div class="confine">
 		{@render children()}
 	</div>
@@ -22,14 +22,8 @@
 	.workspace {
 		min-width: 0;
 		min-height: 0;
-		overflow-y: auto;
-		/* Zones scroll in place, chrome-free — see the rail's note; the mock is the contract. */
-		scrollbar-width: none;
+		overflow-y: auto; /* chrome-free via the shared .no-scrollbar utility */
 		background: var(--bgfx);
-	}
-
-	.workspace::-webkit-scrollbar {
-		display: none;
 	}
 
 	/* The cap + auto margins are the whole job: a comfortable measure on a wide monitor, and — because

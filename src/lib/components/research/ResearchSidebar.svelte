@@ -23,7 +23,7 @@
 	const drilled = $derived(landscape.selected !== null && landscape.field !== null);
 </script>
 
-<aside class="sidebar" data-testid="research-sidebar" aria-label="research context">
+<aside class="sidebar no-scrollbar" data-testid="research-sidebar" aria-label="research context">
 	{#if active === 'atlas'}
 		{#if hasField}
 			<LandscapeSummary />
@@ -55,16 +55,10 @@
 		flex-direction: column;
 		gap: var(--sp-4);
 		min-height: 0;
-		overflow-y: auto;
-		/* Zones scroll in place, chrome-free — see the rail's note; the mock is the contract. */
-		scrollbar-width: none;
+		overflow-y: auto; /* chrome-free via the shared .no-scrollbar utility */
 		padding: var(--sp-6) var(--sp-5);
 		background: var(--panel);
 		border-left: 1px solid var(--line);
-	}
-
-	.sidebar::-webkit-scrollbar {
-		display: none;
 	}
 
 	/* The one bit of prose the sidebar renders itself — the hint to drill a cell (the panels are their

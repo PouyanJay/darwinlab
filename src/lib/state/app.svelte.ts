@@ -24,7 +24,8 @@ import { browser } from '$app/environment';
 import {
 	newWorldConfig,
 	WORLD_LIMITS,
-	BRAIN_MAX_LAYERS,
+	clampToRange,
+	sanitizeBrainLayers,
 	type NumericCondition,
 	type WorldConfig
 } from '../engine';
@@ -39,11 +40,6 @@ export const RESEARCH_NEUTRAL_ACCENT = '#8b8b8b';
 function resolveMode(): AppMode {
 	if (!browser) return 'studio';
 	return localStorage.getItem(MODE_STORAGE_KEY) === 'research' ? 'research' : 'studio';
-}
-
-/** The clamp every base edit passes through — the engine does not validate (see bench.setCondition). */
-function clamp(value: number, { min, max }: { min: number; max: number }): number {
-	return Math.min(max, Math.max(min, value));
 }
 
 /** The name a fresh editable base wears — also what the subject card shows for it. */
@@ -125,22 +121,12 @@ class AppStore {
 	 */
 	setBaseCondition(key: NumericCondition, value: number): void {
 		if (!Number.isFinite(value)) return; // an emptied number input is not an edit
-		this.#editBase((cfg) => ({ ...cfg, [key]: clamp(value, WORLD_LIMITS[key]) }));
+		this.#editBase((cfg) => ({ ...cfg, [key]: clampToRange(value, WORLD_LIMITS[key]) }));
 	}
 
-	/**
-	 * Set the base brain's hidden ARCHITECTURE, same clamps as bench.setBrainLayers: each layer's
-	 * size to WORLD_LIMITS.brainHidden, the layer count to BRAIN_MAX_LAYERS, never zero layers.
-	 */
+	/** Set the base brain's hidden ARCHITECTURE — one shared sanitizer with bench.setBrainLayers. */
 	setBaseBrainLayers(layers: number[]): void {
-		const clean = layers
-			.filter((n) => Number.isFinite(n))
-			.slice(0, BRAIN_MAX_LAYERS)
-			.map((n) => clamp(Math.round(n), WORLD_LIMITS.brainHidden));
-		this.#editBase((cfg) => ({
-			...cfg,
-			brainHidden: clean.length ? clean : [WORLD_LIMITS.brainHidden.min]
-		}));
+		this.#editBase((cfg) => ({ ...cfg, brainHidden: sanitizeBrainLayers(layers) }));
 	}
 
 	/**
@@ -169,7 +155,7 @@ class AppStore {
 
 	/** Replace the editable generic wholesale — the presets store's door for "apply this preset". */
 	adoptBase(cfg: WorldConfig): void {
-		this.#subject = null; // a preset IS the new base, not an overlay on an analysed subject
+		this.clearSubject(); // a preset IS the new base, not an overlay on an analysed subject
 		this.#generic = { ...cfg, senses: { ...cfg.senses } };
 	}
 
