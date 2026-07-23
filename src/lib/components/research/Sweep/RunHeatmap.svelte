@@ -8,8 +8,8 @@
   flat band a few seconds wide, so mapping it from zero would wash every cell to the same shade. Canvas,
   not a grid of DOM cells, so a 32×12 run stays sharp and cheap and the cells never reflow.
 
-  Cells are drillable: click one (or arrow-move the cursor and press Enter) to open it below the grid —
-  the condition's world, this run's survival against the condition's spread, and the door into Studio.
+  Cells are drillable: click one (or arrow-move the cursor and press Enter) to open it in the right
+  sidebar — the condition's world, this run's survival against its spread, and the door into Studio.
 -->
 <script lang="ts">
 	import Canvas from '../../common/Canvas.svelte';

@@ -257,6 +257,7 @@ export const GRADED_KNOBS: GradedKnob[] = [
 		defaultSelected: [200],
 		format: (v) => String(v),
 		apply: (cfg, v) => ({ ...cfg, vision: v }),
+		// terse on purpose: the unit names the knob, and a chip row has no room to spare
 		readChip: (cfg) => `${Math.round(cfg.vision)}px vision`
 	},
 	{
@@ -267,6 +268,7 @@ export const GRADED_KNOBS: GradedKnob[] = [
 		defaultSelected: [176],
 		format: (v) => String(v),
 		apply: (cfg, v) => ({ ...cfg, maxSpeed: v }),
+		// terse on purpose: px/s can only be the fish's top speed
 		readChip: (cfg) => `${Math.round(cfg.maxSpeed ?? 176)}px/s`
 	},
 	{

@@ -91,13 +91,13 @@ test('hovering the run grid reads out the cell under the pointer', async ({ page
 	await expect(page.locator('.tip-val')).toContainText('seed 2'); // 2 seeds → the bottom row is seed 2
 });
 
-test('drilling a cell opens its world below the grid, and watches it in Studio', async ({
+test('drilling a cell opens its world in the sidebar, and watches it in Studio', async ({
 	page
 }) => {
 	await openSweep(page);
 	await runMinimalSweep(page);
 
-	// Click a cell → the drilled-run card opens below the grid with that condition's world and numbers.
+	// Click a cell → the drilled-run card opens in the right sidebar with that condition's world and numbers.
 	const canvas = page.locator('[data-testid="sweep-heat"] canvas');
 	const box = (await canvas.boundingBox())!;
 	await canvas.click({ position: { x: box.width * 0.25, y: box.height * 0.25 } });
