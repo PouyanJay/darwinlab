@@ -10,6 +10,10 @@ import {
 	planSweep,
 	sweepJobs,
 	sweepEffects,
+	sweepInteractions,
+	interactionPlotData,
+	isUnderTrained,
+	levelCurves,
 	type KnobChoices
 } from './sweep';
 import type { Evaluation } from './evaluator';
@@ -188,5 +192,135 @@ describe('the pin-or-sweep knob model', () => {
 		for (const knob of GRADED_KNOBS) {
 			for (const v of knob.defaultSelected) expect(knob.values).toContain(v);
 		}
+	});
+});
+
+describe('sweepInteractions (P4)', () => {
+	const dirFactor = () => boolFactor('dir');
+	const wallsFactor = () => boolFactor('walls');
+
+	/** A 2×2 grid whose returns follow a chosen rule per cell — the interaction is constructed. */
+	const gridWith = (value: (dir: string, walls: string) => number[]) => {
+		const factors = [dirFactor(), wallsFactor()];
+		const cells = expandSweep(base(), factors);
+		const results = cells.map((cell) => withReturns(value(cell.levels.dir, cell.levels.walls)));
+		return { factors, cells, results };
+	};
+
+	it('finds a constructed interaction — A pays only when B is on', () => {
+		// dir is worth +4 with walls on, worth 0 with walls off → interaction = +4.
+		const { factors, cells, results } = gridWith((dir, walls) =>
+			dir === 'on' && walls === 'on' ? [8, 8, 8] : [4, 4, 4]
+		);
+		const [pair] = sweepInteractions(factors, cells, results);
+		expect(pair.label).toBe('Direction × Walls');
+		expect(pair.effect.delta).toBeCloseTo(4, 6);
+		expect(pair.effect.ci.lo).toBeGreaterThan(0); // the interval clears zero — a real interaction
+	});
+
+	it('reports parallel lines as no interaction', () => {
+		// dir is worth +2 regardless of walls — additive, no interaction.
+		const { factors, cells, results } = gridWith((dir) => (dir === 'on' ? [6, 6, 6] : [4, 4, 4]));
+		const [pair] = sweepInteractions(factors, cells, results);
+		expect(pair.effect.delta).toBeCloseTo(0, 6);
+	});
+
+	it('tests every unordered pair exactly once', () => {
+		const factors = [dirFactor(), wallsFactor(), boolFactor('stamina')];
+		const cells = expandSweep(base(), factors);
+		const results = cells.map(() => withReturns([5]));
+		const pairs = sweepInteractions(factors, cells, results);
+		expect(pairs.map((p) => p.label).sort()).toEqual([
+			'Direction × Stamina',
+			'Direction × Walls',
+			'Walls × Stamina' // pair labels keep FACTOR order, not alphabetical
+		]);
+	});
+
+	it('an empty arm yields an honest NaN, not a number in costume', () => {
+		const factors = [dirFactor(), wallsFactor()];
+		const cells = expandSweep(base(), factors);
+		const results = cells.map((cell, i) => (i === 0 ? null : withReturns([5])));
+		const [pair] = sweepInteractions(factors, cells, results);
+		expect(pair.effect.delta).toBeNaN();
+	});
+
+	it('drops the trailing unit mark from a pair label', () => {
+		const speed = sweptFactors({ bools: {}, graded: { predSpeed: [0.6, 1.0] } })[0];
+		const pairs = sweepInteractions([boolFactor('dir'), speed], [], []);
+		expect(pairs[0].label).toBe('Direction × Predator speed');
+	});
+});
+
+describe('interactionPlotData (P4)', () => {
+	it('gives one series per B extreme across all of A’s levels', () => {
+		const a = sweptFactors({ bools: {}, graded: { predSpeed: [0.6, 0.8, 1.0] } })[0];
+		const b = boolFactor('dir');
+		const cells = expandSweep(base(), [a, b]);
+		// survival falls with speed; dir-on halves the fall
+		const results = cells.map((cell) => {
+			const speed = Number(cell.levels.predSpeed.replace('×', ''));
+			const on = cell.levels.dir === 'on';
+			return withReturns([8 - (on ? 2 : 4) * speed]);
+		});
+		const plot = interactionPlotData(a, b, cells, results);
+		expect(plot.x).toEqual(['0.6×', '0.8×', '1.0×']);
+		expect(plot.bottom).toHaveLength(3); // dir off series
+		expect(plot.top?.[0]).toBeCloseTo(8 - 2 * 0.6, 6);
+		expect(plot.bottom?.[2]).toBeCloseTo(8 - 4 * 1.0, 6);
+	});
+});
+
+describe('isUnderTrained (P4)', () => {
+	it('flags a curve still climbing at its end', () => {
+		const climbing = Array.from({ length: 24 }, (_, i) => 0.2 + i * 0.02); // straight line up
+		expect(isUnderTrained(climbing)).toBe(true);
+	});
+
+	it('passes a curve that has plateaued', () => {
+		const saturating = Array.from({ length: 24 }, (_, i) => 0.7 - 0.5 * Math.exp(-i / 4));
+		expect(isUnderTrained(saturating)).toBe(false);
+	});
+
+	it('never cries wolf on a flat or short curve', () => {
+		expect(isUnderTrained(Array(24).fill(0.4))).toBe(false); // flat — nothing was learned
+		expect(isUnderTrained([0.2, 0.3, 0.4])).toBe(false); // too short to judge
+	});
+});
+
+describe('levelCurves (P4)', () => {
+	it('averages each arm’s curves and keeps the arms apart', () => {
+		const factor = boolFactor('dir');
+		const cells = expandSweep(base(), [factor]);
+		const results = cells.map((cell) => ({
+			...withReturns([5]),
+			curve: cell.levels.dir === 'on' ? [0.2, 0.6] : [0.2, 0.4]
+		}));
+		const arms = levelCurves(factor, cells, results as (Evaluation | null)[]);
+		expect(arms.to).toEqual([0.2, 0.6]);
+		expect(arms.from).toEqual([0.2, 0.4]);
+	});
+
+	it('is empty when the run captured no curves', () => {
+		const factor = boolFactor('dir');
+		const cells = expandSweep(base(), [factor]);
+		const arms = levelCurves(
+			factor,
+			cells,
+			cells.map(() => withReturns([5]))
+		);
+		expect(arms.from).toEqual([]);
+		expect(arms.to).toEqual([]);
+	});
+});
+
+describe('sweepJobs (P4 flags)', () => {
+	it('always captures curves, and carries the champion flag only when asked', () => {
+		const cells = expandSweep(base(), [boolFactor('dir')]);
+		const plain = sweepJobs(cells, { seeds: 2, episodes: 5, bouts: 2 });
+		expect(plain.every((job) => job.curve === true)).toBe(true);
+		expect(plain.every((job) => job.champion === false)).toBe(true);
+		const live = sweepJobs(cells, { seeds: 2, episodes: 5, bouts: 2 }, { champion: true });
+		expect(live.every((job) => job.champion === true)).toBe(true);
 	});
 });

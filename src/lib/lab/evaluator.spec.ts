@@ -59,6 +59,18 @@ describe('evaluate — a result, not a lucky run', () => {
 		expect(withCurve!.curve!.every((point) => point >= 0 && point <= 1)).toBe(true);
 	}, 60_000);
 
+	it('scores champion clones only when asked, paired on the same bout seeds', async () => {
+		const plain = await evaluate({ cfg: DEFAULT_WORLDS[2], ...tiny });
+		expect(plain!.championReturns).toBeUndefined(); // the default path pays nothing
+
+		const live = await evaluate({ cfg: DEFAULT_WORLDS[2], ...tiny, champion: true });
+		expect(live!.championReturns).toHaveLength(2); // one per seed
+		for (const value of live!.championReturns!) expect(value).toBeGreaterThan(0);
+		// the POPULATION numbers are identical with and without the champion pass — scoring the
+		// clones must not perturb the evolved population's own measurement (same seeds, no shared RNG)
+		expect(live!.returns).toEqual(plain!.returns);
+	}, 90_000);
+
 	it('the captured curve is deterministic — the same run gives the same curve', async () => {
 		const a = await evaluate({ cfg: DEFAULT_WORLDS[2], ...tiny, curve: true });
 		const b = await evaluate({ cfg: DEFAULT_WORLDS[2], ...tiny, curve: true });

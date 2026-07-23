@@ -14,7 +14,7 @@
  * them away — the population you are watching keeps evolving, unobserved by the measurement.
  */
 
-import { GEN_DURATION } from '../engine';
+import { GEN_DURATION, championGenome, cloneGenome } from '../engine';
 import type { WorldConfig, Genome } from '../engine';
 import { measureBout, type BehaviorStats } from '../harness/behavior';
 import { evolveInSlices } from '../harness/evolve';
@@ -40,6 +40,13 @@ export interface Evaluation {
 	 * no touch of the RNG stream, so it cannot perturb anything the fidelity gate measures.
 	 */
 	curve?: number[];
+	/**
+	 * Per-seed mean survival of a sealed population of CHAMPION CLONES — the best genome of each
+	 * replicate, cloned to the population size and scored on the SAME bout seeds as the evolved
+	 * population (a paired comparison: the arena is identical, only the genomes differ). Present
+	 * only when the request opted in (`champion: true`).
+	 */
+	championReturns?: number[];
 }
 
 export interface EvalRequest {
@@ -56,6 +63,9 @@ export interface EvalRequest {
 	 * boundary); the Ledger and behaviour runs, which answer "did it learn", turn it on.
 	 */
 	curve?: boolean;
+	/** Additionally score champion clones per seed (`Evaluation.championReturns`). Off by default —
+	 *  it roughly doubles the scoring bouts, and only the Sweep's "live" toggle asks for it. */
+	champion?: boolean;
 }
 
 /** The run size every batched experiment (the Sweep, the Ledger) sets on each of its requests. */
@@ -77,7 +87,7 @@ function stats(values: number[]): { mean: number; sd: number } {
  * (they are equal length in practice — every seed evolves the same number of generations — but a
  * capped or cancelled curve must not read past its end).
  */
-function averageCurves(curves: number[][]): number[] {
+export function averageCurves(curves: number[][]): number[] {
 	if (curves.length === 0) return [];
 	const length = Math.min(...curves.map((c) => c.length));
 	const out: number[] = [];
@@ -114,7 +124,14 @@ function meanBehavior(rows: BehaviorStats[]): BehaviorStats {
  * being measured.
  */
 export async function evaluate(
-	{ cfg, seeds = 5, episodes = 30, bouts = 6, curve: captureCurve = false }: EvalRequest,
+	{
+		cfg,
+		seeds = 5,
+		episodes = 30,
+		bouts = 6,
+		curve: captureCurve = false,
+		champion: scoreChampion = false
+	}: EvalRequest,
 	{
 		budgetMs = 12,
 		signal,
@@ -123,6 +140,7 @@ export async function evaluate(
 ): Promise<Evaluation | null> {
 	const genDuration = cfg.genDuration ?? GEN_DURATION;
 	const returns: number[] = [];
+	const championReturns: number[] = [];
 	const behaviors: BehaviorStats[] = [];
 	// Per-seed learning curves, captured read-only after each seed evolves (only when opted in).
 	const curves: number[][] = [];
@@ -159,6 +177,23 @@ export async function evaluate(
 		const row = meanBehavior(rows);
 		behaviors.push(row);
 		returns.push(row.meanLife);
+
+		// CHAMPION CLONES, when asked: the replicate's best genome cloned to the population size and
+		// scored on the SAME bout seeds — a paired comparison, so the arena cannot take the credit.
+		if (scoreChampion) {
+			const best = championGenome(world);
+			if (best) {
+				const clones = genomes.map(() => cloneGenome(best));
+				const champRows: BehaviorStats[] = [];
+				for (let b = 0; b < bouts; b++) {
+					if (signal?.aborted) return null;
+					champRows.push(measureBout(cfg, clones, 5000 + s * 100 + b, genDuration));
+					await breathe();
+				}
+				championReturns.push(meanBehavior(champRows).meanLife);
+			}
+		}
+
 		onProgress?.((s + 1) / seeds);
 	}
 
@@ -170,6 +205,7 @@ export async function evaluate(
 		sdReturn: sd,
 		behavior: meanBehavior(behaviors),
 		returns,
-		...(captureCurve ? { curve: averageCurves(curves) } : {})
+		...(captureCurve ? { curve: averageCurves(curves) } : {}),
+		...(scoreChampion && championReturns.length ? { championReturns } : {})
 	};
 }
