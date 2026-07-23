@@ -11,6 +11,15 @@ export function formatSignedSeconds(value: number): string {
 	return `${value > 0 ? '+' : ''}${value.toFixed(1)}s`;
 }
 
+/** A wall-clock duration: real seconds under a minute (`7.4s`), `m:ss` beyond — a fast pool would
+ *  otherwise print a broken-looking `0:00` for a run that honestly took half a second. */
+export function formatWallClock(seconds: number): string {
+	if (seconds < 60) return `${seconds.toFixed(1)}s`;
+	const minutes = Math.floor(seconds / 60);
+	const rest = Math.round(seconds % 60);
+	return `${minutes}:${String(rest).padStart(2, '0')}`;
+}
+
 /** A survival time in seconds, one decimal — `3.1s`. */
 export function formatSeconds(value: number): string {
 	return `${value.toFixed(1)}s`;

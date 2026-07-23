@@ -162,11 +162,13 @@ describe('sweep design (pin-or-sweep + budget)', () => {
 		expect(sweep.receipt?.seeds).toBe(4); // the receipt says what ran…
 		expect(sweep.receipt?.episodes).toBe(30);
 		expect(sweep.receipt?.wallSeconds).toBeGreaterThanOrEqual(0);
+		const frozenWall = sweep.receipt?.wallSeconds;
 
 		sweep.setSeeds(12); // …and an edit AFTER the run…
 		sweep.setEpisodes(120);
 		expect(sweep.receipt?.seeds).toBe(4); // …does not rewrite history
 		expect(sweep.receipt?.episodes).toBe(30);
+		expect(sweep.receipt?.wallSeconds).toBe(frozenWall); // the clock is part of the receipt too
 	});
 });
 

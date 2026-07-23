@@ -14,32 +14,19 @@
 	import RunCellCard from './RunCellCard.svelte';
 	import { sweep } from '$lib/state';
 	import { toEffectRows } from '$lib/lab/sweep';
-	import type { EffectRow } from '$lib/lab/evidence';
+	import { rankEffectRows, strongestEffect } from '$lib/lab/evidence';
+	import { formatSignedSeconds, formatWallClock } from '$lib/format';
 
 	// RANKED by effect size, so the answer reads top-down (the mock's rule). NaN deltas (an arm with
 	// no results) sink to the bottom rather than poisoning the sort.
-	const effectRows = $derived(
-		toEffectRows(sweep.effects).toSorted((a: EffectRow, b: EffectRow) => {
-			const A = Number.isNaN(a.delta) ? -1 : Math.abs(a.delta);
-			const B = Number.isNaN(b.delta) ? -1 : Math.abs(b.delta);
-			return B - A;
-		})
-	);
+	// RANKED by effect size, so the answer reads top-down (the mock's rule) — the shared sorter,
+	// so the chart and any other consumer rank identically.
+	const effectRows = $derived(rankEffectRows(toEffectRows(sweep.effects)));
 
-	/** The headline tile: the largest real effect, teal/coral by its sign. */
-	const strongest = $derived(effectRows.find((row) => !Number.isNaN(row.delta)) ?? null);
-
-	/** Sub-minute walls show real seconds ("7.4s") — a fast pool would otherwise print a broken-
-	 *  looking "0:00" for a run that honestly took half a second. */
-	const wall = (seconds: number) => {
-		if (seconds < 60) return `${seconds.toFixed(1)}s`;
-		const m = Math.floor(seconds / 60);
-		const rest = Math.round(seconds % 60);
-		return `${m}:${String(rest).padStart(2, '0')}`;
-	};
-
-	/** A delta that rounds to 0.0 is shown unsigned — "−0.0s" would claim a direction it hasn't. */
-	const flat = (delta: number) => Math.abs(delta) < 0.05;
+	/** The headline tile: the strongest factor whose interval CLEARS ZERO — the same isFlatEffect
+	 *  test as the muted bars and the sidebar's lead, so the tile can never paint a confident colour
+	 *  over a bar the card beneath it mutes. Null = a flat environment, itself a real result. */
+	const strongest = $derived(strongestEffect(effectRows));
 
 	// The drilled cell, resolved against the current grid — a full-width detail card renders below
 	// the results. Selection is store-owned, so a new run clears it.
@@ -53,40 +40,30 @@
 		<!-- The experiment's receipts, always visible above the conclusions. -->
 		<div class="tiles" data-testid="sweep-tiles">
 			<div class="tile">
-				<span class="tv tabular"
-					>{sweep.cells.length}<span class="tv-dim"> / {sweep.total}</span></span
-				>
+				<span class="tv">{sweep.cells.length}<span class="tv-dim"> / {sweep.total}</span></span>
 				<span class="ts">{sweep.sampled ? 'cells · sampled' : 'cells · full factorial'}</span>
 			</div>
 			<div class="tile">
-				<span class="tv tabular">{sweep.cells.length * (sweep.receipt?.seeds ?? 0)}</span>
+				<span class="tv">{sweep.cells.length * (sweep.receipt?.seeds ?? 0)}</span>
 				<span class="ts">runs · {sweep.receipt?.seeds ?? 0} seeds each</span>
 			</div>
 			<div class="tile">
-				<span class="tv tabular"
-					>{sweep.receipt?.episodes ?? 0} × {sweep.receipt?.genDuration ?? 0}s</span
-				>
+				<span class="tv">{sweep.receipt?.episodes ?? 0} × {sweep.receipt?.genDuration ?? 0}s</span>
 				<span class="ts">gens × gen length</span>
 			</div>
 			<div class="tile">
-				<span class="tv tabular">{wall(sweep.receipt?.wallSeconds ?? 0)}</span>
+				<span class="tv">{formatWallClock(sweep.receipt?.wallSeconds ?? 0)}</span>
 				<span class="ts">wall clock</span>
 			</div>
 			<div class="tile">
 				{#if strongest}
-					<span
-						class="tv tabular"
-						class:helps={!flat(strongest.delta) && strongest.delta > 0}
-						class:costs={!flat(strongest.delta) && strongest.delta < 0}
-					>
-						{flat(strongest.delta)
-							? '±0.0s'
-							: `${strongest.delta > 0 ? '+' : '−'}${Math.abs(strongest.delta).toFixed(1)}s`}
+					<span class="tv" class:helps={strongest.delta > 0} class:costs={strongest.delta < 0}>
+						{formatSignedSeconds(strongest.delta)}
 					</span>
 					<span class="ts">strongest effect · {strongest.label.toLowerCase()}</span>
 				{:else}
 					<span class="tv">—</span>
-					<span class="ts">strongest effect</span>
+					<span class="ts">strongest effect · none cleared zero</span>
 				{/if}
 			</div>
 		</div>

@@ -36,6 +36,7 @@ import {
 	type KnobChoices,
 	type Factor,
 	type SweepCell,
+	type SweepPlan,
 	type FactorEffect
 } from '../lab/sweep';
 import { research } from './research.svelte';
@@ -363,7 +364,16 @@ class SweepStore {
 		const started = performance.now();
 		const results = await research.run(jobs, executor);
 		if (!results) return;
-		const wallSeconds = (performance.now() - started) / 1000;
+		this.#commitRun(plan, factors, results, (performance.now() - started) / 1000);
+	}
+
+	/** Publish a finished run in one move: price it, freeze its receipt, land its outputs. */
+	#commitRun(
+		plan: SweepPlan,
+		factors: Factor[],
+		results: (Evaluation | null)[],
+		wallSeconds: number
+	): void {
 		this.#recordSimRate(
 			plan.cells.length * this.#seeds * (this.#episodes + SWEEP_DEFAULTS.bouts) * this.#genDuration,
 			wallSeconds
@@ -374,7 +384,6 @@ class SweepStore {
 			genDuration: this.#genDuration,
 			wallSeconds
 		};
-
 		this.#lastFactors = factors;
 		this.#cells = plan.cells;
 		this.#total = plan.total;
