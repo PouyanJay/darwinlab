@@ -116,6 +116,9 @@ export interface BoolKnob {
 	/** Own-speed only: needs the 9-input brain, so the panel disables it and offers the switch. */
 	needsNineInputs?: boolean;
 	apply: (cfg: WorldConfig, on: boolean) => WorldConfig;
+	/** The knob's CURRENT truth in a config — the drill card's pinned chips read the cell's own
+	 *  cfg, never the panel (which may have moved on since the run). Defaults per the reference. */
+	read: (cfg: WorldConfig) => boolean;
 }
 
 /** One graded knob: a numeric level picked from chips. */
@@ -130,6 +133,9 @@ export interface GradedKnob {
 	short: string;
 	format: (value: number) => string;
 	apply: (cfg: WorldConfig, value: number) => WorldConfig;
+	/** The pinned chip's text, read from the cell's own cfg (prey shows its real COUNT — a percent
+	 *  of a base the panel may since have edited would be a lie). */
+	readChip: (cfg: WorldConfig) => string;
 }
 
 const senseKnob = (
@@ -145,7 +151,8 @@ const senseKnob = (
 	group: 'senses',
 	defaultState,
 	needsNineInputs,
-	apply: (cfg, on) => ({ ...cfg, senses: { ...cfg.senses, [key]: on } })
+	apply: (cfg, on) => ({ ...cfg, senses: { ...cfg.senses, [key]: on } }),
+	read: (cfg) => cfg.senses[key] ?? false
 });
 
 /**
@@ -166,7 +173,8 @@ export const BOOL_KNOBS: BoolKnob[] = [
 		detail: 'sprinting drains a tank; empty = half speed',
 		group: 'body',
 		defaultState: 'off',
-		apply: (cfg, on) => ({ ...cfg, stamina: on })
+		apply: (cfg, on) => ({ ...cfg, stamina: on }),
+		read: (cfg) => cfg.stamina ?? false
 	},
 	{
 		key: 'wallInstinct',
@@ -174,7 +182,8 @@ export const BOOL_KNOBS: BoolKnob[] = [
 		detail: 'the built-in instinct to shy off the glass',
 		group: 'body',
 		defaultState: 'on',
-		apply: (cfg, on) => ({ ...cfg, wallInstinct: on })
+		apply: (cfg, on) => ({ ...cfg, wallInstinct: on }),
+		read: (cfg) => cfg.wallInstinct ?? true
 	},
 	{
 		key: 'persistence',
@@ -182,7 +191,8 @@ export const BOOL_KNOBS: BoolKnob[] = [
 		detail: 'faster + wider jaw while starving',
 		group: 'predator',
 		defaultState: 'sweep',
-		apply: (cfg, on) => ({ ...cfg, persistence: on })
+		apply: (cfg, on) => ({ ...cfg, persistence: on }),
+		read: (cfg) => cfg.persistence ?? true
 	},
 	{
 		key: 'lunge',
@@ -190,7 +200,8 @@ export const BOOL_KNOBS: BoolKnob[] = [
 		detail: 'the cruise → aim → lunge strike',
 		group: 'predator',
 		defaultState: 'on',
-		apply: (cfg, on) => ({ ...cfg, lunge: on })
+		apply: (cfg, on) => ({ ...cfg, lunge: on }),
+		read: (cfg) => cfg.lunge ?? true
 	},
 	{
 		key: 'lungeCommit',
@@ -198,7 +209,8 @@ export const BOOL_KNOBS: BoolKnob[] = [
 		detail: 'the strike locks at launch; a dodge beats it',
 		group: 'predator',
 		defaultState: 'off',
-		apply: (cfg, on) => ({ ...cfg, lungeCommit: on })
+		apply: (cfg, on) => ({ ...cfg, lungeCommit: on }),
+		read: (cfg) => cfg.lungeCommit ?? false
 	},
 	{
 		key: 'confusion',
@@ -206,7 +218,8 @@ export const BOOL_KNOBS: BoolKnob[] = [
 		detail: 'a crowded fish is hard to catch',
 		group: 'shoal',
 		defaultState: 'off',
-		apply: (cfg, on) => ({ ...cfg, confusion: on })
+		apply: (cfg, on) => ({ ...cfg, confusion: on }),
+		read: (cfg) => cfg.confusion ?? false
 	}
 ];
 
@@ -223,7 +236,8 @@ export const GRADED_KNOBS: GradedKnob[] = [
 		values: [0.6, 0.7, 0.8, 0.9, 1.0, 1.1],
 		defaultSelected: [0.6, 0.8, 1.0],
 		format: (v) => `${v.toFixed(1)}×`,
-		apply: (cfg, v) => ({ ...cfg, predSpeed: v })
+		apply: (cfg, v) => ({ ...cfg, predSpeed: v }),
+		readChip: (cfg) => `${cfg.predSpeed.toFixed(1)}×`
 	},
 	{
 		key: 'preyPct',
@@ -232,7 +246,8 @@ export const GRADED_KNOBS: GradedKnob[] = [
 		values: [50, 75, 100, 150],
 		defaultSelected: [50, 100],
 		format: (v) => `${v}%`,
-		apply: (cfg, v) => ({ ...cfg, prey: scalePreyPct(cfg.prey, v) })
+		apply: (cfg, v) => ({ ...cfg, prey: scalePreyPct(cfg.prey, v) }),
+		readChip: (cfg) => `${cfg.prey} prey`
 	},
 	{
 		key: 'vision',
@@ -241,7 +256,8 @@ export const GRADED_KNOBS: GradedKnob[] = [
 		values: [120, 160, 200, 240],
 		defaultSelected: [200],
 		format: (v) => String(v),
-		apply: (cfg, v) => ({ ...cfg, vision: v })
+		apply: (cfg, v) => ({ ...cfg, vision: v }),
+		readChip: (cfg) => `${Math.round(cfg.vision)}px vision`
 	},
 	{
 		key: 'maxSpeed',
@@ -250,7 +266,8 @@ export const GRADED_KNOBS: GradedKnob[] = [
 		values: [132, 154, 176, 198],
 		defaultSelected: [176],
 		format: (v) => String(v),
-		apply: (cfg, v) => ({ ...cfg, maxSpeed: v })
+		apply: (cfg, v) => ({ ...cfg, maxSpeed: v }),
+		readChip: (cfg) => `${Math.round(cfg.maxSpeed ?? 176)}px/s`
 	},
 	{
 		key: 'agility',
@@ -259,7 +276,8 @@ export const GRADED_KNOBS: GradedKnob[] = [
 		values: [0.8, 1.0, 1.2],
 		defaultSelected: [1.0],
 		format: (v) => `${v.toFixed(1)}×`,
-		apply: (cfg, v) => ({ ...cfg, agility: v })
+		apply: (cfg, v) => ({ ...cfg, agility: v }),
+		readChip: (cfg) => `agility ${(cfg.agility ?? 1).toFixed(1)}×`
 	},
 	{
 		key: 'mutation',
@@ -268,7 +286,8 @@ export const GRADED_KNOBS: GradedKnob[] = [
 		values: [0.03, 0.06, 0.12],
 		defaultSelected: [0.06],
 		format: (v) => v.toFixed(2),
-		apply: (cfg, v) => ({ ...cfg, mutation: v })
+		apply: (cfg, v) => ({ ...cfg, mutation: v }),
+		readChip: (cfg) => `mutation ${cfg.mutation.toFixed(2)}`
 	}
 ];
 
@@ -573,4 +592,37 @@ export function levelCurves(
 		return out;
 	};
 	return { from: averageCurves(armCurves(bottom)), to: averageCurves(armCurves(top)) };
+}
+
+/* ==================================== the drill's recipe (P5) ================================ */
+
+/** One chip of a drilled cell's recipe: its human text, and whether the sweep varied it. */
+export interface RecipeChip {
+	text: string;
+	swept: boolean;
+}
+
+/**
+ * The full recipe of one cell — swept levels LOUD (they define the cell), every pinned knob quiet,
+ * all read from the cell's OWN config: the panel may have moved on since the run, and a chip that
+ * read live state would relabel a measured world (the Atlas once shipped that bug).
+ */
+export function cellRecipe(cell: SweepCell): RecipeChip[] {
+	const chips: RecipeChip[] = [];
+	for (const knob of BOOL_KNOBS) {
+		if (knob.key in cell.levels) {
+			chips.push({ text: `${knob.label} ${cell.levels[knob.key]}`, swept: true });
+		} else if (!knob.needsNineInputs || knob.read(cell.cfg)) {
+			chips.push({ text: `${knob.label} ${knob.read(cell.cfg) ? 'on' : 'off'}`, swept: false });
+		}
+	}
+	for (const knob of GRADED_KNOBS) {
+		if (knob.key in cell.levels) {
+			chips.push({ text: `${plainLabel(knob.label)} ${cell.levels[knob.key]}`, swept: true });
+		} else {
+			chips.push({ text: knob.readChip(cell.cfg), swept: false });
+		}
+	}
+	// loud first: the levels that make this cell THIS cell lead the row
+	return chips.sort((a, b) => Number(b.swept) - Number(a.swept));
 }

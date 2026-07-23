@@ -102,15 +102,16 @@ test('drilling a cell opens its world below the grid, and watches it in Studio',
 	const box = (await canvas.boundingBox())!;
 	await canvas.click({ position: { x: box.width * 0.25, y: box.height * 0.25 } });
 
-	const card = page.getByTestId('sweep-cell');
+	const card = page.getByTestId('sweep-drill'); // the drill lives in the right SIDEBAR now
 	await expect(card).toBeVisible();
-	await expect(card).toContainText('This run'); // this seed's survival
-	await expect(card).toContainText('Condition mean'); // the aggregate it sits within
-	await expect(card).toContainText('Direction'); // the factor level that defines the condition
-	await expect(card).toContainText('behavioural signature'); // the measured mechanism (how they survive)
-	await expect(card).toContainText('Flee heading');
-	await expect(card).toContainText(/ranks .* condition/); // where this world sits among the conditions
-	await expect(card.locator('.dot.me').first()).toBeVisible(); // "you are here" ringed in a strip
+	await expect(card).toContainText('this run'); // this seed's survival
+	await expect(card).toContainText('cell mean'); // the aggregate it sits within
+	await expect(card).toContainText('Direction'); // the swept level that defines the condition
+	await expect(card).toContainText('How they survive'); // the fingerprint (measured, not watched)
+	await expect(card).toContainText('bolts when seen');
+	await expect(card).toContainText('rank among'); // where this world sits among the cells
+	await expect(card).toContainText('enable Live scoring'); // champion honesty: not measured, says so
+	await expect(card.locator('.dot.me').first()).toBeVisible(); // "you are here" ringed in the strip
 
 	// "Watch this world" carries the condition into Studio — the round-trip out of the run grid.
 	await card.getByRole('button', { name: 'Watch this world' }).click();
@@ -131,14 +132,14 @@ test('the run grid is keyboard-drillable — arrow to a cell, Enter opens it', a
 	await page.locator('[data-testid="sweep-heat"] canvas').focus();
 	await page.keyboard.press('ArrowRight'); // move the cursor onto a cell
 	await page.keyboard.press('Enter'); // …and drill it
-	await expect(page.getByTestId('sweep-cell')).toBeVisible();
+	await expect(page.getByTestId('sweep-drill')).toBeVisible();
 
-	// The drilled card + its mini-tank are new surface — scan clean.
+	// The drilled sidebar card is new surface — scan clean.
 	expect(await scanForViolations(page)).toEqual([]);
 
 	// The close control dismisses it again.
 	await page.getByRole('button', { name: 'close drilled run' }).click();
-	await expect(page.getByTestId('sweep-cell')).toBeHidden();
+	await expect(page.getByTestId('sweep-drill')).toBeHidden();
 });
 
 test('the cap, switched on, warns that it will sample the grid', async ({ page }) => {

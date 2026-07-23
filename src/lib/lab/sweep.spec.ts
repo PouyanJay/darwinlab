@@ -12,6 +12,7 @@ import {
 	sweepEffects,
 	sweepInteractions,
 	toInteractionRows,
+	cellRecipe,
 	interactionPlotData,
 	isUnderTrained,
 	levelCurves,
@@ -343,5 +344,34 @@ describe('sweepJobs (P4 flags)', () => {
 		expect(plain.every((job) => job.champion === false)).toBe(true);
 		const live = sweepJobs(cells, { seeds: 2, episodes: 5, bouts: 2 }, { champion: true });
 		expect(live.every((job) => job.champion === true)).toBe(true);
+	});
+});
+
+describe('cellRecipe (P5)', () => {
+	it('leads with the swept levels loud, then every pinned knob quiet, all from the cell’s cfg', () => {
+		const factors = [boolFactor('dir')];
+		const [dirOff] = expandSweep({ ...base(), predSpeed: 0.8 }, factors);
+		const chips = cellRecipe(dirOff);
+
+		expect(chips[0]).toEqual({ text: 'Direction off', swept: true }); // the cell's identity leads
+		const texts = chips.map((c) => c.text);
+		expect(texts).toContain('0.8×'); // pinned predator speed, read from THE CELL's cfg
+		expect(texts).toContain('20 prey'); // prey as its real count, not a percent of a moved base
+		expect(texts).toContain('Walls on'); // the generic ocean's own senses
+		expect(chips.filter((c) => c.swept)).toHaveLength(1);
+	});
+
+	it('reads pinned truth from the cell config, not any live state', () => {
+		const factors = [boolFactor('dir')];
+		const [cell] = expandSweep({ ...base(), stamina: true, vision: 240 }, factors);
+		const texts = cellRecipe(cell).map((c) => c.text);
+		expect(texts).toContain('Stamina on');
+		expect(texts).toContain('240px vision');
+	});
+
+	it('hides the own-speed sense on an 8-wire cell instead of claiming a pin it cannot have', () => {
+		const [cell] = expandSweep(base(), [boolFactor('dir')]);
+		const texts = cellRecipe(cell).map((c) => c.text);
+		expect(texts.some((t) => t.startsWith('Own speed'))).toBe(false);
 	});
 });
