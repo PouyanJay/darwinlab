@@ -13,6 +13,7 @@ import {
 	sweepInteractions,
 	toInteractionRows,
 	cellRecipe,
+	sweepCsv,
 	interactionPlotData,
 	isUnderTrained,
 	levelCurves,
@@ -373,5 +374,52 @@ describe('cellRecipe (P5)', () => {
 		const [cell] = expandSweep(base(), [boolFactor('dir')]);
 		const texts = cellRecipe(cell).map((c) => c.text);
 		expect(texts.some((t) => t.startsWith('Own speed'))).toBe(false);
+	});
+});
+
+describe('sweepCsv (P6)', () => {
+	const receipt = { seeds: 2, episodes: 20, genDuration: 10, championOn: false };
+
+	it('writes one row per cell with its levels and numbers, under a design-carrying header', () => {
+		const factors = [boolFactor('dir')];
+		const cells = expandSweep(base(), factors);
+		const results = cells.map((cell) => ({
+			...withReturns(cell.levels.dir === 'on' ? [5.1234, 6] : [3, 4]),
+			meanReturn: cell.levels.dir === 'on' ? 5.5617 : 3.5,
+			sdReturn: 0.5
+		})) as Evaluation[];
+
+		const csv = sweepCsv(factors, cells, results, receipt);
+		const lines = csv.split('\n');
+		expect(lines[0]).toContain('2 cells · 2 seeds · 20 gens × 10s · champion off'); // the receipt rides along
+		expect(lines[1]).toBe('condition,Direction,seed_1_s,seed_2_s,mean_s,sd_s');
+		expect(lines[2]).toBe('1,off,3.000,4.000,3.500,0.500');
+		expect(lines[3]).toContain('2,on,5.123,6.000'); // values land in their own columns
+	});
+
+	it('adds champion columns only when the receipt says Live scoring ran', () => {
+		const factors = [boolFactor('dir')];
+		const cells = expandSweep(base(), factors);
+		const results = cells.map(() => ({
+			...withReturns([3, 4]),
+			meanReturn: 3.5,
+			sdReturn: 0.5,
+			championReturns: [4.5, 5.5]
+		})) as Evaluation[];
+
+		const plain = sweepCsv(factors, cells, results, receipt);
+		expect(plain).not.toContain('champion_1_s');
+
+		const live = sweepCsv(factors, cells, results, { ...receipt, championOn: true });
+		expect(live.split('\n')[1]).toContain('champion_1_s,champion_2_s');
+		expect(live).toContain('4.500,5.500');
+	});
+
+	it('leaves an unmeasured cell as honest blanks, and escapes commas in labels', () => {
+		const factors = [sweptFactors({ bools: {}, graded: { predSpeed: [0.6, 1.0] } })[0]];
+		const cells = expandSweep(base(), factors);
+		const csv = sweepCsv(factors, cells, [null, null], receipt);
+		const lines = csv.split('\n');
+		expect(lines[2]).toBe('1,0.6×,,,,'); // blanks, not zeros — nothing was measured
 	});
 });

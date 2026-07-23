@@ -628,3 +628,57 @@ export function cellRecipe(cell: SweepCell): RecipeChip[] {
 	// loud first: the levels that make this cell THIS cell lead the row
 	return chips.sort((a, b) => Number(b.swept) - Number(a.swept));
 }
+
+/* ==================================== the CSV export (P6) ==================================== */
+
+/** Escape one CSV field — quotes doubled, wrapped when the text needs it. */
+function csvField(value: string | number): string {
+	const text = String(value);
+	return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+}
+
+/**
+ * The whole run as CSV, one row per cell: the design (every factor's level), the numbers (per-seed
+ * returns, mean, sd) and the champion's when Live scoring ran. The header carries the receipt so a
+ * file on someone's disk still says how it was measured — an export that loses its design is an
+ * anecdote.
+ */
+export function sweepCsv(
+	factors: Factor[],
+	cells: SweepCell[],
+	results: (Evaluation | null)[],
+	receipt: { seeds: number; episodes: number; genDuration: number; championOn: boolean }
+): string {
+	const seedCols = Array.from({ length: receipt.seeds }, (_, i) => `seed_${i + 1}_s`);
+	const champCols = receipt.championOn
+		? Array.from({ length: receipt.seeds }, (_, i) => `champion_${i + 1}_s`)
+		: [];
+	const header = [
+		'condition',
+		...factors.map((f) => plainLabel(f.label)),
+		...seedCols,
+		'mean_s',
+		'sd_s',
+		...champCols
+	];
+	const rows = cells.map((cell, i) => {
+		const result = results[i];
+		return [
+			i + 1,
+			...factors.map((f) => cell.levels[f.key] ?? ''),
+			...Array.from({ length: receipt.seeds }, (_, s) => result?.returns[s]?.toFixed(3) ?? ''),
+			result ? result.meanReturn.toFixed(3) : '',
+			result ? result.sdReturn.toFixed(3) : '',
+			...(receipt.championOn
+				? Array.from(
+						{ length: receipt.seeds },
+						(_, s) => result?.championReturns?.[s]?.toFixed(3) ?? ''
+					)
+				: [])
+		];
+	});
+	const meta = `# darwinlab sweep · ${cells.length} cells · ${receipt.seeds} seeds · ${receipt.episodes} gens × ${receipt.genDuration}s · champion ${receipt.championOn ? 'on' : 'off'}`;
+	return [meta, header.map(csvField).join(','), ...rows.map((r) => r.map(csvField).join(','))].join(
+		'\n'
+	);
+}

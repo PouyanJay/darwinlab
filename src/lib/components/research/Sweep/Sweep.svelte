@@ -15,6 +15,7 @@
 	import RunHeatmap from './RunHeatmap.svelte';
 	import { sweep } from '$lib/state';
 	import {
+		sweepCsv,
 		toEffectRows,
 		toInteractionRows,
 		interactionPlotData,
@@ -28,6 +29,18 @@
 	// RANKED by effect size, so the answer reads top-down (the mock's rule) — the shared sorter,
 	// so the chart and any other consumer rank identically.
 	const effectRows = $derived(rankEffectRows(toEffectRows(sweep.effects)));
+
+	/** Download the run as CSV — built by the lab's one builder, named for its design. */
+	function exportCsv(): void {
+		if (!sweep.results || !sweep.receipt) return;
+		const csv = sweepCsv(sweep.lastFactors, sweep.cells, sweep.results, sweep.receipt);
+		const blob = new Blob([csv], { type: 'text/csv' });
+		const link = document.createElement('a');
+		link.href = URL.createObjectURL(blob);
+		link.download = `darwinlab-sweep-${sweep.cells.length}x${sweep.receipt.seeds}.csv`;
+		link.click();
+		URL.revokeObjectURL(link.href);
+	}
 
 	/** Rendered through an expression so the build can never collapse its spaces — as a literal text
 	 *  node the production build shipped '2/ 2' once (and a string-literal mustache trips lint). */
@@ -208,6 +221,12 @@
 				{/if}
 			</section>
 		{/if}
+		<div class="exports">
+			<button class="xbtn" onclick={exportCsv}>Export CSV</button>
+			<span class="xnote"
+				>the file carries the full design — cells, levels, seeds, budget, champion</span
+			>
+		</div>
 	{:else}
 		<section class="card empty">
 			<p class="hint">
@@ -386,6 +405,42 @@
 		margin: 0;
 		font-size: var(--fs-sm);
 		line-height: var(--leading-body);
+		color: var(--ink3);
+	}
+
+	.exports {
+		display: flex;
+		align-items: center;
+		gap: var(--sp-4);
+	}
+
+	.xbtn {
+		border: 1px solid var(--line);
+		border-radius: var(--radius-control);
+		background: none;
+		color: var(--ink2);
+		font: inherit;
+		font-size: var(--fs-md);
+		font-weight: var(--fw-semibold);
+		padding: 6px 12px;
+		cursor: pointer;
+		transition:
+			border-color var(--dur-fast) var(--ease),
+			color var(--dur-fast) var(--ease);
+	}
+
+	.xbtn:hover {
+		border-color: var(--ink3);
+		color: var(--ink);
+	}
+
+	.xbtn:focus-visible {
+		outline: var(--focus-ring);
+		outline-offset: var(--focus-offset);
+	}
+
+	.xnote {
+		font-size: var(--fs-xs);
 		color: var(--ink3);
 	}
 
