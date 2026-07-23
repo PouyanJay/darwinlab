@@ -15,7 +15,7 @@
 	import Button from '../../common/Button.svelte';
 	import Icon from '../../common/Icon.svelte';
 	import { sweep } from '$lib/state';
-	import { BOOL_KNOBS, GRADED_KNOBS } from '$lib/lab/sweep';
+	import { knobLabel } from '$lib/lab/sweep';
 	import { heatColor } from '$lib/render';
 	import { formatSeconds } from '$lib/format';
 	import type { SweepCell } from '$lib/lab/sweep';
@@ -50,13 +50,7 @@
 
 	/** The factor levels that define the condition, named for a human (the knob's label, not its key). */
 	const levels = $derived(
-		Object.entries(cell.levels).map(([key, level]) => ({
-			factor:
-				BOOL_KNOBS.find((k) => k.key === key)?.label ??
-				GRADED_KNOBS.find((k) => k.key === key)?.label ??
-				key,
-			level
-		}))
+		Object.entries(cell.levels).map(([key, level]) => ({ factor: knobLabel(key), level }))
 	);
 
 	/** The behavioural signature's rows — static config (label + meaning + how to read the field); only

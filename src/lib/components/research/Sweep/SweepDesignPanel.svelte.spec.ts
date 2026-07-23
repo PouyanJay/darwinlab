@@ -3,6 +3,7 @@ import { render } from 'vitest-browser-svelte';
 import { page } from 'vitest/browser';
 import SweepDesignPanel from './SweepDesignPanel.svelte';
 import { sweep, app } from '$lib/state';
+import { restoreSweepDefaults } from '$lib/state/sweep.testkit';
 
 /**
  * The panel is the store's face, so what is pinned here is the WIRING: a control operated in the
@@ -11,26 +12,8 @@ import { sweep, app } from '$lib/state';
  * never actually started here (the real worker pool has no place in a component test).
  */
 
-/** Walk every knob and the budget back to the catalog defaults — the store is a singleton. */
-function restoreDefaults(): void {
-	app.clearSubject();
-	app.resetBase();
-	for (const knob of sweep.boolKnobs) sweep.setBoolState(knob.key, knob.defaultState);
-	for (const knob of sweep.gradedKnobs) {
-		for (const value of knob.values) {
-			const want = knob.defaultSelected.includes(value);
-			if (sweep.isLevelSelected(knob.key, value) !== want) sweep.toggleLevel(knob.key, value);
-		}
-	}
-	sweep.setSeeds(6);
-	sweep.setEpisodes(20);
-	sweep.setGenDuration(10);
-	sweep.setCapOn(false);
-	sweep.setCapN(32);
-}
-
 describe('SweepDesignPanel', () => {
-	beforeEach(restoreDefaults);
+	beforeEach(restoreSweepDefaults);
 
 	it('pinning a swept knob through its three-state reaches the store', async () => {
 		render(SweepDesignPanel);

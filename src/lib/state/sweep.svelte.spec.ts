@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { sweep } from './sweep.svelte';
+import { restoreSweepDefaults, pinEveryKnob } from './sweep.testkit';
 import { app } from './app.svelte';
 import { bench } from './bench.svelte';
 import { newWorldConfig } from '../engine';
@@ -22,23 +23,9 @@ class NullExecutor implements JobExecutor {
 	dispose(): void {}
 }
 
-/** Walk every knob and the budget back to the catalog defaults. */
 function restoreDefaults(): void {
 	app.setMode('studio');
-	app.clearSubject();
-	app.resetBase();
-	for (const knob of sweep.boolKnobs) sweep.setBoolState(knob.key, knob.defaultState);
-	for (const knob of sweep.gradedKnobs) {
-		for (const value of knob.values) {
-			const want = knob.defaultSelected.includes(value);
-			if (sweep.isLevelSelected(knob.key, value) !== want) sweep.toggleLevel(knob.key, value);
-		}
-	}
-	sweep.setSeeds(6);
-	sweep.setEpisodes(20);
-	sweep.setGenDuration(10);
-	sweep.setCapOn(false);
-	sweep.setCapN(32);
+	restoreSweepDefaults();
 }
 
 describe('sweep design (pin-or-sweep + budget)', () => {
@@ -139,25 +126,16 @@ describe('sweep design (pin-or-sweep + budget)', () => {
 	});
 
 	it('a zero-factor design is one honest cell: the pinned world, measured', async () => {
-		for (const knob of sweep.boolKnobs) {
-			if (sweep.boolState(knob.key) === 'sweep') sweep.setBoolState(knob.key, 'on');
-		}
-		for (const knob of sweep.gradedKnobs) {
-			for (const value of knob.values) {
-				if (sweep.isLevelSelected(knob.key, value) && value !== knob.defaultSelected[0])
-					sweep.toggleLevel(knob.key, value);
-			}
-			if (!sweep.isLevelSelected(knob.key, knob.defaultSelected[0]))
-				sweep.toggleLevel(knob.key, knob.defaultSelected[0]);
-		}
+		expect(sweep.plannedCells).toBeGreaterThan(1); // the design we claim to collapse is really a grid
+		pinEveryKnob();
 		expect(sweep.plannedCells).toBe(1);
 		await sweep.run(new NullExecutor());
 		expect(sweep.cells).toHaveLength(1);
 	});
 
 	it('runs on the analysis subject when Studio hands one over — its config reaches every cell', async () => {
-		// A world with a distinctive vision none of the swept knobs touch (vision stays pinned at
-		// its default? no — the pinned vision chip WOULD override; deselect it to the subject's own).
+		// bh (tank height) is a field no pinned or swept knob ever touches, so it proves the
+		// SUBJECT's own config — not a knob default — reached every cell.
 		app.analyze({ ...newWorldConfig('Watched', '#123456'), bh: 333 });
 		await sweep.run(new NullExecutor());
 		expect(sweep.cells.length).toBeGreaterThan(0); // it really planned and ran a grid

@@ -24,6 +24,8 @@ import {
 	BOOL_KNOBS,
 	GRADED_KNOBS,
 	defaultChoices,
+	knobLabel,
+	hasNineWires,
 	pinBase,
 	sweptFactors,
 	planSweep,
@@ -76,8 +78,9 @@ function loadSimRate(): number {
 
 class SweepStore {
 	// The panel's choices. SvelteMaps are reactive on mutation, so a set() wakes the plan readouts.
-	#bools = new SvelteMap<string, KnobState>(Object.entries(defaultChoices().bools));
-	#graded = new SvelteMap<string, number[]>(Object.entries(defaultChoices().graded));
+	#defaults = defaultChoices();
+	#bools = new SvelteMap<string, KnobState>(Object.entries(this.#defaults.bools));
+	#graded = new SvelteMap<string, number[]>(Object.entries(this.#defaults.graded));
 
 	// The budget. Episodes = generations of training per run; genDuration = sim-seconds each lasts.
 	#seeds = $state<number>(SWEEP_DEFAULTS.seeds);
@@ -131,7 +134,7 @@ class SweepStore {
 	setBoolState(key: string, state: KnobState): void {
 		const knob = BOOL_KNOBS.find((k) => k.key === key);
 		if (!knob) return;
-		if (knob.needsNineInputs && state !== 'off' && (app.base.brainInputs ?? 8) !== 9) return;
+		if (knob.needsNineInputs && state !== 'off' && !hasNineWires(app.base)) return;
 		this.#bools.set(key, state);
 	}
 
@@ -163,9 +166,8 @@ class SweepStore {
 	 */
 	#choices(): KnobChoices {
 		const bools = Object.fromEntries(this.#bools);
-		const nineWired = (app.base.brainInputs ?? 8) === 9;
 		for (const knob of BOOL_KNOBS) {
-			if (knob.needsNineInputs && !nineWired) bools[knob.key] = 'off';
+			if (knob.needsNineInputs && !hasNineWires(app.base)) bools[knob.key] = 'off';
 		}
 		return { bools, graded: Object.fromEntries(this.#graded) };
 	}
@@ -364,13 +366,9 @@ class SweepStore {
 	 * "Direction on", never "dir on".
 	 */
 	watch(cell: SweepCell): void {
-		const labelOf = (key: string) =>
-			BOOL_KNOBS.find((k) => k.key === key)?.label ??
-			GRADED_KNOBS.find((k) => k.key === key)?.label ??
-			key;
 		const name =
 			Object.entries(cell.levels)
-				.map(([key, level]) => `${labelOf(key)} ${level}`)
+				.map(([key, level]) => `${knobLabel(key)} ${level}`)
 				.join(' · ') || 'Sweep world';
 		bench.addWorld({ ...cell.cfg, name });
 		app.setMode('studio');

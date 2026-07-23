@@ -19,6 +19,7 @@
 	import RunProgress from '../RunProgress.svelte';
 	import { sweep, app } from '$lib/state';
 	import { GUARD_CONFIRM_MINUTES, GUARD_WARN_MINUTES } from '$lib/state';
+	import { hasNineWires, scalePreyPct } from '$lib/lab/sweep';
 	import type { KnobGroupKey, KnobState } from '$lib/lab/sweep';
 
 	const GROUPS: { key: KnobGroupKey; label: string }[] = [
@@ -34,7 +35,7 @@
 		{ value: 'sweep', label: 'sweep' }
 	];
 
-	const nineWired = $derived((app.base.brainInputs ?? 8) === 9);
+	const nineWired = $derived(hasNineWires(app.base));
 
 	// The plan, in the commit bar's words. Bool vs graded is decided by KEY, never by level count —
 	// a two-chip graded knob has two levels exactly like a bool, and folding it into the exponent
@@ -137,10 +138,9 @@
 				</div>
 				{#if knob.key === 'preyPct'}
 					<span class="lnote tabular">
-						on a {app.base.prey}-prey subject: {sweep.gradedKnobs
-							.find((k) => k.key === 'preyPct')!
-							.values.filter((v) => sweep.isLevelSelected('preyPct', v))
-							.map((v) => Math.max(2, Math.round((app.base.prey * v) / 100)))
+						on a {app.base.prey}-prey subject: {knob.values
+							.filter((v) => sweep.isLevelSelected(knob.key, v))
+							.map((v) => scalePreyPct(app.base.prey, v))
 							.join(' · ')} fish
 					</span>
 				{/if}

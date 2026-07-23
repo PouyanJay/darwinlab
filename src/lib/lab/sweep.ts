@@ -80,6 +80,26 @@ export function toEffectRows(effects: FactorEffect[]): EffectRow[] {
 
 export type KnobState = 'off' | 'on' | 'sweep';
 
+/** How a knob key becomes a human word — one place, shared by the watch-name and the drill card. */
+export function knobLabel(key: string): string {
+	return (
+		BOOL_KNOBS.find((k) => k.key === key)?.label ??
+		GRADED_KNOBS.find((k) => k.key === key)?.label ??
+		key
+	);
+}
+
+/** The own-speed sense's wiring requirement — the one predicate every check shares. */
+export function hasNineWires(cfg: WorldConfig): boolean {
+	return (cfg.brainInputs ?? 8) === 9;
+}
+
+/** Prey % of the base count, floored at a real population — the apply AND the panel's preview use
+ *  THIS, so what the note promises is what a run measures. */
+export function scalePreyPct(basePrey: number, pct: number): number {
+	return Math.max(2, Math.round((basePrey * pct) / 100));
+}
+
 /** The panel's section a knob renders under. */
 export type KnobGroupKey = 'senses' | 'body' | 'predator' | 'shoal';
 
@@ -212,7 +232,7 @@ export const GRADED_KNOBS: GradedKnob[] = [
 		values: [50, 75, 100, 150],
 		defaultSelected: [50, 100],
 		format: (v) => `${v}%`,
-		apply: (cfg, v) => ({ ...cfg, prey: Math.max(2, Math.round((cfg.prey * v) / 100)) })
+		apply: (cfg, v) => ({ ...cfg, prey: scalePreyPct(cfg.prey, v) })
 	},
 	{
 		key: 'vision',

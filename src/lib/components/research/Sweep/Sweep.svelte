@@ -2,10 +2,9 @@
   The Sweep instrument — factors in, effect sizes out.
 
   The DESIGN PANEL (the console's second sidebar) runs the grid; when the results are in, they land
-  as two cards: the conclusion
-  (each factor's main effect on survival, with intervals) leads, and the raw run grid sits beside it as
-  the evidence. Until then it says plainly what to do. Everything reads off the sweep store; nothing
-  measures here.
+  as two cards: the conclusion (each factor's main effect on survival, with intervals) leads, and
+  the raw run grid sits beside it as the evidence. Until then it says plainly what to do. Everything
+  reads off the sweep store; nothing measures here.
 -->
 <script lang="ts">
 	import EffectBars from '../viz/EffectBars.svelte';
