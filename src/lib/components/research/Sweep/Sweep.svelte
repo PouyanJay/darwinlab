@@ -23,6 +23,10 @@
 	// so the chart and any other consumer rank identically.
 	const effectRows = $derived(rankEffectRows(toEffectRows(sweep.effects)));
 
+	/** Rendered through an expression so the build can never collapse its spaces — as a literal text
+	 *  node the production build shipped '2/ 2' once (and a string-literal mustache trips lint). */
+	const CELLS_SEPARATOR = ' / ';
+
 	/** The headline tile: the strongest factor whose interval CLEARS ZERO — the same isFlatEffect
 	 *  test as the muted bars and the sidebar's lead, so the tile can never paint a confident colour
 	 *  over a bar the card beneath it mutes. Null = a flat environment, itself a real result. */
@@ -40,7 +44,9 @@
 		<!-- The experiment's receipts, always visible above the conclusions. -->
 		<div class="tiles" data-testid="sweep-tiles">
 			<div class="tile">
-				<span class="tv">{sweep.cells.length}<span class="tv-dim">{' / '}{sweep.total}</span></span>
+				<span class="tv"
+					>{sweep.cells.length}<span class="tv-dim">{CELLS_SEPARATOR}{sweep.total}</span></span
+				>
 				<span class="ts">{sweep.sampled ? 'cells · sampled' : 'cells · full factorial'}</span>
 			</div>
 			<div class="tile">
