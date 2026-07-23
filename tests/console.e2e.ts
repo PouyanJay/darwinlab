@@ -21,8 +21,9 @@ test('the console has three zones and the sidebar follows the active instrument'
 	const sidebar = page.getByRole('complementary', { name: 'research context' });
 	await expect(sidebar).toBeVisible();
 
-	// The rail leads with the subject world every instrument runs on.
-	await expect(page.getByTestId('research-rail')).toContainText('Generic world');
+	// The rail leads with the subject world every instrument runs on — its name is an EDITABLE
+	// field since the redesign, so the assertion reads the input's value, not text content.
+	await expect(page.getByRole('textbox', { name: 'subject name' })).toHaveValue('Generic world');
 
 	// Default instrument is the Sweep: the workspace shows it, the sidebar shows its run context.
 	await expect(page.getByTestId('sweep')).toBeVisible();
