@@ -4,9 +4,10 @@
   The grid stretches to the full width × height (rectangular cells, no dead margin), with the two
   parameters as real axes: predator speed and its partner ticked along the bottom and up the side.
   Hover a cell for its numbers, click (or Enter on a keyboard-moved cursor) to drill in. The measured
-  cliff is drawn as a dashed line where survival falls off hardest, and the colour scale sits on the
-  map so "coral = wiped, teal = survives" is right there. Coordinates map straight to pixels — a
-  column is width/cols wide — which is exactly how a pointer is hit-tested back to a cell.
+  cliff is traced in gold, row by row, where survival falls off hardest, and the colour scale sits on
+  the map so "coral = wiped, teal = survives" is right there. Coordinates map straight to pixels — a
+  column is width/cols wide, with row 0 at the BOTTOM (Y grows upward, like a chart) — and the
+  hit-test uses the same mapping.
 -->
 <script lang="ts">
 	import Canvas from '../../common/Canvas.svelte';
@@ -106,7 +107,7 @@
 	const xTicks = $derived(
 		field ? axisTicks(field.axisX.min, field.axisX.max, field.axisX.format) : []
 	);
-	// Y ticks read top-down (the map's row 0 is the top), so the list is reversed for display.
+	// Row 0 (the Y minimum) sits at the BOTTOM, so the tick list reverses to read top-down.
 	const yTicks = $derived(
 		field ? [...axisTicks(field.axisY.min, field.axisY.max, field.axisY.format)].reverse() : []
 	);
@@ -124,7 +125,8 @@
 
 	const mapLabel = $derived(
 		field
-			? `Survival landscape, ${field.cols} by ${field.rows} grid of ${field.axisX.label} against ${field.axisY.label}. Arrow keys move the cursor, Enter opens a cell.`
+			? `Survival landscape, ${field.cols} by ${field.rows} grid of ${field.axisX.label} ` +
+					`against ${field.axisY.label}. Arrow keys move the cursor, Enter opens a cell.`
 			: 'Survival landscape — run the Atlas to fill it.'
 	);
 </script>

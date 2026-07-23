@@ -26,10 +26,12 @@ describe('AtlasDesignPanel', () => {
 
 	it('an axis dropdown never offers the other slot’s pick — an axis can’t face itself', async () => {
 		render(AtlasDesignPanel);
-		const options = [
-			...page.getByLabelText('x axis', { exact: true }).element().querySelectorAll('option')
-		];
-		expect(options.map((o) => o.value)).not.toContain(landscape.axisY.key);
+		const values = (label: string) =>
+			[...page.getByLabelText(label, { exact: true }).element().querySelectorAll('option')].map(
+				(o) => (o as HTMLOptionElement).value
+			);
+		expect(values('x axis')).not.toContain(landscape.axisY.key);
+		expect(values('y axis')).not.toContain(landscape.axisX.key); // both slots, same discipline
 	});
 
 	it('picking an axis reaches the store', async () => {
@@ -44,6 +46,8 @@ describe('AtlasDesignPanel', () => {
 		commit(page.getByLabelText('x axis from').element(), '1.9'); // past the axis bound
 		expect(landscape.axisX.min).toBeCloseTo(0.6); // the LAB's rules ran, not the input's text
 		expect(landscape.axisX.max).toBeCloseTo(1.4);
+		// the input re-displays what a run would actually use, not the rejected text
+		await expect.element(page.getByLabelText('x axis from')).toHaveValue(0.6);
 	});
 
 	it('a resolution chip snaps the store to the menu', async () => {
@@ -66,13 +70,16 @@ describe('AtlasDesignPanel', () => {
 		expect(landscape.pin('persistence')).toBe(true);
 	});
 
-	it('the budget inputs commit to the store, clamped by the store', async () => {
+	it('the seeds input commits to the store, clamped by the store', async () => {
 		render(AtlasDesignPanel);
 		const seeds = page.getByTestId('atlas-seeds');
 		await seeds.fill('99');
 		seeds.element().dispatchEvent(new Event('change', { bubbles: true }));
 		expect(landscape.seeds).toBe(10); // the STORE's clamp
+	});
 
+	it('the generations input commits to the store, clamped by the store', async () => {
+		render(AtlasDesignPanel);
 		const gens = page.getByTestId('atlas-episodes');
 		await gens.fill('999');
 		gens.element().dispatchEvent(new Event('change', { bubbles: true }));

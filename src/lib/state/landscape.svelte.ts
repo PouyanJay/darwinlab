@@ -74,20 +74,6 @@ class LandscapeStore {
 	#selected = $state.raw<LandscapeCell | null>(null);
 	#receipt = $state.raw<LandscapeReceipt | null>(null);
 
-	// Falls back to the first axis on an unknown key — deliberately defensive. The picker only ever
-	// passes a real `axis.key`, so this is unreachable today; it keeps a future renamed key from
-	// throwing rather than silently mislabelling, and the picker's own `selected` state stays honest.
-	#axis(key: string): LandscapeAxis {
-		return this.axes.find((axis) => axis.key === key) ?? this.axes[0];
-	}
-
-	/** An axis narrowed to its remembered range — what the plan and the panel's inputs both read. */
-	#spanned(key: string): LandscapeAxis {
-		const axis = this.#axis(key);
-		const span = this.#spans.get(key);
-		return span ? spanAxis(axis, span.from, span.to) : axis;
-	}
-
 	get axisX(): LandscapeAxis {
 		return this.#spanned(this.#xKey);
 	}
@@ -112,6 +98,20 @@ class LandscapeStore {
 	setSpan(key: string, from: number, to: number): void {
 		const spanned = spanAxis(this.#axis(key), from, to);
 		this.#spans.set(key, { from: spanned.min, to: spanned.max });
+	}
+
+	// Falls back to the first axis on an unknown key — deliberately defensive. The picker only ever
+	// passes a real `axis.key`, so this is unreachable today; it keeps a future renamed key from
+	// throwing rather than silently mislabelling, and the picker's own `selected` state stays honest.
+	#axis(key: string): LandscapeAxis {
+		return this.axes.find((axis) => axis.key === key) ?? this.axes[0];
+	}
+
+	/** An axis narrowed to its remembered range — what the plan and the panel's inputs both read. */
+	#spanned(key: string): LandscapeAxis {
+		const axis = this.#axis(key);
+		const span = this.#spans.get(key);
+		return span ? spanAxis(axis, span.from, span.to) : axis;
 	}
 
 	get resolution(): number {
@@ -264,7 +264,7 @@ class LandscapeStore {
 	 */
 	async run(executor?: JobExecutor): Promise<void> {
 		const base = pinnedBase(app.subjectBase('Atlas'), this.pins);
-		const plan = planLandscape(base, this.axisX, this.axisY, this.#resolution);
+		const plan = planLandscape({ base, axisX: this.axisX, axisY: this.axisY }, this.#resolution);
 		const jobs = landscapeJobs(plan.cells, {
 			seeds: this.#seeds,
 			episodes: this.#episodes,

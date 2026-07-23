@@ -1,48 +1,20 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { landscape, EDGE_DROP_SECONDS } from './landscape.svelte';
-import { restoreLandscapeDefaults } from './landscape.testkit';
+import {
+	restoreLandscapeDefaults,
+	CannedExecutor,
+	HangingExecutor,
+	evalMean
+} from './landscape.testkit';
 import { bench } from './bench.svelte';
 import { app } from './app.svelte';
 import { newWorldConfig } from '../engine';
-import type { JobExecutor } from '../lab/runner';
-import type { EvalRequest, Evaluation } from '../lab/evaluator';
 
 /**
  * The Atlas store, driven through a canned executor so the field is fixed and the cliff/selection
  * logic is deterministic (a real landscape is a live measurement — not something to assert). The
  * store is a singleton, so each test walks the whole design back to the defaults first.
  */
-
-/** Hands back pre-baked evaluations in submit order — one per cell, row-major. */
-class CannedExecutor implements JobExecutor {
-	readonly concurrency = 1;
-	#queue: (Evaluation | null)[];
-	constructor(evaluations: (Evaluation | null)[]) {
-		this.#queue = [...evaluations];
-	}
-	async submit(): Promise<Evaluation | null> {
-		return this.#queue.shift() ?? null;
-	}
-	dispose(): void {}
-}
-
-/** An executor whose jobs never settle on their own — only a cancel (signal abort) resolves them. */
-class HangingExecutor implements JobExecutor {
-	readonly concurrency = 1;
-	submit(
-		_req: EvalRequest,
-		_onProgress: (fraction: number) => void,
-		signal: AbortSignal
-	): Promise<Evaluation | null> {
-		return new Promise((resolve) => {
-			if (signal.aborted) return resolve(null);
-			signal.addEventListener('abort', () => resolve(null), { once: true });
-		});
-	}
-	dispose(): void {}
-}
-
-const evalMean = (meanReturn: number) => ({ meanReturn }) as unknown as Evaluation;
 
 // A 5×5 field whose columns average 10, 5, 4, 3, 2 — a cliff between columns 0 and 1.
 const COLUMN_MEANS = [10, 5, 4, 3, 2];
@@ -119,17 +91,23 @@ describe('the Atlas store', () => {
 		expect(landscape.axisX.max).toBeCloseTo(1.4);
 	});
 
-	it('snaps resolution to the menu and clamps seeds and generations', () => {
+	it('snaps an off-menu resolution to the nearest option, never a free integer', () => {
 		landscape.setResolution(99);
 		expect(landscape.resolution).toBe(9);
 		landscape.setResolution(1);
 		expect(landscape.resolution).toBe(5);
 		landscape.setResolution(6.9);
-		expect(landscape.resolution).toBe(7); // nearest menu option, not a free integer
+		expect(landscape.resolution).toBe(7);
+	});
+
+	it('clamps seeds to the budget limits', () => {
 		landscape.setSeeds(99);
 		expect(landscape.seeds).toBe(10);
 		landscape.setSeeds(0);
 		expect(landscape.seeds).toBe(2);
+	});
+
+	it('clamps generations to the budget limits', () => {
 		landscape.setEpisodes(999);
 		expect(landscape.episodes).toBe(60);
 		landscape.setEpisodes(1);
@@ -144,13 +122,15 @@ describe('the Atlas store', () => {
 		expect(landscape.selected?.cfg.persistence).toBe(true); // the pin reached the cell's config
 	});
 
-	it('prices the plan and freezes the receipt with the run', async () => {
+	it('prices the plan by its training length — longer costs more', () => {
 		expect(landscape.estimatedSeconds).toBeGreaterThan(0);
 		landscape.setEpisodes(40);
 		const dearer = landscape.estimatedSeconds;
 		landscape.setEpisodes(20);
-		expect(dearer).toBeGreaterThan(landscape.estimatedSeconds); // longer training costs more
+		expect(dearer).toBeGreaterThan(landscape.estimatedSeconds);
+	});
 
+	it('freezes the receipt with the run — what the tiles print is the measured budget', async () => {
 		await landscape.run(cannedField());
 		expect(landscape.receipt).toMatchObject({ seeds: 2, episodes: 20 });
 		expect(landscape.receipt!.wallSeconds).toBeGreaterThanOrEqual(0);
@@ -200,6 +180,16 @@ describe('the Atlas store', () => {
 		landscape.select(4, 4); // the far corner
 		expect(landscape.neighborDelta(1, 0)).toBeNull(); // the map's edge, not a fake zero
 		expect(landscape.neighborDelta(0, 1)).toBeNull();
+	});
+
+	it('reports the map edge on a SINGLE axis — no wrap into the next row', async () => {
+		// The sabotage that found this: dropping the ix >= cols bound made a right-edge cell read the
+		// NEXT ROW's first value through the flat index. The double corner can't catch that (its index
+		// falls off the array's end either way) — only a one-axis edge distinguishes the guard.
+		await landscape.run(cannedField());
+		landscape.select(4, 2); // the right edge, an interior row
+		expect(landscape.neighborDelta(1, 0)).toBeNull(); // off the map, not row 3's first cell
+		expect(landscape.neighborDelta(0, 1)).not.toBeNull(); // the same cell still has an up-neighbour
 	});
 
 	it('a fresh run clears any prior drill — the old cell is not in the new grid', async () => {

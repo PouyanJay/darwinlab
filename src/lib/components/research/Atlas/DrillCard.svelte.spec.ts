@@ -3,24 +3,8 @@ import { render } from 'vitest-browser-svelte';
 import { page } from 'vitest/browser';
 import DrillCard from './DrillCard.svelte';
 import { landscape } from '$lib/state';
-import { restoreLandscapeDefaults } from '$lib/state/landscape.testkit';
-import type { JobExecutor } from '$lib/lab/runner';
-import type { Evaluation } from '$lib/lab/evaluator';
+import { restoreLandscapeDefaults, CannedExecutor, evalMean } from '$lib/state/landscape.testkit';
 
-/** Hands back pre-baked evaluations in submit order — one per cell, row-major. */
-class CannedExecutor implements JobExecutor {
-	readonly concurrency = 1;
-	#queue: (Evaluation | null)[];
-	constructor(evaluations: (Evaluation | null)[]) {
-		this.#queue = [...evaluations];
-	}
-	async submit(): Promise<Evaluation | null> {
-		return this.#queue.shift() ?? null;
-	}
-	dispose(): void {}
-}
-
-const evalMean = (meanReturn: number) => ({ meanReturn }) as unknown as Evaluation;
 // Columns average 10, 5, 4.7, 4.5, 4.4 — a cliff between columns 0 and 1, then a plateau whose
 // steps sit safely under the edge threshold, so the two where-lines are both reachable.
 const cannedField = () =>

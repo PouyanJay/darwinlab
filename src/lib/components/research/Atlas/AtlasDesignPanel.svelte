@@ -25,25 +25,50 @@
 
 	const knob = (key: string) => BOOL_KNOBS.find((k) => k.key === key);
 
-	// The two slots, uniformly: which axis each holds, and the setter a pick commits through.
+	// The two slots, uniformly: which axis each holds, the setter a pick commits through, and a
+	// LIVE read of the slot's axis — handlers close over a stale render's slot, so a post-commit
+	// read must go through the store, not the captured object.
 	const slots = $derived([
 		{
 			tag: 'X →',
 			label: 'x axis',
 			axis: landscape.axisX,
-			set: (key: string) => landscape.setX(key)
+			set: (key: string) => landscape.setX(key),
+			current: () => landscape.axisX
 		},
 		{
 			tag: 'Y ↑',
 			label: 'y axis',
 			axis: landscape.axisY,
-			set: (key: string) => landscape.setY(key)
+			set: (key: string) => landscape.setY(key),
+			current: () => landscape.axisY
 		}
 	]);
 
 	/** The other slot's pick — an axis can never face itself, so it leaves the dropdown. */
 	const rivalOf = (label: string) =>
 		label === 'x axis' ? landscape.axisY.key : landscape.axisX.key;
+
+	/**
+	 * Commit one edge of a slot's range, then write the NORMALISED value back into the input. The
+	 * write-back matters: when the store rejects an edit back to the value the input already showed
+	 * (a degenerate span resets to the full range), the one-way binding sees no change and would
+	 * leave the rejected text on screen — an input quietly lying about what a run would use.
+	 */
+	function commitSpan(
+		slot: (typeof slots)[number],
+		input: HTMLInputElement,
+		edge: 'from' | 'to'
+	): void {
+		const raw = Number(input.value);
+		landscape.setSpan(
+			slot.axis.key,
+			edge === 'from' ? raw : slot.axis.min,
+			edge === 'to' ? raw : slot.axis.max
+		);
+		const fresh = slot.current();
+		input.value = String(edge === 'from' ? fresh.min : fresh.max);
+	}
 
 	const estMinutes = $derived(landscape.estimatedSeconds / 60);
 	const estLabel = $derived(estMinutes < 1 ? '< 1 min' : `≈ ${Math.round(estMinutes)} min`);
@@ -80,8 +105,7 @@
 						step="any"
 						aria-label="{slot.label} from"
 						value={slot.axis.min}
-						onchange={(e) =>
-							landscape.setSpan(slot.axis.key, Number(e.currentTarget.value), slot.axis.max)}
+						onchange={(e) => commitSpan(slot, e.currentTarget, 'from')}
 					/>
 					<span class="to">→</span>
 					<input
@@ -89,8 +113,7 @@
 						step="any"
 						aria-label="{slot.label} to"
 						value={slot.axis.max}
-						onchange={(e) =>
-							landscape.setSpan(slot.axis.key, slot.axis.min, Number(e.currentTarget.value))}
+						onchange={(e) => commitSpan(slot, e.currentTarget, 'to')}
 					/>
 				</div>
 			</div>

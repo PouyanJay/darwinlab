@@ -27,7 +27,11 @@ const evalMean = (meanReturn: number) => ({ meanReturn }) as Evaluation;
 
 describe('expandLandscape', () => {
 	it('lays a cols×rows grid whose corners hit the axis min/max', () => {
-		const cells = expandLandscape(base(), axis('predSpeed'), axis('mutation'), 3, 3);
+		const cells = expandLandscape(
+			{ base: base(), axisX: axis('predSpeed'), axisY: axis('mutation') },
+			3,
+			3
+		);
 		expect(cells).toHaveLength(9);
 
 		// Row-major, index = iy*cols + ix, so the four corners sit at the axis bounds.
@@ -40,26 +44,39 @@ describe('expandLandscape', () => {
 
 	it("writes BOTH axes onto each cell's config and leaves the rest of the base alone", () => {
 		const b = base();
-		const cell = expandLandscape(b, axis('predSpeed'), axis('mutation'), 2, 2).find(
-			(c) => c.ix === 1 && c.iy === 1
-		)!;
+		const cell = expandLandscape(
+			{ base: b, axisX: axis('predSpeed'), axisY: axis('mutation') },
+			2,
+			2
+		).find((c) => c.ix === 1 && c.iy === 1)!;
 		expect(cell.cfg.predSpeed).toBeCloseTo(1.4); // the X axis wrote predSpeed
 		expect(cell.cfg.mutation).toBeCloseTo(0.14); // the Y axis wrote mutation
 		expect(cell.cfg.vision).toBe(b.vision); // an untouched field is unchanged
 	});
 
 	it('snaps integer axes to their real step — even prey, whole pixels of top speed', () => {
-		const preyCells = expandLandscape(base(), axis('prey'), axis('mutation'), 4, 1);
+		const preyCells = expandLandscape(
+			{ base: base(), axisX: axis('prey'), axisY: axis('mutation') },
+			4,
+			1
+		);
 		for (const cell of preyCells) expect(cell.cfg.prey % 2).toBe(0); // prey moves in twos
 
-		const speedCells = expandLandscape(base(), axis('maxSpeed'), axis('mutation'), 4, 1);
+		const speedCells = expandLandscape(
+			{ base: base(), axisX: axis('maxSpeed'), axisY: axis('mutation') },
+			4,
+			1
+		);
 		for (const cell of speedCells) expect(Number.isInteger(cell.cfg.maxSpeed)).toBe(true);
 	});
 });
 
 describe('planLandscape + landscapeJobs', () => {
 	it('plans a square grid at the given resolution and one job per cell', () => {
-		const plan = planLandscape(base(), axis('predSpeed'), axis('mutation'), 5);
+		const plan = planLandscape(
+			{ base: base(), axisX: axis('predSpeed'), axisY: axis('mutation') },
+			5
+		);
 		expect(plan.cols).toBe(5);
 		expect(plan.rows).toBe(5);
 		expect(plan.cells).toHaveLength(25);
@@ -74,7 +91,10 @@ describe('planLandscape + landscapeJobs', () => {
 
 describe('landscapeField', () => {
 	it('maps results onto cells and takes min/max over the finite ones', () => {
-		const plan = planLandscape(base(), axis('predSpeed'), axis('mutation'), 2);
+		const plan = planLandscape(
+			{ base: base(), axisX: axis('predSpeed'), axisY: axis('mutation') },
+			2
+		);
 		// four cells; the third failed (null), so its value is NaN and it is excluded from the range
 		const results = [evalMean(5), evalMean(9), null, evalMean(2)];
 		const field = landscapeField(plan, results);
@@ -87,7 +107,10 @@ describe('landscapeField', () => {
 	});
 
 	it('valueAt reads a cell by grid coordinate', () => {
-		const plan = planLandscape(base(), axis('predSpeed'), axis('mutation'), 2);
+		const plan = planLandscape(
+			{ base: base(), axisX: axis('predSpeed'), axisY: axis('mutation') },
+			2
+		);
 		const field = landscapeField(plan, [evalMean(1), evalMean(2), evalMean(3), evalMean(4)]);
 		expect(valueAt(field, 0, 0)).toBeCloseTo(1);
 		expect(valueAt(field, 1, 0)).toBeCloseTo(2);
@@ -218,9 +241,7 @@ describe('spanAxis — an edited range, made legal', () => {
 
 	it('everything downstream reads the span — a plan over it hits the edited corners', () => {
 		const cells = expandLandscape(
-			base(),
-			spanAxis(axis('predSpeed'), 0.8, 1.0),
-			axis('mutation'),
+			{ base: base(), axisX: spanAxis(axis('predSpeed'), 0.8, 1.0), axisY: axis('mutation') },
 			3,
 			1
 		);
@@ -300,7 +321,10 @@ describe('pinnedBase — the two-state background, compiled', () => {
 
 describe('landscapeCsv', () => {
 	it('carries the design in the header and one row per cell', () => {
-		const plan = planLandscape(base(), axis('predSpeed'), axis('mutation'), 2);
+		const plan = planLandscape(
+			{ base: base(), axisX: axis('predSpeed'), axisY: axis('mutation') },
+			2
+		);
 		const field = landscapeField(plan, [evalMean(1), evalMean(2), null, evalMean(4)]);
 		const csv = landscapeCsv(field, { seeds: 4, episodes: 20 });
 		const lines = csv.split('\n');
