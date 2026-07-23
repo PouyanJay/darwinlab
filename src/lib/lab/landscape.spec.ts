@@ -9,6 +9,11 @@ import {
 	valueAt,
 	steepestFalloff,
 	xMarginal,
+	spanAxis,
+	rowCliffs,
+	rowSection,
+	pinnedBase,
+	landscapeCsv,
 	type LandscapeAxis,
 	type LandscapeField
 } from './landscape';
@@ -28,9 +33,9 @@ describe('expandLandscape', () => {
 		// Row-major, index = iy*cols + ix, so the four corners sit at the axis bounds.
 		const at = (ix: number, iy: number) => cells.find((c) => c.ix === ix && c.iy === iy)!;
 		expect(at(0, 0).x).toBeCloseTo(0.6); // predSpeed min
-		expect(at(2, 0).x).toBeCloseTo(1.2); // predSpeed max
-		expect(at(0, 0).y).toBeCloseTo(0.01); // mutation min
-		expect(at(0, 2).y).toBeCloseTo(0.15); // mutation max
+		expect(at(2, 0).x).toBeCloseTo(1.4); // predSpeed max
+		expect(at(0, 0).y).toBeCloseTo(0.02); // mutation min
+		expect(at(0, 2).y).toBeCloseTo(0.14); // mutation max
 	});
 
 	it("writes BOTH axes onto each cell's config and leaves the rest of the base alone", () => {
@@ -38,17 +43,17 @@ describe('expandLandscape', () => {
 		const cell = expandLandscape(b, axis('predSpeed'), axis('mutation'), 2, 2).find(
 			(c) => c.ix === 1 && c.iy === 1
 		)!;
-		expect(cell.cfg.predSpeed).toBeCloseTo(1.2); // the X axis wrote predSpeed
-		expect(cell.cfg.mutation).toBeCloseTo(0.15); // the Y axis wrote mutation
+		expect(cell.cfg.predSpeed).toBeCloseTo(1.4); // the X axis wrote predSpeed
+		expect(cell.cfg.mutation).toBeCloseTo(0.14); // the Y axis wrote mutation
 		expect(cell.cfg.vision).toBe(b.vision); // an untouched field is unchanged
 	});
 
-	it('snaps integer axes to their real step — even prey, whole predators', () => {
+	it('snaps integer axes to their real step — even prey, whole pixels of top speed', () => {
 		const preyCells = expandLandscape(base(), axis('prey'), axis('mutation'), 4, 1);
 		for (const cell of preyCells) expect(cell.cfg.prey % 2).toBe(0); // prey moves in twos
 
-		const predCells = expandLandscape(base(), axis('preds'), axis('mutation'), 4, 1);
-		for (const cell of predCells) expect(Number.isInteger(cell.cfg.preds)).toBe(true);
+		const speedCells = expandLandscape(base(), axis('maxSpeed'), axis('mutation'), 4, 1);
+		for (const cell of speedCells) expect(Number.isInteger(cell.cfg.maxSpeed)).toBe(true);
 	});
 });
 
@@ -111,13 +116,13 @@ function fieldWithColumnMeans(columnMeans: number[]): LandscapeField {
 
 describe('xMarginal — the field collapsed onto its X axis for the Report strip', () => {
 	it('pairs each column mean with its X value, in axis order', () => {
-		// column means [10, 6, 3, 2]; xs = linspace(0.6, 1.2, 4) = [0.6, 0.8, 1.0, 1.2]
+		// column means [10, 6, 3, 2]; xs = linspace(0.6, 1.4, 4) ends at the axis bounds
 		const band = xMarginal(fieldWithColumnMeans([10, 6, 3, 2]));
 
 		expect(band).toHaveLength(4);
 		expect(band.map((b) => b.survival)).toEqual([10, 6, 3, 2]);
 		expect(band[0].x).toBeCloseTo(0.6);
-		expect(band[3].x).toBeCloseTo(1.2);
+		expect(band[3].x).toBeCloseTo(1.4);
 	});
 
 	it('averages a column over its FINITE rows, not down to NaN', () => {
@@ -142,8 +147,8 @@ describe('steepestFalloff — the cliff, measured not assumed', () => {
 		const cliff = steepestFalloff(field);
 		expect(cliff?.ix).toBe(1); // the drop is between ix 1 and 2
 		expect(cliff?.drop).toBeCloseTo(6); // 9 → 3
-		// xs = linspace(0.6, 1.2, 4) = [0.6, 0.8, 1.0, 1.2]; midpoint of the pair is 0.9
-		expect(cliff?.x).toBeCloseTo(0.9);
+		// xs = linspace(0.6, 1.4, 4); the midpoint of columns 1..2 is (0.867 + 1.133) / 2
+		expect(cliff?.x).toBeCloseTo(1.0);
 	});
 
 	it('returns null when survival never falls along X — no fake cliff on a rising field', () => {
@@ -186,5 +191,123 @@ describe('steepestFalloff — the cliff, measured not assumed', () => {
 			max: 7
 		};
 		expect(steepestFalloff(field)).toBeNull();
+	});
+});
+
+describe('spanAxis — an edited range, made legal', () => {
+	it('clamps into the axis bounds and orders an inverted pair', () => {
+		const spanned = spanAxis(axis('predSpeed'), 1.9, 0.3);
+		expect(spanned.min).toBeCloseTo(0.6); // clamped up to the axis bound
+		expect(spanned.max).toBeCloseTo(1.4); // clamped down, and the pair ordered
+	});
+
+	it('keeps a legal sub-range as given', () => {
+		const spanned = spanAxis(axis('predSpeed'), 0.8, 1.1);
+		expect(spanned.min).toBeCloseTo(0.8);
+		expect(spanned.max).toBeCloseTo(1.1);
+	});
+
+	it('resets a collapsed or non-finite range to the axis defaults, never a zero-width map', () => {
+		const collapsed = spanAxis(axis('mutation'), 0.06, 0.06);
+		expect(collapsed.min).toBeCloseTo(0.02);
+		expect(collapsed.max).toBeCloseTo(0.14);
+		const garbage = spanAxis(axis('mutation'), NaN, 0.1);
+		expect(garbage.min).toBeCloseTo(0.02);
+		expect(garbage.max).toBeCloseTo(0.14);
+	});
+
+	it('everything downstream reads the span — a plan over it hits the edited corners', () => {
+		const cells = expandLandscape(
+			base(),
+			spanAxis(axis('predSpeed'), 0.8, 1.0),
+			axis('mutation'),
+			3,
+			1
+		);
+		expect(cells[0].x).toBeCloseTo(0.8);
+		expect(cells[2].x).toBeCloseTo(1.0);
+	});
+});
+
+describe('rowCliffs — the cliff, traced row by row', () => {
+	it('finds each row its own steepest drop, so the edge can bend', () => {
+		// row 0 falls between columns 1→2; row 1 falls earlier, between 0→1 — the edge moved left
+		const field: LandscapeField = {
+			cols: 3,
+			rows: 2,
+			axisX: axis('predSpeed'),
+			axisY: axis('mutation'),
+			values: [8, 7, 2, 8, 3, 2], // row 0: 8,7,2 · row 1: 8,3,2
+			min: 2,
+			max: 8
+		};
+		const cliffs = rowCliffs(field);
+		expect(cliffs[0]?.ix).toBe(1);
+		expect(cliffs[0]?.drop).toBeCloseTo(5);
+		expect(cliffs[1]?.ix).toBe(0);
+		expect(cliffs[1]?.drop).toBeCloseTo(5);
+	});
+
+	it('leaves a flat or rising row untraced — no fake cliff', () => {
+		const field: LandscapeField = {
+			cols: 3,
+			rows: 2,
+			axisX: axis('predSpeed'),
+			axisY: axis('mutation'),
+			values: [2, 3, 4, 5, 5, 5], // row 0 rises, row 1 is flat
+			min: 2,
+			max: 5
+		};
+		expect(rowCliffs(field)).toEqual([null, null]);
+	});
+
+	it('skips NaN neighbours rather than reading them as drops', () => {
+		const field: LandscapeField = {
+			cols: 3,
+			rows: 1,
+			axisX: axis('predSpeed'),
+			axisY: axis('mutation'),
+			values: [9, NaN, 2],
+			min: 2,
+			max: 9
+		};
+		expect(rowCliffs(field)).toEqual([null]); // both pairs touch the dead cell
+	});
+});
+
+describe('rowSection — one row of the map as a curve', () => {
+	it('pairs each cell with its X value, for the given row', () => {
+		const field = fieldWithColumnMeans([10, 6, 3, 2]); // both rows equal
+		const section = rowSection(field, 1);
+		expect(section.map((p) => p.survival)).toEqual([10, 6, 3, 2]);
+		expect(section[0].x).toBeCloseTo(0.6);
+		expect(section[3].x).toBeCloseTo(1.4);
+	});
+});
+
+describe('pinnedBase — the two-state background, compiled', () => {
+	it('applies explicit pins through the Sweep knob catalog and leaves unpinned keys alone', () => {
+		const cfg = pinnedBase(base(), { persistence: true, dir: false });
+		expect(cfg.persistence).toBe(true); // the pin reached the config
+		expect(cfg.senses.dir).toBe(false); // a sense pin goes through the same catalog
+		expect(cfg.senses.dist).toBe(base().senses.dist); // an unpinned key is untouched
+	});
+
+	it('ignores a key no knob owns rather than guessing a patch', () => {
+		expect(pinnedBase(base(), { sonar: true }).senses).toEqual(base().senses);
+	});
+});
+
+describe('landscapeCsv', () => {
+	it('carries the design in the header and one row per cell', () => {
+		const plan = planLandscape(base(), axis('predSpeed'), axis('mutation'), 2);
+		const field = landscapeField(plan, [evalMean(1), evalMean(2), null, evalMean(4)]);
+		const csv = landscapeCsv(field, { seeds: 4, episodes: 20 });
+		const lines = csv.split('\n');
+		expect(lines[0]).toContain('2×2 cells · 4 seeds · 20 gens'); // the receipt travels
+		expect(lines[0]).toContain('Predator speed');
+		expect(lines).toHaveLength(2 + 4); // meta + header + one line per cell
+		expect(lines[2]).toMatch(/^0,0,0.6,0.02,1.000$/); // ix, iy, x, y, mean
+		expect(lines[4].endsWith(',')).toBe(true); // the failed cell exports empty, not NaN
 	});
 });
