@@ -90,8 +90,10 @@
 		return {
 			factor,
 			arms,
-			fromLabel: `${factor.label} ${factor.levels[0].label}`,
-			toLabel: `${factor.label} ${factor.levels[factor.levels.length - 1].label}`,
+			// LEVEL-only labels: the card's header names the factor, and the full name clipped at
+			// the chart's right edge ("Predator speed × 0.6×" also doubled the unit mark).
+			fromLabel: factor.levels[0].label,
+			toLabel: factor.levels[factor.levels.length - 1].label,
 			underTrained: isUnderTrained(arms.from) || isUnderTrained(arms.to)
 		};
 	});
@@ -201,7 +203,9 @@
 			<section class="card" data-testid="sweep-convergence">
 				<header class="card-head">
 					<span class="eyebrow">Did training suffice?</span>
-					<span class="meta">learning curves · {convergence.factor.label.toLowerCase()} arms</span>
+					<span class="meta"
+						>learning curves · {plainLabel(convergence.factor.label).toLowerCase()} arms</span
+					>
 				</header>
 				<CurvePair
 					from={convergence.arms.from}
