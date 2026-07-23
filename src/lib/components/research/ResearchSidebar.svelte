@@ -10,17 +10,25 @@
 	import DrillCard from './Atlas/DrillCard.svelte';
 	import LandscapeSummary from './Atlas/LandscapeSummary.svelte';
 	import SweepSummary from './Sweep/SweepSummary.svelte';
+	import SweepDrillCard from './Sweep/SweepDrillCard.svelte';
 	import ClaimSummary from './Ledger/ClaimSummary.svelte';
 	import TraceSummary from './Trace/TraceSummary.svelte';
 	import ReportContents from './Report/ReportContents.svelte';
 	import SummaryPanel from './SummaryPanel.svelte';
-	import { landscape } from '$lib/state';
+	import { landscape, sweep } from '$lib/state';
 	import type { Instrument } from './instruments';
 
 	let { active }: { active: Instrument } = $props();
 
 	const hasField = $derived(landscape.field !== null);
 	const drilled = $derived(landscape.selected !== null && landscape.field !== null);
+
+	// The sweep's drilled cell, resolved against the current grid — the store clears it on a new run.
+	const sweepDrill = $derived.by(() => {
+		const sel = sweep.selected;
+		if (!sel || !sweep.results || !sweep.cells[sel.condition]) return null;
+		return sel;
+	});
 </script>
 
 <aside class="sidebar no-scrollbar" data-testid="research-sidebar" aria-label="research context">
@@ -40,6 +48,21 @@
 		{/if}
 	{:else if active === 'sweep'}
 		<SweepSummary />
+		{#if sweepDrill}
+			<SweepDrillCard
+				cell={sweep.cells[sweepDrill.condition]}
+				conditionIndex={sweepDrill.condition}
+				seed={sweepDrill.seed}
+				evaluation={sweep.results?.[sweepDrill.condition] ?? null}
+				allResults={sweep.results ?? []}
+				championScored={sweep.receipt?.championOn ?? false}
+				onclose={() => sweep.clearSelection()}
+			/>
+		{:else if sweep.results}
+			<p class="empty">
+				Click a cell of the run grid to open its world here — the door into Studio.
+			</p>
+		{/if}
 	{:else if active === 'ledger'}
 		<ClaimSummary />
 	{:else if active === 'trace'}

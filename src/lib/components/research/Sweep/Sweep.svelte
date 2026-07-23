@@ -13,7 +13,6 @@
 	import InteractionPlot from '../viz/InteractionPlot.svelte';
 	import CurvePair from '../viz/CurvePair.svelte';
 	import RunHeatmap from './RunHeatmap.svelte';
-	import RunCellCard from './RunCellCard.svelte';
 	import { sweep } from '$lib/state';
 	import {
 		toEffectRows,
@@ -82,12 +81,6 @@
 			underTrained: isUnderTrained(arms.from) || isUnderTrained(arms.to)
 		};
 	});
-
-	// The drilled cell, resolved against the current grid — a full-width detail card renders below
-	// the results. Selection is store-owned, so a new run clears it.
-	const drilled = $derived(
-		sweep.selected && sweep.cells[sweep.selected.condition] ? sweep.selected : null
-	);
 </script>
 
 <div class="sweep" data-testid="sweep">
@@ -179,7 +172,7 @@
 				<span class="eyebrow">Runs · condition × seed</span>
 				{#if sweep.sampled}
 					<span class="meta sampled" data-testid="sweep-sampled">
-						sampled {sweep.cells.length} of {sweep.total} · click a cell to drill
+						sampled {sweep.cells.length} of {sweep.total} · a click opens the cell in the sidebar
 					</span>
 				{:else}
 					<span class="meta"
@@ -214,17 +207,6 @@
 					</p>
 				{/if}
 			</section>
-		{/if}
-
-		{#if drilled}
-			<RunCellCard
-				cell={sweep.cells[drilled.condition]}
-				conditionIndex={drilled.condition}
-				seed={drilled.seed}
-				evaluation={sweep.results[drilled.condition] ?? null}
-				allResults={sweep.results}
-				onclose={() => sweep.clearSelection()}
-			/>
 		{/if}
 	{:else}
 		<section class="card empty">
