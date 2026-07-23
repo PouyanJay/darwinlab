@@ -18,6 +18,7 @@
 	import SweepDesignPanel from './Sweep/SweepDesignPanel.svelte';
 	import Sweep from './Sweep/Sweep.svelte';
 	import Ledger from './Ledger/Ledger.svelte';
+	import LedgerDesignPanel from './Ledger/LedgerDesignPanel.svelte';
 	import Atlas from './Atlas/Atlas.svelte';
 	import Trace from './Trace/Trace.svelte';
 	import ReportView from './Report/ReportView.svelte';
@@ -29,9 +30,10 @@
 	const meta = $derived(instrumentMeta(active));
 	const answers = $derived(answersOf(active));
 
-	// Which instruments have a DESIGN PANEL (the console's second sidebar). The Sweep leads; the
-	// others gain theirs as their redesigns land — until then the console stays three-zone for them.
-	const hasDesign = $derived(active === 'sweep');
+	// Which instruments have a DESIGN PANEL (the console's second sidebar). The Sweep led; the
+	// Ledger's composer joined it. Atlas and Trace gain theirs as their redesigns land — until then
+	// the console stays three-zone for them.
+	const hasDesign = $derived(active === 'sweep' || active === 'ledger');
 </script>
 
 <div class="console" class:has-design={hasDesign} data-testid="research-stage">
@@ -41,7 +43,11 @@
 
 	{#if hasDesign}
 		<div class="zone zone-design">
-			<SweepDesignPanel />
+			{#if active === 'sweep'}
+				<SweepDesignPanel />
+			{:else}
+				<LedgerDesignPanel />
+			{/if}
 		</div>
 	{/if}
 

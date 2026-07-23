@@ -100,7 +100,7 @@ test('the Research stage scans clean — the instrument tabs, the Sweep and the 
 	await page.getByTestId('sweep').waitFor();
 	expect(await violations(page)).toEqual([]);
 
-	// and the Ledger — its hypothesis list, verdict card and feed are their own new surface
+	// and the Ledger — its composer panel, verdict card and record feed are their own new surface
 	await page.getByRole('tab', { name: 'The Ledger' }).click();
 	await page.getByTestId('ledger').waitFor();
 	expect(await violations(page)).toEqual([]);

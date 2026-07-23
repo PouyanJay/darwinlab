@@ -11,11 +11,11 @@
 	import LandscapeSummary from './Atlas/LandscapeSummary.svelte';
 	import SweepSummary from './Sweep/SweepSummary.svelte';
 	import SweepDrillCard from './Sweep/SweepDrillCard.svelte';
-	import ClaimSummary from './Ledger/ClaimSummary.svelte';
+	import LedgerDrillCard from './Ledger/LedgerDrillCard.svelte';
 	import TraceSummary from './Trace/TraceSummary.svelte';
 	import ReportContents from './Report/ReportContents.svelte';
 	import SummaryPanel from './SummaryPanel.svelte';
-	import { landscape, sweep } from '$lib/state';
+	import { landscape, ledger, sweep } from '$lib/state';
 	import type { Instrument } from './instruments';
 
 	let { active }: { active: Instrument } = $props();
@@ -64,7 +64,14 @@
 			</p>
 		{/if}
 	{:else if active === 'ledger'}
-		<ClaimSummary />
+		{#if ledger.selected}
+			<LedgerDrillCard />
+		{:else}
+			<p class="empty">
+				Test a claim and its record opens here — the verdict's provenance, and the doors back into
+				the composer.
+			</p>
+		{/if}
 	{:else if active === 'trace'}
 		<TraceSummary />
 	{:else if active === 'report'}

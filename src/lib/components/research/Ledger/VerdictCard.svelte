@@ -1,14 +1,13 @@
 <!--
-  The active claim's verdict — the two arms plotted as intervals on a shared seconds axis, so you can
-  SEE whether they separate, plus the numbers the verdict rests on. Non-overlapping intervals are a
-  supported "A beats B"; overlapping ones are the honest "no difference". The run button is here
-  because a verdict is a thing you commit to running, not a passive readout.
+  The verdict — the workspace's centrepiece: the composed claim's sentence with its badge, the two
+  arms plotted as intervals (the actual evidence the verdict was read from), and the numbers spelled
+  out — Δ with its interval, effect size, seeds, fingerprint. The trigger is NOT here: composing and
+  firing live in the design panel; this card reports what the last run of this claim settled.
 -->
 <script lang="ts">
-	import Button from '../../common/Button.svelte';
-	import RunProgress from '../RunProgress.svelte';
 	import IntervalPlot from '../viz/IntervalPlot.svelte';
 	import { ledger, toArmRows } from '$lib/state';
+	import { formatSignedSeconds } from '$lib/format';
 
 	const claim = $derived(ledger.active);
 	const entry = $derived(ledger.latestFor(claim.id));
@@ -17,49 +16,55 @@
 	const armRows = $derived(toArmRows(entry?.arms ?? []));
 </script>
 
-<div class="verdict">
+<section class="verdict" data-testid="verdict-card">
+	<header class="card-head">
+		<span class="eyebrow">The verdict — latest run of the composed claim</span>
+		{#if entry}
+			<span class="meta tabular">{entry.seeds} seeds/arm · 95% CI · {entry.configHash}</span>
+		{/if}
+	</header>
+
 	<div class="vhead">
-		<span class="eyebrow">Verdict</span>
+		<!-- h3: the workspace's h2 is the instrument name, so the card's outline sits under it. -->
+		<h3>{claim.text}</h3>
 		{#if entry}<span class="badge verdict-{entry.verdict}">{entry.verdict.toUpperCase()}</span>{/if}
 	</div>
-	<!-- h2: the next heading level under the page's h1 (the wordmark), so the outline has no gap. -->
-	<h2>{claim.text}</h2>
 
 	{#if entry}
 		<div class="plot" data-testid="verdict-plot">
 			<IntervalPlot arms={armRows} />
 		</div>
 
-		<div class="design">
-			design · 2 arms · {entry.seeds} seeds · run <b>{entry.configHash}</b>
+		<div class="vstats">
+			<span
+				>Δ <b class="tabular">{formatSignedSeconds(entry.delta)}</b>
+				<span class="ci tabular">[{fmt(entry.ci.lo)}, {fmt(entry.ci.hi)}]</span></span
+			>
+			{#if !Number.isNaN(entry.d)}<span
+					>effect size d <b class="tabular">{entry.d.toFixed(1)}</b></span
+				>{/if}
+			<span>seeds <b class="tabular">{entry.seeds} / arm</b></span>
+			<span>fingerprint <b class="tabular">{entry.configHash}</b></span>
 		</div>
 
-		<div class="chips">
-			<span class="chip">Δ {fmt(entry.delta)}s</span>
-			<span class="chip">95% [{fmt(entry.ci.lo)}, {fmt(entry.ci.hi)}]</span>
-			{#if !Number.isNaN(entry.d)}<span class="chip">d {entry.d.toFixed(1)}</span>{/if}
-		</div>
+		<p class="read">
+			The two arms are plotted as the evidence the verdict was read from: for an <b
+				>A&nbsp;&gt;&nbsp;B</b
+			>
+			claim, supported means the whole Δ interval clears zero in A's favour — a shortfall <b>or</b>
+			a straddle both refute it. For an <b>A&nbsp;≈&nbsp;B</b> claim the logic flips: a straddle supports,
+			clearing zero refutes. The verdict is read off the pre-registered contrast, never argued after the
+			fact.
+		</p>
 	{:else}
 		<p class="untested">
-			This claim has not been tested yet. Running it measures both arms across {ledger.runSeeds} seeds
-			and returns a verdict — supported or refuted — that goes into the record below.
+			This claim has not been tested yet. Test it from the design panel — both arms run across
+			{ledger.seeds} seeds and the verdict, supported or refuted, enters the record below.
 		</p>
 	{/if}
-
-	<div class="actions">
-		{#if ledger.running}
-			<RunProgress progress={ledger.progress} oncancel={() => ledger.cancel()} />
-		{:else}
-			<Button variant="primary" size="sm" onclick={() => ledger.run(claim.id)}>
-				{entry ? 'Run again' : 'Run this test'}
-			</Button>
-		{/if}
-	</div>
-</div>
+</section>
 
 <style>
-	/* The centrepiece: full width below the claims, roomier than a summary card so the interval plot has
-	   the width to actually separate the two arms. */
 	.verdict {
 		display: flex;
 		flex-direction: column;
@@ -70,9 +75,10 @@
 		padding: var(--sp-6);
 	}
 
-	.vhead {
+	.card-head {
 		display: flex;
-		align-items: center;
+		justify-content: space-between;
+		align-items: baseline;
 		gap: var(--sp-3);
 	}
 
@@ -84,10 +90,34 @@
 		color: var(--ink3);
 	}
 
-	/* The verdict word leads, prominent — supported wears the survival teal, refuted the danger hue. The
-	   tints are a touch stronger than the old inline chip's (20%/45% vs 18%/40%) so they read at the
-	   badge's larger size. */
+	.meta {
+		font-size: var(--fs-sm);
+		color: var(--ink3);
+		white-space: nowrap;
+	}
+
+	.vhead {
+		display: flex;
+		align-items: baseline;
+		gap: var(--sp-3);
+		flex-wrap: wrap;
+	}
+
+	h3 {
+		font-family: var(--font-display);
+		font-size: var(--fs-report-headline);
+		font-weight: var(--fw-semibold);
+		letter-spacing: var(--tracking-tight);
+		margin: 0;
+		line-height: 1.15;
+		color: var(--ink);
+		text-wrap: balance;
+	}
+
+	/* The verdict word beside the sentence — supported wears the survival teal, refuted the danger
+	   hue. The tints are a touch stronger than a chip's so they read at the badge's size. */
 	.badge {
+		flex: none;
 		font-size: var(--fs-eyebrow);
 		font-weight: var(--fw-semibold);
 		letter-spacing: var(--tracking-wide);
@@ -106,46 +136,39 @@
 		border: 1px solid color-mix(in oklab, var(--danger) 45%, transparent);
 	}
 
-	h2 {
-		font-family: var(--font-display);
-		font-size: var(--fs-report-headline);
-		font-weight: var(--fw-semibold);
-		letter-spacing: var(--tracking-tight);
-		margin: 0;
-		line-height: 1.15;
-		color: var(--ink);
-		text-wrap: balance;
-	}
-
 	.plot {
 		margin: var(--sp-2) 0;
 	}
 
-	.design {
+	.vstats {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--sp-3) var(--sp-6);
 		font-size: var(--fs-sm);
-		color: var(--ink3);
+		color: var(--ink2);
 		border-top: 1px solid var(--line2);
 		padding-top: var(--sp-3);
 	}
 
-	.design b {
-		color: var(--ink2);
+	.vstats b {
+		color: var(--ink);
+		font-size: var(--fs-md);
 		font-weight: var(--fw-semibold);
-		font-variant-numeric: tabular-nums;
 	}
 
-	.chips {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--sp-2);
-	}
-
-	.chip {
+	.ci {
+		color: var(--ink3);
 		font-size: var(--fs-xs);
-		font-variant-numeric: tabular-nums;
-		border: 1px solid var(--line);
-		border-radius: var(--radius-chip);
-		padding: 3px 9px;
+	}
+
+	.read {
+		margin: 0;
+		font-size: var(--fs-sm);
+		line-height: var(--leading-body);
+		color: var(--ink3);
+	}
+
+	.read b {
 		color: var(--ink2);
 	}
 
@@ -154,9 +177,5 @@
 		font-size: var(--fs-sm);
 		line-height: var(--leading-body);
 		color: var(--ink3);
-	}
-
-	.actions {
-		display: flex;
 	}
 </style>
