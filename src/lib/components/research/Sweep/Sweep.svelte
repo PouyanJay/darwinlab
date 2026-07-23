@@ -40,7 +40,7 @@
 		<!-- The experiment's receipts, always visible above the conclusions. -->
 		<div class="tiles" data-testid="sweep-tiles">
 			<div class="tile">
-				<span class="tv">{sweep.cells.length}<span class="tv-dim"> / {sweep.total}</span></span>
+				<span class="tv">{sweep.cells.length}<span class="tv-dim">{' / '}{sweep.total}</span></span>
 				<span class="ts">{sweep.sampled ? 'cells · sampled' : 'cells · full factorial'}</span>
 			</div>
 			<div class="tile">
