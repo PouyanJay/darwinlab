@@ -93,17 +93,28 @@ export async function openAtlas(page: Page): Promise<void> {
 }
 
 /**
- * Shrink the Sweep to a single factor (Direction) at two seeds — two conditions, four jobs — and
- * PROVE the shrink applied before running, so a test can't kick a full-size grid off by accident.
- * Assumes the Sweep is already open (its factor chips are on screen).
+ * Shrink the Sweep to a single factor (Direction) at two seeds — two cells, four jobs — and PROVE
+ * the shrink applied before running, so a test can't kick a full-size grid off by accident.
+ * Assumes the Sweep is open (the design panel is on screen): the other default sweeps are PINNED
+ * through their three-states, the default-swept graded knobs are brought down to one chip each
+ * (the last chip is the pin), and the summary must say so before Run is pressed.
  */
 export async function runMinimalSweep(page: Page): Promise<void> {
-	for (const factor of ['Distance', 'Walls', 'Predator speed']) {
-		await page.getByRole('button', { name: factor, exact: false }).first().click();
+	for (const knob of ['Distance', 'Hunger escalation']) {
+		await page.getByRole('radiogroup', { name: knob }).getByRole('radio', { name: 'on' }).click();
 	}
-	await page.locator('.seeds input').fill('2');
-	await page.locator('.seeds input').blur();
-	await expect(page.getByTestId('sweep-summary')).toContainText('2 conditions × 2 seeds');
+	// exact names throughout — '50%' would otherwise substring-match '150%' too
+	const speeds = page.getByRole('group', { name: 'Predator speed ×' });
+	await speeds.getByRole('button', { name: '0.6×', exact: true }).click();
+	await speeds.getByRole('button', { name: '0.8×', exact: true }).click();
+	await page
+		.getByRole('group', { name: 'Prey population % of base' })
+		.getByRole('button', { name: '50%', exact: true })
+		.click();
+
+	await page.getByTestId('sweep-seeds').fill('2');
+	await page.getByTestId('sweep-seeds').blur();
+	await expect(page.getByTestId('sweep-summary')).toContainText('2 cells × 2 seeds');
 
 	await page.getByRole('button', { name: 'Run sweep' }).click();
 	await expect(page.locator('[data-testid="sweep"] .effects')).toBeVisible({ timeout: 60_000 });

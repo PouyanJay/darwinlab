@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { sweep } from './sweep.svelte';
+import { restoreSweepDefaults, pinEveryKnob } from './sweep.testkit';
 import { app } from './app.svelte';
 import { bench } from './bench.svelte';
 import { newWorldConfig } from '../engine';
@@ -8,11 +9,10 @@ import type { Evaluation } from '../lab/evaluator';
 import type { SweepCell } from '../lab/sweep';
 
 /**
- * The selection → grid-size logic, kept fast and free of any run. The store is a singleton, so each
- * test restores the default selection first (toggling only the factors that are out of place), which
- * keeps the tests order-independent under shuffle.
+ * The design → grid-size logic, kept fast and free of any run. The store is a singleton, so each
+ * test restores the catalog defaults first (walking every knob back to its default position),
+ * which keeps the tests order-independent under shuffle.
  */
-const DEFAULTS = new Set(['dir', 'dist', 'walls', 'predSpeed']);
 
 /** An executor that settles every cell without running the engine — the grid is what we assert, not survival. */
 class NullExecutor implements JobExecutor {
@@ -23,50 +23,136 @@ class NullExecutor implements JobExecutor {
 	dispose(): void {}
 }
 
-describe('sweep selection', () => {
-	beforeEach(() => {
-		for (const factor of sweep.factors) {
-			if (sweep.isSelected(factor.key) !== DEFAULTS.has(factor.key)) sweep.toggle(factor.key);
-		}
-		sweep.setSeeds(6);
-		app.setMode('studio');
-		app.clearSubject();
-	});
+function restoreDefaults(): void {
+	app.setMode('studio');
+	restoreSweepDefaults();
+}
 
-	it('starts on a bounded grid under the cap', () => {
-		expect(sweep.plannedCells).toBe(24); // dir·dist·walls (2 each) × predSpeed (3)
+describe('sweep design (pin-or-sweep + budget)', () => {
+	beforeEach(restoreDefaults);
+
+	it('opens on the default design: 48 cells, uncapped, nothing sampled', () => {
+		expect(sweep.plannedCells).toBe(48); // 2³ bools × 3 speeds × 2 prey sizes
+		expect(sweep.cellsToRun).toBe(48);
 		expect(sweep.willSample).toBe(false);
 	});
 
-	it('a toggle changes the grid size', () => {
-		expect(sweep.isSelected('closing')).toBe(false); // the state we claim to change starts here
-		sweep.toggle('closing');
-		expect(sweep.isSelected('closing')).toBe(true);
-		expect(sweep.plannedCells).toBe(48); // ×2 for the new two-level factor
+	it('moving a pinned knob to sweep doubles the factorial', () => {
+		expect(sweep.boolState('closing')).toBe('on'); // the state we claim to change starts pinned
+		sweep.setBoolState('closing', 'sweep');
+		expect(sweep.plannedCells).toBe(96);
 	});
 
-	it('warns when the grid would overflow the cap', () => {
-		sweep.toggle('closing'); // → 48
-		sweep.toggle('persistence'); // → 96, over the 32 cap
-		expect(sweep.plannedCells).toBeGreaterThan(32);
+	it('a second chip sweeps a graded knob; back to one chip pins it again', () => {
+		expect(sweep.isLevelSelected('vision', 240)).toBe(false);
+		sweep.toggleLevel('vision', 240); // 200 + 240 → swept
+		expect(sweep.plannedCells).toBe(96);
+		sweep.toggleLevel('vision', 240); // back to the single 200 chip → pinned
+		expect(sweep.plannedCells).toBe(48);
+	});
+
+	it('the last chip cannot be deselected — a knob always has a value', () => {
+		expect(sweep.isLevelSelected('vision', 200)).toBe(true); // the chip we try to remove is there
+		sweep.toggleLevel('vision', 200);
+		expect(sweep.isLevelSelected('vision', 200)).toBe(true);
+	});
+
+	it('the cap samples the factorial and says so; off, the full design runs', () => {
+		sweep.setCapOn(true);
+		sweep.setCapN(32);
+		expect(sweep.cellsToRun).toBe(32);
 		expect(sweep.willSample).toBe(true);
+		sweep.setCapOn(false);
+		expect(sweep.cellsToRun).toBe(48);
+		expect(sweep.willSample).toBe(false);
 	});
 
-	it('setSeeds clamps out-of-range values so a bad input never reaches a job', () => {
+	it('every budget input clamps — a bad value never reaches a job', () => {
 		sweep.setSeeds(999);
 		expect(sweep.seeds).toBe(12);
 		sweep.setSeeds(-4);
 		expect(sweep.seeds).toBe(2);
-		sweep.setSeeds(5);
-		expect(sweep.seeds).toBe(5);
+		sweep.setEpisodes(999);
+		expect(sweep.episodes).toBe(120);
+		sweep.setEpisodes(1);
+		expect(sweep.episodes).toBe(5);
+		sweep.setGenDuration(999);
+		expect(sweep.genDuration).toBe(60);
+		sweep.setGenDuration(1);
+		expect(sweep.genDuration).toBe(10);
+	});
+
+	it('own-speed is refused off the 8-wire brain, allowed on the 9-wire one', () => {
+		expect(app.base.brainInputs ?? 8).toBe(8); // the wiring we refuse on really is the base's
+		sweep.setBoolState('speed', 'sweep');
+		expect(sweep.boolState('speed')).toBe('off'); // refused, not adopted
+
+		app.setBaseBrainInputs(9);
+		sweep.setBoolState('speed', 'sweep');
+		expect(sweep.boolState('speed')).toBe('sweep');
+		expect(sweep.plannedCells).toBe(96); // it really is a factor now
+	});
+
+	it('a stale own-speed sweep collapses at plan time when the brain loses its 9th wire', () => {
+		app.setBaseBrainInputs(9);
+		sweep.setBoolState('speed', 'sweep');
+		expect(sweep.plannedCells).toBe(96); // the state we claim collapses really existed
+		app.setBaseBrainInputs(8); // the subject changed under the panel
+		expect(sweep.boolState('speed')).toBe('sweep'); // the panel still shows the stale choice…
+		expect(sweep.plannedCells).toBe(48); // …but the plan refuses the impossible factor
+	});
+
+	it('a large design is confirm-tier, and run() refuses it without the typed cell count', async () => {
+		sweep.setSeeds(12);
+		sweep.setEpisodes(120);
+		sweep.setGenDuration(60); // 48 × 12 × 124 × 60 sim-s ≈ hours at the fallback rate
+		expect(sweep.guard).toBe('confirm');
+
+		await sweep.run(new NullExecutor());
+		expect(sweep.results).toBeNull(); // refused — nothing was published
+
+		await sweep.run(new NullExecutor(), { confirmedCells: sweep.cellsToRun });
+		expect(sweep.cells.length).toBe(48); // the same design, confirmed, runs
+	});
+
+	it('the default design sits under the warn tier at the fallback rate', () => {
+		expect(sweep.guard).toBe('none');
+	});
+
+	it('a test executor settling instantly does NOT calibrate the estimate', async () => {
+		expect(sweep.estimateCalibrated).toBe(false); // the state we claim survives really starts false
+		await sweep.run(new NullExecutor());
+		expect(sweep.estimateCalibrated).toBe(false); // sub-second walls are not prices
+	});
+
+	it('a zero-factor design is one honest cell: the pinned world, measured', async () => {
+		expect(sweep.plannedCells).toBeGreaterThan(1); // the design we claim to collapse is really a grid
+		pinEveryKnob();
+		expect(sweep.plannedCells).toBe(1);
+		await sweep.run(new NullExecutor());
+		expect(sweep.cells).toHaveLength(1);
 	});
 
 	it('runs on the analysis subject when Studio hands one over — its config reaches every cell', async () => {
-		// A world with a distinctive vision none of the default factors (senses, predator speed) touch.
-		app.analyze({ ...newWorldConfig('Watched', '#123456'), vision: 999 });
+		// bh (tank height) is a field no pinned or swept knob ever touches, so it proves the
+		// SUBJECT's own config — not a knob default — reached every cell.
+		app.analyze({ ...newWorldConfig('Watched', '#123456'), bh: 333 });
 		await sweep.run(new NullExecutor());
 		expect(sweep.cells.length).toBeGreaterThan(0); // it really planned and ran a grid
-		expect(sweep.cells.every((cell) => cell.cfg.vision === 999)).toBe(true); // the subject's vision, not a default
+		expect(sweep.cells.every((cell) => cell.cfg.bh === 333)).toBe(true); // the subject's tank, not a default
+	});
+
+	it('the pinned choices reach every cell of the run', async () => {
+		sweep.setBoolState('walls', 'off'); // pin walls OFF — overriding the generic's on
+		await sweep.run(new NullExecutor());
+		expect(sweep.cells.length).toBeGreaterThan(0);
+		expect(sweep.cells.every((cell) => cell.cfg.senses.walls === false)).toBe(true);
+	});
+
+	it('the budget’s generation length reaches every cell as its genDuration', async () => {
+		sweep.setGenDuration(20);
+		await sweep.run(new NullExecutor());
+		expect(sweep.cells.every((cell) => cell.cfg.genDuration === 20)).toBe(true);
 	});
 });
 

@@ -124,12 +124,13 @@ test('the run grid is keyboard-drillable — arrow to a cell, Enter opens it', a
 	await expect(page.getByTestId('sweep-cell')).toBeHidden();
 });
 
-test('the summary warns when the grid would overflow the cap', async ({ page }) => {
+test('the cap, switched on, warns that it will sample the grid', async ({ page }) => {
 	await openSweep(page);
 
-	// Add every remaining factor; the full factorial (2·2·2·2·3·2·2 = 192) is far over the 32 cap.
-	for (const factor of ['Closing', 'Persistence', 'Prey']) {
-		await page.getByRole('button', { name: factor, exact: false }).first().click();
-	}
-	await expect(page.getByTestId('sweep-summary')).toContainText('capped');
+	// The default design is 48 cells and the cap is OFF (the full factorial is the honest default) —
+	// switching it on at its default 32 must announce the sampling before anything runs.
+	await expect(page.getByTestId('sweep-summary')).toContainText('48 cells');
+	await expect(page.getByTestId('sweep-sampled-warn')).toHaveCount(0); // no warning before the cap
+	await page.getByRole('switch', { name: 'cap the cell count' }).click();
+	await expect(page.getByTestId('sweep-sampled-warn')).toContainText('random 32 of 48');
 });

@@ -15,6 +15,7 @@
 	import ResearchRail from './ResearchRail.svelte';
 	import ResearchWorkspace from './ResearchWorkspace.svelte';
 	import ResearchSidebar from './ResearchSidebar.svelte';
+	import SweepDesignPanel from './Sweep/SweepDesignPanel.svelte';
 	import Sweep from './Sweep/Sweep.svelte';
 	import Ledger from './Ledger/Ledger.svelte';
 	import Atlas from './Atlas/Atlas.svelte';
@@ -27,12 +28,22 @@
 	let active = $state<Instrument>('sweep');
 	const meta = $derived(instrumentMeta(active));
 	const answers = $derived(answersOf(active));
+
+	// Which instruments have a DESIGN PANEL (the console's second sidebar). The Sweep leads; the
+	// others gain theirs as their redesigns land — until then the console stays three-zone for them.
+	const hasDesign = $derived(active === 'sweep');
 </script>
 
-<div class="console" data-testid="research-stage">
+<div class="console" class:has-design={hasDesign} data-testid="research-stage">
 	<div class="zone zone-rail">
 		<ResearchRail {active} onselect={(key) => (active = key)} />
 	</div>
+
+	{#if hasDesign}
+		<div class="zone zone-design">
+			<SweepDesignPanel />
+		</div>
+	{/if}
 
 	<div class="zone zone-work">
 		<ResearchWorkspace>
@@ -68,9 +79,10 @@
 
 <style>
 	.console {
-		/* The redesign's zone widths (the mock is the contract): a slimmer rail and sidebar buy the
-		   workspace room — the design panel joins as a fourth zone in the next phase. */
+		/* The redesign's zone widths (the mock is the contract): rail · design panel · workspace ·
+		   sidebar. The design column only exists on instruments that have a panel (`has-design`). */
 		--rail-w: 240px;
+		--design-w: 278px;
 		--side-w: 276px;
 		flex: 1;
 		min-width: 0;
@@ -78,6 +90,10 @@
 		display: grid;
 		grid-template-columns: var(--rail-w) minmax(0, 1fr) var(--side-w);
 		grid-template-rows: minmax(0, 1fr);
+	}
+
+	.console.has-design {
+		grid-template-columns: var(--rail-w) var(--design-w) minmax(0, 1fr) var(--side-w);
 		background: var(--bgfx);
 		/* The shared card-entrance as the console swaps in from Studio. Reduced-motion is handled
 		   globally in app.css (a blanket animation: none). */
@@ -139,18 +155,33 @@
 	/* Below the sidebar's comfortable width: keep the rail on the left, and drop the context sidebar to
 	   a capped strip under the workspace so the drilled point is still reachable, never hidden. */
 	@media (max-width: 1200px) {
-		.console {
+		.console,
+		.console.has-design {
 			grid-template-columns: var(--rail-w) minmax(0, 1fr);
-			grid-template-rows: minmax(0, 1fr) auto;
+			grid-template-rows: auto minmax(0, 1fr) auto;
 		}
 
 		.zone-rail {
-			grid-row: 1 / span 2;
+			grid-row: 1 / span 3;
+		}
+
+		/* The design panel becomes a capped strip ABOVE the workspace — controls stay reachable,
+		   the results keep the room. */
+		.zone-design {
+			grid-column: 2;
+			grid-row: 1;
+			max-height: 44vh;
+			border-bottom: 1px solid var(--line);
+		}
+
+		.zone-work {
+			grid-column: 2;
+			grid-row: 2;
 		}
 
 		.zone-side {
 			grid-column: 2;
-			grid-row: 2;
+			grid-row: 3;
 			max-height: 42vh;
 			border-top: 1px solid var(--line);
 		}
@@ -158,18 +189,30 @@
 
 	/* Narrow: one column, everything stacked — rail, then the instrument, then its context. */
 	@media (max-width: 760px) {
-		.console {
+		.console,
+		.console.has-design {
 			grid-template-columns: 1fr;
-			grid-template-rows: auto minmax(0, 1fr) auto;
+			grid-template-rows: auto auto minmax(0, 1fr) auto;
 		}
 
 		.zone-rail {
 			grid-row: 1;
 		}
 
-		.zone-side {
+		.zone-design {
+			grid-column: 1;
+			grid-row: 2;
+			max-height: 46vh;
+		}
+
+		.zone-work {
 			grid-column: 1;
 			grid-row: 3;
+		}
+
+		.zone-side {
+			grid-column: 1;
+			grid-row: 4;
 			max-height: 40vh;
 		}
 	}

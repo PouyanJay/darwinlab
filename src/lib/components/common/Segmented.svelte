@@ -24,9 +24,11 @@
 		 * selector used to snap back to Off with no explanation whenever there was no brain to clone.
 		 */
 		disabled?: boolean;
+		/** 'xs' is the design panel's row size — many controls in a narrow column. */
+		size?: 'md' | 'xs';
 	}
 
-	let { options, value, onchange, label, disabled = false }: Props = $props();
+	let { options, value, onchange, label, disabled = false, size = 'md' }: Props = $props();
 
 	let group = $state<HTMLDivElement>();
 
@@ -58,7 +60,7 @@
 
 <div
 	bind:this={group}
-	class="segmented"
+	class={['segmented', size]}
 	class:disabled
 	role="radiogroup"
 	aria-label={label}
@@ -113,6 +115,17 @@
 		background: var(--panel);
 		color: var(--ink);
 		box-shadow: var(--shadow-segment);
+	}
+
+	/* The panel's compact rows: eyebrow-sized type, tight padding — same roles, less chrome. */
+	.segmented.xs {
+		padding: 2px;
+	}
+
+	.segmented.xs button {
+		padding: 2px 7px;
+		font-size: var(--fs-eyebrow);
+		font-weight: var(--fw-semibold);
 	}
 
 	.segmented.disabled {

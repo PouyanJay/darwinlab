@@ -69,54 +69,274 @@ export function toEffectRows(effects: FactorEffect[]): EffectRow[] {
 	}));
 }
 
-/** A sense channel as a two-level off/on factor. */
-export function senseFactor(key: 'dist' | 'dir' | 'closing' | 'walls', label: string): Factor {
+/* ================================ the pin-or-sweep knob model =================================
+ *
+ * Since the redesign, every knob has ONE home: the design panel, where it is either PINNED (it
+ * holds that value in every cell) or SWEPT (it becomes a factor). Booleans are three-state
+ * off·on·sweep; graded knobs are multi-select level chips — one chip pins, two or more sweep.
+ * The model COMPILES to the Factor machinery above (`sweptFactors`) and to a pinned base config
+ * (`pinBase`), so the proven factorial/effects code runs unchanged underneath.
+ */
+
+export type KnobState = 'off' | 'on' | 'sweep';
+
+/** How a knob key becomes a human word — one place, shared by the watch-name and the drill card. */
+export function knobLabel(key: string): string {
+	return (
+		BOOL_KNOBS.find((k) => k.key === key)?.label ??
+		GRADED_KNOBS.find((k) => k.key === key)?.label ??
+		key
+	);
+}
+
+/** The own-speed sense's wiring requirement — the one predicate every check shares. */
+export function hasNineWires(cfg: WorldConfig): boolean {
+	return (cfg.brainInputs ?? 8) === 9;
+}
+
+/** Prey % of the base count, floored at a real population — the apply AND the panel's preview use
+ *  THIS, so what the note promises is what a run measures. */
+export function scalePreyPct(basePrey: number, pct: number): number {
+	return Math.max(2, Math.round((basePrey * pct) / 100));
+}
+
+/** The panel's section a knob renders under. */
+export type KnobGroupKey = 'senses' | 'body' | 'predator' | 'shoal';
+
+/** One boolean knob: a sense, an instinct, or a predator rule. */
+export interface BoolKnob {
+	key: string;
+	label: string;
+	/** The one-line explainer under the name in the panel. */
+	detail: string;
+	group: KnobGroupKey;
+	/** The panel's starting position — the generic ocean's own value, or 'sweep' for the defaults
+	 *  the instrument opens with (direction/distance/persistence: the questions worth asking first). */
+	defaultState: KnobState;
+	/** Own-speed only: needs the 9-input brain, so the panel disables it and offers the switch. */
+	needsNineInputs?: boolean;
+	apply: (cfg: WorldConfig, on: boolean) => WorldConfig;
+}
+
+/** One graded knob: a numeric level picked from chips. */
+export interface GradedKnob {
+	key: string;
+	label: string;
+	/** The chip values offered — real, measured engine values, not round numbers. */
+	values: number[];
+	/** One chip = pinned at that value; two or more = swept as a factor. */
+	defaultSelected: number[];
+	/** The plan line's plural — "3 pred speeds", "2 prey sizes". */
+	short: string;
+	format: (value: number) => string;
+	apply: (cfg: WorldConfig, value: number) => WorldConfig;
+}
+
+const senseKnob = (
+	key: 'dir' | 'dist' | 'closing' | 'walls' | 'speed',
+	label: string,
+	detail: string,
+	defaultState: KnobState,
+	needsNineInputs?: boolean
+): BoolKnob => ({
+	key,
+	label,
+	detail,
+	group: 'senses',
+	defaultState,
+	needsNineInputs,
+	apply: (cfg, on) => ({ ...cfg, senses: { ...cfg.senses, [key]: on } })
+});
+
+/**
+ * Every boolean knob the sweep offers, in panel order. Default pins mirror the generic ocean
+ * (walls/closing/darting on; stamina/committed/confusion off), so a fresh panel describes the
+ * world as it IS; the three default sweeps are the platform's first questions (direction,
+ * distance, hunger escalation).
+ */
+export const BOOL_KNOBS: BoolKnob[] = [
+	senseKnob('dir', 'Direction', 'which way the shark is', 'sweep'),
+	senseKnob('dist', 'Distance', 'how far it is', 'sweep'),
+	senseKnob('walls', 'Walls', 'nearness of the glass', 'on'),
+	senseKnob('closing', 'Closing speed', 'is it gaining', 'on'),
+	senseKnob('speed', 'Own speed', 'the fish’s own pace — needs the 9-input brain', 'off', true),
+	{
+		key: 'stamina',
+		label: 'Stamina',
+		detail: 'sprinting drains a tank; empty = half speed',
+		group: 'body',
+		defaultState: 'off',
+		apply: (cfg, on) => ({ ...cfg, stamina: on })
+	},
+	{
+		key: 'wallInstinct',
+		label: 'Wall avoidance',
+		detail: 'the built-in instinct to shy off the glass',
+		group: 'body',
+		defaultState: 'on',
+		apply: (cfg, on) => ({ ...cfg, wallInstinct: on })
+	},
+	{
+		key: 'persistence',
+		label: 'Hunger escalation',
+		detail: 'faster + wider jaw while starving',
+		group: 'predator',
+		defaultState: 'sweep',
+		apply: (cfg, on) => ({ ...cfg, persistence: on })
+	},
+	{
+		key: 'lunge',
+		label: 'Darting',
+		detail: 'the cruise → aim → lunge strike',
+		group: 'predator',
+		defaultState: 'on',
+		apply: (cfg, on) => ({ ...cfg, lunge: on })
+	},
+	{
+		key: 'lungeCommit',
+		label: 'Committed lunge',
+		detail: 'the strike locks at launch; a dodge beats it',
+		group: 'predator',
+		defaultState: 'off',
+		apply: (cfg, on) => ({ ...cfg, lungeCommit: on })
+	},
+	{
+		key: 'confusion',
+		label: 'Confusion effect',
+		detail: 'a crowded fish is hard to catch',
+		group: 'shoal',
+		defaultState: 'off',
+		apply: (cfg, on) => ({ ...cfg, confusion: on })
+	}
+];
+
+/**
+ * Every graded knob, in panel order. Values are the ENGINE's honest numbers (mutation lives in
+ * 0..0.2 with 0.06 the reference — not a 0..1 slider), and prey is a PERCENT of the subject's base
+ * count, so the same design scales with the world it runs on.
+ */
+export const GRADED_KNOBS: GradedKnob[] = [
+	{
+		key: 'predSpeed',
+		label: 'Predator speed ×',
+		short: 'pred speeds',
+		values: [0.6, 0.7, 0.8, 0.9, 1.0, 1.1],
+		defaultSelected: [0.6, 0.8, 1.0],
+		format: (v) => `${v.toFixed(1)}×`,
+		apply: (cfg, v) => ({ ...cfg, predSpeed: v })
+	},
+	{
+		key: 'preyPct',
+		label: 'Prey population % of base',
+		short: 'prey sizes',
+		values: [50, 75, 100, 150],
+		defaultSelected: [50, 100],
+		format: (v) => `${v}%`,
+		apply: (cfg, v) => ({ ...cfg, prey: scalePreyPct(cfg.prey, v) })
+	},
+	{
+		key: 'vision',
+		label: 'Vision px',
+		short: 'visions',
+		values: [120, 160, 200, 240],
+		defaultSelected: [200],
+		format: (v) => String(v),
+		apply: (cfg, v) => ({ ...cfg, vision: v })
+	},
+	{
+		key: 'maxSpeed',
+		label: 'Top speed px/s',
+		short: 'fish speeds',
+		values: [132, 154, 176, 198],
+		defaultSelected: [176],
+		format: (v) => String(v),
+		apply: (cfg, v) => ({ ...cfg, maxSpeed: v })
+	},
+	{
+		key: 'agility',
+		label: 'Agility ×',
+		short: 'agilities',
+		values: [0.8, 1.0, 1.2],
+		defaultSelected: [1.0],
+		format: (v) => `${v.toFixed(1)}×`,
+		apply: (cfg, v) => ({ ...cfg, agility: v })
+	},
+	{
+		key: 'mutation',
+		label: 'Mutation rate',
+		short: 'mutation rates',
+		values: [0.03, 0.06, 0.12],
+		defaultSelected: [0.06],
+		format: (v) => v.toFixed(2),
+		apply: (cfg, v) => ({ ...cfg, mutation: v })
+	}
+];
+
+/** The panel's resolved choices — what the store holds, what the plan is built from. */
+export interface KnobChoices {
+	/** knob key → its three-state position. */
+	bools: Record<string, KnobState>;
+	/** knob key → the selected chip values (1 = pinned, ≥2 = swept). */
+	graded: Record<string, number[]>;
+}
+
+/** The panel's starting choices, straight from the catalog's defaults. */
+export function defaultChoices(): KnobChoices {
 	return {
-		key,
-		label,
-		levels: [
-			{ label: 'off', apply: (cfg) => ({ ...cfg, senses: { ...cfg.senses, [key]: false } }) },
-			{ label: 'on', apply: (cfg) => ({ ...cfg, senses: { ...cfg.senses, [key]: true } }) }
-		]
+		bools: Object.fromEntries(BOOL_KNOBS.map((k) => [k.key, k.defaultState])),
+		graded: Object.fromEntries(GRADED_KNOBS.map((k) => [k.key, [...k.defaultSelected]]))
 	};
 }
 
 /**
- * The factors offered for the predator-prey scenario, most-interesting first. Predator speed is the
- * one that crosses the 0.88 cliff, where the shark starts outrunning every fish; the senses are the
- * observation channels the ablation matrix already varies, generalised here into the same grid.
+ * Pin every unswept knob onto the base — the world every cell starts from. Pinned booleans apply
+ * their off/on; a single-chip graded knob applies its one value; swept knobs are left for the
+ * factorial. Order (bools, then graded) matters only to preyPct, which scales the PINNED base.
  */
-export const CANDIDATE_FACTORS: Factor[] = [
-	senseFactor('dir', 'Direction'),
-	senseFactor('dist', 'Distance'),
-	senseFactor('walls', 'Walls'),
-	senseFactor('closing', 'Closing'),
-	{
-		key: 'predSpeed',
-		label: 'Predator speed',
-		levels: [
-			{ label: '0.6×', apply: (cfg) => ({ ...cfg, predSpeed: 0.6 }) },
-			{ label: '0.8×', apply: (cfg) => ({ ...cfg, predSpeed: 0.8 }) },
-			{ label: '1.0×', apply: (cfg) => ({ ...cfg, predSpeed: 1.0 }) }
-		]
-	},
-	{
-		key: 'persistence',
-		label: 'Persistence',
-		levels: [
-			{ label: 'off', apply: (cfg) => ({ ...cfg, persistence: false }) },
-			{ label: 'on', apply: (cfg) => ({ ...cfg, persistence: true }) }
-		]
-	},
-	{
-		key: 'prey',
-		label: 'Prey',
-		levels: [
-			{ label: '12', apply: (cfg) => ({ ...cfg, prey: 12 }) },
-			{ label: '20', apply: (cfg) => ({ ...cfg, prey: 20 }) }
-		]
+export function pinBase(base: WorldConfig, choices: KnobChoices): WorldConfig {
+	let cfg = base;
+	for (const knob of BOOL_KNOBS) {
+		const state = choices.bools[knob.key];
+		if (state === 'off' || state === 'on') cfg = knob.apply(cfg, state === 'on');
 	}
-];
+	for (const knob of GRADED_KNOBS) {
+		const selected = choices.graded[knob.key] ?? [];
+		if (selected.length === 1) cfg = knob.apply(cfg, selected[0]);
+	}
+	return cfg;
+}
+
+/**
+ * Compile the SWEPT knobs into the factorial's Factor shape — the proven expandSweep/planSweep/
+ * sweepEffects machinery runs the redesign unchanged. Graded levels sort ascending, so a main
+ * effect always reads bottom-level → top-level.
+ */
+export function sweptFactors(choices: KnobChoices): Factor[] {
+	const factors: Factor[] = [];
+	for (const knob of BOOL_KNOBS) {
+		if (choices.bools[knob.key] !== 'sweep') continue;
+		factors.push({
+			key: knob.key,
+			label: knob.label,
+			levels: [
+				{ label: 'off', apply: (cfg) => knob.apply(cfg, false) },
+				{ label: 'on', apply: (cfg) => knob.apply(cfg, true) }
+			]
+		});
+	}
+	for (const knob of GRADED_KNOBS) {
+		const selected = choices.graded[knob.key] ?? [];
+		if (selected.length < 2) continue;
+		factors.push({
+			key: knob.key,
+			label: knob.label,
+			levels: [...selected]
+				.sort((a, b) => a - b)
+				.map((v) => ({ label: knob.format(v), apply: (cfg: WorldConfig) => knob.apply(cfg, v) }))
+		});
+	}
+	return factors;
+}
 
 /** The full cross-product of the factors' levels, each a config built by applying every chosen level. */
 export function expandSweep(base: WorldConfig, factors: Factor[]): SweepCell[] {
