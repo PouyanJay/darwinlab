@@ -7,6 +7,7 @@ export * from './research.svelte';
 export * from './sweep.svelte';
 export * from './ledger.svelte';
 export * from './findings.svelte';
+export * from './presets.svelte';
 export * from './report.svelte';
 export * from './trace.svelte';
 export * from './landscape.svelte';

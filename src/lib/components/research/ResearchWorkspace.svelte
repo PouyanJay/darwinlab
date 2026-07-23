@@ -12,7 +12,7 @@
 	let { children }: { children: Snippet } = $props();
 </script>
 
-<div class="workspace" data-testid="research-workspace">
+<div class="workspace no-scrollbar" data-testid="research-workspace">
 	<div class="confine">
 		{@render children()}
 	</div>
@@ -22,7 +22,7 @@
 	.workspace {
 		min-width: 0;
 		min-height: 0;
-		overflow-y: auto;
+		overflow-y: auto; /* chrome-free via the shared .no-scrollbar utility */
 		background: var(--bgfx);
 	}
 

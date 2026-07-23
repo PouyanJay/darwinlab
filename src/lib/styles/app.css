@@ -107,6 +107,16 @@ textarea,
 	touch-action: manipulation;
 }
 
+/* A zone that scrolls in place with no scrollbar chrome — the Research console's zones share it;
+   the content is the affordance (the redesign mock is the contract). */
+.no-scrollbar {
+	scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+	display: none;
+}
+
 /* Visible to screen readers, invisible on screen. */
 .visually-hidden {
 	position: absolute;

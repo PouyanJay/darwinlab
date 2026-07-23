@@ -49,7 +49,7 @@
 	}
 </script>
 
-<nav class="rail" data-testid="research-rail" aria-label="research">
+<nav class="rail no-scrollbar" data-testid="research-rail" aria-label="research">
 	<div class="brand">
 		<span class="brand-name">Research</span>
 	</div>
@@ -129,7 +129,7 @@
 		display: flex;
 		flex-direction: column;
 		min-height: 0;
-		overflow-y: auto;
+		overflow-y: auto; /* chrome-free via the shared .no-scrollbar utility */
 		background: var(--panel);
 		border-right: 1px solid var(--line);
 	}

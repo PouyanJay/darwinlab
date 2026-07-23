@@ -1,44 +1,56 @@
 <!--
-  The world the whole console is pointed at, shown in the rail.
+  The world the whole console is pointed at, shown in the rail — and since the redesign, EDITED here.
 
-  Every instrument — the Sweep, the Ledger, the Atlas — builds its runs on ONE base world
-  (`app.subjectBase`), so the rail leads with it: a mini-tank of that world, its name, and the
-  conditions that make it the world it is. When a Studio world was carried in via "Analyse", the card
-  also names it as the analysis subject and offers the way back to a generic world — so the subject is
-  never a trap you can see but not leave.
+  The subject is the place and the wiring: population, tank, brain. Everything about how fish and
+  shark BEHAVE (senses, body, predator rules) lives in the instrument's design panel, where a knob is
+  pinned or swept — one home per knob, so the card can never contradict the panel. The card edits the
+  app store's base directly (`app.base` + the setBase* doors, which own the clamps); every instrument
+  builds its runs on the same base through `subjectBase`.
 
-  No survival number is shown: that is a MEASUREMENT (the Ledger and the Report produce it), and the
-  card will not invent one it has not run.
+  When a Studio world was carried in via "Analyse", the card names it as the analysis subject and
+  offers the way back to a generic world — the subject is never a trap you can see but not leave.
+  Presets are the durable form: save the current base under its name, apply one later.
+
+  No survival number is shown: that is a MEASUREMENT (the instruments produce it), and the card will
+  not invent one it has not run.
 -->
 <script lang="ts">
 	import Canvas from '../common/Canvas.svelte';
-	import { app, theme } from '$lib/state';
-	import type { Senses } from '$lib/engine';
+	import EditableLabel from '../common/EditableLabel.svelte';
+	import Segmented from '../common/Segmented.svelte';
+	import Icon from '../common/Icon.svelte';
+	import KnobGroup from './KnobGroup.svelte';
+	import ConditionInput from './ConditionInput.svelte';
+	import { app, theme, presets } from '$lib/state';
+	import { NHID } from '$lib/engine';
 	import { previewWorld } from '$lib/render';
 
 	// The analysis subject (null on a generic world), and the base every instrument actually runs on.
-	// Both are derived so the card follows an "Analyse" hand-off or a "use a generic world" without a
-	// manual repaint — the `{#key}` below reframes the tank when the base identity changes.
+	// Both are derived so the card follows an "Analyse" hand-off, an edit, or a preset apply without
+	// a manual repaint — the `{#key}` below reframes the tank when anything it paints changes.
 	const subject = $derived(app.subject);
-	const base = $derived(app.subjectBase('Subject'));
+	const base = $derived(app.base);
 
-	/** The senses that are switched on — the science-relevant knob, so they lead the config chips.
-	    Listed in slot order; the optional schooling senses only appear on worlds that carry them. */
-	const SENSE_CHIPS: { key: keyof Senses; label: string }[] = [
-		{ key: 'dist', label: 'distance' },
-		{ key: 'dir', label: 'direction' },
-		{ key: 'closing', label: 'closing' },
-		{ key: 'walls', label: 'walls' },
-		{ key: 'speed', label: 'speed' },
-		{ key: 'cohesion', label: 'cohesion' },
-		{ key: 'align', label: 'alignment' }
-	];
-	const senses = $derived(SENSE_CHIPS.filter((sense) => base.senses[sense.key]));
+	// The hidden layers as the text the input shows — "6", or "16, 8" for a deep brain. The store
+	// clamps on the way back in, and this derived echoes the clamped truth after every commit.
+	const layersText = $derived(
+		Array.isArray(base.brainHidden) ? base.brainHidden.join(', ') : String(base.brainHidden ?? NHID)
+	);
+
+	/** Parse "16, 8"-style text into layer sizes; the store owns the real clamp. */
+	function commitLayers(text: string): void {
+		app.setBaseBrainLayers(
+			text
+				.split(/[^0-9]+/)
+				.filter(Boolean)
+				.map(Number)
+		);
+	}
 
 	/**
 	 * A still of the base world: a fresh population stepped a couple of sim-seconds so the fish have
 	 * scattered and the shark is hunting — a preview of the place, not an evolved result. Painted once
-	 * per base (the block is keyed), so there is no loop to tear down.
+	 * per key (the block is keyed on everything it paints), so there is no loop to tear down.
 	 */
 	function paintMini(ctx: CanvasRenderingContext2D, w: number, h: number): void {
 		previewWorld(base, ctx, w, h, theme.name);
@@ -47,7 +59,7 @@
 
 <div class="subject">
 	<div class="tank">
-		{#key `${subject?.name ?? 'generic'}-${theme.name}`}
+		{#key `${base.prey}-${base.preds}-${base.bw}-${base.bh}-${subject?.name ?? 'generic'}-${theme.name}`}
 			<Canvas paint={paintMini} label="preview of the subject world" />
 		{/key}
 	</div>
@@ -55,16 +67,52 @@
 	<div class="body">
 		<div class="name">
 			<span class="dot" aria-hidden="true"></span>
-			{subject ? subject.name : 'Generic world'}
+			<EditableLabel
+				value={base.name}
+				label="subject name"
+				onchange={(name) => app.renameBase(name)}
+			/>
 		</div>
 
-		<div class="cfg">
-			<span class="pill tabular">{base.prey} prey</span>
-			<span class="pill tabular">vision {Math.round(base.vision)}px</span>
-			{#each senses as sense (sense.key)}
-				<span class="pill">{sense.label}</span>
-			{/each}
-		</div>
+		<KnobGroup title="Population" open>
+			<label class="frow"><span>prey</span><ConditionInput key="prey" /></label>
+			<label class="frow"><span>predators</span><ConditionInput key="preds" /></label>
+		</KnobGroup>
+
+		<KnobGroup title="Tank" open>
+			<div class="frow">
+				<span id="tank-size-label">size <i class="unit">px</i></span>
+				<span class="duo" role="group" aria-labelledby="tank-size-label">
+					<ConditionInput key="bw" label="tank width" />
+					<span class="x" aria-hidden="true">×</span>
+					<ConditionInput key="bh" label="tank height" />
+				</span>
+			</div>
+		</KnobGroup>
+
+		<KnobGroup title="Brain">
+			<div class="frow">
+				<span>inputs</span>
+				<Segmented
+					label="brain input slots"
+					options={[
+						{ value: 8, label: '8' },
+						{ value: 9, label: '9 +own speed' }
+					]}
+					value={base.brainInputs ?? 8}
+					onchange={(inputs) => app.setBaseBrainInputs(inputs as 8 | 9)}
+				/>
+			</div>
+			<label class="frow">
+				<span>hidden layers</span>
+				<input
+					type="text"
+					class="wide"
+					value={layersText}
+					onchange={(e) => commitLayers(e.currentTarget.value)}
+				/>
+			</label>
+		</KnobGroup>
 
 		{#if subject}
 			<!-- Only when a Studio world was carried in: name it as the subject and offer the way back.
@@ -73,9 +121,41 @@
 				<span class="analysing-text"
 					>Analysing <b>{subject.name}</b> — every instrument runs on it.</span
 				>
-				<button class="clear" onclick={() => app.clearSubject()}>Use a generic world</button>
+				<button class="linkbtn" onclick={() => app.clearSubject()}>Use a generic world</button>
 			</div>
 		{/if}
+
+		<div class="foot">
+			<p>
+				The subject is the <b>place and the wiring</b>. How fish and shark behave is experiment
+				design — it lives with each instrument, pinned or swept.
+			</p>
+			<div class="links">
+				{#if !subject}
+					<button class="linkbtn" onclick={() => app.resetBase()}>Reset to generic</button>
+				{/if}
+				<button class="linkbtn" onclick={() => presets.saveCurrent()}>Save as preset</button>
+			</div>
+
+			{#if presets.entries.length}
+				<div class="presets" data-testid="base-presets">
+					{#each presets.entries as preset (preset.name)}
+						<span class="preset">
+							<button class="papply" onclick={() => presets.apply(preset.name)}>
+								{preset.name}
+							</button>
+							<button
+								class="premove"
+								aria-label="remove preset {preset.name}"
+								onclick={() => presets.remove(preset.name)}
+							>
+								<Icon name="close" size={11} />
+							</button>
+						</span>
+					{/each}
+				</div>
+			{/if}
+		</div>
 	</div>
 </div>
 
@@ -98,7 +178,6 @@
 	.body {
 		display: flex;
 		flex-direction: column;
-		gap: var(--sp-3);
 		padding: var(--sp-3) var(--sp-4) var(--sp-4);
 	}
 
@@ -109,6 +188,7 @@
 		font-weight: var(--fw-semibold);
 		font-size: var(--fs-md);
 		color: var(--ink);
+		padding-bottom: var(--sp-3);
 	}
 
 	.dot {
@@ -119,27 +199,57 @@
 		background: var(--ink3);
 	}
 
-	.cfg {
+	.frow {
 		display: flex;
-		flex-wrap: wrap;
-		gap: var(--sp-2);
-	}
-
-	.pill {
-		font-size: var(--fs-eyebrow);
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--sp-3);
+		font-size: var(--fs-sm);
 		color: var(--ink2);
-		border: 1px solid var(--line);
-		border-radius: var(--radius-chip);
-		padding: 2px 7px;
-		background: var(--panel);
 	}
 
+	.unit {
+		font-style: normal;
+		font-size: var(--fs-eyebrow);
+		color: var(--ink3);
+	}
+
+	/* the one input the card still renders itself — the hidden-layers text field */
+	.frow input.wide {
+		width: 76px;
+		padding: 5px 8px;
+		border: 1px solid var(--line);
+		border-radius: var(--radius-sm);
+		background: var(--panel);
+		color: var(--ink);
+		font-size: var(--fs-md);
+		font-weight: var(--fw-semibold);
+		font-variant-numeric: tabular-nums;
+		text-align: center;
+	}
+
+	.frow input.wide:focus {
+		outline: none;
+		border-color: var(--accent);
+	}
+
+	.duo {
+		display: flex;
+		align-items: center;
+		gap: var(--sp-1);
+	}
+
+	.duo .x {
+		color: var(--ink3);
+		font-size: var(--fs-xs);
+	}
+
+	/* ---- the analysing banner (contract: crosslink.e2e) ---- */
 	.analysing {
 		display: flex;
 		flex-direction: column;
 		gap: var(--sp-2);
-		margin-top: 2px;
-		padding-top: var(--sp-3);
+		padding: var(--sp-3) 0;
 		border-top: 1px solid var(--line);
 	}
 
@@ -154,25 +264,96 @@
 		font-weight: var(--fw-semibold);
 	}
 
-	.clear {
-		align-self: flex-start;
-		border: 1px solid var(--line);
-		border-radius: var(--radius-pill);
-		background: none;
-		padding: 4px var(--sp-3);
-		color: var(--ink2);
-		font-size: var(--fs-sm);
-		font-weight: var(--fw-semibold);
-		cursor: pointer;
-		transition: border-color var(--dur-fast) var(--ease);
+	/* ---- foot: the card's one paragraph of intent + the base's doors ---- */
+	.foot {
+		display: flex;
+		flex-direction: column;
+		gap: var(--sp-3);
+		padding-top: var(--sp-3);
+		border-top: 1px solid var(--line);
 	}
 
-	.clear:hover {
-		border-color: var(--accent);
+	.foot p {
+		margin: 0;
+		font-size: var(--fs-xs);
+		line-height: var(--leading-body);
+		color: var(--ink3);
+	}
+
+	.foot p b {
+		color: var(--ink2);
+	}
+
+	.links {
+		display: flex;
+		gap: var(--sp-4);
+	}
+
+	.linkbtn {
+		align-self: flex-start;
+		background: none;
+		border: none;
+		padding: 0;
+		color: var(--ink2);
+		font-size: var(--fs-xs);
+		font-weight: var(--fw-semibold);
+		cursor: pointer;
+		text-decoration: underline;
+		text-underline-offset: 2px;
+	}
+
+	.linkbtn:hover {
 		color: var(--ink);
 	}
 
-	.clear:focus-visible {
+	.linkbtn:focus-visible {
+		outline: var(--focus-ring);
+		outline-offset: var(--focus-offset);
+	}
+
+	/* ---- saved presets, chips with a remove that appears on hover (the findings-list pattern) ---- */
+	.presets {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--sp-2);
+	}
+
+	.preset {
+		display: inline-flex;
+		align-items: center;
+		border: 1px solid var(--line);
+		border-radius: var(--radius-chip);
+		background: var(--panel);
+	}
+
+	.papply {
+		border: none;
+		background: none;
+		padding: 2px 4px 2px 8px;
+		font-size: var(--fs-xs);
+		color: var(--ink2);
+		cursor: pointer;
+	}
+
+	.papply:hover {
+		color: var(--ink);
+	}
+
+	.premove {
+		display: inline-flex;
+		border: none;
+		background: none;
+		padding: 2px 5px 2px 1px;
+		color: var(--ink3);
+		cursor: pointer;
+	}
+
+	.premove:hover {
+		color: var(--danger-ink);
+	}
+
+	.papply:focus-visible,
+	.premove:focus-visible {
 		outline: var(--focus-ring);
 		outline-offset: var(--focus-offset);
 	}

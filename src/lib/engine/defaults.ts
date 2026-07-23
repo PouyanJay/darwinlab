@@ -294,8 +294,27 @@ export const WORLD_LIMITS = {
 /** The numeric conditions a user may edit — the keys of WORLD_LIMITS. */
 export type NumericCondition = keyof typeof WORLD_LIMITS;
 
+/** Clamp a condition into its range — the one clamp every store's edit door uses. */
+export function clampToRange(value: number, { min, max }: { min: number; max: number }): number {
+	return Math.min(max, Math.max(min, value));
+}
+
 /** Most hidden layers a brain may have in the UI — deeper is rarely better and only slows evolution. */
 export const BRAIN_MAX_LAYERS = 4;
+
+/**
+ * Sanitize a hidden-layer list into something a brain can be built from: finite integers only, each
+ * clamped to WORLD_LIMITS.brainHidden, at most BRAIN_MAX_LAYERS deep, never zero layers. Shared by
+ * every editor of brain shape (bench.setBrainLayers, app.setBaseBrainLayers) so the validation
+ * cannot drift between Studio and Research.
+ */
+export function sanitizeBrainLayers(layers: number[]): number[] {
+	const clean = layers
+		.filter((n) => Number.isFinite(n))
+		.slice(0, BRAIN_MAX_LAYERS)
+		.map((n) => clampToRange(Math.round(n), WORLD_LIMITS.brainHidden));
+	return clean.length ? clean : [WORLD_LIMITS.brainHidden.min];
+}
 
 /** What the persistence params fall back to when the ramp is switched on (the reference's own). */
 export const PERSISTENCE_DEFAULTS = {
