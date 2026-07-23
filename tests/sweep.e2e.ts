@@ -35,6 +35,12 @@ test('a sweep runs and reports an effect with its run grid', async ({ page }) =>
 	// may or may not clear zero. Assert the tile speaks, not which verdict it reached.
 	await expect(tiles).toContainText(/strongest effect · (direction|none cleared zero)/);
 
+	// The science cards land beside the conclusion: the interactions card says honestly that one
+	// factor has no pairs to test, and the convergence card draws the curves the run captured.
+	await expect(page.getByTestId('sweep-interactions')).toContainText('two or more factors');
+	await expect(page.getByTestId('sweep-convergence')).toBeVisible();
+	await expect(page.getByTestId('sweep-convergence')).toContainText('learning curves');
+
 	// The conclusion lands: exactly one effect row (Direction — the only factor left in the grid), with
 	// a seconds value. One row, asserted — a second unwanted row would fail loudly, not slip past.
 	const effects = page.locator('[data-testid="sweep"] .effects');

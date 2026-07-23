@@ -23,6 +23,7 @@ export function restoreSweepDefaults(): void {
 	sweep.setGenDuration(10);
 	sweep.setCapOn(false);
 	sweep.setCapN(32);
+	sweep.setChampion(false);
 }
 
 /** Collapse every knob to a single pinned value — the zero-factor, one-cell design. */

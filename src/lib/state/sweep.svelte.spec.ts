@@ -5,7 +5,7 @@ import { app } from './app.svelte';
 import { bench } from './bench.svelte';
 import { newWorldConfig } from '../engine';
 import type { JobExecutor } from '../lab/runner';
-import type { Evaluation } from '../lab/evaluator';
+import type { EvalRequest, Evaluation } from '../lab/evaluator';
 import type { SweepCell } from '../lab/sweep';
 
 /**
@@ -18,6 +18,17 @@ import type { SweepCell } from '../lab/sweep';
 class NullExecutor implements JobExecutor {
 	readonly concurrency = 1;
 	async submit(): Promise<Evaluation | null> {
+		return null;
+	}
+	dispose(): void {}
+}
+
+/** An executor that RECORDS every request — how a spec proves what the store actually asked for. */
+class RecordingExecutor implements JobExecutor {
+	readonly concurrency = 1;
+	requests: EvalRequest[] = [];
+	async submit(req: EvalRequest): Promise<Evaluation | null> {
+		this.requests.push(req);
 		return null;
 	}
 	dispose(): void {}
@@ -153,6 +164,24 @@ describe('sweep design (pin-or-sweep + budget)', () => {
 		sweep.setGenDuration(20);
 		await sweep.run(new NullExecutor());
 		expect(sweep.cells.every((cell) => cell.cfg.genDuration === 20)).toBe(true);
+	});
+
+	it('the champion toggle reaches every job, doubles the estimate, and lands in the receipt', async () => {
+		const before = sweep.plannedSimSeconds; // the price we claim doubles the bouts of
+		sweep.setChampion(true);
+		expect(sweep.plannedSimSeconds).toBeGreaterThan(before); // the toggle costs, honestly
+
+		const recorder = new RecordingExecutor();
+		await sweep.run(recorder);
+		expect(recorder.requests.length).toBeGreaterThan(0); // jobs were really submitted
+		expect(recorder.requests.every((req) => req.champion === true)).toBe(true);
+		expect(recorder.requests.every((req) => req.curve === true)).toBe(true); // curves always ride
+		expect(sweep.receipt?.champion).toBe(true);
+
+		sweep.setChampion(false);
+		const plain = new RecordingExecutor();
+		await sweep.run(plain);
+		expect(plain.requests.every((req) => req.champion === false)).toBe(true);
 	});
 
 	it('the receipt freezes the budget at run time — later panel edits cannot relabel the run', async () => {

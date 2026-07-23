@@ -10,11 +10,13 @@
 -->
 <script lang="ts">
 	import EffectBars from '../viz/EffectBars.svelte';
+	import InteractionPlot from '../viz/InteractionPlot.svelte';
+	import CurvePair from '../viz/CurvePair.svelte';
 	import RunHeatmap from './RunHeatmap.svelte';
 	import RunCellCard from './RunCellCard.svelte';
 	import { sweep } from '$lib/state';
-	import { toEffectRows } from '$lib/lab/sweep';
-	import { rankEffectRows, strongestEffect } from '$lib/lab/evidence';
+	import { toEffectRows, interactionPlotData, isUnderTrained, levelCurves } from '$lib/lab/sweep';
+	import { rankEffectRows, strongestEffect, isFlatEffect } from '$lib/lab/evidence';
 	import { formatSignedSeconds, formatWallClock } from '$lib/format';
 
 	// RANKED by effect size, so the answer reads top-down (the mock's rule). NaN deltas (an arm with
@@ -31,6 +33,50 @@
 	 *  test as the muted bars and the sidebar's lead, so the tile can never paint a confident colour
 	 *  over a bar the card beneath it mutes. Null = a flat environment, itself a real result. */
 	const strongest = $derived(strongestEffect(effectRows));
+
+	// The interactions as EffectRow shapes, so the SAME ranking and flatness rules the main effects
+	// obey (rankEffectRows / isFlatEffect) apply to the pairs — one honesty rule everywhere.
+	const interactionRows = $derived(
+		rankEffectRows(
+			sweep.interactions.map((pair) => ({
+				label: pair.label,
+				delta: pair.effect.delta,
+				lo: pair.effect.ci.lo,
+				hi: pair.effect.ci.hi
+			}))
+		)
+	);
+
+	/** The pair the plot draws: the strongest REAL interaction, else the largest overall. */
+	const topPair = $derived.by(() => {
+		if (sweep.interactions.length === 0) return null;
+		const lead = strongestEffect(interactionRows) ?? interactionRows[0];
+		return sweep.interactions.find((pair) => pair.label === lead.label) ?? null;
+	});
+
+	const plot = $derived.by(() => {
+		if (!topPair || !sweep.results) return null;
+		const a = sweep.lastFactors.find((f) => f.key === topPair.keyA);
+		const b = sweep.lastFactors.find((f) => f.key === topPair.keyB);
+		if (!a || !b) return null;
+		return { ...interactionPlotData(a, b, sweep.cells, sweep.results), bLabel: b.label };
+	});
+
+	/** The convergence card's factor: the strongest effect's, else the first swept factor. */
+	const convergence = $derived.by(() => {
+		if (!sweep.results || sweep.lastFactors.length === 0) return null;
+		const lead = strongest ?? effectRows[0];
+		const factor = sweep.lastFactors.find((f) => f.label === lead?.label) ?? sweep.lastFactors[0];
+		const arms = levelCurves(factor, sweep.cells, sweep.results);
+		if (arms.from.length === 0 && arms.to.length === 0) return null;
+		return {
+			factor,
+			arms,
+			fromLabel: `${factor.label} ${factor.levels[0].label}`,
+			toLabel: `${factor.label} ${factor.levels[factor.levels.length - 1].label}`,
+			underTrained: isUnderTrained(arms.from) || isUnderTrained(arms.to)
+		};
+	});
 
 	// The drilled cell, resolved against the current grid — a full-width detail card renders below
 	// the results. Selection is store-owned, so a new run clears it.
@@ -74,18 +120,53 @@
 			</div>
 		</div>
 
-		<section class="card conclusion">
-			<header class="card-head">
-				<span class="eyebrow">Main effect on survival</span>
-				<span class="meta">ranked · 95% interval</span>
-			</header>
-			<EffectBars effects={effectRows} />
-			<p class="read">
-				Ranked by size, so the answer reads top-down. A bar clears zero when a factor reliably moves
-				survival — <b>teal</b> if it helps, <b>coral</b> if it costs. A muted bar is a knob that does
-				nothing in this environment, and the sweep won't round it into a finding.
-			</p>
-		</section>
+		<!-- The two CONCLUSIONS side by side: what moves survival, and which knobs depend on each
+		     other. They stack when the workspace can no longer hold two comfortable columns. -->
+		<div class="conclusions">
+			<section class="card conclusion">
+				<header class="card-head">
+					<span class="eyebrow">Main effect on survival</span>
+					<span class="meta">ranked · 95% interval</span>
+				</header>
+				<EffectBars effects={effectRows} />
+				<p class="read">
+					Ranked by size, so the answer reads top-down. A bar clears zero when a factor reliably
+					moves survival — <b>teal</b> if it helps, <b>coral</b> if it costs. A muted bar is a knob that
+					does nothing in this environment, and the sweep won't round it into a finding.
+				</p>
+			</section>
+
+			<section class="card" data-testid="sweep-interactions">
+				<header class="card-head">
+					<span class="eyebrow">Interactions</span>
+					<span class="meta">all pairs tested</span>
+				</header>
+				{#if interactionRows.length === 0}
+					<p class="read">Sweep two or more factors and every pair is tested for interaction.</p>
+				{:else}
+					<div class="pairs">
+						{#each interactionRows as row (row.label)}
+							<div class="pair" class:flat={isFlatEffect(row)}>
+								<span class="pdot" aria-hidden="true"></span>
+								<span class="pname">{row.label}</span>
+								<span class="pval tabular">
+									{Number.isNaN(row.delta)
+										? '—'
+										: `${formatSignedSeconds(row.delta)}${isFlatEffect(row) ? ' · flat' : ' · matters'}`}
+								</span>
+							</div>
+						{/each}
+					</div>
+					{#if plot}
+						<InteractionPlot {...plot} />
+						<p class="read">
+							Parallel lines = the factors are independent; <b>diverging lines</b> mean one factor's value
+							depends on the other — the flagged pairs are where the interval clears zero.
+						</p>
+					{/if}
+				{/if}
+			</section>
+		</div>
 
 		<!-- The interactive evidence: full width, so every cell is a real click target. -->
 		<section class="card evidence">
@@ -103,6 +184,32 @@
 			</header>
 			<RunHeatmap cells={sweep.cells} results={sweep.results} />
 		</section>
+
+		{#if convergence}
+			<section class="card" data-testid="sweep-convergence">
+				<header class="card-head">
+					<span class="eyebrow">Did training suffice?</span>
+					<span class="meta">learning curves · {convergence.factor.label.toLowerCase()} arms</span>
+				</header>
+				<CurvePair
+					from={convergence.arms.from}
+					to={convergence.arms.to}
+					fromLabel={convergence.fromLabel}
+					toLabel={convergence.toLabel}
+				/>
+				{#if convergence.underTrained}
+					<p class="read warn" data-testid="sweep-under-trained">
+						⚠ <b>Under-trained:</b> an arm is still climbing at the last generation — the effects above
+						may grow with a longer budget. Raise generations per run before trusting a null.
+					</p>
+				{:else}
+					<p class="read">
+						Both arms plateau before the budget ends — the training was long enough for the effects
+						above to be trusted at this budget.
+					</p>
+				{/if}
+			</section>
+		{/if}
 
 		{#if drilled}
 			<RunCellCard
@@ -133,6 +240,69 @@
 		flex-direction: column;
 		gap: var(--sp-5);
 		container-type: inline-size;
+	}
+
+	/* Two conclusions side by side on a wide stage; stacked when the container narrows. */
+	.conclusions {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+		gap: var(--sp-5);
+		align-items: stretch;
+	}
+
+	@container (max-width: 720px) {
+		.conclusions {
+			grid-template-columns: 1fr;
+		}
+	}
+
+	.pairs {
+		display: flex;
+		flex-direction: column;
+		gap: var(--sp-2);
+	}
+
+	.pair {
+		display: flex;
+		align-items: baseline;
+		gap: var(--sp-3);
+		font-size: var(--fs-sm);
+		color: var(--ink2);
+	}
+
+	.pdot {
+		flex: none;
+		width: 7px;
+		height: 7px;
+		border-radius: 50%;
+		background: var(--data-teal);
+		align-self: center;
+	}
+
+	.pair.flat .pdot {
+		background: none;
+		box-shadow: inset 0 0 0 1.5px var(--ink3);
+	}
+
+	.pair.flat {
+		color: var(--ink3);
+	}
+
+	.pname {
+		flex: 1;
+		min-width: 0;
+	}
+
+	.pval {
+		white-space: nowrap;
+	}
+
+	.read.warn {
+		color: var(--gold-ink);
+	}
+
+	.read.warn b {
+		color: var(--gold-ink);
 	}
 
 	/* ---- the honesty tiles: the experiment's receipts in one row ---- */
