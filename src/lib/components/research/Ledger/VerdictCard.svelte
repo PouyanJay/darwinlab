@@ -7,11 +7,10 @@
 <script lang="ts">
 	import IntervalPlot from '../viz/IntervalPlot.svelte';
 	import { ledger, toArmRows } from '$lib/state';
-	import { formatSignedSeconds } from '$lib/format';
+	import { formatSigned, formatSignedSeconds } from '$lib/format';
 
 	const claim = $derived(ledger.active);
 	const entry = $derived(ledger.latestFor(claim.id));
-	const fmt = (v: number) => (v > 0 ? '+' : '') + v.toFixed(1);
 
 	const armRows = $derived(toArmRows(entry?.arms ?? []));
 </script>
@@ -38,7 +37,8 @@
 		<div class="vstats">
 			<span
 				>Δ <b class="tabular">{formatSignedSeconds(entry.delta)}</b>
-				<span class="ci tabular">[{fmt(entry.ci.lo)}, {fmt(entry.ci.hi)}]</span></span
+				<span class="ci tabular">[{formatSigned(entry.ci.lo)}, {formatSigned(entry.ci.hi)}]</span
+				></span
 			>
 			{#if !Number.isNaN(entry.d)}<span
 					>effect size d <b class="tabular">{entry.d.toFixed(1)}</b></span

@@ -13,14 +13,13 @@
 	import IntervalPlot from '../viz/IntervalPlot.svelte';
 	import { ledger, findings, toArmRows } from '$lib/state';
 	import { rationaleFor } from '$lib/lab/hypothesis';
-	import { formatSignedSeconds } from '$lib/format';
+	import { formatSigned, formatSignedSeconds } from '$lib/format';
 
 	const entry = $derived(ledger.selected);
-	const fmt = (v: number) => (v > 0 ? '+' : '') + v.toFixed(1);
 
 	/** Pre-composer records carry no template pick — their claims may no longer be composable, so
 	 *  the composer doors close rather than guess. */
-	const composable = $derived(entry?.templateId != null && entry?.slots != null);
+	const isComposable = $derived(entry?.templateId != null && entry?.slots != null);
 
 	const rationale = $derived(
 		entry?.expect ? rationaleFor(entry.expect, entry.verdict, entry.ci) : null
@@ -95,7 +94,7 @@
 		</div>
 		<div class="row">
 			<span>95% interval</span>
-			<b class="tabular">[{fmt(entry.ci.lo)}, {fmt(entry.ci.hi)}]</b>
+			<b class="tabular">[{formatSigned(entry.ci.lo)}, {formatSigned(entry.ci.hi)}]</b>
 		</div>
 		{#if !Number.isNaN(entry.d)}
 			<div class="row">
@@ -113,7 +112,7 @@
 
 		<!-- the doors -->
 		<div class="doors">
-			{#if composable}
+			{#if isComposable}
 				<Button
 					variant="primary"
 					class="wide"

@@ -40,7 +40,7 @@ import { configHash } from '../lab/run';
 import { contrast, mean, bootstrapCI, type Interval } from '../lab/stats';
 import type { ArmRow } from '../lab/evidence';
 import type { JobExecutor } from '../lab/runner';
-import type { Evaluation } from '../lab/evaluator';
+import type { EvalRequest, Evaluation } from '../lab/evaluator';
 import { loadSimRate } from './sweep.svelte';
 
 export const LEDGER_STORAGE_KEY = 'darwinlab:ledger';
@@ -115,6 +115,16 @@ function isLedgerEntry(value: unknown): value is LedgerEntry {
 		(e.shared === undefined || Array.isArray(e.shared)) &&
 		(e.slots === undefined || (typeof e.slots === 'object' && e.slots !== null))
 	);
+}
+
+/** Everything one run designed with — handed from `run` to `#toEntry` so the record can carry the
+ *  claim, the composer pick, the frozen base, and the fingerprint of the two arm configs. */
+interface RunDesign {
+	claim: Claim;
+	template: ClaimTemplate;
+	values: SlotValues;
+	base: WorldConfig;
+	design: { a: EvalRequest; b: EvalRequest };
 }
 
 /** Read the persisted ledger, tolerating anything that is not a ledger this version wrote. Exported
@@ -247,20 +257,16 @@ class LedgerStore {
 		const results = await research.run([design.a, design.b], executor);
 		if (!results) return;
 
-		const entry = this.#toEntry(claim, template, values, base, design, results);
+		const entry = this.#toEntry({ claim, template, values, base, design }, results);
 		this.#entries = [entry, ...this.#entries].slice(0, MAX_ENTRIES);
 		this.#selectedId = entry.id; // the drill opens on what was just settled
 		this.#persist();
 	}
 
 	/** Assemble the record: the verdict, each arm's interval, the shared background, and the
-	 *  fingerprint + composer pick that rerun it. */
+	 *  fingerprint + composer pick that rerun it. `run` hands over everything it designed with. */
 	#toEntry(
-		claim: Claim,
-		template: ClaimTemplate,
-		values: SlotValues,
-		base: WorldConfig,
-		design: { a: { cfg: WorldConfig }; b: { cfg: WorldConfig } },
+		{ claim, template, values, base, design }: RunDesign,
 		[armA, armB]: (Evaluation | null)[]
 	): LedgerEntry {
 		const c = contrast(armA?.returns ?? [], armB?.returns ?? []);
@@ -291,6 +297,16 @@ class LedgerStore {
 		};
 	}
 
+	#persist(): void {
+		if (!browser) return;
+		try {
+			const payload = JSON.stringify({ version: STORAGE_VERSION, entries: this.#entries });
+			localStorage.setItem(LEDGER_STORAGE_KEY, payload);
+		} catch {
+			// Storage full or unavailable — the in-memory ledger still works for this session.
+		}
+	}
+
 	cancel(): void {
 		research.cancel();
 	}
@@ -305,16 +321,6 @@ class LedgerStore {
 		this.#entries = [];
 		this.#selectedId = null;
 		if (browser) localStorage.removeItem(LEDGER_STORAGE_KEY);
-	}
-
-	#persist(): void {
-		if (!browser) return;
-		try {
-			const payload = JSON.stringify({ version: STORAGE_VERSION, entries: this.#entries });
-			localStorage.setItem(LEDGER_STORAGE_KEY, payload);
-		} catch {
-			// Storage full or unavailable — the in-memory ledger still works for this session.
-		}
 	}
 }
 

@@ -85,9 +85,9 @@ export function senseDisabledReason(id: string, base: WorldConfig): string | nul
 	return id === 'speed' && !hasNineWires(base) ? 'needs the 9-input brain' : null;
 }
 
-const label = (pool: SlotPool, id: string) =>
+const optionLabel = (pool: SlotPool, id: string) =>
 	optionsFor(pool).find((o) => o.id === id)?.label ?? id;
-const lc = (text: string) => text.toLowerCase();
+const lower = (text: string) => text.toLowerCase();
 
 /* ==================================== the config patches ====================================== */
 
@@ -163,7 +163,7 @@ export type SlotValues = Record<string, string>;
 /** One run of the composed sentence — slot-derived words are marked so the panel can show them. */
 export interface SentencePart {
 	text: string;
-	slot: boolean;
+	isSlot: boolean;
 }
 
 export type TemplateId =
@@ -181,8 +181,8 @@ export interface ClaimTemplate {
 	arms: (v: SlotValues) => [ClaimArm, ClaimArm];
 }
 
-const word = (text: string): SentencePart => ({ text, slot: false });
-const slotWord = (text: string): SentencePart => ({ text, slot: true });
+const word = (text: string): SentencePart => ({ text, isSlot: false });
+const slotWord = (text: string): SentencePart => ({ text, isSlot: true });
 
 /**
  * The seven families. Ids are chosen so the three claims the Ledger shipped with keep their exact
@@ -200,15 +200,15 @@ export const TEMPLATES: ClaimTemplate[] = [
 		],
 		expect: 'A>B',
 		parts: (v) => [
-			slotWord(label('sense', v.x)),
+			slotWord(optionLabel('sense', v.x)),
 			word(' pays more than '),
-			slotWord(lc(label('sense', v.y))),
+			slotWord(lower(optionLabel('sense', v.y))),
 			word('.')
 		],
 		claimId: (v) => `${v.x}-beats-${v.y}`,
 		arms: (v) => [
-			{ label: `only ${lc(label('sense', v.x))}`, apply: withOnly(v.x as SenseKey) },
-			{ label: `only ${lc(label('sense', v.y))}`, apply: withOnly(v.y as SenseKey) }
+			{ label: `only ${lower(optionLabel('sense', v.x))}`, apply: withOnly(v.x as SenseKey) },
+			{ label: `only ${lower(optionLabel('sense', v.y))}`, apply: withOnly(v.y as SenseKey) }
 		]
 	},
 	{
@@ -219,12 +219,12 @@ export const TEMPLATES: ClaimTemplate[] = [
 		expect: 'A>B',
 		parts: (v) => [
 			word('The '),
-			slotWord(lc(label('sense', v.x))),
+			slotWord(lower(optionLabel('sense', v.x))),
 			word(' sense pays on its own.')
 		],
 		claimId: (v) => `${v.x}-pays-alone`,
 		arms: (v) => [
-			{ label: `only ${lc(label('sense', v.x))}`, apply: withOnly(v.x as SenseKey) },
+			{ label: `only ${lower(optionLabel('sense', v.x))}`, apply: withOnly(v.x as SenseKey) },
 			{ label: 'blind', apply: withBlind }
 		]
 	},
@@ -239,18 +239,18 @@ export const TEMPLATES: ClaimTemplate[] = [
 		expect: 'A>B',
 		parts: (v) => [
 			word('Adding '),
-			slotWord(lc(label('sense', v.y))),
+			slotWord(lower(optionLabel('sense', v.y))),
 			word(' to '),
-			slotWord(lc(label('sense', v.x))),
+			slotWord(lower(optionLabel('sense', v.x))),
 			word(' pays.')
 		],
 		claimId: (v) => `${v.y}-stacks-on-${v.x}`,
 		arms: (v) => [
 			{
-				label: `${lc(label('sense', v.x))} + ${lc(label('sense', v.y))}`,
+				label: `${lower(optionLabel('sense', v.x))} + ${lower(optionLabel('sense', v.y))}`,
 				apply: withOnly(v.x as SenseKey, v.y as SenseKey)
 			},
-			{ label: `only ${lc(label('sense', v.x))}`, apply: withOnly(v.x as SenseKey) }
+			{ label: `only ${lower(optionLabel('sense', v.x))}`, apply: withOnly(v.x as SenseKey) }
 		]
 	},
 	{
@@ -261,13 +261,13 @@ export const TEMPLATES: ClaimTemplate[] = [
 		expect: 'A≈B',
 		parts: (v) => [
 			word('The full suite survives losing '),
-			slotWord(lc(label('sense', v.x))),
+			slotWord(lower(optionLabel('sense', v.x))),
 			word('.')
 		],
 		claimId: (v) => `suite-survives-losing-${v.x}`,
 		arms: (v) => [
 			{
-				label: `all senses − ${lc(label('sense', v.x))}`,
+				label: `all senses − ${lower(optionLabel('sense', v.x))}`,
 				apply: withAllMinus(v.x as SenseKey)
 			},
 			{ label: 'all senses', apply: withAll }
@@ -283,18 +283,18 @@ export const TEMPLATES: ClaimTemplate[] = [
 		],
 		expect: 'A>B',
 		parts: (v) => [
-			slotWord(label('sense', v.x)),
+			slotWord(optionLabel('sense', v.x)),
 			word(' still pays at '),
-			slotWord(label('speed', v.s)),
+			slotWord(optionLabel('speed', v.s)),
 			word(' cruise.')
 		],
 		claimId: (v) => `${v.x}-pays-at-${v.s}`,
 		arms: (v) => [
 			{
-				label: `only ${lc(label('sense', v.x))} · ${label('speed', v.s)}`,
+				label: `only ${lower(optionLabel('sense', v.x))} · ${optionLabel('speed', v.s)}`,
 				apply: atSpeed(Number(v.s), withOnly(v.x as SenseKey))
 			},
-			{ label: `blind · ${label('speed', v.s)}`, apply: atSpeed(Number(v.s), withBlind) }
+			{ label: `blind · ${optionLabel('speed', v.s)}`, apply: atSpeed(Number(v.s), withBlind) }
 		]
 	},
 	{
@@ -303,12 +303,16 @@ export const TEMPLATES: ClaimTemplate[] = [
 		sub: '“above S×, no sense pays” — where seeing stops helping',
 		slots: [{ key: 's', label: 'predator speed', pool: 'speed', def: '1.0' }],
 		expect: 'A≈B',
-		parts: (v) => [word('Above '), slotWord(label('speed', v.s)), word(' cruise, no sense pays.')],
+		parts: (v) => [
+			word('Above '),
+			slotWord(optionLabel('speed', v.s)),
+			word(' cruise, no sense pays.')
+		],
 		// Number() folds '1.0' → 1, which is exactly the historical `cliff-1` id.
 		claimId: (v) => `cliff-${Number(v.s)}`,
 		arms: (v) => [
-			{ label: `all senses · ${label('speed', v.s)}`, apply: atSpeed(Number(v.s), withAll) },
-			{ label: `blind · ${label('speed', v.s)}`, apply: atSpeed(Number(v.s), withBlind) }
+			{ label: `all senses · ${optionLabel('speed', v.s)}`, apply: atSpeed(Number(v.s), withAll) },
+			{ label: `blind · ${optionLabel('speed', v.s)}`, apply: atSpeed(Number(v.s), withBlind) }
 		]
 	},
 	{
@@ -317,11 +321,11 @@ export const TEMPLATES: ClaimTemplate[] = [
 		sub: '“C makes survival harder” — one rule of the world, on vs off',
 		slots: [{ key: 'c', label: 'condition', pool: 'condition', def: 'persistence' }],
 		expect: 'A>B',
-		parts: (v) => [slotWord(label('condition', v.c)), word(' makes survival harder.')],
+		parts: (v) => [slotWord(optionLabel('condition', v.c)), word(' makes survival harder.')],
 		claimId: (v) => `${v.c}-hurts`,
 		arms: (v) => [
-			{ label: `${lc(label('condition', v.c))} off`, apply: withCondition(v.c, false) },
-			{ label: `${lc(label('condition', v.c))} on`, apply: withCondition(v.c, true) }
+			{ label: `${lower(optionLabel('condition', v.c))} off`, apply: withCondition(v.c, false) },
+			{ label: `${lower(optionLabel('condition', v.c))} on`, apply: withCondition(v.c, true) }
 		]
 	}
 ];
@@ -409,7 +413,10 @@ export function rationaleFor(
 		return 'A > B claim: the interval straddles zero — no reliable difference. Refuted.';
 	}
 	if (verdict === 'supported')
-		return 'A ≈ B claim: the interval straddles zero — no difference could be shown, which is what the claim asserts. Supported.';
+		return (
+			'A ≈ B claim: the interval straddles zero — no difference could be shown, ' +
+			'which is what the claim asserts. Supported.'
+		);
 	return 'A ≈ B claim: the interval clears zero — there IS a reliable difference. Refuted.';
 }
 
