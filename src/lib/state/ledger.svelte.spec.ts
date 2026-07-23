@@ -161,10 +161,14 @@ describe('the Ledger', () => {
 	});
 
 	it('caps the record, evicting the oldest', async () => {
-		for (let i = 0; i < MAX_ENTRIES + 3; i++) {
+		await ledger.run(new CannedExecutor([evalWith([5]), evalWith([3])]));
+		const oldest = ledger.entries[0].id; // the first run — the one the cap must push out
+		for (let i = 0; i < MAX_ENTRIES + 2; i++) {
 			await ledger.run(new CannedExecutor([evalWith([5]), evalWith([3])]));
 		}
 		expect(ledger.entries).toHaveLength(MAX_ENTRIES);
+		// oldest-first eviction, not just a bounded length — a newest-first slice would also cap
+		expect(ledger.entries.some((entry) => entry.id === oldest)).toBe(false);
 	});
 
 	it('runs the claim on the analysis subject — its config is in the recorded fingerprint', async () => {
@@ -180,7 +184,8 @@ describe('the Ledger', () => {
 		expect(onSubject).not.toBe(generic); // the subject's vision changed the two-arm fingerprint
 	});
 
-	it('load drops malformed entries and ignores a foreign or corrupt store', () => {
+	describe('loading the persisted record', () => {
+		// A pre-composer record: none of the new optional fields, all of the required ones.
 		const good = {
 			id: 'x',
 			claimId: 'c',
@@ -194,29 +199,37 @@ describe('the Ledger', () => {
 			configHash: 'abc123',
 			recorded: ''
 		};
-		// a valid entry beside one missing its numeric fields — only the valid one loads
-		localStorage.setItem(
-			LEDGER_STORAGE_KEY,
-			JSON.stringify({ version: 1, entries: [good, { id: 'y', claimId: 'c' }] })
-		);
-		expect(loadEntries()).toHaveLength(1);
 
-		// a pre-composer record (no templateId/slots/expect/shared) is still a valid record
-		expect(loadEntries()[0]).toMatchObject({ id: 'x', claimId: 'c' });
+		it('drops a malformed entry but keeps the valid one beside it', () => {
+			// the malformed neighbour is missing its numeric fields — only the valid entry loads
+			localStorage.setItem(
+				LEDGER_STORAGE_KEY,
+				JSON.stringify({ version: 1, entries: [good, { id: 'y', claimId: 'c' }] })
+			);
+			expect(loadEntries()).toHaveLength(1);
+		});
 
-		// an entry whose new optional fields are the wrong shape is dropped, not half-trusted
-		localStorage.setItem(
-			LEDGER_STORAGE_KEY,
-			JSON.stringify({ version: 1, entries: [{ ...good, slots: 5 }] })
-		);
-		expect(loadEntries()).toEqual([]);
+		it('accepts a pre-composer record — the new fields are optional, not required', () => {
+			localStorage.setItem(LEDGER_STORAGE_KEY, JSON.stringify({ version: 1, entries: [good] }));
+			expect(loadEntries()[0]).toMatchObject({ id: 'x', claimId: 'c' });
+		});
 
-		// a version this build did not write is discarded wholesale, not half-trusted
-		localStorage.setItem(LEDGER_STORAGE_KEY, JSON.stringify({ version: 999, entries: [good] }));
-		expect(loadEntries()).toEqual([]);
+		it('drops an entry whose new optional fields are the wrong shape, not half-trusts it', () => {
+			localStorage.setItem(
+				LEDGER_STORAGE_KEY,
+				JSON.stringify({ version: 1, entries: [{ ...good, slots: 5 }] })
+			);
+			expect(loadEntries()).toEqual([]);
+		});
 
-		// and outright garbage never throws
-		localStorage.setItem(LEDGER_STORAGE_KEY, 'not json at all');
-		expect(loadEntries()).toEqual([]);
+		it('discards a version this build did not write, wholesale', () => {
+			localStorage.setItem(LEDGER_STORAGE_KEY, JSON.stringify({ version: 999, entries: [good] }));
+			expect(loadEntries()).toEqual([]);
+		});
+
+		it('never throws on outright garbage', () => {
+			localStorage.setItem(LEDGER_STORAGE_KEY, 'not json at all');
+			expect(loadEntries()).toEqual([]);
+		});
 	});
 });

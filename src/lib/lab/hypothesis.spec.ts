@@ -74,7 +74,7 @@ describe('the templates', () => {
 		expect(
 			template
 				.parts(values)
-				.filter((p) => p.slot)
+				.filter((p) => p.isSlot)
 				.map((p) => p.text)
 		).toEqual(['Direction', '1.4×']);
 	});
@@ -160,13 +160,17 @@ describe('resolveSlots', () => {
 });
 
 describe('senseDisabledReason', () => {
-	it('gates own speed on the brain wiring and nothing else', () => {
+	it('gates own speed on the brain wiring', () => {
 		expect(senseDisabledReason('speed', base())).toMatch(/9-input/);
 		expect(senseDisabledReason('speed', nineWired())).toBeNull();
-		for (const option of SENSE_OPTIONS.filter((o) => o.id !== 'speed')) {
+	});
+
+	it.each(SENSE_OPTIONS.filter((o) => o.id !== 'speed'))(
+		'never gates $label — only own speed needs a wire',
+		(option) => {
 			expect(senseDisabledReason(option.id, base())).toBeNull();
 		}
-	});
+	);
 });
 
 describe('verdictFrom', () => {

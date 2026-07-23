@@ -22,10 +22,16 @@
 	const claim = $derived(ledger.active);
 	const parts = $derived(template.parts(values));
 
-	const MEANS_AB =
-		'supported = arm A reliably outlives arm B — the whole 95% interval clears zero. A shortfall or a straddle both refute it.';
-	const MEANS_EQ =
-		'supported = the two arms are indistinguishable — the interval straddles zero. An interval that clears zero, either way, refutes it.';
+	// What "supported" would mean, per reading — the lead word is bolded by the template, so the
+	// text here starts after it (no string arithmetic to fall out of sync with a copy edit).
+	const MEANS: Record<typeof template.expect, string> = {
+		'A>B':
+			'= arm A reliably outlives arm B — the whole 95% interval clears zero. ' +
+			'A shortfall or a straddle both refute it.',
+		'A≈B':
+			'= the two arms are indistinguishable — the interval straddles zero. ' +
+			'An interval that clears zero, either way, refutes it.'
+	};
 
 	// A slot's dropdown never offers its sibling's pick — a sense cannot rival itself. The gated
 	// own-speed option stays VISIBLE but disabled, with the reason in its label (never silently
@@ -46,7 +52,18 @@
 
 	const hasSenseSlot = $derived(template.slots.some((slot) => slot.pool === 'sense'));
 	const hasExclSlot = $derived(template.slots.some((slot) => slot.excl));
-	const gatedSense = $derived(hasSenseSlot && senseDisabledReason('speed', app.base) !== null);
+	const isSenseGated = $derived(hasSenseSlot && senseDisabledReason('speed', app.base) !== null);
+
+	// The slot caveats as ONE derived line — assembling it in markup once jammed three inline ifs
+	// together and hid the joining logic in the template.
+	const slotNote = $derived(
+		[
+			isSenseGated && 'own speed is disabled: this subject has the 8-input brain',
+			hasExclSlot && 'a sense cannot rival itself — the second slot drops your first pick'
+		]
+			.filter(Boolean)
+			.join(' · ')
+	);
 
 	const estLabel = $derived(
 		ledger.estimatedSeconds < 60 ? '< 1 min' : `≈ ${Math.round(ledger.estimatedSeconds / 60)} min`
@@ -116,19 +133,15 @@
 				</select>
 			</label>
 		{/each}
-		{#if gatedSense || hasExclSlot}
-			<p class="lnote">
-				{#if gatedSense}own speed is disabled: this subject has the 8-input brain{/if}{#if gatedSense && hasExclSlot}
-					·
-				{/if}{#if hasExclSlot}a sense cannot rival itself — the second slot drops your first pick{/if}
-			</p>
+		{#if slotNote}
+			<p class="lnote">{slotNote}</p>
 		{/if}
 	</section>
 
 	<section class="dsec">
 		<header class="dsec-head"><span class="eyebrow">The claim</span></header>
 		<p class="claimprev" data-testid="ledger-claim-preview" aria-live="polite">
-			{#each parts as part, i (i)}<span class:sw={part.slot}>{part.text}</span>{/each}
+			{#each parts as part, i (i)}<span class:sw={part.isSlot}>{part.text}</span>{/each}
 		</p>
 		<div class="armline">
 			<span class="ab">Arm A</span>
@@ -138,10 +151,7 @@
 			<span class="ab">Arm B</span>
 			<span class="chips"><span class="chip hot">{claim.b.label}</span></span>
 		</div>
-		<p class="means">
-			{#if template.expect === 'A>B'}<b>supported</b>{MEANS_AB.slice('supported'.length)}
-			{:else}<b>supported</b>{MEANS_EQ.slice('supported'.length)}{/if}
-		</p>
+		<p class="means"><b>supported</b> {MEANS[template.expect]}</p>
 	</section>
 
 	<section class="dsec">

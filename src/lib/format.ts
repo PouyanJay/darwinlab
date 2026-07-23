@@ -4,11 +4,19 @@
  */
 
 /**
- * A signed survival delta in seconds: `+2.4s`, `0.0s`, `-1.1s`. Positives get a leading `+`; the
- * negative sign is the native one `toFixed` produces — the convention the lab's readouts already use.
+ * A signed number, one decimal, no unit: `+2.4`, `0.0`, `-1.1` — what an interval bound reads as.
+ * Positives get a leading `+`; the negative sign is the native one `toFixed` produces.
+ */
+export function formatSigned(value: number): string {
+	return `${value > 0 ? '+' : ''}${value.toFixed(1)}`;
+}
+
+/**
+ * A signed survival delta in seconds: `+2.4s`, `0.0s`, `-1.1s` — the signed number wearing the
+ * unit, so the same quantity reads the same everywhere it appears.
  */
 export function formatSignedSeconds(value: number): string {
-	return `${value > 0 ? '+' : ''}${value.toFixed(1)}s`;
+	return `${formatSigned(value)}s`;
 }
 
 /** A wall-clock duration: real seconds under a minute (`7.4s`), `m:ss` beyond — a fast pool would
