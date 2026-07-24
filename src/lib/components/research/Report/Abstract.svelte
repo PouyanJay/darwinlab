@@ -22,6 +22,13 @@
 		total: number;
 		onjump: (id: QuestionId) => void;
 	} = $props();
+
+	/** The punctuation after a clause: a full stop closes the abstract, a space precedes the gold gap
+	 *  clause (which reads as its own sentence), and a semicolon joins the rest. */
+	function separatorAfter(clause: AbstractClause, index: number): string {
+		if (index === clauses.length - 1) return '.';
+		return clause.gap ? ' ' : '; ';
+	}
 </script>
 
 <div class="abstract" data-testid="report-abstract">
@@ -36,7 +43,7 @@
 						onclick={() => onjump(clause.questionId!)}
 						aria-label="jump to {clause.questionId}">{clause.questionId}</button
 					>{/if}</span
-			>{i < clauses.length - 1 ? (clause.gap ? ' ' : '; ') : '.'}{/each}
+			>{separatorAfter(clause, i)}{/each}
 	</p>
 	<span class="band">
 		{answered} of {total} questions settled for this subject · every clause links to the run that produced

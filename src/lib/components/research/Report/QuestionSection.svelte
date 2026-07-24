@@ -15,7 +15,7 @@
 	import LearningCurve from '../viz/LearningCurve.svelte';
 	import BehaviorBars from '../viz/BehaviorBars.svelte';
 	import { CANDIDATE_AXES } from '$lib/lab/landscape';
-	import { SOURCE_LABEL, type FindingSource, type ResearchInstrument } from '$lib/lab/questions';
+	import { SOURCE_LABEL, SOURCE_INSTRUMENT, QUESTION_SOURCE } from '$lib/lab/questions';
 	import { app } from '$lib/state';
 	import type { ReportSection } from '$lib/state';
 
@@ -39,24 +39,11 @@
 	const finding = $derived(section.finding);
 	const evidence = $derived(finding?.evidence);
 
-	/** Which instrument a finding's source drills back to — a trace lives in the Sweep drill's
-	 *  microscope, so its link lands on the Sweep. */
-	const SOURCE_INSTRUMENT: Record<FindingSource, ResearchInstrument> = {
-		sweep: 'sweep',
-		ledger: 'ledger',
-		atlas: 'atlas',
-		trace: 'sweep'
-	};
-
-	/** The instrument that WOULD answer an unanswered question — read from its producer name, so the
-	 *  "run …" button lands on the right rail tab. Falls back to the Sweep. */
-	function fallbackSource(producer: string): FindingSource {
-		const p = producer.toLowerCase();
-		if (p.includes('ledger')) return 'ledger';
-		if (p.includes('atlas')) return 'atlas';
-		if (p.includes('trace')) return 'trace';
-		return 'sweep';
-	}
+	/** The instrument to navigate to: the finding's own source when answered, else the one that WOULD
+	 *  settle this question — both from the typed domain maps, never matched off a display string. */
+	const target = $derived(
+		SOURCE_INSTRUMENT[finding?.source ?? QUESTION_SOURCE[section.question.id] ?? 'sweep']
+	);
 
 	/** The landscape axis's format fn, resolved from its persisted key (functions don't serialise). */
 	const axisFormat = (key: string) =>
@@ -85,7 +72,7 @@
 		{#if finding}
 			<button
 				class="src"
-				onclick={() => app.setInstrument(SOURCE_INSTRUMENT[finding.source])}
+				onclick={() => app.setInstrument(target)}
 				title="drill back to {SOURCE_LABEL[finding.source]}"
 			>
 				← {SOURCE_LABEL[finding.source]}
@@ -130,10 +117,7 @@
 					<p>
 						The Report states this <b>only</b> once a real finding backs it — no placeholder verdict.
 					</p>
-					<button
-						class="run"
-						onclick={() => app.setInstrument(SOURCE_INSTRUMENT[fallbackSource(section.producer)])}
-					>
+					<button class="run" onclick={() => app.setInstrument(target)}>
 						Run {section.producer} →
 					</button>
 				</div>

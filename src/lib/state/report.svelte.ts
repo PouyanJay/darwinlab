@@ -131,7 +131,7 @@ class ReportStore {
 	 * back the world the findings are about, and "copy config JSON" hands over exactly what reproduces
 	 * them. Read live from the subject the report is scoped to.
 	 */
-	get reproduce(): { configHash: string; seeds: number | null; configJson: string } | null {
+	get reproduce(): { configHash: string; seeds: number; configJson: string } | null {
 		const method = this.method;
 		if (!method) return null;
 		return {

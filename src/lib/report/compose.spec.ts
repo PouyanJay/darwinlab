@@ -71,11 +71,12 @@ describe('composeAbstract', () => {
 		expect(composeAbstract(sectionsWith({}))).toEqual([]);
 	});
 
-	it('reads the dominant mover from the Q2 effects, and cites Q2', () => {
+	it('reads the dominant mover from the Q2 effects with its SIGN, and cites Q2', () => {
 		const clauses = composeAbstract(sectionsWith({ Q2: EFFECTS }));
 		const q2 = clauses.find((c) => c.questionId === 'Q2');
-		expect(q2?.text).toContain('predator speed'); // the strongest |effect|, not Direction
-		expect(q2?.text).toContain('2.8s'); // the real number, formatted from the evidence
+		// The whole sentence, so a sign-loss bug (reporting a −2.8s COST as a +2.8s gain — exactly the
+		// dishonesty the rail guards) fails here; predator speed is the strongest |effect|, not Direction.
+		expect(q2?.text).toBe('predator speed moved survival most (-2.8s)');
 	});
 
 	it('states the kept negatives from Q6, naming the factor that straddles zero', () => {
@@ -84,11 +85,21 @@ describe('composeAbstract', () => {
 		expect(q6?.text).toContain('Distance'); // the flat effect, kept as a negative
 	});
 
-	it('reads the final survival off the Q1 learning curve', () => {
+	it('reads the final survival off the Q1 learning curve, and says "climbed" only when it rose', () => {
 		const clauses = composeAbstract(sectionsWith({ Q2: EFFECTS, Q1: CURVE }));
 		const q1 = clauses.find((c) => c.questionId === 'Q1');
 		expect(q1?.text).toContain('62%'); // curve.at(-1) as a percent
 		expect(q1?.text).toContain('4 generations'); // curve.length
+		expect(q1?.text).toContain('climbed to'); // this curve genuinely rose 10% → 62%
+	});
+
+	it('says "reached", not "climbed", when the curve did NOT rise — no unverified trend claim', () => {
+		// A curve that ends below where it started: the number is real, the direction is not "up".
+		const falling: Evidence = { kind: 'curve', curve: [0.6, 0.5, 0.3, 0.25] };
+		const clauses = composeAbstract(sectionsWith({ Q2: EFFECTS, Q1: falling }));
+		const q1 = clauses.find((c) => c.questionId === 'Q1');
+		expect(q1?.text).toContain('reached');
+		expect(q1?.text).not.toContain('climbed');
 	});
 
 	it('closes on the FIRST unanswered content question — the honest gap, cited to nothing', () => {

@@ -55,3 +55,23 @@ export const SOURCE_LABEL: Record<FindingSource, string> = {
 	atlas: 'The Atlas',
 	trace: 'Behaviour trace'
 };
+
+/**
+ * The single source that answers each question — the inverse of `ANSWERS`, derived from it so the two
+ * can never drift. Every content question maps to exactly one source (Q2/Q6→sweep, Q3→ledger, Q4→atlas,
+ * Q1/Q5→trace); Q7 is provenance and has none. The Report's drill-through reads this to send an
+ * unanswered question to the instrument that WOULD settle it — typed, not matched off a display string.
+ */
+export const QUESTION_SOURCE: Partial<Record<QuestionId, FindingSource>> = Object.fromEntries(
+	Object.entries(ANSWERS).flatMap(([source, ids]) => ids.map((id) => [id, source as FindingSource]))
+);
+
+/** The console instrument a finding's source drills back to — a trace has no rail tab of its own, so
+ *  it lands on the Sweep, whose drill microscope produced it. One place, so the Report's source links
+ *  and its "run the test" prompts navigate the same way. */
+export const SOURCE_INSTRUMENT: Record<FindingSource, ResearchInstrument> = {
+	sweep: 'sweep',
+	ledger: 'ledger',
+	atlas: 'atlas',
+	trace: 'sweep'
+};

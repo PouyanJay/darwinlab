@@ -56,66 +56,71 @@ function firstGap(sections: ReportSection[]): ReportSection | null {
 	return sections.find((s) => s.question.id !== 'Q7' && !s.finding) ?? null;
 }
 
+/** Q2 · what matters — the dominant mover, read from the Sweep's effect bars. */
+function moverClause(sections: ReportSection[]): AbstractClause | null {
+	const effects = evidenceFor(sections, 'Q2', 'effects');
+	const dominant = effects ? strongestEffect(effects.effects) : null;
+	if (!dominant) return null;
+	return {
+		text: `${dominant.label.toLowerCase()} moved survival most (${formatSignedSeconds(dominant.delta)})`,
+		questionId: 'Q2'
+	};
+}
+
+/** Q6 · what did not — the kept negatives, from the same Sweep evidence. */
+function negativesClause(sections: ReportSection[]): AbstractClause | null {
+	const negatives = negativesOf(findingFor(sections, 'Q6')?.evidence);
+	if (!negatives.length) return null;
+	return { text: `${negatives.join(', ')} did not measurably help`, questionId: 'Q6' };
+}
+
+/** Q1 · did it learn — the survival the learning curve reached. The verb is gated on the ACTUAL
+ *  trajectory: "climbed to" only when the curve genuinely rose (it is not guaranteed monotonic — GA
+ *  noise can leave the last generation below an earlier peak), else the trend-neutral "reached". The
+ *  number is read off the evidence either way; only the claimed direction is checked. */
+function learnedClause(sections: ReportSection[]): AbstractClause | null {
+	const curve = evidenceFor(sections, 'Q1', 'curve')?.curve;
+	if (!curve?.length) return null;
+	const final = curve[curve.length - 1];
+	const verb = curve[0] <= final ? 'climbed to' : 'reached';
+	return {
+		text: `one population ${verb} ${formatSurvivalPct(final)} survival over ${curve.length} generations`,
+		questionId: 'Q1'
+	};
+}
+
+/** Q5 · how — the mechanism is the finding's own headline (a behaviour contrast reads best in words). */
+function mechanismClause(sections: ReportSection[]): AbstractClause | null {
+	const mechanism = findingFor(sections, 'Q5');
+	return mechanism ? { text: mechanism.title.toLowerCase(), questionId: 'Q5' } : null;
+}
+
+/** Q4 · where it holds — bounded by the Atlas's cliff, when one was found. */
+function boundClause(sections: ReportSection[]): AbstractClause | null {
+	const landscape = evidenceFor(sections, 'Q4', 'landscape');
+	if (!landscape) return null;
+	return {
+		text:
+			landscape.cliffX !== undefined
+				? `the result holds until survival falls off a cliff along ${landscape.axisLabel.toLowerCase()}`
+				: `the result varies across ${landscape.axisLabel.toLowerCase()}`,
+		questionId: 'Q4'
+	};
+}
+
 /**
  * The auto-abstract: a handful of sentences composed from the settled findings, in the order a paper
  * would state them — what matters, what did not, that it learned, how, where it holds — each closing
  * with a citation to the question it came from, and a final honest clause naming the first gap.
  *
- * Every clause is a template filled from real evidence; a clause is emitted only when its finding
- * exists, so the abstract can never claim a thing the notebook does not hold. Returns [] before the
- * subject has been studied at all.
+ * Each clause builder emits a sentence ONLY when its finding exists, so the abstract can never claim a
+ * thing the notebook does not hold. Returns [] before the subject has been studied at all.
  */
 export function composeAbstract(sections: ReportSection[]): AbstractClause[] {
-	const clauses: AbstractClause[] = [];
-
-	// Q2 · what matters — the dominant mover, read from the Sweep's effect bars.
-	const effects = evidenceFor(sections, 'Q2', 'effects');
-	if (effects) {
-		const dominant = strongestEffect(effects.effects);
-		if (dominant) {
-			clauses.push({
-				text: `${dominant.label.toLowerCase()} moved survival most (${formatSignedSeconds(dominant.delta)})`,
-				questionId: 'Q2'
-			});
-		}
-	}
-
-	// Q6 · what did not — the kept negatives, from the same Sweep evidence.
-	const negatives = negativesOf(findingFor(sections, 'Q6')?.evidence);
-	if (negatives.length) {
-		clauses.push({
-			text: `${negatives.join(', ')} did not measurably help`,
-			questionId: 'Q6'
-		});
-	}
-
-	// Q1 · did it learn — the final survival the learning curve reached.
-	const curve = evidenceFor(sections, 'Q1', 'curve');
-	if (curve && curve.curve.length) {
-		const final = curve.curve[curve.curve.length - 1];
-		clauses.push({
-			text: `one population climbed to ${formatSurvivalPct(final)} survival over ${curve.curve.length} generations`,
-			questionId: 'Q1'
-		});
-	}
-
-	// Q5 · how — the mechanism is the finding's own headline (a behaviour contrast reads best in words).
-	const mechanism = findingFor(sections, 'Q5');
-	if (mechanism) {
-		clauses.push({ text: mechanism.title.toLowerCase(), questionId: 'Q5' });
-	}
-
-	// Q4 · where it holds — bounded by the Atlas's cliff, when one was found.
-	const landscape = evidenceFor(sections, 'Q4', 'landscape');
-	if (landscape) {
-		clauses.push({
-			text:
-				landscape.cliffX !== undefined
-					? `the result holds until survival falls off a cliff along ${landscape.axisLabel.toLowerCase()}`
-					: `the result varies across ${landscape.axisLabel.toLowerCase()}`,
-			questionId: 'Q4'
-		});
-	}
+	const builders = [moverClause, negativesClause, learnedClause, mechanismClause, boundClause];
+	const clauses = builders
+		.map((build) => build(sections))
+		.filter((clause): clause is AbstractClause => clause !== null);
 
 	// The honest closer — the first content question still without a finding. Only when something WAS
 	// settled (an empty abstract needs no "but one thing is missing"); with nothing settled, return [].

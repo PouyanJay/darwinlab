@@ -10,7 +10,7 @@
   backs it, and the abstract composes from those findings alone.
 -->
 <script lang="ts">
-	import { SvelteSet } from 'svelte/reactivity';
+	import { SvelteSet, SvelteMap } from 'svelte/reactivity';
 	import { report, app } from '$lib/state';
 	import { negativesOf } from '$lib/state';
 	import { QUESTIONS, type QuestionId } from '$lib/lab/questions';
@@ -36,7 +36,7 @@
 	// A figure number for each detailed section that draws a graph, in question order — so the paper's
 	// figures are numbered 1, 2, 3, … and an unanswered question takes no number.
 	const figureNumbers = $derived.by(() => {
-		const map = new Map<QuestionId, number>();
+		const map = new SvelteMap<QuestionId, number>();
 		let n = 0;
 		for (const s of detailed) if (s.finding?.evidence) map.set(s.question.id, ++n);
 		return map;
@@ -159,7 +159,7 @@
 				<ReproducePanel
 					config={app.base}
 					configHash={reproduce.configHash}
-					seeds={reproduce.seeds ?? 0}
+					seeds={reproduce.seeds}
 					configJson={reproduce.configJson}
 					onload={() => report.watch()}
 				/>
