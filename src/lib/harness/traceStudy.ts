@@ -120,6 +120,14 @@ export function traceSummary(study: TraceStudy): {
 }
 
 /**
+ * The progress split `runTraceStudy` reports: the evolve is the bulk, then the evolved bout, then the
+ * control bout. Exported so a caller narrating the stages (the drill's microscope) reads the same
+ * boundaries this file emits — restated literals would silently desync if the split were retuned.
+ */
+export const EVOLVE_PROGRESS_SHARE = 0.85;
+export const CONTROL_BOUT_PROGRESS = 0.93;
+
+/**
  * Run one trace study. Evolve one population in time-boxed slices keeping its genomes (the evaluator
  * discards them), then trace it against a random-brain control. `onProgress` is 0–1 (the evolve loop is
  * the bulk of the work); `signal` cancels between slices, so a study the user walked away from stops.
@@ -130,11 +138,11 @@ export async function runTraceStudy(
 ): Promise<TraceStudy | null> {
 	const seconds = cfg.genDuration ?? GEN_DURATION;
 
-	// Evolve, keeping the population — the evolve loop is ~85% of the work.
+	// Evolve, keeping the population — the evolve loop is the bulk of the work.
 	const world = await evolveInSlices(cfg, 1000 + seed, episodes, {
 		budgetMs,
 		signal,
-		onProgress: (fraction) => onProgress?.(fraction * 0.85)
+		onProgress: (fraction) => onProgress?.(fraction * EVOLVE_PROGRESS_SHARE)
 	});
 	if (!world) return null;
 
@@ -142,7 +150,7 @@ export async function runTraceStudy(
 	const genomes: Genome[] = (world.roster.length ? world.roster : world.fish).map((f) => f.genome);
 
 	const evolved = traceArm(cfg, genomes, seed, seconds);
-	onProgress?.(0.93);
+	onProgress?.(CONTROL_BOUT_PROGRESS);
 	if (signal?.aborted) return null;
 	const control = traceArm(cfg, undefined, seed, seconds);
 	onProgress?.(1);

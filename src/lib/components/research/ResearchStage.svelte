@@ -21,7 +21,6 @@
 	import LedgerDesignPanel from './Ledger/LedgerDesignPanel.svelte';
 	import AtlasDesignPanel from './Atlas/AtlasDesignPanel.svelte';
 	import Atlas from './Atlas/Atlas.svelte';
-	import Trace from './Trace/Trace.svelte';
 	import ReportView from './Report/ReportView.svelte';
 	import QuestionTags from './QuestionTags.svelte';
 	import { instrumentMeta, answersOf, type Instrument } from './instruments';
@@ -32,8 +31,8 @@
 	const answers = $derived(answersOf(active));
 
 	// Which instruments have a DESIGN PANEL (the console's second sidebar). The Sweep led, the
-	// Ledger's composer and the Atlas's landscape panel joined it. The Trace gains its panel when
-	// its redesign lands — until then the console stays three-zone for it.
+	// Ledger's composer and the Atlas's landscape panel joined it. The Trace never needed one — it
+	// retired into the Sweep drill's microscope; only the Report stays three-zone.
 	const hasDesign = $derived(active === 'sweep' || active === 'ledger' || active === 'atlas');
 </script>
 
@@ -72,8 +71,6 @@
 					<Ledger />
 				{:else if active === 'atlas'}
 					<Atlas />
-				{:else if active === 'trace'}
-					<Trace />
 				{:else if active === 'report'}
 					<ReportView />
 				{/if}

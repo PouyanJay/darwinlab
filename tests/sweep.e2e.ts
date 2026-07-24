@@ -114,7 +114,7 @@ test('drilling a cell opens its world in the sidebar, and watches it in Studio',
 	await expect(card.locator('.dot.me').first()).toBeVisible(); // "you are here" ringed in the strip
 
 	// The drill's notebook door files THIS cell — the rail's notebook counts it.
-	await card.getByRole('button', { name: 'Send to notebook' }).click();
+	await card.getByRole('button', { name: 'Send cell finding to notebook' }).click();
 	await expect(page.getByTestId('findings')).toContainText('kept');
 
 	// And the workspace offers the CSV export, its note naming what the file carries.

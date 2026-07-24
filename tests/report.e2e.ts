@@ -76,13 +76,14 @@ test('the workspace header tags each instrument with the questions it answers', 
 	await gotoApp(page);
 	await openResearch(page);
 
-	// The Sweep leads: it settles what matters (Q2) and what did not (Q6).
-	await expect(page.getByRole('group', { name: 'answers Q2, Q6' })).toBeVisible();
+	// The Sweep leads: its own questions (Q2 what matters, Q6 what did not) plus the microscope's
+	// (Q1 did it learn, Q5 the mechanism) — the behaviour trace lives in its drill now.
+	await expect(page.getByRole('group', { name: 'answers Q1, Q2, Q5, Q6' })).toBeVisible();
 
 	// Switch instruments and the tag follows — the Ledger settles whether a winner is real (Q3).
 	await page.getByRole('tab', { name: 'The Ledger' }).click();
 	await expect(page.getByRole('group', { name: 'answers Q3' })).toBeVisible();
-	await expect(page.getByRole('group', { name: 'answers Q2, Q6' })).toBeHidden();
+	await expect(page.getByRole('group', { name: 'answers Q1, Q2, Q5, Q6' })).toBeHidden();
 });
 
 test('the Report exports as a Markdown file the study can keep', async ({ page }) => {
