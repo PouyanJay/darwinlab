@@ -191,7 +191,6 @@ test('removing a question’s answer confirms, reverts it to a prompt, and clear
 	const dialog = page.getByRole('dialog', { name: 'Remove this answer?' });
 	await expect(dialog).toBeVisible();
 	await expect(dialog).toContainText('Q6');
-	await page.screenshot({ path: '/private/tmp/claude-501/-Users-pouyan-Developer-personal-darwinlab/a12c7128-0d77-4137-a2d1-dcafbaa05bfd/scratchpad/remove-confirm.png' });
 
 	// Cancel first — a probe: the answer must survive a dismissed confirm.
 	await dialog.getByRole('button', { name: 'Cancel' }).click();
@@ -203,7 +202,6 @@ test('removing a question’s answer confirms, reverts it to a prompt, and clear
 	await expect(page.getByTestId('report-qQ2')).toContainText('Run The Sweep');
 	await expect(page.getByTestId('report-qQ2').locator('.effects')).toHaveCount(0);
 	await expect(page.getByTestId('report-qQ6')).toContainText('run');
-	await page.screenshot({ path: '/private/tmp/claude-501/-Users-pouyan-Developer-personal-darwinlab/a12c7128-0d77-4137-a2d1-dcafbaa05bfd/scratchpad/after-remove.png' });
 });
 
 test('"Clear this report" empties every answer after a confirm, and survives a cancel', async ({
@@ -214,7 +212,10 @@ test('"Clear this report" empties every answer after a confirm, and survives a c
 
 	// Cancel keeps the report intact.
 	await page.getByTestId('clear-report').click();
-	await page.getByRole('dialog', { name: 'Clear this report?' }).getByRole('button', { name: 'Cancel' }).click();
+	await page
+		.getByRole('dialog', { name: 'Clear this report?' })
+		.getByRole('button', { name: 'Cancel' })
+		.click();
 	await expect(page.getByTestId('report-qQ2').locator('.effects')).toBeVisible();
 
 	// Confirm wipes it: the masthead falls back to "hasn't been studied yet" and the actions vanish.

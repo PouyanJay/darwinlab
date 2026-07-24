@@ -174,7 +174,9 @@ describe('the Findings notebook', () => {
 		expect(findings.forSubject(subject)).toHaveLength(0); // the cleared subject is empty
 		expect(findings.forSubject(generic).map((f) => f.title)).toEqual(['on the generic world']); // the other survives
 		// …and the removal reached disk, not just memory
-		expect(stored().entries.map((f: { title: string }) => f.title)).toEqual(['on the generic world']);
+		expect(stored().entries.map((f: { title: string }) => f.title)).toEqual([
+			'on the generic world'
+		]);
 	});
 
 	it('scopes findings to the subject they were recorded on', () => {

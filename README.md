@@ -12,7 +12,7 @@
 
 [**▶ Open the live lab**](https://pouyanjay.github.io/darwinlab/)
 
-![The bench: five worlds evolving side by side](docs/bench-light.webp)
+![Darwin Lab Studio: an evolving world laid out on the lineage canvas, each fish an individual brain](docs/bench-dark.webp)
 
 </div>
 
@@ -25,6 +25,14 @@ time: it is a **filter, not a teacher.**
 Darwin Lab is a client-only, no-backend web app. It has two modes: **Studio**, where you watch one
 world evolve, and **Research**, a console for running thousands of simulations and reading a rigorous
 conclusion out of them. Both drive one bit-exact neuroevolution engine.
+
+**At a glance:**
+
+- 🧠 **Real neuroevolution, nothing scripted** — every fish is its own 68-weight network; behavior is what survives, not what's coded.
+- 🔬 **A research console, not a toy** — factorial sweeps, pre-registered A/B verdicts, survival landscapes, and a report that assembles itself.
+- 📊 **An honest finding, defended by CI** — _more senses ≠ more intelligence_; a nightly job re-measures it and fails on drift.
+- 🎛️ **Inspect and intervene live** — open any evolved mind, ablate a sense mid-swim, branch a world, then watch it decay once selection stops.
+- ⚡ **Client-only static SPA** — SvelteKit 2 · Svelte 5 runes · TypeScript · zero backend; runs entirely in the browser.
 
 ## Contents
 
@@ -56,27 +64,28 @@ spine — it shows up again in every part of the Research console below.
 
 ## Schooling — a sense that _does_ pay
 
-The sense ladder shows inputs that don't earn their keep. **The Shoal exhibit shows one that does** —
-and the contrast is the whole point: _a sense is worth exactly what the world makes it worth._
+The sense ladder shows inputs that don't earn their keep. Schooling is the one that does — and the
+contrast is the whole point: _a sense is worth exactly what the world makes it worth._
 
-Switch the bench to **The Shoal** and two tanks run the same dangerous ocean and the same brain,
-differing only in whether the fish can sense each other. Give the predator a **confusion effect** — it
-can hold only one target, and loses its lock (then mills, distracted) when that fish is buried in a
-dense crowd — and schooling **evolves on its own**. Nobody writes the flocking; it appears because it
-works. Measured as the shoal sense's marginal effect over many seeded runs, fish that can feel their
-neighbours pack **~20px tighter and survive ~4s longer per generation**. Toggle the shoal pill off and
-the school comes apart.
+Turn on **Sense the shoal** in any world's Conditions and two things happen: the brain gains the shoal
+senses (the **SHOAL** and **ALIGN** pills), and the predator gains a **confusion effect** — it can hold
+only one target, and loses its lock (then mills, distracted) when that fish is buried in a dense crowd.
+Nothing writes the flocking. It **evolves on its own**, because now it works: measured as the shoal
+sense's marginal effect over many seeded runs, fish that can feel their neighbours pack **~20px tighter
+and survive ~4s longer per generation**. The tank paints a live **density field** — a bait-ball glows,
+a loose crowd doesn't — and the tile reads out the school's spacing and alignment as they tighten.
+Toggle the shoal senses back off and the school comes apart.
 
 The honest caveats stay: **cohesion** (tight grouping) is the robust signal; **alignment** is weaker
 and lineage-variable, and the readout says so. And it only pays because the shark is fast enough that
 fleeing alone can't save you — slow the shark down and grouping stops mattering, exactly as the thesis
 predicts.
 
-![The Shoal exhibit: Alone vs The Shoal, the density field, and the live school readout](docs/shoal-dark.webp)
+![A schooling world beside a non-schooling one: the density-field bait-ball, the SHOAL and ALIGN senses, and the live spacing readout](docs/shoal-dark.webp)
 
 ## Studio — watch one world evolve
 
-![Dark theme bench](docs/bench-dark.webp)
+![Studio in the light theme: the same lineage canvas, with the control sidebar and per-world learning curves](docs/bench-light.webp)
 
 - **Watch worlds evolve side by side** — live learning curves, real populations, every fish an
   individual genome, laid out on a pannable/zoomable lineage tree.
@@ -91,7 +100,7 @@ predicts.
   Natural selection with the selection turned off.
 - **Play the story**: a narrated film of the whole argument, made of live simulations, not recordings.
 
-![Brain inspector: one real evolved mind, live](docs/inspector.webp)
+![The live brain inspector: a fish's senses this frame, its escape-map policy, and its motor outputs — all read from its real 68 weights](docs/inspector.webp)
 
 ## Research — a console for real experiments
 
