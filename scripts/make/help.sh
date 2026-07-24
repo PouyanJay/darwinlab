@@ -18,6 +18,9 @@ row "make preview" "Build, then serve the production build"
 row "make stop" "Tear down anything make started"
 row "make logs" "Follow the running server's log"
 
+head_ "Deploy"
+row "make deploy" "Publish to GitHub Pages on demand (merging never deploys)"
+
 head_ "Testing"
 row "make test" "All suites — unit + e2e — never stopping at the first red"
 row "make test-unit" "Vitest only"
