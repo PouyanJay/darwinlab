@@ -2,13 +2,14 @@ import { expect, test, type Page } from '@playwright/test';
 import { gotoApp, openResearch, runMinimalSweep, scanForViolations } from './helpers';
 
 /**
- * The Report end to end (RC3): with a Sweep finding recorded, it renders the questions the Sweep
- * answers (Q2, Q6) with a real graph and the method footer (Q7), and every OTHER question as an honest
- * "run the test" prompt — never a fabricated verdict. And the brief survives a reload, since it is
- * assembled from the persisted notebook.
+ * The Report end to end: with a Sweep finding recorded, it assembles the seven-question brief — a
+ * coverage spine, an auto-composed abstract, the questions the Sweep answers (Q2, Q6) with real
+ * figures, the method (Q7), and every OTHER question as an honest "run the test" prompt, never a
+ * fabricated verdict. The redesign adds reading modes, skeptic toggles and drill-through; those are
+ * exercised here too. The brief survives a reload, since it is assembled from the persisted notebook.
  *
- * The Sweep's numbers are a live measurement and are not asserted; what is asserted is the STRUCTURE of
- * the brief — which questions are answered, which are prompts, and that it stays axe-clean.
+ * The Sweep's numbers are a live measurement and are not asserted; what is asserted is the STRUCTURE —
+ * which questions are answered, which are prompts, that the interactions work, and that it stays clean.
  */
 
 async function reportWithASweep(page: Page): Promise<void> {
@@ -24,26 +25,65 @@ test('the Report answers what the Sweep settled and prompts for the rest', async
 	await reportWithASweep(page);
 
 	// The Sweep answers Q2 (what moves survival): a real section with its effect bars, NOT a prompt.
+	// Full is the default reading mode, so every section is expanded and the figure is on screen.
 	const q2 = page.getByTestId('report-qQ2');
 	await expect(q2).toBeVisible();
 	await expect(q2).toContainText('← The Sweep'); // traced to its source
-	await expect(q2.locator('.effects')).toBeVisible(); // the graph is drawn, not a placeholder
+	await expect(q2.locator('.effects')).toBeVisible(); // the figure is drawn, not a placeholder
 	await expect(q2).not.toContainText('Not answered yet');
 
 	// The questions the Sweep does NOT answer show an honest prompt naming the test that would.
-	await expect(page.getByTestId('report-qQ3')).toContainText('run The Ledger');
-	await expect(page.getByTestId('report-qQ4')).toContainText('run The Atlas');
-	await expect(page.getByTestId('report-qQ1')).toContainText('run a behaviour trace');
+	await expect(page.getByTestId('report-qQ3')).toContainText('Run The Ledger');
+	await expect(page.getByTestId('report-qQ4')).toContainText('Run The Atlas');
+	await expect(page.getByTestId('report-qQ1')).toContainText('Run a behaviour trace');
 
 	// Q7 always states the method that reproduces it — the config fingerprint + seeds.
 	await expect(page.getByTestId('report-qQ7')).toContainText('config');
 
-	// Q6 keeps the negatives (the honesty rule) — the "what did not work" note renders through the
+	// Q6 keeps the negatives (the honesty rule) — the "what did not work" panel renders through the
 	// live sweep → notebook → evidence pipeline, in one of its honest states.
 	await expect(page.getByTestId('report-qQ6')).toContainText('did not work');
 
-	// The glance table lays out all seven, with the unanswered ones honestly "Not tested".
-	await expect(page.getByTestId('report')).toContainText('Not tested');
+	// The unanswered questions read honestly — an untested one says so, never a fabricated verdict.
+	await expect(page.getByTestId('report-qQ3')).toContainText('Not answered yet');
+
+	// The auto-abstract composed at least one cited clause from the real finding — and is flagged as
+	// assembled, not authored.
+	await expect(page.getByTestId('report-abstract')).toContainText('assembled from findings');
+});
+
+test('the reading modes and skeptic toggles interrogate the brief', async ({ page }) => {
+	await reportWithASweep(page);
+	const q2 = page.getByTestId('report-qQ2');
+	const modes = page.getByRole('group', { name: 'reading mode' });
+
+	// Full (default) shows the figure; Brief collapses every section to its one-line answer.
+	await expect(q2.locator('.effects')).toBeVisible();
+	await modes.getByRole('button', { name: 'Brief' }).click();
+	await expect(q2.locator('.effects')).toBeHidden();
+
+	// Full opens them back up.
+	await modes.getByRole('button', { name: 'Full' }).click();
+	await expect(q2.locator('.effects')).toBeVisible();
+
+	// The 95%-interval skeptic toggle adds/removes the whiskers on the effect figure — a real layer,
+	// on by default. Unchecking it removes them; the bars themselves stay.
+	await expect(q2.locator('.whisk').first()).toBeVisible();
+	await page.getByTestId('report-tog-intervals').uncheck();
+	await expect(q2.locator('.whisk')).toHaveCount(0);
+	await expect(q2.locator('.effects .bar').first()).toBeVisible();
+});
+
+test('a source drill-through carries the reader back to the instrument', async ({ page }) => {
+	await reportWithASweep(page);
+
+	// Clicking Q2's "← The Sweep" navigates the console to the Sweep — conclusion back to its evidence.
+	await page
+		.getByTestId('report-qQ2')
+		.getByRole('button', { name: /The Sweep/ })
+		.click();
+	await expect(page.getByTestId('sweep')).toBeVisible();
+	await expect(page.locator('#rtab-sweep')).toHaveAttribute('aria-selected', 'true');
 });
 
 test('the Report is assembled from the persisted notebook — it survives a reload', async ({
@@ -62,7 +102,7 @@ test('the Report is assembled from the persisted notebook — it survives a relo
 	await expect(page.getByTestId('report-qQ2').locator('.effects')).toBeVisible();
 });
 
-test('the Report scans clean — the headings, the glance table and the graphs are new surface', async ({
+test('the Report scans clean — the spine, abstract, sections and figures are new surface', async ({
 	page
 }) => {
 	await reportWithASweep(page);

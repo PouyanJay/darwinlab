@@ -13,7 +13,6 @@
 	import { SvelteSet } from 'svelte/reactivity';
 	import { report, app } from '$lib/state';
 	import { negativesOf } from '$lib/state';
-	import { downloadText } from '$lib/download';
 	import { QUESTIONS, type QuestionId } from '$lib/lab/questions';
 	import CoverageSpine from './CoverageSpine.svelte';
 	import Abstract from './Abstract.svelte';
@@ -74,10 +73,6 @@
 			block: 'start'
 		});
 	}
-
-	function exportMarkdown(): void {
-		downloadText('darwin-lab-report.md', report.toMarkdown(), 'text/markdown');
-	}
 </script>
 
 <div class="report" data-testid="report" data-print-region>
@@ -101,13 +96,7 @@
 					<input type="checkbox" bind:checked={showData} data-testid="report-tog-data" />
 					show data
 				</label>
-				<div class="spacer"></div>
-				{#if report.hasFindings}
-					<button class="xbtn" onclick={exportMarkdown} data-testid="export-md">Export MD</button>
-					<button class="xbtn" onclick={() => window.print()} data-testid="print-report">
-						Export PDF
-					</button>
-				{/if}
+				<span class="hint">export &amp; reproduce in the sidebar →</span>
 			</div>
 
 			<!-- masthead: the thesis leads with the strongest real finding, never a fabricated one -->
@@ -257,25 +246,10 @@
 		accent-color: var(--ink);
 	}
 
-	.spacer {
+	.hint {
 		margin-left: auto;
-	}
-
-	.xbtn {
-		border: 1px solid var(--line);
-		border-radius: var(--radius-control);
-		background: none;
-		color: var(--ink2);
-		font: inherit;
 		font-size: var(--fs-xs);
-		font-weight: var(--fw-semibold);
-		padding: var(--sp-1) var(--sp-3);
-		cursor: pointer;
-	}
-
-	.xbtn:hover {
-		border-color: var(--ink3);
-		color: var(--ink);
+		color: var(--ink3);
 	}
 
 	.masthead {
