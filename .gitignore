@@ -159,3 +159,6 @@ CLAUDE.md
 # Playwright
 test-results
 playwright-report
+
+# make-managed process state (PIDs, logs, port allocations)
+.run-state/
