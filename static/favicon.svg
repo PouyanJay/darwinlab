@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="240" height="240">
+	<!--
+		The tab icon: the lab's mark on its rounded plate.
+
+		It carries BOTH palettes and picks one with a media query, because a favicon is the one image
+		the app cannot re-render when the theme flips — the browser paints it into its own chrome,
+		which follows the OS rather than our data-theme. An SVG favicon is a document, so it can answer
+		that itself.
+
+		The note lives INSIDE the root element on purpose: Vite inlines this file as a `data:` URI, and
+		anything before the <svg> tag is encoded into it, where a strict parser is within its rights to
+		object. (The 240×240 plate is the owner's icon artwork; the mark is LogoMark's glyph.)
+	-->
+	<style>
+		.plate { fill: #d8a13a }
+		.rim { stroke: #000; stroke-opacity: 0.06 }
+		.body { fill: #faf9f4 }
+		.net { fill: #4f56d3; stroke: #4f56d3 }
+		@media (prefers-color-scheme: dark) {
+			.plate { fill: #0e0f12 }
+			.rim { stroke: #e7e8ec; stroke-opacity: 0.1 }
+			.body { fill: #e7e8ec }
+			/* Monochrome dark: a dark-ink net reads on the near-white body (no brand hue). */
+			.net { fill: #16181c; stroke: #16181c }
+		}
+	</style>
+	<rect class="plate" width="240" height="240" rx="54" />
+	<rect class="rim" x="0.75" y="0.75" width="238.5" height="238.5" rx="53.25" fill="none" />
+	<g transform="translate(15.24 66.52) scale(0.3146)">
+		<path
+			class="body"
+			d="M 600 170 C 508 52 356 52 196 170 C 356 288 508 288 600 170 Z M 296 170 L 66 74 Q 118 170 66 266 L 296 170 Z"
+			fill-rule="nonzero"
+		/>
+		<line class="net" x1="506" y1="178" x2="432" y2="146" stroke-width="11" stroke-linecap="round" />
+		<line class="net" x1="506" y1="178" x2="432" y2="210" stroke-width="11" stroke-linecap="round" />
+		<circle class="net" cx="432" cy="146" r="18" stroke="none" />
+		<circle class="net" cx="432" cy="210" r="18" stroke="none" />
+		<circle class="net" cx="506" cy="178" r="18" stroke="none" />
+	</g>
+</svg>

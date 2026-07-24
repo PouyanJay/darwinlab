@@ -80,6 +80,20 @@
 		shows the theme you would GET — a sun to go light, a moon to go dark — which is the only one of
 		the two conventions a user can act on without pressing it to find out.
 	-->
+	<!-- The repo, one click away. A real <a> (not a Button firing window.open) so it middle-clicks,
+	     opens in a new tab, and reads as a link to assistive tech. Styled to match the ghost buttons
+	     beside it, so the three read as one control cluster. -->
+	<a
+		class="gh"
+		href="https://github.com/PouyanJay/darwinlab"
+		target="_blank"
+		rel="noopener noreferrer"
+		aria-label="Darwin Lab on GitHub"
+		title="Source on GitHub"
+	>
+		<Icon name="github" />
+	</a>
+
 	<Button
 		aria-label={theme.name === 'light' ? 'switch to dark theme' : 'switch to light theme'}
 		title={theme.name === 'light' ? 'dark theme' : 'light theme'}
@@ -149,6 +163,40 @@
 
 	.spacer {
 		flex: 1;
+	}
+
+	/* The GitHub link wears the ghost-button box (matching the theme + settings buttons it sits
+	   beside), so the three read as one control cluster. It is an <a>, not a Button, so its look
+	   is matched here rather than inherited. */
+	.gh {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		padding: var(--sp-3) 14px;
+		border: 1px solid var(--line);
+		border-radius: var(--radius-control);
+		background: var(--panel);
+		color: var(--ink);
+		transition:
+			background var(--dur-fast) var(--ease),
+			border-color var(--dur-fast) var(--ease),
+			color var(--dur-fast) var(--ease);
+	}
+
+	.gh:hover {
+		background: var(--chip);
+	}
+
+	.gh:focus-visible {
+		outline: var(--focus-ring);
+		outline-offset: var(--focus-offset);
+	}
+
+	/* A fingertip is not a cursor — full-size target on coarse pointers, as Button does. */
+	@media (pointer: coarse) {
+		.gh {
+			min-height: 44px;
+		}
 	}
 
 	/*

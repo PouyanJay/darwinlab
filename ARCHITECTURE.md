@@ -38,8 +38,8 @@ src/
 │  │              behaviour recorders — trace.ts (one bout's paths) + traceStudy.ts (evolve → the
 │  │              learning curve + an evolved-vs-control study), read-only so fidelity stays green.
 │  ├─ state/      Svelte 5 runes stores — THE only seam between UI and simulation.
-│  │              app.svelte.ts       the MODE (Studio | Research, persisted) + the analysis
-│  │                                  SUBJECT (a Studio world handed to Research to explore)
+│  │              app.svelte.ts       the MODE (Studio | Research, persisted), the active Research
+│  │                                  INSTRUMENT, + the analysis SUBJECT (a Studio world → Research)
 │  │              bench.svelte.ts     which worlds exist, selection, conditions, tick();
 │  │                                  branchWorld/moveWorld drive the lineage tree;
 │  │                                  analyzeWorld hands a world to Research (Studio→Research)
@@ -49,8 +49,9 @@ src/
 │  │                                  and the Atlas each own one instance, never shared
 │  │              research.svelte.ts  the ONE running batch (progress, cancel-on-new)
 │  │              sweep / ledger /     the instruments' state: factors→effects · claims→verdicts ·
-│  │              landscape / trace     axes→landscape · evolve→learning-curve+mechanism (trace runs
-│  │                                    its OWN time-sliced study, not the worker batch)
+│  │              landscape / trace     axes→landscape · the microscope (evolve→learning-curve+
+│  │                                    mechanism, keyed by recipe; its OWN time-sliced study, not
+│  │                                    the worker batch) — driven from the Sweep drill, not a tab
 │  │              findings.svelte.ts  the persisted findings NOTEBOOK (any instrument writes to it)
 │  │              report.svelte.ts    the seven-question brief derived from the notebook (honesty rail)
 │  │              playback.svelte.ts  play / pause / speed / turbo training
@@ -65,9 +66,10 @@ src/
 │  │              common. intro/Intro — the full-screen welcome; the first interaction fades it
 │  │              out over the already-running platform. bench/LineageCanvas — the pannable plane;
 │  │              worlds are draggable nodes (WorldTile) wired parent→child by branch edges.
-│  │              research/ — the three-zone CONSOLE (ResearchRail · ResearchWorkspace ·
-│  │              ResearchSidebar) over five instruments (Sweep, Ledger, Atlas, Trace, Report),
-│  │              the shared viz/ graph library + QuestionTags + RunProgress; topbar/ModeSwitch
+│  │              research/ — the four-zone CONSOLE (ResearchRail · design panel ·
+│  │              ResearchWorkspace · ResearchSidebar) over four instruments (Sweep, Ledger, Atlas,
+│  │              Report); the behaviour trace is the "microscope" folded INTO the Sweep drill card,
+│  │              not a tab. Shared viz/ graph library + QuestionTags + RunProgress; topbar/ModeSwitch
 │  │              flips Studio ⇄ Research.
 │  ├─ lab/        The Research SCIENCE (pure, no Svelte/DOM), + the batch pipeline:
 │  │              evaluator.ts        n-seed measurement of a config (mean ± sd survival)
@@ -107,27 +109,35 @@ because moving the camera touches no genome.
 
 **Studio + Research:** the lab is one place with two modes (`app.svelte.ts`, flipped from the top
 bar). **Studio** is the spatial tree above — watch a world evolve, read one brain. **Research** is a
-three-zone **console** (`ResearchRail` · `ResearchWorkspace` · `ResearchSidebar`) organised around the
-**seven questions a rigorous study must answer** (`lab/questions.ts`; each instrument declares which it
-settles via the `ANSWERS` map, shown as `QuestionTags`). Five instruments fill them in:
+four-zone **console** (`ResearchRail` · a per-instrument design panel · `ResearchWorkspace` ·
+`ResearchSidebar`) organised around the **seven questions a rigorous study must answer**
+(`lab/questions.ts`; each instrument declares which it settles via the `ANSWERS` map, shown as
+`QuestionTags`). Four instruments fill them in:
 
-- **The Sweep** _(Q2 · Q6)_ — a factorial → each factor's effect on survival, with intervals.
+- **The Sweep** _(Q2 · Q6, and Q1 · Q5 via its drill)_ — a factorial → each factor's effect on survival
+  with intervals, the pairwise interactions, and a convergence check. Its **drill sidebar** opens any
+  run; the **microscope** there is the behaviour trace (below).
 - **The Ledger** _(Q3)_ — a claim → one pre-registered contrast → a supported/refuted verdict, kept.
 - **The Atlas** _(Q4)_ — two parameters → a pannable survival landscape with the measured cliff.
-- **The Trace** _(Q1 · Q5)_ — the SECOND discovery type: evolve one population keeping its genomes,
-  read the learning curve, then trace it against a random-brain control (the mechanism is the contrast).
 - **The Report** — assembles the **findings notebook** (`state/findings.svelte.ts`, a persisted
-  envelope any instrument writes to) into a seven-question brief (`state/report.svelte.ts`), each
-  answer drawn from the evidence that settled it; exportable to Markdown/PDF.
+  envelope any instrument writes to) into a seven-question brief (`state/report.svelte.ts`): a coverage
+  spine, an **auto-composed abstract** (`report/compose.ts`, templated from real findings — never
+  authored), numbered figures each drawn from the evidence that settled it, a **tensions** check, and a
+  reproduce-this method; exportable to Markdown/PDF.
+
+**The microscope** _(Q1 · Q5)_ is the second discovery type, folded into the Sweep drill rather than
+given its own tab: drill a run, **Trace this world**, and it evolves ONE population _keeping_ its
+genomes (`harness/traceStudy.ts`, keyed by recipe in `state/trace.svelte.ts`), reads `World.lifeCurve`
+for the learning curve, then traces that school against a random-brain control (the mechanism is the
+contrast). It is a deliberate, time-sliced main-thread study — the exception to the batch spine below.
 
 The measuring instruments are thin UIs over one spine: the pure `evaluator` on a **Web Worker pool**
-(`runner.ts`) aggregated by honest `stats.ts`. The Trace is the exception — a deliberate, time-sliced
-main-thread study (`harness/traceStudy.ts`) that evolves-and-KEEPS a population (the evaluator discards
-it) and reads `World.lifeCurve` **read-only**, plus `harness/trace.ts` for one bout's paths. **The
-engine and the fidelity gate are never touched** — Research, the curve capture included, only ever
-_reads_ the engine. A round-trip stitches the modes: **Analyse** hands a Studio world to Research as the
-subject every instrument explores (`app.analyze`), and **Watch this world** drops an Atlas point or the
-Report's subject back onto the bench (`landscape.watch` / `report.watch`).
+(`runner.ts`) aggregated by honest `stats.ts`. **The engine and the fidelity gate are never touched** —
+Research, the curve capture included, only ever _reads_ the engine. A round-trip stitches the modes:
+**Analyse** hands a Studio world to Research as the subject every instrument explores (`app.analyze`),
+**Watch this world** drops an Atlas point or the Report's subject back onto the bench
+(`landscape.watch` / `report.watch`), and a Report **drill-through** navigates from a conclusion back to
+the instrument that produced it (`app.setInstrument`).
 
 **Honesty rails (load-bearing):** an exploratory Sweep shows effect **intervals only** — no
 significance badge, because it is many comparisons. A verdict WORD ("supported"/"refuted") is emitted
@@ -164,15 +174,31 @@ same snapshot the screen does (`state/report.svelte.ts` is the one place this ra
   fish is eaten, when its generation is replaced, and on world reset.
 - **The honest finding stays**: more senses ≠ more intelligence. Don't fake a clean ladder.
 
+## Developer tooling
+
+A thin **`Makefile`** over `scripts/make/` is the one entry point — `make run` does setup + start
+end to end (Node check, dependency install, port allocation, readiness poll). The Makefile only
+dispatches; each script (`install.sh`, `run.sh`, `run-tests.sh`, `run-linters.sh`, `deploy.sh`) owns
+its logic and shares one bash-3.2-safe UI library. Tests and linters aggregate — every gate runs, the
+exit code ORs them — so no failure is hidden behind an earlier one.
+
 ## Deployment
 
-Static build, deployed to GitHub Pages by CI on `main`. The Pages sub-path is env-guarded:
-`BASE_PATH=/darwinlab npm run build` produces the Pages-shaped build; local dev and plain
-builds stay at `/`. The e2e suite runs against the based build in CI, so a base-path
-regression fails before it deploys.
+Static build, deployed to GitHub Pages. The Pages sub-path is env-guarded: `BASE_PATH=/darwinlab npm
+run build` produces the Pages-shaped build; local dev and plain builds stay at `/`, using relative
+asset paths so the same bundle works at either root.
+
+Publishing is **decoupled from merging, on purpose**. Every push to `main` runs `verify` + the full
+e2e suite (the health signal) but **deploys nothing**; the deploy job is gated on a manual
+`workflow_dispatch`, triggered by **`make deploy`** — which shows the gap between the live SHA and
+current `main`, confirms, runs the whole bar fresh, and only then ships. So `main` and the live site
+diverge until someone chooses to publish. Link-preview metadata (Open Graph card + favicon) lives in
+the static `src/app.html`, since a client-only SPA's `<svelte:head>` is JS-only and unfurlers don't
+run JS.
 
 ## Stack
 
 SvelteKit 2 · Svelte 5 (runes) · TypeScript · Vite · `adapter-static` ·
 Vitest (unit + component, real Chromium for component specs) · Playwright (e2e) ·
-ESLint + Prettier · GitHub Actions (CI, Pages deploy, nightly science watch).
+ESLint + Prettier · Make-based dev tooling · GitHub Actions (CI, on-demand Pages deploy, nightly
+science watch).

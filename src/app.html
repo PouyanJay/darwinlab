@@ -4,6 +4,48 @@
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<meta name="text-scale" content="scale" />
+
+		<!--
+			Link-preview + tab metadata, in the STATIC shell on purpose. The app is a client-only SPA
+			(ssr=false), so anything in a component's <svelte:head> is added by JS after load — a
+			link-unfurler (Slack, iMessage, WhatsApp, Twitter…) reads the HTML WITHOUT running JS and
+			would see none of it. So the title, description, favicon and Open Graph card live here.
+
+			og:image / og:url are ABSOLUTE because unfurlers demand it, and the site ships to one fixed
+			place — GitHub Pages under /darwinlab. If the deploy URL ever changes, update these four.
+			favicon.svg and preview.png are served from /static, so they follow the base path via
+			%sveltekit.assets% (the icon) or the hardcoded origin+base (the card image).
+		-->
+		<title>Darwin Lab</title>
+		<meta
+			name="description"
+			content="A browser lab for neuroevolution: tiny neural-network fish evolve real escape behaviour through natural selection — nothing about how they behave is ever programmed."
+		/>
+		<link rel="icon" href="%sveltekit.assets%/favicon.svg" />
+
+		<meta property="og:type" content="website" />
+		<meta property="og:site_name" content="Darwin Lab" />
+		<meta property="og:title" content="Darwin Lab — behaviour that evolved, not coded" />
+		<meta
+			property="og:description"
+			content="Tiny neural-network fish evolve real escape behaviour through natural selection. Nothing about how they behave is ever programmed — watch it happen."
+		/>
+		<meta property="og:url" content="https://pouyanjay.github.io/darwinlab/" />
+		<meta property="og:image" content="https://pouyanjay.github.io/darwinlab/preview.png" />
+		<meta property="og:image:width" content="1200" />
+		<meta property="og:image:height" content="630" />
+		<meta
+			property="og:image:alt"
+			content="Darwin Lab — the intro screen: 'Behaviour that evolved, not behaviour that was coded'"
+		/>
+
+		<meta name="twitter:card" content="summary_large_image" />
+		<meta name="twitter:title" content="Darwin Lab — behaviour that evolved, not coded" />
+		<meta
+			name="twitter:description"
+			content="Tiny neural-network fish evolve real escape behaviour through natural selection. Nothing about how they behave is ever programmed — watch it happen."
+		/>
+		<meta name="twitter:image" content="https://pouyanjay.github.io/darwinlab/preview.png" />
 		<!--
 			Resolve the theme BEFORE the first paint. The app is client-rendered, so if we waited for
 			onMount to stamp data-theme, a user would see a flash of the wrong palette on every load.
