@@ -62,3 +62,16 @@ test('the mode survives a reload — into Research, and back out of it', async (
 	await expect(researchStage(page)).toHaveCount(0);
 	await expect(modeGroup(page).getByRole('radio', { name: 'Studio' })).toBeChecked();
 });
+
+test('the top bar links to the source repo, safely, in a new tab', async ({ page }) => {
+	await gotoApp(page);
+
+	// A real <a> to the repo — asserted by its href, so a wrong/broken URL fails loudly — that opens
+	// in a new tab without handing the opener over (target=_blank needs rel=noopener to be safe).
+	const gh = page.getByRole('link', { name: 'Darwin Lab on GitHub' });
+	await expect(gh).toHaveAttribute('href', 'https://github.com/PouyanJay/darwinlab');
+	await expect(gh).toHaveAttribute('target', '_blank');
+	await expect(gh).toHaveAttribute('rel', /noopener/);
+	// It sits in the header's control cluster, before the theme toggle — a link, not a button.
+	await expect(page.locator('header a.gh svg')).toBeVisible();
+});
