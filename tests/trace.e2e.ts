@@ -120,6 +120,6 @@ test('sending the trace answers Q1 and Q5 in the Report — and nothing else', a
 
 	// The trace does NOT answer the Ledger's question — that stays an honest prompt. (Q2/Q6 belong
 	// to the sweep's own findings, which this test deliberately never sent.)
-	await expect(page.getByTestId('report-qQ3')).toContainText('run The Ledger');
-	await expect(page.getByTestId('report-qQ2')).toContainText('run The Sweep');
+	await expect(page.getByTestId('report-qQ3')).toContainText('Run The Ledger');
+	await expect(page.getByTestId('report-qQ2')).toContainText('Run The Sweep');
 });
