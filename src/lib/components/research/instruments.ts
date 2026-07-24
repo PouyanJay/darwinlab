@@ -7,9 +7,10 @@
  * `FindingSource` keeps 'trace' and the Report consumes them unchanged.
  */
 
-import { ANSWERS, type QuestionId } from '../../lab/questions';
+import { ANSWERS, type QuestionId, type ResearchInstrument } from '../../lab/questions';
 
-export type Instrument = 'sweep' | 'ledger' | 'atlas' | 'report';
+/** The console's instrument keys — the neutral type lives in lab/questions so the state store shares it. */
+export type Instrument = ResearchInstrument;
 
 export interface InstrumentMeta {
 	key: Instrument;

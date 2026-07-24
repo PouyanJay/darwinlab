@@ -16,12 +16,15 @@
 		axisLabel,
 		format,
 		/** Optional x where survival falls off hardest — drawn as a threshold marker on the strip. */
-		cliffX
+		cliffX,
+		open
 	}: {
 		band: { x: number; survival: number }[];
 		axisLabel: string;
 		format: (x: number) => string;
 		cliffX?: number;
+		/** Force the data table open (the Report's "show data" toggle). */
+		open?: boolean;
 	} = $props();
 
 	const W = 320;
@@ -79,7 +82,7 @@
 	);
 </script>
 
-<Figure {label}>
+<Figure {label} {open}>
 	<svg viewBox="0 0 {W} {H}" aria-hidden="true">
 		<!-- the survival gradient: one segment per measured point, contiguous across the width -->
 		{#each segments as seg, i (i)}

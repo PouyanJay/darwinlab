@@ -10,7 +10,17 @@
 	import { formatSeconds } from '$lib/format';
 	import type { ArmRow } from '$lib/lab/evidence';
 
-	let { arms }: { arms: ArmRow[] } = $props();
+	let {
+		arms,
+		intervals = true,
+		open
+	}: {
+		arms: ArmRow[];
+		/** Draw the interval bars (vs just the mean dots). The Report's skeptic toggle flips this. */
+		intervals?: boolean;
+		/** Force the data table open (the Report's "show data" toggle). */
+		open?: boolean;
+	} = $props();
 
 	// A shared axis spanning both arms' intervals, padded and never below zero (survival can't be).
 	const axis = $derived.by(() => {
@@ -41,7 +51,7 @@
 	);
 </script>
 
-<Figure {label}>
+<Figure {label} {open}>
 	<div class="ab">
 		{#each arms as arm (arm.label)}
 			{@const won = !Number.isNaN(arm.mean) && arm.mean === topMean}
@@ -50,12 +60,14 @@
 				<div class="track">
 					<div class="baseline" aria-hidden="true"></div>
 					{#if !Number.isNaN(arm.mean)}
-						<div
-							class="ci"
-							class:won
-							style:left="{toPercent(arm.lo)}%"
-							style:width="{Math.max(0, toPercent(arm.hi) - toPercent(arm.lo))}%"
-						></div>
+						{#if intervals}
+							<div
+								class="ci"
+								class:won
+								style:left="{toPercent(arm.lo)}%"
+								style:width="{Math.max(0, toPercent(arm.hi) - toPercent(arm.lo))}%"
+							></div>
+						{/if}
 						<div class="dot" class:won style:left="{toPercent(arm.mean)}%"></div>
 					{/if}
 				</div>

@@ -14,6 +14,12 @@ import { bench } from './bench.svelte';
 import { QUESTIONS, type Question, type QuestionId } from '../lab/questions';
 import { negativesOf as negativesFromEvidence } from '../lab/evidence';
 import { reportToMarkdown, type ReportSnapshot } from '../report/export';
+import {
+	composeAbstract,
+	detectTensions,
+	type AbstractClause,
+	type Tension
+} from '../report/compose';
 
 /** Who answers each question — the instrument (or action) whose finding fills it, named for the prompt
  *  shown when it is unanswered. Q7 is provenance: any finding carries the fingerprint that reproduces it. */
@@ -104,6 +110,35 @@ class ReportStore {
 	/** How many of the seven are answered — the coverage the lede reports honestly. */
 	get coverage(): { answered: number; total: number } {
 		return { answered: this.sections.filter((s) => s.finding).length, total: QUESTIONS.length };
+	}
+
+	/**
+	 * The auto-composed abstract — a few sentences read from the settled findings, each cited to its
+	 * question, closing with an honest gap. Empty before the subject has been studied. Never invented:
+	 * see `composeAbstract`.
+	 */
+	get abstract(): AbstractClause[] {
+		return composeAbstract(this.sections);
+	}
+
+	/** The flagged conflicts between findings that both stand — surfaced, not averaged. Empty when none. */
+	get tensions(): Tension[] {
+		return detectTensions(this.sections);
+	}
+
+	/**
+	 * The reproduce-this payload — the subject's own base config, so "load this exact world" carries
+	 * back the world the findings are about, and "copy config JSON" hands over exactly what reproduces
+	 * them. Read live from the subject the report is scoped to.
+	 */
+	get reproduce(): { configHash: string; seeds: number | null; configJson: string } | null {
+		const method = this.method;
+		if (!method) return null;
+		return {
+			configHash: method.configHash,
+			seeds: method.seeds,
+			configJson: JSON.stringify(app.subjectBase(this.subjectName), null, 2)
+		};
 	}
 
 	/** Whether the current subject has been studied at all. */

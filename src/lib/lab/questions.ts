@@ -9,6 +9,11 @@
 
 export type QuestionId = 'Q1' | 'Q2' | 'Q3' | 'Q4' | 'Q5' | 'Q6' | 'Q7';
 
+/** The instruments the Research console navigates between — the neutral key type, so both the state
+ *  store (which owns which is active) and the components (which render them) share one definition. The
+ *  Trace is deliberately absent: it retired into the Sweep drill's microscope. */
+export type ResearchInstrument = 'sweep' | 'ledger' | 'atlas' | 'report';
+
 export interface Question {
 	id: QuestionId;
 	/** The question, as a rigorous study would phrase it. */

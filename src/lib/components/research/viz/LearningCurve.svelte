@@ -12,8 +12,9 @@
 	let {
 		curve,
 		/** What one point means, for the reader — e.g. "fraction of each generation still alive at its end". */
-		legend = 'fraction of each generation still alive when it ended'
-	}: { curve: number[]; legend?: string } = $props();
+		legend = 'fraction of each generation still alive when it ended',
+		open
+	}: { curve: number[]; legend?: string; open?: boolean } = $props();
 
 	const W = 320;
 	const H = 120;
@@ -47,7 +48,7 @@
 	);
 </script>
 
-<Figure {label}>
+<Figure {label} {open}>
 	<svg viewBox="0 0 {W} {H}" aria-hidden="true">
 		<!-- gridlines at 50% and the 0% baseline — monochrome, so the curve reads over them -->
 		<line class="grid" x1={PAD.l} x2={W - PAD.r} y1={y(0.5)} y2={y(0.5)} />

@@ -29,6 +29,7 @@ import {
 	type NumericCondition,
 	type WorldConfig
 } from '../engine';
+import type { ResearchInstrument } from '../lab/questions';
 
 export type AppMode = 'studio' | 'research';
 
@@ -47,6 +48,11 @@ const GENERIC_NAME = 'Generic world';
 
 class AppStore {
 	#mode = $state<AppMode>('studio');
+
+	// Which Research instrument is active — lifted here (not local to the stage) so a drill-through
+	// link inside one instrument (the Report's "← The Sweep") can navigate to another. Session-only:
+	// like the subject, it is where you are right now, not a setting to restore.
+	#instrument = $state<ResearchInstrument>('sweep');
 
 	// The world Research is exploring around — set by "Analyse in Research" from a Studio world. Null
 	// means Research runs on the editable generic base below. `$state.raw`: it is a whole config, only
@@ -74,10 +80,21 @@ class AppStore {
 		return this.#mode === 'research';
 	}
 
-	/** Switch instruments. Persists, and leaves the live bench untouched. */
+	/** Switch modes. Persists, and leaves the live bench untouched. */
 	setMode(mode: AppMode): void {
 		this.#mode = mode;
 		if (browser) localStorage.setItem(MODE_STORAGE_KEY, mode);
+	}
+
+	/** The active Research instrument — the rail, the workspace and the sidebar read this one truth. */
+	get instrument(): ResearchInstrument {
+		return this.#instrument;
+	}
+
+	/** Navigate the console to an instrument — the rail's tabs and the Report's drill-through links
+	 *  both call this, so a jump from a conclusion back to its instrument is one path, not two. */
+	setInstrument(key: ResearchInstrument): void {
+		this.#instrument = key;
 	}
 
 	/** The world Research is currently analysing, or null when it explores a generic world. */

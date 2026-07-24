@@ -10,7 +10,18 @@
 	import { formatSignedSeconds } from '$lib/format';
 	import { isFlatEffect, type EffectRow } from '$lib/lab/evidence';
 
-	let { effects }: { effects: EffectRow[] } = $props();
+	let {
+		effects,
+		intervals = true,
+		open
+	}: {
+		effects: EffectRow[];
+		/** Draw the 95% interval whiskers. The Report's skeptic toggle flips this; on by default, so
+		 *  the Sweep (its other caller) is unchanged. */
+		intervals?: boolean;
+		/** Force the data table open (the Report's "show data" toggle). */
+		open?: boolean;
+	} = $props();
 
 	// A symmetric axis sized to the widest bar or whisker, so the zero line sits dead centre.
 	const max = $derived(
@@ -43,7 +54,7 @@
 	);
 </script>
 
-<Figure {label}>
+<Figure {label} {open}>
 	<div class="effects">
 		{#each effects as e (e.label)}
 			{@const missing = Number.isNaN(e.delta)}
@@ -60,7 +71,13 @@
 							style:width="{Math.abs(px(e.delta) - 50)}%"
 							style:background={barColor(!cost, flat)}
 						></div>
-						<div class="whisk" style:left="{px(e.lo)}%" style:width="{px(e.hi) - px(e.lo)}%"></div>
+						{#if intervals}
+							<div
+								class="whisk"
+								style:left="{px(e.lo)}%"
+								style:width="{px(e.hi) - px(e.lo)}%"
+							></div>
+						{/if}
 					{/if}
 				</div>
 				<span class="val" class:cost class:flat>
