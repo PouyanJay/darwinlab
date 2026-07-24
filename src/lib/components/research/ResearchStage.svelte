@@ -23,10 +23,13 @@
 	import Atlas from './Atlas/Atlas.svelte';
 	import ReportView from './Report/ReportView.svelte';
 	import QuestionTags from './QuestionTags.svelte';
-	import { instrumentMeta, answersOf, type Instrument } from './instruments';
+	import { instrumentMeta, answersOf } from './instruments';
+	import { app } from '$lib/state';
 	import { SCENARIO } from '$lib/lab/scenario';
 
-	let active = $state<Instrument>('sweep');
+	// The active instrument lives in the app store now, so a Report drill-through link can navigate
+	// here from inside the workspace. The stage reads and sets that one truth.
+	const active = $derived(app.instrument);
 	const meta = $derived(instrumentMeta(active));
 	const answers = $derived(answersOf(active));
 
@@ -38,7 +41,7 @@
 
 <div class="console" class:has-design={hasDesign} data-testid="research-stage">
 	<div class="zone zone-rail">
-		<ResearchRail {active} onselect={(key) => (active = key)} />
+		<ResearchRail {active} onselect={(key) => app.setInstrument(key)} />
 	</div>
 
 	{#if hasDesign}

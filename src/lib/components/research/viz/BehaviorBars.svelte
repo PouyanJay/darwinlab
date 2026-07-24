@@ -13,7 +13,14 @@
 	import Figure from './Figure.svelte';
 	import DataTable from './DataTable.svelte';
 
-	let { metrics }: { metrics: BehaviorMetric[] } = $props();
+	let {
+		metrics,
+		open
+	}: {
+		metrics: BehaviorMetric[];
+		/** Force the data table open (the Report's "show data" toggle). */
+		open?: boolean;
+	} = $props();
 
 	/** Bar width as a fraction of the row max — both bars share the row's scale so their gap is honest. */
 	const frac = (value: number, max: number) => (max > 0 ? Math.max(0, value / max) : 0);
@@ -38,7 +45,7 @@
 	);
 </script>
 
-<Figure {label}>
+<Figure {label} {open}>
 	<div class="bars">
 		{#each metrics as m (m.label)}
 			{@const max = rowMax(m)}

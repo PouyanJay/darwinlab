@@ -10,12 +10,16 @@
 	let {
 		label,
 		children,
-		table
+		table,
+		open
 	}: {
 		/** The one-sentence conclusion a screen reader reads in place of the pixels. */
 		label: string;
 		children: Snippet;
 		table: Snippet;
+		/** Force the data table open — the Report's "show data" skeptic toggle drives this. Undefined
+		 *  leaves it user-controlled (the per-figure summary), so ordinary callers are unaffected. */
+		open?: boolean;
 	} = $props();
 </script>
 
@@ -23,7 +27,7 @@
 	<div class="graphic" role="img" aria-label={label}>
 		{@render children()}
 	</div>
-	<details class="as-table">
+	<details class="as-table" open={open || undefined}>
 		<summary>Show as a table</summary>
 		<div class="table-wrap">
 			{@render table()}
