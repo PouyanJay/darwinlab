@@ -47,32 +47,57 @@ const study = (): TraceStudy => ({
 
 describe('traceFindings', () => {
 	it('makes exactly two findings — the curve and the mechanism — keyed to their recipe', () => {
-		const findings = traceFindings(study(), 'cfg123', 'k1', 'Condition 3');
+		const findings = traceFindings({
+			study: study(),
+			hash: 'cfg123',
+			key: 'k1',
+			label: 'Condition 3'
+		});
 		expect(findings).toHaveLength(2);
 		expect(findings.map((f) => f.variant)).toEqual(['curve-k1', 'mechanism-k1']);
 	});
 
 	it('the curve finding settles ONLY Q1 and carries the learning curve', () => {
-		const curve = traceFindings(study(), 'cfg123', 'k1', 'Condition 3')[0];
+		const curve = traceFindings({
+			study: study(),
+			hash: 'cfg123',
+			key: 'k1',
+			label: 'Condition 3'
+		})[0];
 		expect(curve.questions).toEqual(['Q1']); // not the source's [Q1, Q5] — this one is the curve
 		expect(curve.evidence).toEqual({ kind: 'curve', curve: [0.1, 0.3, 0.55, 0.62] });
 		expect(curve.title).toContain('62%'); // the final survival fraction, as a percent
 	});
 
 	it('the mechanism finding settles ONLY Q5 and carries the evolved-vs-control behaviour', () => {
-		const mechanism = traceFindings(study(), 'cfg123', 'k1', 'Condition 3')[1];
+		const mechanism = traceFindings({
+			study: study(),
+			hash: 'cfg123',
+			key: 'k1',
+			label: 'Condition 3'
+		})[1];
 		expect(mechanism.questions).toEqual(['Q5']);
 		expect(mechanism.evidence?.kind).toBe('behavior');
 		expect(mechanism.title).toContain('5/8'); // the survivors it reports
 	});
 
 	it('names the traced cell in both findings — the drill is where this study came from', () => {
-		const findings = traceFindings(study(), 'cfg123', 'k1', 'Condition 3');
+		const findings = traceFindings({
+			study: study(),
+			hash: 'cfg123',
+			key: 'k1',
+			label: 'Condition 3'
+		});
 		expect(findings.every((f) => f.detail.includes('Condition 3'))).toBe(true);
 	});
 
 	it('stamps both findings with the config that reproduces them', () => {
-		const findings = traceFindings(study(), 'abc999', 'k1', 'Condition 3');
+		const findings = traceFindings({
+			study: study(),
+			hash: 'abc999',
+			key: 'k1',
+			label: 'Condition 3'
+		});
 		expect(findings.every((f) => f.configHash === 'abc999')).toBe(true);
 	});
 });
@@ -98,6 +123,8 @@ describe('traceKey', () => {
 describe('the microscope store', () => {
 	// A REAL two-generation evolve, not a stub — the store's whole job is delivering a live study to
 	// the right recipe and nobody else, and only a run that actually happened can prove the wiring.
+	// No afterEach cleanup on purpose: the store is a singleton with one #done slot each test
+	// overwrites for itself, and the findings it files carry collision-free recipe-hash variants.
 	it('lands the study on ITS recipe key — a different budget or cell can never wear it', async () => {
 		const cfg = newWorldConfig('microscope-spec', '#123456');
 		const episodes = 2;
@@ -121,4 +148,33 @@ describe('the microscope store', () => {
 		expect(findings.has('trace', `curve-${key}`)).toBe(true);
 		expect(findings.has('trace', `mechanism-${key}`)).toBe(true);
 	}, 30_000);
+
+	it('holds another recipe’s door while a study runs, and a cancel clears it without a result', async () => {
+		const cfg = newWorldConfig('microscope-cancel-spec', '#123456');
+		// 50 generations — long enough that the evolve MUST still be in flight when we look. run()
+		// marks busy synchronously (before its first await), so these reads race nothing.
+		const running = trace.run({ cfg, episodes: 50, label: 'Condition 9' });
+		const key = traceKey(cfg, 50);
+
+		expect(trace.runningFor(key)).toBe(true); // this recipe is the one measuring…
+		expect(trace.busyElsewhere(key)).toBe(false); // …so its own card shows progress, not a wait
+		expect(trace.busyElsewhere(traceKey(cfg, 51))).toBe(true); // any other recipe's door waits
+
+		trace.cancel();
+		await running;
+		expect(trace.runningFor(key)).toBe(false); // the busy flag cleared…
+		expect(trace.busyElsewhere(traceKey(cfg, 51))).toBe(false); // …for every card
+		expect(trace.resultFor(key)).toBeNull(); // a cancelled study never lands
+	}, 30_000);
+
+	it('prices a trace as the evolve plus its two frozen bouts, at the calibrated rate', () => {
+		// Seed the same persisted rate loadSimRate reads (the sweep's calibration key), so the
+		// expected number is exact — a regex on the button could never catch a formula regression.
+		localStorage.setItem('darwinlab:sweep-sim-rate', '100');
+		try {
+			expect(trace.estimateSeconds(8, 10)).toBe(1); // (8 gens + 2 bouts) × 10 sim-s ÷ 100 sim-s/s
+		} finally {
+			localStorage.removeItem('darwinlab:sweep-sim-rate');
+		}
+	});
 });

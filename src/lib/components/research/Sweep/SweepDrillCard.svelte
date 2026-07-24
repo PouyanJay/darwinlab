@@ -26,7 +26,12 @@
 	import { cellRecipe, isUnderTrained } from '$lib/lab/sweep';
 	import { ANSWERS } from '$lib/lab/questions';
 	import { mean } from '$lib/lab/stats';
-	import { behaviorMetrics, traceSummary } from '$lib/harness/traceStudy';
+	import {
+		behaviorMetrics,
+		traceSummary,
+		EVOLVE_PROGRESS_SHARE,
+		CONTROL_BOUT_PROGRESS
+	} from '$lib/harness/traceStudy';
 	import { formatSeconds, formatSignedSeconds } from '$lib/format';
 	import type { SweepCell } from '$lib/lab/sweep';
 	import type { Evaluation } from '$lib/lab/evaluator';
@@ -184,15 +189,18 @@
 	);
 	const estimate = $derived(Math.max(1, Math.round(trace.estimateSeconds(episodes, genDuration))));
 
-	// The progress narrated as its stages: the evolve is 0–0.85, then the two frozen bouts (the same
-	// split runTraceStudy reports) — so the strip says WHAT is happening, not just how much.
+	// The progress narrated as its stages — the boundaries are runTraceStudy's own exported split,
+	// so the strip says WHAT is happening and can never desync from the number it describes.
 	const stage = $derived.by(() => {
 		const p = trace.progress;
-		if (p < 0.85) {
-			const gen = Math.max(1, Math.min(episodes, Math.ceil((p / 0.85) * episodes)));
+		if (p < EVOLVE_PROGRESS_SHARE) {
+			const gen = Math.max(
+				1,
+				Math.min(episodes, Math.ceil((p / EVOLVE_PROGRESS_SHARE) * episodes))
+			);
 			return `evolving at this recipe · gen ${gen}/${episodes} — keeping the brains`;
 		}
-		return p < 0.93
+		return p < CONTROL_BOUT_PROGRESS
 			? 'frozen bout · tracing the evolved school'
 			: 'frozen bout · tracing the random-brain control';
 	});

@@ -47,7 +47,7 @@ export function traceKey(cfg: WorldConfig, episodes: number): string {
 
 /** One completed study, frozen with everything its findings need — nothing is re-read at send time,
  *  so a panel or subject edit after the run cannot relabel what was measured. */
-interface DoneStudy {
+export interface TraceRecord {
 	key: string;
 	study: TraceStudy;
 	hash: string;
@@ -62,12 +62,7 @@ interface DoneStudy {
  * "in report" state can never borrow another cell's. Pure, so the mapping is testable without a live
  * evolve.
  */
-export function traceFindings(
-	study: TraceStudy,
-	hash: string,
-	key: string,
-	label: string
-): FindingInput[] {
+export function traceFindings({ key, study, hash, label }: TraceRecord): FindingInput[] {
 	const { finalSurvival, evolvedSurvivors, total } = traceSummary(study);
 
 	return [
@@ -99,8 +94,11 @@ export function traceFindings(
 	];
 }
 
+/** The two frozen bouts a study prices beside its evolve — the evolved school's and the control's. */
+const FROZEN_BOUTS = 2;
+
 class TraceStore {
-	#done = $state.raw<DoneStudy | null>(null);
+	#done = $state.raw<TraceRecord | null>(null);
 	#busyKey = $state<string | null>(null);
 	#progress = $state(0);
 	#controller: AbortController | null = null;
@@ -128,7 +126,7 @@ class TraceStore {
 	/** Price one trace — the evolve plus its two frozen bouts — with the same calibrated rate every
 	 *  console estimate uses, so the button's "≈ n s" can't drift from the Sweep's arithmetic. */
 	estimateSeconds(episodes: number, genDuration: number): number {
-		return ((episodes + 2) * genDuration) / loadSimRate();
+		return ((episodes + FROZEN_BOUTS) * genDuration) / loadSimRate();
 	}
 
 	/**
@@ -167,8 +165,7 @@ class TraceStore {
 	/** Add the frozen study's two findings — the learning curve (Q1) and the mechanism (Q5). */
 	addToReport(): void {
 		if (!this.#done) return;
-		const { study, hash, key, label } = this.#done;
-		for (const finding of traceFindings(study, hash, key, label)) findings.add(finding);
+		for (const finding of traceFindings(this.#done)) findings.add(finding);
 	}
 }
 
