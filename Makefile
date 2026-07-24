@@ -5,7 +5,7 @@ SHELL := /bin/bash
 .DEFAULT_GOAL := help
 
 # ── Setup & orchestration ─────────────────────────────────────────────
-.PHONY: help setup start run preview stop logs
+.PHONY: help setup start run preview stop logs deploy
 
 help:
 	@./scripts/make/help.sh
@@ -26,6 +26,10 @@ stop:
 
 logs:
 	@./scripts/make/run.sh --logs
+
+# Publish to GitHub Pages — on demand only. Merging never deploys; this does.
+deploy:
+	@./scripts/make/deploy.sh
 
 # ── Testing ───────────────────────────────────────────────────────────
 .PHONY: test test-unit test-e2e
