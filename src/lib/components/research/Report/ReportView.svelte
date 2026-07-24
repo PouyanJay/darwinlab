@@ -11,14 +11,16 @@
 -->
 <script lang="ts">
 	import { SvelteSet, SvelteMap } from 'svelte/reactivity';
-	import { report, app } from '$lib/state';
+	import { report, app, findings } from '$lib/state';
 	import { negativesOf } from '$lib/state';
+	import type { ReportSection } from '$lib/state';
 	import { QUESTIONS, type QuestionId } from '$lib/lab/questions';
 	import CoverageSpine from './CoverageSpine.svelte';
 	import Abstract from './Abstract.svelte';
 	import QuestionSection from './QuestionSection.svelte';
 	import TensionCallout from './TensionCallout.svelte';
 	import ReproducePanel from './ReproducePanel.svelte';
+	import ConfirmDialog from '../../common/ConfirmDialog.svelte';
 
 	// The detailed sections are Q1–Q5; Q6 (negatives) and Q7 (method) render as their own panels.
 	const DETAILED: QuestionId[] = ['Q1', 'Q2', 'Q3', 'Q4', 'Q5'];
@@ -72,6 +74,32 @@
 			behavior: 'smooth',
 			block: 'start'
 		});
+	}
+
+	// ---- un-answering a question: confirm, then drop the finding that backs it ----
+	// The section awaiting confirmation, or null. A finding can answer two questions (the Sweep settles
+	// Q2 AND Q6), so removing it clears both — the confirm names the sibling so that is never a surprise.
+	let pendingRemoval = $state<ReportSection | null>(null);
+
+	const SHORT = new Map(QUESTIONS.map((q) => [q.id, q.short]));
+
+	/** The questions the pending finding ALSO answers, besides the one clicked — for the warning line. */
+	const alsoClears = $derived(
+		(pendingRemoval?.finding?.questions ?? []).filter((id) => id !== pendingRemoval?.question.id)
+	);
+
+	const removalMessage = $derived.by(() => {
+		if (!pendingRemoval) return '';
+		const q = pendingRemoval.question.id;
+		const base = `Remove the answer to ${q} (${pendingRemoval.question.short})? The section reverts to its prompt so you can run the test again.`;
+		if (!alsoClears.length) return base;
+		const siblings = alsoClears.map((id) => `${id} (${SHORT.get(id)})`).join(', ');
+		return `${base} This is one finding that also answers ${siblings}, so it clears too.`;
+	});
+
+	function confirmRemoval(): void {
+		if (pendingRemoval?.finding) findings.remove(pendingRemoval.finding.id);
+		pendingRemoval = null;
 	}
 </script>
 
@@ -127,6 +155,7 @@
 					{intervals}
 					{showData}
 					ontoggle={() => toggleSection(section.question.id)}
+					onremove={section.finding ? () => (pendingRemoval = section) : undefined}
 				/>
 			{/each}
 
@@ -172,6 +201,16 @@
 		</div>
 	</div>
 </div>
+
+<ConfirmDialog
+	open={pendingRemoval !== null}
+	title="Remove this answer?"
+	message={removalMessage}
+	confirmLabel="Remove answer"
+	confirmTestid="confirm-remove"
+	onconfirm={confirmRemoval}
+	oncancel={() => (pendingRemoval = null)}
+/>
 
 <style>
 	.report {

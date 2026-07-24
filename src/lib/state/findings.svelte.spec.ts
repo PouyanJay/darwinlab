@@ -157,6 +157,26 @@ describe('the Findings notebook', () => {
 		expect(localStorage.getItem(FINDINGS_STORAGE_KEY)).toBeNull();
 	});
 
+	it('clearSubject forgets one subject’s findings on disk and leaves the others standing', () => {
+		findings.add(input({ title: 'on the generic world' }));
+		const generic = currentSubjectHash();
+
+		app.analyze({ ...newWorldConfig('Watched', '#123456'), vision: 999 });
+		const subject = currentSubjectHash();
+		findings.add(input({ title: 'on the subject' }));
+
+		// both subjects really have a finding before we clear one — else "gone" proves nothing
+		expect(findings.forSubject(generic)).toHaveLength(1);
+		expect(findings.forSubject(subject)).toHaveLength(1);
+
+		findings.clearSubject(subject);
+
+		expect(findings.forSubject(subject)).toHaveLength(0); // the cleared subject is empty
+		expect(findings.forSubject(generic).map((f) => f.title)).toEqual(['on the generic world']); // the other survives
+		// …and the removal reached disk, not just memory
+		expect(stored().entries.map((f: { title: string }) => f.title)).toEqual(['on the generic world']);
+	});
+
 	it('scopes findings to the subject they were recorded on', () => {
 		const generic = currentSubjectHash();
 		findings.add(input({ title: 'on the generic world' }));

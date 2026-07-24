@@ -25,7 +25,8 @@
 		open,
 		intervals,
 		showData,
-		ontoggle
+		ontoggle,
+		onremove
 	}: {
 		section: ReportSection;
 		/** The figure's number in the paper, or undefined when this section draws no figure. */
@@ -34,6 +35,9 @@
 		intervals: boolean;
 		showData: boolean;
 		ontoggle: () => void;
+		/** Un-answer this question — drop the backing finding so the section reverts to its "run the
+		 *  test" prompt, ready to be answered again. Absent when the row offers no removal. */
+		onremove?: () => void;
 	} = $props();
 
 	const finding = $derived(section.finding);
@@ -77,6 +81,15 @@
 			>
 				← {SOURCE_LABEL[finding.source]}
 			</button>
+			{#if onremove}
+				<button
+					class="qremove"
+					aria-label="remove the answer to {section.question.id}"
+					title="remove this answer, then run it again"
+					onclick={onremove}
+					data-testid="remove-answer-{section.question.id}">✕</button
+				>
+			{/if}
 		{:else}
 			<span class="src gap">not tested</span>
 		{/if}
@@ -224,6 +237,32 @@
 		color: var(--gold-ink);
 		border: 0;
 		cursor: default;
+	}
+
+	/* Un-answer this question — its own tab stop beside the drill-back link, muted until hovered so it
+	   never competes with the answer, then coral to say it deletes. */
+	.qremove {
+		flex: none;
+		align-self: center;
+		background: none;
+		border: 0;
+		padding: 2px 5px;
+		font: inherit;
+		font-size: var(--fs-sm);
+		line-height: 1;
+		color: var(--ink3);
+		cursor: pointer;
+		border-radius: var(--radius-chip);
+	}
+
+	.qremove:hover {
+		color: var(--data-coral);
+		background: color-mix(in oklab, var(--data-coral) 12%, transparent);
+	}
+
+	.qremove:focus-visible {
+		outline: var(--focus-ring);
+		outline-offset: var(--focus-offset);
 	}
 
 	.chev {
