@@ -180,6 +180,13 @@ class FindingsStore {
 		this.#persist();
 	}
 
+	/** Forget every finding about ONE subject — clearing a single report without touching the
+	 *  notebooks of other subjects the console has studied. */
+	clearSubject(subjectHash: string): void {
+		this.#entries = this.#entries.filter((finding) => finding.subjectHash !== subjectHash);
+		this.#persist();
+	}
+
 	/** The whole notebook as JSON — what a later "export" hands over. */
 	toJson(): string {
 		return JSON.stringify({ version: STORAGE_VERSION, entries: this.#entries }, null, 2);

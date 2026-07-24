@@ -177,6 +177,53 @@ test('the print stylesheet isolates the report — only the brief is on the page
 	await expect(page.getByTestId('report')).toHaveCSS('visibility', 'visible');
 });
 
+test('removing a question’s answer confirms, reverts it to a prompt, and clears its sibling', async ({
+	page
+}) => {
+	await reportWithASweep(page);
+
+	// Q2 and Q6 are both answered by the one Sweep finding, before we touch anything.
+	await expect(page.getByTestId('report-qQ2').locator('.effects')).toBeVisible();
+	await expect(page.getByTestId('report-qQ6')).not.toContainText('run The Sweep');
+
+	// The ✕ on Q2 opens a confirm that names the sibling Q6 it will also clear — no silent double-delete.
+	await page.getByTestId('remove-answer-Q2').click();
+	const dialog = page.getByRole('dialog', { name: 'Remove this answer?' });
+	await expect(dialog).toBeVisible();
+	await expect(dialog).toContainText('Q6');
+	await page.screenshot({ path: '/private/tmp/claude-501/-Users-pouyan-Developer-personal-darwinlab/a12c7128-0d77-4137-a2d1-dcafbaa05bfd/scratchpad/remove-confirm.png' });
+
+	// Cancel first — a probe: the answer must survive a dismissed confirm.
+	await dialog.getByRole('button', { name: 'Cancel' }).click();
+	await expect(page.getByTestId('report-qQ2').locator('.effects')).toBeVisible();
+
+	// Now confirm: Q2 reverts to its honest "run the test" prompt, and Q6 goes back to unanswered too.
+	await page.getByTestId('remove-answer-Q2').click();
+	await page.getByTestId('confirm-remove').click();
+	await expect(page.getByTestId('report-qQ2')).toContainText('Run The Sweep');
+	await expect(page.getByTestId('report-qQ2').locator('.effects')).toHaveCount(0);
+	await expect(page.getByTestId('report-qQ6')).toContainText('run');
+	await page.screenshot({ path: '/private/tmp/claude-501/-Users-pouyan-Developer-personal-darwinlab/a12c7128-0d77-4137-a2d1-dcafbaa05bfd/scratchpad/after-remove.png' });
+});
+
+test('"Clear this report" empties every answer after a confirm, and survives a cancel', async ({
+	page
+}) => {
+	await reportWithASweep(page);
+	await expect(page.getByTestId('report-qQ2').locator('.effects')).toBeVisible();
+
+	// Cancel keeps the report intact.
+	await page.getByTestId('clear-report').click();
+	await page.getByRole('dialog', { name: 'Clear this report?' }).getByRole('button', { name: 'Cancel' }).click();
+	await expect(page.getByTestId('report-qQ2').locator('.effects')).toBeVisible();
+
+	// Confirm wipes it: the masthead falls back to "hasn't been studied yet" and the actions vanish.
+	await page.getByTestId('clear-report').click();
+	await page.getByTestId('confirm-clear').click();
+	await expect(page.getByTestId('report')).toContainText("hasn't been studied yet");
+	await expect(page.getByTestId('report-actions')).toHaveCount(0);
+});
+
 test('"Watch in Studio" carries the report subject back into Studio', async ({ page }) => {
 	await reportWithASweep(page);
 

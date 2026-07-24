@@ -6,15 +6,33 @@
   side effects (a download, a print, a hop to Studio).
 -->
 <script lang="ts">
-	import { report } from '$lib/state';
+	import { report, findings } from '$lib/state';
 	import { downloadText } from '$lib/download';
 	import Button from '../../common/Button.svelte';
+	import ConfirmDialog from '../../common/ConfirmDialog.svelte';
 
 	const sections = $derived(report.sections);
 	const n = $derived(report.findings.length);
+	/** The whole notebook's size — "clear all" reaches past this subject, so it says how much it forgets. */
+	const total = $derived(findings.entries.length);
 
 	function exportMarkdown(): void {
 		downloadText('darwin-lab-report.md', report.toMarkdown(), 'text/markdown');
+	}
+
+	// Which clear is awaiting confirmation: this subject's report, the whole notebook, or neither.
+	let confirming = $state<null | 'subject' | 'all'>(null);
+
+	const confirmMessage = $derived(
+		confirming === 'subject'
+			? `Clear the report for ${report.subjectName}? This removes its ${n} finding${n === 1 ? '' : 's'} so every question goes back to unanswered. Other subjects' notebooks are untouched.`
+			: `Clear the ENTIRE notebook? This forgets every finding for every subject (${total} in total) and cannot be undone.`
+	);
+
+	function confirmClear(): void {
+		if (confirming === 'subject') findings.clearSubject(report.subjectHash);
+		else if (confirming === 'all') findings.clear();
+		confirming = null;
 	}
 </script>
 
@@ -42,8 +60,29 @@
 				Watch in Studio
 			</Button>
 		</div>
+
+		<div class="danger" data-testid="report-clear">
+			<button class="clear" onclick={() => (confirming = 'subject')} data-testid="clear-report">
+				Clear this report
+			</button>
+			{#if total > n}
+				<button class="clear all" onclick={() => (confirming = 'all')} data-testid="clear-all">
+					Clear all findings ({total})
+				</button>
+			{/if}
+		</div>
 	{/if}
 </div>
+
+<ConfirmDialog
+	open={confirming !== null}
+	title={confirming === 'all' ? 'Clear the whole notebook?' : 'Clear this report?'}
+	message={confirmMessage}
+	confirmLabel={confirming === 'all' ? 'Clear everything' : 'Clear report'}
+	confirmTestid="confirm-clear"
+	onconfirm={confirmClear}
+	oncancel={() => (confirming = null)}
+/>
 
 <style>
 	.panel {
@@ -118,5 +157,42 @@
 
 	.actions :global(.btn) {
 		width: 100%;
+	}
+
+	/* The destructive clears sit apart at the foot — ghost-quiet until hovered, then coral, so they read
+	   as the "undo the whole thing" they are and never crowd the export actions above. */
+	.danger {
+		display: flex;
+		flex-direction: column;
+		gap: var(--sp-2);
+		margin-top: var(--sp-3);
+	}
+
+	.clear {
+		width: 100%;
+		background: none;
+		border: 1px solid var(--line);
+		border-radius: var(--radius-control);
+		padding: var(--sp-3) 14px;
+		font: inherit;
+		font-size: var(--fs-sm);
+		font-weight: var(--fw-semibold);
+		color: var(--ink3);
+		cursor: pointer;
+		transition:
+			color var(--dur-fast) var(--ease),
+			border-color var(--dur-fast) var(--ease),
+			background var(--dur-fast) var(--ease);
+	}
+
+	.clear:hover {
+		color: var(--data-coral);
+		border-color: color-mix(in srgb, var(--data-coral) 55%, transparent);
+		background: color-mix(in oklab, var(--data-coral) 8%, transparent);
+	}
+
+	.clear:focus-visible {
+		outline: var(--focus-ring);
+		outline-offset: var(--focus-offset);
 	}
 </style>
