@@ -4,18 +4,29 @@
   pinned quiet, all frozen in the cell's own config), WHAT happened (this run → the seed spread →
   the cell mean → its rank among every condition), HOW they survive (the behaviour fingerprint the
   harness already measured, with the sweep-wide average ticked), whether THIS world converged, the
-  champion beside its population when Live scoring ran — and the door into Studio.
+  champion beside its population when Live scoring ran, THE MICROSCOPE (the behaviour trace, folded
+  in from the retired Trace instrument: re-evolve this exact recipe keeping the brains, then pit the
+  evolved school against a random-brain control on one frozen bout — Q1 and Q5, on demand) — and the
+  door into Studio.
 
   NO decorative world preview, on purpose (the owner's call): every pixel here is a measurement —
-  "measured, not watched". Watching is what the door is for.
+  "measured, not watched". Watching is what the door is for. The microscope keeps that rule: its
+  paths panels are the traced bout, not an animation.
 -->
 <script lang="ts">
 	import Button from '../../common/Button.svelte';
 	import Icon from '../../common/Icon.svelte';
-	import { sweep, findings } from '$lib/state';
+	import QuestionTags from '../QuestionTags.svelte';
+	import RunProgress from '../RunProgress.svelte';
+	import Trajectories from '../viz/Trajectories.svelte';
+	import BehaviorBars from '../viz/BehaviorBars.svelte';
+	import { sweep, findings, trace, traceKey } from '$lib/state';
+	import { prefersReducedMotion } from '$lib/state/motion.svelte';
 	import { configHash } from '$lib/lab/run';
 	import { cellRecipe, isUnderTrained } from '$lib/lab/sweep';
+	import { ANSWERS } from '$lib/lab/questions';
 	import { mean } from '$lib/lab/stats';
+	import { behaviorMetrics, traceSummary } from '$lib/harness/traceStudy';
 	import { formatSeconds, formatSignedSeconds } from '$lib/format';
 	import type { SweepCell } from '$lib/lab/sweep';
 	import type { Evaluation } from '$lib/lab/evaluator';
@@ -28,6 +39,8 @@
 		evaluation,
 		allResults,
 		championScored,
+		episodes,
+		genDuration,
 		onclose
 	}: {
 		cell: SweepCell;
@@ -37,6 +50,11 @@
 		allResults: (Evaluation | null)[];
 		/** Whether the run scored champion clones (the receipt's flag, frozen at run time). */
 		championScored: boolean;
+		/** The run's training budget (the receipt's, frozen) — the microscope inherits it, which is
+		 *  what makes the traced curve comparable to the cell's own. */
+		episodes: number;
+		/** Sim-seconds per generation, from the same frozen receipt — prices the trace estimate. */
+		genDuration: number;
 		onclose: () => void;
 	} = $props();
 
@@ -147,17 +165,84 @@
 		});
 	}
 
+	// ---- the microscope: the behaviour trace, keyed to THIS recipe (config + budget) ----
+
+	const microscopeKey = $derived(traceKey(cell.cfg, episodes));
+	const study = $derived(trace.resultFor(microscopeKey));
+	const tracing = $derived(trace.runningFor(microscopeKey));
+	const summary = $derived(study ? traceSummary(study) : null);
+	const metrics = $derived(
+		study ? behaviorMetrics(study.evolved.behavior, study.control.behavior) : []
+	);
+	const panels = $derived(
+		study
+			? [
+					{ title: 'Evolved', trace: study.evolved.trace },
+					{ title: 'Random control', trace: study.control.trace }
+				]
+			: []
+	);
+	const estimate = $derived(Math.max(1, Math.round(trace.estimateSeconds(episodes, genDuration))));
+
+	// The progress narrated as its stages: the evolve is 0–0.85, then the two frozen bouts (the same
+	// split runTraceStudy reports) — so the strip says WHAT is happening, not just how much.
+	const stage = $derived.by(() => {
+		const p = trace.progress;
+		if (p < 0.85) {
+			const gen = Math.max(1, Math.min(episodes, Math.ceil((p / 0.85) * episodes)));
+			return `evolving at this recipe · gen ${gen}/${episodes} — keeping the brains`;
+		}
+		return p < 0.93
+			? 'frozen bout · tracing the evolved school'
+			: 'frozen bout · tracing the random-brain control';
+	});
+
+	// The sidebar hides its scrollbar, so the microscope brings itself to the user instead of hoping
+	// they scroll: once when the study starts (the progress strip) and again when the results land.
+	// Driven from the click handler, not an effect — re-drilling an already-traced cell must NOT jump.
+	let microscopeEl: HTMLElement | undefined = $state();
+
+	function showMicroscope(): void {
+		microscopeEl?.scrollIntoView({
+			block: 'nearest',
+			behavior: prefersReducedMotion() ? 'auto' : 'smooth'
+		});
+	}
+
+	async function runTrace(): Promise<void> {
+		showMicroscope();
+		await trace.run({ cfg: cell.cfg, episodes, label: `Condition ${conditionIndex + 1}` });
+		showMicroscope();
+	}
+
+	const traceInReport = $derived(study !== null && trace.inReport(microscopeKey));
+
 	const curve = $derived(evaluation?.curve ?? []);
 	const underTrained = $derived(isUnderTrained(curve));
-	const sparkPath = $derived.by(() => {
-		if (curve.length < 2) return '';
-		const lo = Math.min(...curve);
-		const hi = Math.max(...curve);
-		const span = hi - lo || 1;
-		return curve
-			.map((v, i) => `${(i / (curve.length - 1)) * 240},${44 - ((v - lo) / span) * 40}`)
-			.join(' ');
+
+	// The convergence spark, with the traced school overlaid once a study is in. The two curves share
+	// one y-scale — the overlay is a comparison, and separate scales would fake agreement — and each
+	// spans the full width on its own x (both trained for the same budget; lengths differ only by a
+	// cancelled tail).
+	const sparkScale = $derived.by(() => {
+		const values = [...curve, ...(study?.curve ?? [])];
+		const lo = values.length ? Math.min(...values) : 0;
+		const hi = values.length ? Math.max(...values) : 1;
+		return { lo, span: hi - lo || 1 };
 	});
+
+	const toPath = (points: number[]) =>
+		points.length < 2
+			? ''
+			: points
+					.map(
+						(v, i) =>
+							`${(i / (points.length - 1)) * 240},${44 - ((v - sparkScale.lo) / sparkScale.span) * 40}`
+					)
+					.join(' ');
+
+	const sparkPath = $derived(toPath(curve));
+	const tracedPath = $derived(toPath(study?.curve ?? []));
 </script>
 
 <div class="drill" data-testid="sweep-drill">
@@ -250,10 +335,20 @@
 
 		{#if curve.length >= 2}
 			<hr class="sep" />
-			<!-- 4 · did THIS world converge -->
+			<!-- 4 · did THIS world converge — after a trace, the traced school's own curve lands here
+			     as a dashed gold line: one seed beside the cell mean, labeled, never averaged together -->
 			<svg class="spark" viewBox="0 0 240 52" aria-label="this cell's learning curve">
 				<polyline points={sparkPath} class="curve" />
+				{#if tracedPath}
+					<polyline points={tracedPath} class="curve traced" data-testid="drill-traced-curve" />
+				{/if}
 			</svg>
+			{#if tracedPath}
+				<p class="fpread legend">
+					<i class="sw teal"></i> cell mean · {evaluation.n} seeds
+					<i class="sw gold"></i> the traced school · 1 seed, same recipe &amp; budget
+				</p>
+			{/if}
 			{#if underTrained}
 				<p class="fpread warn" data-testid="drill-under-trained">
 					⚠ still climbing at the budget's edge — under-trained
@@ -262,13 +357,72 @@
 				<p class="fpread">converged ✓ — the curve plateaus before the budget ends</p>
 			{/if}
 		{/if}
+
+		<hr class="sep" />
+
+		<!-- 5 · the microscope — the behaviour trace, folded in: re-evolve THIS recipe keeping the
+		     brains, then the evolved school against a random-brain control on one frozen bout -->
+		<div class="microscope" bind:this={microscopeEl} data-testid="drill-microscope">
+			<div class="row">
+				<span class="eyebrow">The microscope</span>
+				<QuestionTags questions={ANSWERS.trace} />
+			</div>
+
+			{#if study && summary}
+				<div class="row">
+					<span>evolved · outlive the bout</span>
+					<b class="tabular">{summary.evolvedSurvivors}/{summary.total}</b>
+				</div>
+				<div class="row">
+					<span>random-brain control</span>
+					<b class="tabular control">{summary.controlSurvivors}/{summary.total}</b>
+				</div>
+
+				<Trajectories {panels} />
+				<BehaviorBars {metrics} />
+				<p class="fpread">
+					Same recipe, same frozen bout — only the brains differ. That contrast is the mechanism:
+					learning, not luck.
+				</p>
+
+				<Button
+					class="wide"
+					disabled={traceInReport}
+					onclick={() => trace.addToReport()}
+					data-testid="drill-trace-report"
+				>
+					<span>{traceInReport ? 'Trace in the report' : 'Send trace to notebook · Q1 + Q5'}</span>
+				</Button>
+			{:else if tracing}
+				<RunProgress progress={trace.progress} oncancel={() => trace.cancel()} />
+				<p class="fpread" data-testid="drill-trace-stage">{stage}</p>
+			{:else}
+				<p class="fpread">
+					The sweep scored this world, then discarded its brains. The microscope re-runs the exact
+					recipe — same budget, fresh seed — <b>keeps the school it grew</b>, and pits it against a
+					random-brain control on one frozen bout.
+				</p>
+				<Button
+					variant="primary"
+					class="wide"
+					disabled={trace.busyElsewhere(microscopeKey)}
+					onclick={runTrace}
+					data-testid="drill-trace"
+				>
+					<span>Trace this world · ≈ {estimate} s</span>
+				</Button>
+				{#if trace.busyElsewhere(microscopeKey)}
+					<p class="fpread">a trace is already running for another cell — it finishes first</p>
+				{/if}
+			{/if}
+		</div>
 	{:else}
 		<p class="frozen">
 			This cell was cancelled before it was measured — there is nothing to report.
 		</p>
 	{/if}
 
-	<!-- 5 · the doors -->
+	<!-- 6 · the doors -->
 	<div class="doors">
 		<Button variant="primary" class="wide" onclick={() => sweep.watch(cell)}>
 			<span>Watch this world</span>
@@ -276,7 +430,7 @@
 		</Button>
 		{#if evaluation}
 			<Button class="wide" disabled={inReport} onclick={addToReport} data-testid="drill-add-report">
-				<span>{inReport ? 'In the report' : 'Send to notebook'}</span>
+				<span>{inReport ? 'In the report' : 'Send cell finding to notebook'}</span>
 			</Button>
 		{/if}
 	</div>
@@ -468,6 +622,47 @@
 		fill: none;
 		stroke: var(--data-teal);
 		stroke-width: 1.8;
+	}
+
+	/* The traced school's curve rides the same axes as the cell mean — one seed, dashed gold, so the
+	   comparison is visible without ever being averaged into the teal line. */
+	.curve.traced {
+		stroke: var(--gold-ink);
+		stroke-width: 1.4;
+		stroke-dasharray: 4 3;
+	}
+
+	.legend {
+		display: flex;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: var(--sp-2);
+	}
+
+	.sw {
+		width: 12px;
+		height: 2px;
+		border-radius: 1px;
+		flex: none;
+	}
+
+	.sw.teal {
+		background: var(--data-teal);
+	}
+
+	.sw.gold {
+		background: repeating-linear-gradient(90deg, var(--gold-ink) 0 3px, transparent 3px 5px);
+	}
+
+	.microscope {
+		display: flex;
+		flex-direction: column;
+		gap: var(--sp-3);
+	}
+
+	/* The control's number is muted ink — the baseline that never learned gets no colour. */
+	.row b.control {
+		color: var(--ink3);
 	}
 
 	.doors {

@@ -46,18 +46,14 @@ test('the console has three zones and the sidebar follows the active instrument'
 	await expect(page.getByTestId('atlas-design')).toBeVisible();
 	await expect(sidebar).toContainText('Paint a landscape and drill any cell');
 
-	// The Trace — the second discovery type; the sidebar becomes its study summary (empty until run).
-	await page.getByRole('tab', { name: 'The Trace' }).click();
-	await expect(page.getByTestId('trace')).toBeVisible();
-	await expect(sidebar).toContainText('This trace');
-
 	// The Report — the last instrument opens the brief, and the sidebar becomes its contents outline.
+	// (No Trace tab: the behaviour trace lives in the Sweep drill's microscope now.)
 	await page.getByRole('tab', { name: 'The Report' }).click();
 	await expect(page.getByTestId('report')).toBeVisible();
 	await expect(sidebar).toContainText('Contents');
 });
 
-test('the rail nav is a roving tablist: arrows cycle all five instruments and wrap', async ({
+test('the rail nav is a roving tablist: arrows cycle all four instruments and wrap', async ({
 	page
 }) => {
 	await gotoApp(page);
@@ -74,10 +70,6 @@ test('the rail nav is a roving tablist: arrows cycle all five instruments and wr
 
 	await page.keyboard.press('ArrowDown');
 	await expect(page.locator('#rtab-atlas')).toBeFocused();
-
-	await page.keyboard.press('ArrowDown');
-	await expect(page.locator('#rtab-trace')).toBeFocused();
-	await expect(page.getByTestId('trace')).toBeVisible();
 
 	await page.keyboard.press('ArrowDown');
 	await expect(page.locator('#rtab-report')).toBeFocused();

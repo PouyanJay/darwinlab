@@ -53,6 +53,9 @@ const props = {
 	evaluation,
 	allResults,
 	championScored: false,
+	// the microscope inherits the run's frozen budget — the card prices its door from these
+	episodes: 30,
+	genDuration: 10,
 	onclose: () => {}
 };
 
@@ -146,7 +149,7 @@ describe('SweepDrillCard', () => {
 		});
 		expect(findings.has('sweep', 'cell-0')).toBe(false); // the state we claim to create starts absent
 
-		await page.getByRole('button', { name: 'Send to notebook' }).click();
+		await page.getByRole('button', { name: 'Send cell finding to notebook' }).click();
 		expect(findings.has('sweep', 'cell-0')).toBe(true);
 		const filed = findings.entries.find((f) => f.key.includes('cell-0'));
 		expect(filed?.title).toContain('Condition 1'); // the cell's identity, not the sweep's headline
@@ -158,5 +161,20 @@ describe('SweepDrillCard', () => {
 		const { container } = render(SweepDrillCard, { ...props, evaluation: null });
 		expect(container.textContent).toContain('nothing to report');
 		expect(container.querySelectorAll('.fprow')).toHaveLength(0);
+	});
+
+	it('offers the microscope on a measured cell — the trace door priced by the frozen budget', () => {
+		const { container } = render(SweepDrillCard, props);
+		const microscope = container.querySelector('[data-testid="drill-microscope"]');
+		expect(microscope?.textContent).toContain('The microscope');
+		expect(microscope?.textContent).toContain('Q1'); // the questions a trace settles…
+		expect(microscope?.textContent).toContain('Q5'); // …worn right on the section
+		// the door names the study and carries a wall-clock estimate — a number, not a promise
+		expect(microscope?.textContent).toMatch(/Trace this world · ≈ \d+ s/);
+	});
+
+	it('offers NO microscope on an unmeasured cell — there is no recipe worth re-running', () => {
+		const { container } = render(SweepDrillCard, { ...props, evaluation: null });
+		expect(container.querySelector('[data-testid="drill-microscope"]')).toBeNull();
 	});
 });

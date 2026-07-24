@@ -106,13 +106,9 @@ test('the Research stage scans clean — the instrument tabs, the Sweep and the 
 	expect(await violations(page)).toEqual([]);
 
 	// and the Atlas's controls — its axis pickers, grid/seed inputs and run button (empty state)
+	// (No Trace scan here: the microscope is drill-card surface, scanned populated in trace.e2e.)
 	await page.getByRole('tab', { name: 'The Atlas' }).click();
 	await page.getByTestId('atlas').waitFor();
-	expect(await violations(page)).toEqual([]);
-
-	// and the Trace's empty state — its run control and prompt, before a study is run
-	await page.getByRole('tab', { name: 'The Trace' }).click();
-	await page.getByTestId('trace').waitFor();
 	expect(await violations(page)).toEqual([]);
 });
 
