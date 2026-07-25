@@ -196,33 +196,31 @@
 		}
 	}
 
-	/* Narrow: one column, everything stacked - rail, then the instrument, then its context. */
+	/* Phone: the desktop model - fixed-height zones that each scroll inside a console that never grows
+	   the page - crams the design panel, the workspace and the context sidebar into one screen, so the
+	   vh-capped strips eat the viewport (the reported bug). Instead let the whole console SCROLL AS ONE
+	   PAGE: the console is the single scroll container, and the zones stack in DOM order (tab bar,
+	   design, workspace, context) at their natural height. The zones drop their own internal scrollers
+	   at this width (rail/workspace/sidebar each go overflow:visible in their own files) so there is
+	   exactly one scrollbar and nothing is trapped in a short capped box. */
 	@media (max-width: 768px) {
 		.console,
 		.console.has-design {
-			grid-template-columns: 1fr;
-			grid-template-rows: auto auto minmax(0, 1fr) auto;
+			display: flex;
+			flex-direction: column;
+			overflow-y: auto;
+			-webkit-overflow-scrolling: touch;
 		}
 
-		.zone-rail {
-			grid-row: 1;
+		.zone {
+			display: block;
+			min-height: 0;
 		}
 
-		.zone-design {
-			grid-column: 1;
-			grid-row: 2;
-			max-height: 46vh;
-		}
-
-		.zone-work {
-			grid-column: 1;
-			grid-row: 3;
-		}
-
+		/* No vh caps - each zone is as tall as its content; the console scrolls past them. */
+		.zone-design,
 		.zone-side {
-			grid-column: 1;
-			grid-row: 4;
-			max-height: 40vh;
+			max-height: none;
 		}
 	}
 </style>
