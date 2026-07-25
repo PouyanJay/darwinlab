@@ -37,4 +37,16 @@
 		flex-direction: column;
 		gap: var(--sp-6);
 	}
+
+	/* Phone: the console (ResearchStage) is the single scroll container, so the workspace renders at its
+	   natural height instead of being its own nested scroller, and takes a tighter gutter. (--bp-md) */
+	@media (max-width: 768px) {
+		.workspace {
+			overflow: visible;
+		}
+
+		.confine {
+			padding: var(--sp-6) var(--sp-5) var(--sp-7);
+		}
+	}
 </style>

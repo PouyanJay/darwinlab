@@ -102,4 +102,12 @@
 		line-height: var(--leading-body);
 		color: var(--ink3);
 	}
+
+	/* Phone: the console scrolls as one page, so the context zone renders at its natural height rather
+	   than trapping its drill card in a short vh-capped internal scroller. (--bp-md) */
+	@media (max-width: 768px) {
+		.sidebar {
+			overflow: visible;
+		}
+	}
 </style>

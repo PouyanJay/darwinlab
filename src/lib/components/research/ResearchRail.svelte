@@ -394,6 +394,8 @@
 		.rail {
 			border-right: none;
 			border-bottom: 1px solid var(--line);
+			/* The console owns the page scroll now; the rail renders at its natural height. */
+			overflow-y: visible;
 		}
 
 		.brand,
