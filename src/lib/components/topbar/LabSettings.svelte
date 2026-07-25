@@ -1,5 +1,5 @@
 <!--
-  Lab settings — the knobs that belong to the bench rather than to any one world.
+  Lab settings - the knobs that belong to the bench rather than to any one world.
 
   Only one so far, and it is the one that decides whether the product has a second act: how many
   generations a world trains for before it is DEPLOYED (see MAX_GENERATIONS in engine/defaults.ts).
@@ -18,12 +18,12 @@
 
 	const limit = $derived(bench.maxGenerations);
 
-	/** "never" is not a smaller number than 5 — it is a different answer, and it reads like one. */
+	/** "never" is not a smaller number than 5 - it is a different answer, and it reads like one. */
 	const describe = (generation: number) => (generation === 0 ? 'never' : `gen ${generation}`);
 </script>
 
 <!-- Sliders, not a gear: a gear is the universal sign for "app preferences", and this panel is not
-     that — it holds the knobs of the EXPERIMENT, chief among them the generation at which training
+     that - it holds the knobs of the EXPERIMENT, chief among them the generation at which training
      stops for good. -->
 <Button popovertarget="lab-settings" aria-label="lab settings" title="lab settings">
 	<Icon name="sliders" />
@@ -73,7 +73,7 @@
 		position: fixed;
 		top: calc(var(--topbar-height) + var(--sp-2));
 		right: var(--sp-8);
-		/* never wider than the viewport leaves room for — a 320px phone still gets a whole panel */
+		/* never wider than the viewport leaves room for - a 320px phone still gets a whole panel */
 		width: min(300px, calc(100vw - 2 * var(--sp-8)));
 		padding: var(--sp-6);
 		border: 1px solid var(--line);

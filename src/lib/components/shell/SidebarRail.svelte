@@ -1,12 +1,12 @@
 <!--
   The rail: what the sidebar leaves behind when it is shut.
 
-  A collapse that hides play/pause is a collapse nobody uses twice — mid-experiment you are pausing,
+  A collapse that hides play/pause is a collapse nobody uses twice - mid-experiment you are pausing,
   changing speed and firing training bursts constantly. So the rail keeps every RUN control (as
   icons, each with a real label) and drops only the reading matter.
 
   The one control that changes shape is speed: a three-way segmented control does not fit 56px, so
-  the rail offers the same three values as a CYCLE — press to step ½× → 1× → 2× → ½×. It shows the
+  the rail offers the same three values as a CYCLE - press to step ½× → 1× → 2× → ½×. It shows the
   value it is on, so it reads as much as it acts.
 
   It is inert while the panel is open: on a phone it sits under the panel's scrim, and either way the

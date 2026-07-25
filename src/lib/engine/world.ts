@@ -38,7 +38,7 @@ import { meanNearestNeighbor } from './flock';
 import type { World, WorldConfig, Fish, Predator, Genome } from './types';
 
 /**
- * Whether a world's brains carry the shoal senses — declared, on OR off. The one place this
+ * Whether a world's brains carry the shoal senses - declared, on OR off. The one place this
  * question is answered: the emergence-curve recording here, the live readout in WorldStats, and the
  * density field in drawWorld all import it, so a third shoal sense would only ever be added once.
  */
@@ -60,7 +60,7 @@ export function makeFish(cfg: WorldConfig, genome?: Genome, rng: Rng = defaultRn
 		trail: [],
 		phase: rnd(rng, 0, TAU),
 		size: rnd(rng, 0.85, 1.15),
-		// a fresh brain is built to THIS world's shape — 8 inputs (the reference brain, 68
+		// a fresh brain is built to THIS world's shape - 8 inputs (the reference brain, 68
 		// weights) or 9, when the world lets its fish feel their own speed (74 weights)
 		genome: genome ?? makeGenome(rng, cfg.brainInputs ?? NIN, cfg.brainHidden ?? NHID),
 		fitness: 0,
@@ -127,7 +127,7 @@ export function makeWorld(cfg: WorldConfig, genomes?: Genome[], rng: Rng = defau
 	// FIDELITY QUIRK (do not "fix" without re-measuring §8): spawnGeneration already created
 	// cfg.preds predators; the reference adds cfg.preds MORE here, so a fresh world starts
 	// generation 0 with 2× predators. The first evolve()/applyCfg normalizes back to
-	// cfg.preds, so only the gen-0 massacre is affected — converged numbers are unchanged.
+	// cfg.preds, so only the gen-0 massacre is affected - converged numbers are unchanged.
 	for (let i = 0; i < cfg.preds; i++) w.preds.push(makePred(cfg, rng));
 	for (let i = 0; i < 24; i++) {
 		w.dust.push({
@@ -149,7 +149,7 @@ function spawnGeneration(w: World, genomes?: Genome[]): void {
 	w.genT = 0;
 	w.bursts = [];
 	// Every fish that could have been selected or hovered is about to be replaced by its offspring.
-	// Leaving the pointers behind would keep a whole generation alive in memory and — worse — would
+	// Leaving the pointers behind would keep a whole generation alive in memory and - worse - would
 	// let the UI go on presenting a fish that no longer exists as if it were still swimming: its
 	// position frozen, its "live" brain no longer running. The engine already does this when a fish
 	// is eaten (see the catch path); a generation ending is the same death, in bulk.
@@ -173,7 +173,7 @@ function spawnGeneration(w: World, genomes?: Genome[]): void {
 export function resetWorld(w: World): void {
 	w.gen = 0;
 	w.curve = [];
-	w.lifeCurve = []; // the learning curve the UI plots — a reset world has learned nothing
+	w.lifeCurve = []; // the learning curve the UI plots - a reset world has learned nothing
 	w.schoolCurve = [];
 	w._nndSum = 0;
 	w._nndN = 0;
@@ -186,7 +186,7 @@ export function resetWorld(w: World): void {
 	w.hover = null;
 	// The last real-world run belonged to the population that just got wiped, and that population no
 	// longer exists. Leaving its decay curve and its half-life behind would put "wiped out · 37s" and
-	// a red death curve on a world that is now at generation 0 and evolving — a reading from a run
+	// a red death curve on a world that is now at generation 0 and evolving - a reading from a run
 	// that is not this one. (The reference leaves them; it is the same lie there.)
 	w._deployed = false;
 	w.deployT = 0;
@@ -241,12 +241,12 @@ function evolve(w: World): void {
 	if (w.curve.length > CURVE_MAX_POINTS) w.curve.shift();
 
 	/*
-	 * The LIFE curve — what selection actually rewards.
+	 * The LIFE curve - what selection actually rewards.
 	 *
 	 * `curve` above asks a yes/no question (were you alive when the bell rang?), and in a tank
 	 * where almost everyone dies it flattens to a few percent for every world alike: a fish that
 	 * lasted 18 of 20 seconds and one eaten at second 2 score the same zero. Fitness is SECONDS
-	 * SURVIVED, so this is the curve that can actually see a brain improving — mean fitness across
+	 * SURVIVED, so this is the curve that can actually see a brain improving - mean fitness across
 	 * the whole roster, as a share of the generation. Same smoothing, same cap.
 	 * (`curve` is left exactly as the reference computes it: the fidelity gate compares it.)
 	 */
@@ -260,7 +260,7 @@ function evolve(w: World): void {
 	w.lifeCurve.push(life);
 	if (w.lifeCurve.length > CURVE_MAX_POINTS) w.lifeCurve.shift();
 
-	// THE EMERGENCE CURVE — flush this generation's mean nearest-neighbour distance (the school's
+	// THE EMERGENCE CURVE - flush this generation's mean nearest-neighbour distance (the school's
 	// tightness), then reset the accumulators. Only ever populated for schooling worlds (the
 	// accumulators stay 0 otherwise), so the sense ladder and the fidelity reference skip it.
 	if (w._nndN > 0) {
@@ -274,18 +274,18 @@ function evolve(w: World): void {
 		w.champion = { genome: cloneGenome(best.genome), fitness: best.fitness, gen: w.gen };
 	}
 	/*
-	 * THE BEST OF THIS GENERATION — which is not the same thing as `champion`, and the difference
+	 * THE BEST OF THIS GENERATION - which is not the same thing as `champion`, and the difference
 	 * matters more than it looks.
 	 *
 	 * `champion` is the best fitness EVER, and it only updates on a strictly greater score. But
 	 * fitness is seconds survived, and it is capped by the generation's length: the moment any fish
-	 * survives a whole generation it scores the maximum, and no later fish can ever beat it — only
+	 * survives a whole generation it scores the maximum, and no later fish can ever beat it - only
 	 * tie. So `champion` FREEZES, permanently, on the first fish to run the clock out, and by
 	 * generation ninety it is a fossil from generation five that got lucky.
 	 *
 	 * That is the reference engine's elitism and it stays exactly as it is (the fidelity gate pins
-	 * it). But anything that wants to show a human "the brain this population has NOW" — the exhibit
-	 * — must ask this instead. Nothing else reads it, and it consumes no RNG, so the bit-exact port
+	 * it). But anything that wants to show a human "the brain this population has NOW" - the exhibit
+	 * - must ask this instead. Nothing else reads it, and it consumes no RNG, so the bit-exact port
 	 * is untouched.
 	 */
 	w.best = best ? { genome: cloneGenome(best.genome), fitness: best.fitness, gen: w.gen } : null;
@@ -296,7 +296,7 @@ function evolve(w: World): void {
 
 /**
  * Deploy lifecycle: latch the transition when training ends, then track elapsed time, sample
- * the decay curve, and capture half-life / extinction. NO respawns here — the population only
+ * the decay curve, and capture half-life / extinction. NO respawns here - the population only
  * goes down (CLAUDE.md gotcha).
  */
 function updateDeployment(w: World, dt: number, trained: boolean): void {
@@ -357,14 +357,14 @@ const claimedScratch = new Set<Fish>();
  *
  * ISOLATION-HUNTING (confusion on): a fish's targeting score is its distance PLUS a penalty for how
  * crowded it is, so the shark passes over a surrounded fish for the exposed one. This is the whole
- * reason a school pays — the interior is the safe place — and it is a bias, not a rule: `_td` stays
+ * reason a school pays - the interior is the safe place - and it is a bias, not a rule: `_td` stays
  * the true distance (the strike still arms on real range), and the least-crowded fish is always
  * targetable, so a group is never uncatchable. Off (default), score = distance and this is the
  * reference's exact nearest-unclaimed pick (no crowd scan, bit-exact).
  */
 /**
  * PREDATOR ATTENTION targeting: a locked shark HOLDS its target across ticks (so a dense swarm can
- * later shake it — see updatePredators) rather than re-picking the nearest every frame; a distracted
+ * later shake it - see updatePredators) rather than re-picking the nearest every frame; a distracted
  * one (just lost a lock in a crowd) holds none and mills. Returns true when the target is settled for
  * this tick and the caller should skip re-acquisition.
  */
@@ -398,7 +398,7 @@ function assignPredatorTargets(w: World): void {
 		let bd = 1e9;
 		for (const f of w.fish) {
 			// the distinct-target claim only applies to the stateless (no-lock) hunt; a locked shark
-			// acquires independently, so two may share a target — the swarm still shakes each.
+			// acquires independently, so two may share a target - the swarm still shakes each.
 			if (!lockOn && claimed.has(f)) continue;
 			const d = Math.hypot(f.x - p.x, f.y - p.y);
 			const score = confuse ? d + crowdAround(f, w.fish, R, cap) * isolationPenalty : d;
@@ -409,7 +409,7 @@ function assignPredatorTargets(w: World): void {
 			}
 		}
 		if (!best && !lockOn) {
-			// everything claimed — take the nearest overall so a shark never idles mid-hunt
+			// everything claimed - take the nearest overall so a shark never idles mid-hunt
 			({ best, bd } = nearestFish(w.fish, p, null));
 		} else if (best && !lockOn) {
 			claimed.add(best);
@@ -420,12 +420,12 @@ function assignPredatorTargets(w: World): void {
 }
 
 /**
- * THE CONFUSION EFFECT — how crowded the shark's target is, 0 (a loner) to 1 (a full swarm).
+ * THE CONFUSION EFFECT - how crowded the shark's target is, 0 (a loner) to 1 (a full swarm).
  *
  * This is the only thing that makes grouping pay: nothing rewards a fish for schooling, but a
  * crowded target is one the shark strikes late and wide (see updatePredators). The count excludes
  * the target itself and saturates at CONFUSION_CROWD_CAP. Nothing about flocking is programmed here
- * — this makes a swarm SAFER; whether swarms then evolve is what the bench measures.
+ * - this makes a swarm SAFER; whether swarms then evolve is what the bench measures.
  */
 function crowdAround(target: Fish, fish: Fish[], radius: number, cap: number): number {
 	let n = 0;
@@ -437,11 +437,11 @@ function crowdAround(target: Fish, fish: Fish[], radius: number, cap: number): n
 }
 
 /** The confusion sub-mechanisms, each named and gated so a reference world runs none of them (and
- *  so draws no extra randomness — the two that roll rng, lock-loss and jitter, only fire on the
+ *  so draws no extra randomness - the two that roll rng, lock-loss and jitter, only fire on the
  *  worlds that opt in, which is what keeps the fidelity gate bit-exact). `strength`/`R`/`cap` are
  *  resolved once by the caller (updatePredators) and threaded through. */
 
-/** PREDATOR ATTENTION: age the shark's distraction, then roll for lock-loss — the denser the crowd
+/** PREDATOR ATTENTION: age the shark's distraction, then roll for lock-loss - the denser the crowd
  *  around the LOCKED target, the likelier it loses the fish and mills. A fish that dives into a swarm
  *  when chased shakes the hunter; a loner never does. */
 function applyPredatorAttention(
@@ -472,7 +472,7 @@ function confusionFactor(target: Fish, w: World, R: number, cap: number, strengt
 	return strength * crowdAround(target, w.fish, R, cap);
 }
 
-/** Rotate a unit lunge vector by an angular error that grows with the confusion factor — a crowded
+/** Rotate a unit lunge vector by an angular error that grows with the confusion factor - a crowded
  *  target throws the committed strike off. */
 function jitterVector(vx: number, vy: number, conf: number, rng: () => number): [number, number] {
 	const jit = (rng() * 2 - 1) * conf * CONFUSION_MAX_JITTER;
@@ -520,10 +520,10 @@ function updatePredators(w: World, dt: number, frust: number, catchR: number): v
 			const commit = c.lungeCommit ?? false;
 			// lunge state machine: cruise → aim (telegraphed wind-up) → lunge (fast strike)
 			// ferocity only exists for committed strikes: faster, shorter-telegraphed lunges
-			// that position alone can no longer dodge — feeling them COMING is the edge.
+			// that position alone can no longer dodge - feeling them COMING is the edge.
 			const ferocity = commit ? (c.lungeFerocity ?? 1) : 1;
 			// STRIKE DEGRADATION: how packed the target is (0 off the confusion path). It arrives two
-			// ways below — a longer telegraph when the aim arms, and a jittered committed lunge vector.
+			// ways below - a longer telegraph when the aim arms, and a jittered committed lunge vector.
 			const conf = confusionFactor(best, w, R, cap, strength);
 			if (!darts) {
 				// No strike: the aim/lunge machine never arms, so the shark below stays in its cruise
@@ -535,7 +535,7 @@ function updatePredators(w: World, dt: number, frust: number, catchR: number): v
 					// A committed strike costs more when it misses: the direction locks at THIS
 					// instant, and the longer cooldown is the recovery a dodged shark visibly
 					// pays, sailing past on its locked vector. (Reference: re-aims every frame
-					// with cool 1.3 — a guided missile no dodge can beat.)
+					// with cool 1.3 - a guided missile no dodge can beat.)
 					p.cool = commit ? 2.4 : 1.3;
 					if (commit) {
 						const lead = 0.34;
@@ -560,7 +560,7 @@ function updatePredators(w: World, dt: number, frust: number, catchR: number): v
 			let diry: number;
 			let acc: number;
 			let max: number;
-			// predictive interception — lead the target's motion so predictable prey get cut off
+			// predictive interception - lead the target's motion so predictable prey get cut off
 			const lead = p.lunge > 0 ? 0.34 : 0.18;
 			const lx = best.x + best.vx * lead;
 			const ly = best.y + best.vy * lead;
@@ -580,7 +580,7 @@ function updatePredators(w: World, dt: number, frust: number, catchR: number): v
 				diry = (ly - p.y) / ld;
 				// The reference wind-up BRAKES (max 40): the shark coils, so closing speed
 				// collapses right before the strike and the closing sense is worse than
-				// useless — it says "safe" at the exact moment it should scream. Charging
+				// useless - it says "safe" at the exact moment it should scream. Charging
 				// instead keeps closing speed rising into the strike, which is the only way
 				// a fish can learn to feel a lunge coming.
 				const charging = c.aimCharge ?? false;
@@ -661,7 +661,7 @@ function updatePredators(w: World, dt: number, frust: number, catchR: number): v
 function updatePrey(w: World, dt: number): void {
 	const c = w.cfg;
 	// agility scales how fast the BODY expresses what the brain decides (turn rate and
-	// velocity response) — the same evolved policy, on a sharper chassis. Reference = 1.
+	// velocity response) - the same evolved policy, on a sharper chassis. Reference = 1.
 	const agility = c.agility ?? 1;
 	for (const f of w.fish) {
 		const { x } = senseInputs(w, f);
@@ -671,7 +671,7 @@ function updatePrey(w: World, dt: number): void {
 		f.heading += out.turn * MAXTURN * agility * dt;
 		// stamina (optional): sprinting above 60% thrust drains the reserve, cruising below
 		// refills it, and an empty tank halves top speed. Sprint-always loses; bolting wins.
-		// The agent's top speed — editable, defaulting to the reference's 176 (see cfg.maxSpeed). It is
+		// The agent's top speed - editable, defaulting to the reference's 176 (see cfg.maxSpeed). It is
 		// the other half of the predator-speed crossover: whether fleeing escapes or only delays.
 		const topSpeed = c.maxSpeed ?? MAXSPEED;
 		let speedCap = topSpeed;
@@ -699,9 +699,9 @@ function updatePrey(w: World, dt: number): void {
 				f.y += (dy / d) * (15 - d) * 0.06;
 			}
 		}
-		// baseline wall-avoidance instinct — keeps fish off the glass so they never pin in
+		// baseline wall-avoidance instinct - keeps fish off the glass so they never pin in
 		// corners. Optional (reference = on): with it OFF, staying out of corners is
-		// something only a brain with the walls sense can learn — the sense earns its keep.
+		// something only a brain with the walls sense can learn - the sense earns its keep.
 		if (c.wallInstinct ?? true) {
 			const wm = 54;
 			if (f.x < wm) f.vx += (1 - f.x / wm) * 460 * dt;
@@ -745,7 +745,7 @@ function updatePrey(w: World, dt: number): void {
  *
  * Exported because selecting a fish has to fill this in immediately: the inspector must open
  * populated even when the simulation is PAUSED, and the next tick may never come. (The reference
- * got there by stepping the world 0.0001s on every click — a real, if tiny, nudge to the physics
+ * got there by stepping the world 0.0001s on every click - a real, if tiny, nudge to the physics
  * for a UI concern. Reading the mind is not a reason to move the world.)
  */
 export function updateSenseSnapshot(w: World): void {
@@ -773,13 +773,13 @@ export function updateSenseSnapshot(w: World): void {
 
 /** Age the catch bursts and drop the expired ones. */
 function ageBursts(w: World, dt: number): void {
-	if (w.bursts.length === 0) return; // almost always — don't reallocate an empty array per tick
+	if (w.bursts.length === 0) return; // almost always - don't reallocate an empty array per tick
 	for (const b of w.bursts) b.a += dt;
 	w.bursts = w.bursts.filter((b) => b.a < 0.65);
 }
 
 /**
- * Advance one tick — the core loop.
+ * Advance one tick - the core loop.
  *
  * The phases below run in EXACTLY this order; the order is load-bearing (predators act on the
  * fish's previous positions, then the fish react to the predators' new ones), and reordering
@@ -812,7 +812,7 @@ export function stepWorld(w: World, dt: number): void {
 	updateSenseSnapshot(w);
 	ageBursts(w, dt);
 
-	// Emergence-curve sampling — schooling worlds only, on an interval. Off the training path
+	// Emergence-curve sampling - schooling worlds only, on an interval. Off the training path
 	// (deployed), the population is decaying, not evolving, so there is no generation to average
 	// into; and consuming no RNG, this never touches the bit-exact reference run.
 	if (!trained && isSchoolingWorld(w.cfg)) {
@@ -827,12 +827,12 @@ export function stepWorld(w: World, dt: number): void {
 		}
 	}
 
-	// generation boundary (configurable length — past ~gen 30 the reference's 10s cap is
+	// generation boundary (configurable length - past ~gen 30 the reference's 10s cap is
 	// saturated by every decent fish and selection stops sharpening; longer keeps the
 	// gradient alive)
 	if (w.genT >= (w.cfg.genDuration ?? GEN_DURATION) || w.fish.length === 0) {
 		if (trained) {
-			w.genT = 0; // deployed: don't evolve, don't reset — let the population play out
+			w.genT = 0; // deployed: don't evolve, don't reset - let the population play out
 		} else {
 			evolve(w);
 		}

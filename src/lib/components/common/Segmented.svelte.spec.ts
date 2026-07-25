@@ -64,7 +64,7 @@ describe('Segmented', () => {
 	});
 
 	it('wraps around off the back of the group', async () => {
-		// The other half of the same modulo — symmetric code, so it gets a symmetric test.
+		// The other half of the same modulo - symmetric code, so it gets a symmetric test.
 		const onchange = mount(2);
 		(page.getByRole('radio', { name: '2×' }).element() as HTMLButtonElement).focus();
 

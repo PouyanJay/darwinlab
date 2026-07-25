@@ -1,7 +1,7 @@
 /**
  * The shell: how the app's chrome is arranged, as opposed to what the simulation is doing.
  *
- * It owns the sidebar — whether it is open — and nothing else. Kept OUT of the bench store on
+ * It owns the sidebar - whether it is open - and nothing else. Kept OUT of the bench store on
  * purpose: opening the controls must never look like a reason to touch a world.
  *
  * The panel is ONE fixed width. It is designed at that width; letting a divider drag it narrower or
@@ -22,13 +22,14 @@
  */
 
 import { browser } from '$app/environment';
+import { below } from '../styles/breakpoints';
 
 export const SIDEBAR_STORAGE_KEY = 'darwinlab:sidebar';
 
-/** Narrower than this and there is no room to dock a panel beside the bench. */
-export const NARROW_QUERY = '(max-width: 900px)';
+/** Narrower than this and there is no room to dock a panel beside the bench (the `lg` breakpoint). */
+export const NARROW_QUERY = below('lg');
 
-/** The one width the docked panel is drawn at — see the note at the top of this file. */
+/** The one width the docked panel is drawn at - see the note at the top of this file. */
 export const SIDEBAR_WIDTH = 300;
 
 function loadCollapsed(): boolean {
@@ -38,20 +39,20 @@ function loadCollapsed(): boolean {
 		if (!raw) return false;
 		return (JSON.parse(raw) as { collapsed?: unknown }).collapsed === true;
 	} catch {
-		// A corrupt or unreadable entry is not worth a broken shell — open at the default.
+		// A corrupt or unreadable entry is not worth a broken shell - open at the default.
 		return false;
 	}
 }
 
 class ShellStore {
-	/** The DOCKED preference — persisted, and only honoured on the wide layout. */
+	/** The DOCKED preference - persisted, and only honoured on the wide layout. */
 	#collapsed = $state(false);
 	/** Is the viewport too narrow to dock? Tracked, not guessed: the CSS asks the same question. */
 	#narrow = $state(false);
 	/** Narrow layout only: the panel is showing OVER the bench. Session-local, starts shut. */
 	#overlayOpen = $state(false);
 
-	/** The panel's width — fixed, so callers can size off it without being able to change it. */
+	/** The panel's width - fixed, so callers can size off it without being able to change it. */
 	get width(): number {
 		return SIDEBAR_WIDTH;
 	}
@@ -74,7 +75,7 @@ class ShellStore {
 	 * The panel is COVERING the bench rather than sitting beside it.
 	 *
 	 * What floats over the bench (the disclaimer, the first-run hint) is pinned to the viewport and
-	 * layered above it, so it would otherwise punch straight through the panel and its scrim — a
+	 * layered above it, so it would otherwise punch straight through the panel and its scrim - a
 	 * pill about the tanks, printed on top of the controls that hide them.
 	 */
 	get overlaying(): boolean {

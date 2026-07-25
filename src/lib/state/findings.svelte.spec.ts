@@ -56,7 +56,7 @@ describe('the Findings notebook', () => {
 
 		const finding = findings.entries[0];
 		expect(finding.title).toBe('Direction +2.4s');
-		expect(finding.questions).toEqual(['Q2', 'Q6']); // ANSWERS.sweep — derived, not passed in
+		expect(finding.questions).toEqual(['Q2', 'Q6']); // ANSWERS.sweep - derived, not passed in
 		expect(finding.status).toBe('ok');
 		expect(finding.subjectHash).toMatch(/^[0-9a-f]{6}$/);
 
@@ -64,7 +64,7 @@ describe('the Findings notebook', () => {
 		expect(stored().entries[0].title).toBe('Direction +2.4s');
 	});
 
-	it('lets a finding override the questions it settles — a trace curve answers only Q1', () => {
+	it('lets a finding override the questions it settles - a trace curve answers only Q1', () => {
 		// A trace produces two findings from one source; each answers a subset of ANSWERS.trace ([Q1,Q5]),
 		// so the store honours an explicit `questions` rather than always tagging the source's whole set.
 		findings.add(input({ source: 'trace', variant: 'curve', questions: ['Q1'] }));
@@ -129,7 +129,7 @@ describe('the Findings notebook', () => {
 	});
 
 	it('drops a finding whose evidence is not a kind-tagged object (a text-only finding still loads)', () => {
-		const withText = { ...GOOD, id: 'text' }; // no evidence at all — valid
+		const withText = { ...GOOD, id: 'text' }; // no evidence at all - valid
 		const withBadEvidence = { ...GOOD, id: 'bad', evidence: 'not an object' };
 		localStorage.setItem(
 			FINDINGS_STORAGE_KEY,
@@ -165,7 +165,7 @@ describe('the Findings notebook', () => {
 		const subject = currentSubjectHash();
 		findings.add(input({ title: 'on the subject' }));
 
-		// both subjects really have a finding before we clear one — else "gone" proves nothing
+		// both subjects really have a finding before we clear one - else "gone" proves nothing
 		expect(findings.forSubject(generic)).toHaveLength(1);
 		expect(findings.forSubject(subject)).toHaveLength(1);
 
@@ -194,7 +194,7 @@ describe('the Findings notebook', () => {
 	});
 
 	it('load drops malformed findings and ignores a foreign or corrupt store', () => {
-		// a valid finding beside one with an unknown source — only the valid one loads
+		// a valid finding beside one with an unknown source - only the valid one loads
 		localStorage.setItem(
 			FINDINGS_STORAGE_KEY,
 			JSON.stringify({ version: 1, entries: [GOOD, { id: 'y', source: 'nonsense' }] })

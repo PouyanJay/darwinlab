@@ -20,7 +20,7 @@ describe('rungFor', () => {
 		expect(rungFor(senses({ dist: true }))).toBe(1);
 	});
 
-	it('DIRECTION alone is not a reflex — it is the one sense that pays', () => {
+	it('DIRECTION alone is not a reflex - it is the one sense that pays', () => {
 		// Reachable: the Conditions dialog toggles each sense independently, so a world can hand a
 		// brain "which way" without "how far". Calling that a reflex would be wrong, and it is exactly
 		// what the naive nested ternary did.
@@ -31,7 +31,7 @@ describe('rungFor', () => {
 		expect(rungFor(senses({ dist: true, dir: true }))).toBe(2);
 	});
 
-	it('is prediction once closing speed is wired in — the only input carrying the future', () => {
+	it('is prediction once closing speed is wired in - the only input carrying the future', () => {
 		expect(rungFor(senses({ dist: true, dir: true, closing: true }))).toBe(3);
 		expect(rungFor(senses({ closing: true }))).toBe(3);
 	});

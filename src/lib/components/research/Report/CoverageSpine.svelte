@@ -1,5 +1,5 @@
 <!--
-  The coverage spine — the honesty rail made visible, and the Report's navigation in one.
+  The coverage spine - the honesty rail made visible, and the Report's navigation in one.
 
   A seven-segment ring shows how much of a rigorous study is settled (a filled arc per answered
   question, a hollow gold arc per gap), and the list below jumps to each section. It reads the same
@@ -15,7 +15,7 @@
 		onjump
 	}: {
 		sections: ReportSection[];
-		/** The question whose section is in view — highlighted in the list. */
+		/** The question whose section is in view - highlighted in the list. */
 		active: QuestionId | null;
 		onjump: (id: QuestionId) => void;
 	} = $props();

@@ -1,5 +1,5 @@
 /**
- * Render — pure canvas painters. Engine state + theme in, pixels out.
+ * Render - pure canvas painters. Engine state + theme in, pixels out.
  *
  * These functions read engine data and draw; they own NO physics and mutate NO simulation
  * state (the sole exception is `drawWorld` storing the fit-scale `w.transform`, which

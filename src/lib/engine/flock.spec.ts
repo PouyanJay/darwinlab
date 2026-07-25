@@ -20,7 +20,7 @@ describe('polarization φ', () => {
 		expect(polarization(fish)).toBeCloseTo(0, 6);
 	});
 
-	it('excludes fish below the movement threshold — a still fish has no heading to align', () => {
+	it('excludes fish below the movement threshold - a still fish has no heading to align', () => {
 		// two aligned movers + one drifting fish that must not drag φ down
 		const fish = [moving(30, 0), moving(30, 0), moving(1, 0)];
 		expect(polarization(fish)).toBeCloseTo(1, 6);
@@ -32,7 +32,7 @@ describe('polarization φ', () => {
 });
 
 describe('mean nearest-neighbour distance', () => {
-	it('is null below two fish — there is no neighbour to measure', () => {
+	it('is null below two fish - there is no neighbour to measure', () => {
 		expect(meanNearestNeighbor([])).toBeNull();
 		expect(meanNearestNeighbor([at(0, 0)])).toBeNull();
 	});

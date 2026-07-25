@@ -1,5 +1,5 @@
 /**
- * Test helpers for the landscape design — the singleton walk-backs the store spec and the panel
+ * Test helpers for the landscape design - the singleton walk-backs the store spec and the panel
  * spec share (the sweep.testkit precedent). One source of truth for "what the panel's defaults
  * are", so the two specs cannot drift.
  */
@@ -25,7 +25,7 @@ export function restoreLandscapeDefaults(): void {
 	landscape.clearSelection();
 }
 
-/** Hands back pre-baked evaluations in submit order — one per cell, row-major. Shared by the store
+/** Hands back pre-baked evaluations in submit order - one per cell, row-major. Shared by the store
  *  and component specs, so the two fakes of the worker boundary cannot drift. */
 export class CannedExecutor implements JobExecutor {
 	readonly concurrency = 1;
@@ -39,7 +39,7 @@ export class CannedExecutor implements JobExecutor {
 	dispose(): void {}
 }
 
-/** An executor whose jobs never settle on their own — only a cancel (signal abort) resolves them. */
+/** An executor whose jobs never settle on their own - only a cancel (signal abort) resolves them. */
 export class HangingExecutor implements JobExecutor {
 	readonly concurrency = 1;
 	submit(

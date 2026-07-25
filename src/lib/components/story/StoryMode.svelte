@@ -1,12 +1,12 @@
 <!--
-  Story mode — the bench as a film.
+  Story mode - the bench as a film.
 
   A full-screen takeover, one scene per world, tinted with that world's accent. The centre is the
   same tank the bench uses, drawn big; the rails say what the brains in it were given and how many
   are still alive; the bottom says which scene this is and what it means.
 
   Everything on screen is still the simulation. The fish are a fresh generation of that world's
-  evolved brains, being hunted in real time, and you can click one mid-scene and read its mind —
+  evolved brains, being hunted in real time, and you can click one mid-scene and read its mind -
   the inspector works over a scene exactly as it works over the bench. Nothing here is a recording.
 -->
 <script lang="ts">
@@ -26,8 +26,8 @@
 	/**
 	 * A takeover takes focus.
 	 *
-	 * Without this, focus stays on the "Play story" button in the top bar — now behind a full-screen
-	 * film — and the keyboard breaks in a way that is worse than "nothing happens": Space would press
+	 * Without this, focus stays on the "Play story" button in the top bar - now behind a full-screen
+	 * film - and the keyboard breaks in a way that is worse than "nothing happens": Space would press
 	 * that button again and re-cut the story from scene one, right under the presenter. Focus moves
 	 * into the film, and returns to where it came from on the way out.
 	 */
@@ -44,11 +44,11 @@
 	 * The keyboard IS the transport for anyone presenting this: Esc to get out, arrows to move
 	 * through the scenes, Space to hold on one.
 	 *
-	 * But a shortcut must never take a key out of the hands of the control the user is actually on —
+	 * But a shortcut must never take a key out of the hands of the control the user is actually on -
 	 * that was Phase 3's lesson, and it applies twice here, differently for each key:
 	 *
 	 *   Space   belongs to any focused BUTTON (it presses it) and to a radio (it picks it).
-	 *   Arrows  belong to the speed control — a radio group navigates with them. They do NOT belong
+	 *   Arrows  belong to the speed control - a radio group navigates with them. They do NOT belong
 	 *           to a button, so ‹ / › still move the film when the focus is sitting on one.
 	 *
 	 * Without the arrow guard, pressing → to go from 1× to 2× would ALSO skip the scene: the
@@ -62,7 +62,7 @@
 
 		if (event.key === 'Escape') {
 			// An open inspector owns this Esc (its own window listener closes it in this same
-			// dispatch — stopPropagation cannot help between two listeners on one target). The
+			// dispatch - stopPropagation cannot help between two listeners on one target). The
 			// film only leaves on the NEXT press, or the inspector and the film would tear down
 			// together in one keystroke.
 			if (bench.selection) return;
@@ -138,7 +138,7 @@
 	/*
 	 * The stage's own palette.
 	 *
-	 * Story mode is a FIXED dark stage — it does not follow the app's light/dark theme, because a
+	 * Story mode is a FIXED dark stage - it does not follow the app's light/dark theme, because a
 	 * film is a film whichever way the room's lights are set. That is why these are not the usual
 	 * tokens. But they are still tokens: four components draw on this stage, and the same six
 	 * literals hand-copied between them is exactly the drift tokens.css exists to prevent. They
@@ -155,7 +155,7 @@
 	}
 
 	.story:focus {
-		outline: none; /* it is a screen, not a control — the film arriving is the signal */
+		outline: none; /* it is a screen, not a control - the film arriving is the signal */
 	}
 
 	.story {
@@ -169,7 +169,7 @@
 
 	header {
 		display: flex;
-		flex-wrap: wrap; /* the honesty line WRAPS on a narrow stage — it never disappears */
+		flex-wrap: wrap; /* the honesty line WRAPS on a narrow stage - it never disappears */
 		align-items: center;
 		gap: var(--sp-3) 14px;
 		padding: var(--sp-5) 22px;
@@ -264,7 +264,7 @@
 
 	/* A phone's film: the tank leads, the rails follow beneath it, and the whole stage scrolls
 	   if it must. Two fixed 196px rails beside a tank cannot share 375 points of width. */
-	@media (max-width: 820px) {
+	@media (max-width: 900px) {
 		.stage {
 			flex-direction: column;
 			gap: var(--sp-5);

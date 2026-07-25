@@ -1,16 +1,16 @@
 /**
- * The reactive PROJECTIONS of a world — what components are allowed to bind to.
+ * The reactive PROJECTIONS of a world - what components are allowed to bind to.
  *
  * A `World` is raw and unreactive on purpose: it is mutated ~60×/s and holds every fish, trail
  * point and 68-weight genome, and deep-proxying that would fire reactivity at frame rate (see the
  * bench store's header). So the UI never reads `world.*` directly. It reads one of these instead:
  *
- *   WorldStats       what a world is DOING — alive, eaten, gen, survival, its deployment.
- *   WorldConfigView  what a world IS — name, senses, tank, accent.
- *   MindView         what the SELECTED FISH is thinking — its senses and motor outputs.
+ *   WorldStats       what a world is DOING - alive, eaten, gen, survival, its deployment.
+ *   WorldConfigView  what a world IS - name, senses, tank, accent.
+ *   MindView         what the SELECTED FISH is thinking - its senses and motor outputs.
  *
  * They live here rather than in the bench store because story mode has a world too, and it needs
- * exactly the same projections — a scene is a world like any other, just a temporary one.
+ * exactly the same projections - a scene is a world like any other, just a temporary one.
  *
  * Every one of them is projected FROM the engine and never computed independently of it. That is
  * what lets the UI claim to be showing the simulation rather than an illustration of it.
@@ -31,17 +31,17 @@ export class WorldStats {
 	alive = $state(0);
 	eaten = $state(0);
 	gen = $state(0);
-	/** The LIFE curve's latest value, 0–100 — mean seconds survived as a share of a generation. */
+	/** The LIFE curve's latest value, 0-100 - mean seconds survived as a share of a generation. */
 	survivalPct = $state(0);
-	/** The alive-at-the-bell rate, 0–100 — the fraction of the population still alive when a
+	/** The alive-at-the-bell rate, 0-100 - the fraction of the population still alive when a
 	 *  generation ends (the reference's `curve`, distinct from the life curve above). */
 	aliveRatePct = $state(0);
 	championFitness = $state(0);
 	/**
-	 * The best survival time of the LAST COMPLETED generation, seconds — what the population knows now.
+	 * The best survival time of the LAST COMPLETED generation, seconds - what the population knows now.
 	 *
 	 * NOT `champion.fitness`, which is the all-time elite and SATURATES: fitness is seconds survived,
-	 * the generation caps it, and the elite only re-crowns on a strictly greater score — so once any
+	 * the generation caps it, and the elite only re-crowns on a strictly greater score - so once any
 	 * fish survives a full generation the champion's time is stuck at the generation length forever.
 	 * The inspector showed that stuck number (always 30.0s). `best` is re-crowned every generation, so
 	 * it moves, and in a world whose best fish genuinely lasts the whole generation, 30 is the truth.
@@ -53,23 +53,23 @@ export class WorldStats {
 	extinctT = $state<number | null>(null);
 
 	/**
-	 * The live school readout — only meaningful in a world whose fish can sense each other, so it is
+	 * The live school readout - only meaningful in a world whose fish can sense each other, so it is
 	 * computed ONLY there (an O(n²) neighbour scan should not run on every sense-ladder tank). In an
 	 * Alone-vs-Shoal pair these two numbers ARE the story: the same ocean, and one tank's fish pull
 	 * into a tight aligned ball while the other's stay scattered.
 	 */
 	/**
-	 * Mean nearest-neighbour distance (px) — school tightness — as a RUNNING mean, not the
+	 * Mean nearest-neighbour distance (px) - school tightness - as a RUNNING mean, not the
 	 * instantaneous value. Every generation resets the tank to random positions, so an instantaneous
 	 * reading swings wildly across the ~30s cycle (scattered right after a reset, tight once re-formed)
 	 * and can even read the wrong way for a frame. The card must not flicker Alone tighter than the
-	 * Shoal, so both numbers decay over a few seconds of tank-time — steady, and directionally honest.
+	 * Shoal, so both numbers decay over a few seconds of tank-time - steady, and directionally honest.
 	 * Null until enough has accumulated, or when the world is not a schooling world.
 	 */
 	schoolNND = $state<number | null>(null);
-	/** Polarization φ as a percentage (0–100), same running mean. Integer, to spare renders. */
+	/** Polarization φ as a percentage (0-100), same running mean. Integer, to spare renders. */
 	schoolAlignPct = $state(0);
-	/** Whether this world's brains carry the shoal senses — the card uses it to show the readout. */
+	/** Whether this world's brains carry the shoal senses - the card uses it to show the readout. */
 	schooling = $state(false);
 
 	/** ~4-second half-life at 60fps: long enough to ride across a generation reset, short enough to
@@ -90,7 +90,7 @@ export class WorldStats {
 	 *
 	 * Running, and not instantaneous, because an instantaneous one is noise and lies. A single frame
 	 * averages a handful of fish over a fraction of a second; measured live, a blind tank read 54°
-	 * and a bearing tank read 99° — the exact reverse of what twelve seconds of the same measurement
+	 * and a bearing tank read 99° - the exact reverse of what twelve seconds of the same measurement
 	 * says (blind 85°, bearing 73°). A number that flips its own verdict between frames is not a
 	 * reading, it is a coin, and putting it on the card next to a claim would have been indefensible.
 	 *
@@ -100,20 +100,20 @@ export class WorldStats {
 	 * that is still improving, and it never needs to be reset by hand.
 	 *
 	 * Rounded to a whole degree ON PURPOSE: this is a $state field on a 60fps path, and an unrounded
-	 * float would write a new value — and re-render the card — on every single frame.
+	 * float would write a new value - and re-render the card - on every single frame.
 	 */
 	fleeNow = $state<number | null>(null);
-	/** Effective sample size in the window — the card shows it, because a mean without an n is a rumour. */
+	/** Effective sample size in the window - the card shows it, because a mean without an n is a rumour. */
 	fleeSamples = $state(0);
 	fleeReadable = $state(0);
 
 	/**
-	 * Per-frame decay on the accumulators — a half-life of about twenty seconds at 60fps.
+	 * Per-frame decay on the accumulators - a half-life of about twenty seconds at 60fps.
 	 *
 	 * It has to be this long because the readings are SPARSE: a shark is only in vision for a small
 	 * fraction of the tank at any moment, so a frame contributes a handful of fish, not twenty. At a
 	 * two-second half-life the number still swung from 76° to 47° in the same tank, six seconds apart
-	 * — it was measuring which fish happened to be near a shark, not what the population had learned.
+	 * - it was measuring which fish happened to be near a shark, not what the population had learned.
 	 */
 	static readonly LENS_DECAY = 0.9994;
 
@@ -130,7 +130,7 @@ export class WorldStats {
 	syncLens(world: World, on: boolean): void {
 		if (!on) {
 			// Off means off: the next time the lens opens it must not average in a stale population's
-			// readings — very likely from before this world was reset, or its senses were cut.
+			// readings - very likely from before this world was reset, or its senses were cut.
 			this.#fleeSum = 0;
 			this.#fleeN = 0;
 			this.fleeNow = null;
@@ -163,7 +163,7 @@ export class WorldStats {
 		this.eaten = world.eaten;
 		this.gen = world.gen;
 		// The LIFE curve, not the alive-at-the-bell curve: fitness is seconds survived, so this is
-		// the number selection is actually pushing on — and the only one that can still see a brain
+		// the number selection is actually pushing on - and the only one that can still see a brain
 		// improving in a tank where nearly every fish dies (see World.lifeCurve).
 		const survival = world.lifeCurve.length
 			? world.lifeCurve[world.lifeCurve.length - 1]
@@ -180,7 +180,7 @@ export class WorldStats {
 		this.halfLife = world.halfLife;
 		this.extinctT = world.extinctT;
 
-		// A schooling world is one whose brains CARRY the shoal senses — declared, on or off. "Alone"
+		// A schooling world is one whose brains CARRY the shoal senses - declared, on or off. "Alone"
 		// has them ablated to false, but the spacing/alignment readout is exactly the comparison we
 		// want beside "The Shoal", so it must show on both. Ladder worlds never declare them.
 		this.schooling = isSchoolingWorld(world.cfg);
@@ -207,7 +207,7 @@ export class WorldStats {
 }
 
 /**
- * What the selected fish is thinking, right now — the numbers the Brain Inspector reads.
+ * What the selected fish is thinking, right now - the numbers the Brain Inspector reads.
  *
  * A projection of `world.sense`, which the ENGINE fills in each step (`updateSenseSnapshot`). The
  * UI never computes a sense itself: the bars, the brain canvas and the tank's perception overlay
@@ -215,7 +215,7 @@ export class WorldStats {
  * can honestly claim to show what the fish senses rather than what we think it should.
  */
 export class MindView {
-	/** Seconds this fish has survived — its fitness, live. */
+	/** Seconds this fish has survived - its fitness, live. */
 	lived = $state(0);
 	/** Raw distance to the nearest predator, in px. Infinity when there is no predator at all. */
 	distance = $state(Infinity);
@@ -227,7 +227,7 @@ export class MindView {
 	wallAhead = $state(0);
 	/** Is the predator inside this fish's vision range at all? */
 	inVision = $state(false);
-	/** The normalised input values (0–1) the network was actually fed — what the bars fill to. */
+	/** The normalised input values (0-1) the network was actually fed - what the bars fill to. */
 	distanceInput = $state(0);
 	closingInput = $state(0);
 	wallInput = $state(0);
@@ -251,11 +251,11 @@ export class MindView {
 }
 
 /**
- * The selected fish's ESCAPE MAP — its evolved policy swept over every adversary position.
+ * The selected fish's ESCAPE MAP - its evolved policy swept over every adversary position.
  *
  * A companion to MindView: that projects what the fish senses THIS frame; this projects the whole
  * rule the brain learned, read straight off its genome by `probePolicy`. The sweep is ~768 forward
- * passes, so it is MEMOISED — `syncFrom` recomputes only when the genome or the conditions that
+ * passes, so it is MEMOISED - `syncFrom` recomputes only when the genome or the conditions that
  * shape the map (senses, vision, predator speed, brain width) actually change. That lets the same
  * per-frame seam that republishes the mind drive this too, at near-zero cost while the fish and its
  * world hold still, and refresh the instant a sense is cut or the tank resized.
@@ -290,7 +290,7 @@ export class EscapeMapView {
 	}
 
 	clear(): void {
-		if (this.map === null) return; // already clear — and #genome/#sig were reset with it
+		if (this.map === null) return; // already clear - and #genome/#sig were reset with it
 		this.map = null;
 		this.#genome = null;
 		this.#sig = '';
@@ -298,14 +298,14 @@ export class EscapeMapView {
 }
 
 /**
- * Reactive mirror of a world's `cfg` — the half of the world the UI both READS and WRITES.
+ * Reactive mirror of a world's `cfg` - the half of the world the UI both READS and WRITES.
  *
  * The world itself is raw and unreactive on purpose (see the file header), which is right for the
  * 20 fish being mutated 60×/s, but wrong for the config: a tile has to re-render the moment you
  * rename it or cut one of its senses. Rather than proxy the whole hot world for the sake of twelve
  * fields, the config is mirrored here.
  *
- * `cfg` stays the single source of truth — this is only ever projected FROM it, and only the store
+ * `cfg` stays the single source of truth - this is only ever projected FROM it, and only the store
  * writes to `cfg`, so the two cannot drift.
  */
 export class WorldConfigView {
@@ -316,11 +316,11 @@ export class WorldConfigView {
 	bw = $state(0);
 	bh = $state(0);
 	predSpeed = $state(1);
-	/** The agent's own top speed — the other half of the predator-speed crossover. */
+	/** The agent's own top speed - the other half of the predator-speed crossover. */
 	maxSpeed = $state(176);
 	/** Does the adversary dart? Off, it only pursues at cruise. */
 	lunge = $state(true);
-	/** The shark's hunger ramp — off, it is the same hunter all run long. */
+	/** The shark's hunger ramp - off, it is the same hunter all run long. */
 	persistence = $state(false);
 	persistRamp = $state(0.04);
 	persistMaxBoost = $state(0.85);
@@ -333,7 +333,7 @@ export class WorldConfigView {
 	brainInputs = $state(8);
 	/** The brain's hidden layers, as a list of neuron counts. Reference [6] (one layer of six). */
 	brainHidden = $state<number[]>([6]);
-	/** Whether the shoal senses are wired into this world's brains — the "Schooling" toggle's state. */
+	/** Whether the shoal senses are wired into this world's brains - the "Schooling" toggle's state. */
 	schooling = $state(false);
 	/** How hard the confusion effect bites (only meaningful while schooling is on). */
 	confusionStrength = $state(3);
@@ -363,7 +363,7 @@ export class WorldConfigView {
 		this.schooling = 'cohesion' in cfg.senses || 'align' in cfg.senses;
 		this.confusionStrength = cfg.confusionStrength ?? 3;
 		this.caption = cfg.caption;
-		// A fresh object, not a mutation: `senses` is $state.raw-ish in spirit — replaced wholesale,
+		// A fresh object, not a mutation: `senses` is $state.raw-ish in spirit - replaced wholesale,
 		// so one assignment wakes every reader exactly once.
 		this.senses = { ...cfg.senses };
 	}
@@ -372,12 +372,12 @@ export class WorldConfigView {
 /**
  * Where a world SITS on the lineage canvas, and who it descends from.
  *
- * This is view state, not science — it never touches a genome, a fitness, or the RNG. It lives here
+ * This is view state, not science - it never touches a genome, a fitness, or the RNG. It lives here
  * (reactive, on the entry) rather than on the raw `World` because the canvas must re-render when a
  * node moves or a branch is drawn, and none of it changes at frame rate. `x`/`y` are the node's
  * top-left in CANVAS coordinates; the viewport transform (canvas.svelte.ts) maps them to the screen.
  *
- * Only the bench store writes these — `branchWorld` sets the links, `moveWorld` sets the position,
+ * Only the bench store writes these - `branchWorld` sets the links, `moveWorld` sets the position,
  * and the initial auto-layout places the roots. Components read them and call those methods; they
  * never mutate a node's position directly (the same load-bearing rule as the rest of the store).
  */
@@ -392,12 +392,12 @@ export class LineageView {
 
 export interface WorldEntry {
 	readonly id: string;
-	/** The raw engine world — deliberately NOT reactive (see above). */
+	/** The raw engine world - deliberately NOT reactive (see above). */
 	readonly world: World;
 	readonly stats: WorldStats;
-	/** Reactive view of `world.cfg` — what components bind to. */
+	/** Reactive view of `world.cfg` - what components bind to. */
 	readonly config: WorldConfigView;
-	/** Reactive canvas placement + lineage links — see LineageView. */
+	/** Reactive canvas placement + lineage links - see LineageView. */
 	readonly lineage: LineageView;
 }
 

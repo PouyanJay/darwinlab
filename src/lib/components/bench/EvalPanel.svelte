@@ -1,5 +1,5 @@
 <!--
-  The evaluation panel — where the card stops showing a run and starts reporting a RESULT.
+  The evaluation panel - where the card stops showing a run and starts reporting a RESULT.
 
   The tank above it is one population on one seed: it wanders several points between seeds, and a
   ladder read off five of those is a ladder read off noise. This measures the environment as
@@ -8,7 +8,7 @@
 
   It also states when it is STALE. Change a condition and the result stops being an answer to the
   question you are now asking, so it is struck through rather than left on screen going quietly
-  wrong — a number that no longer matches its configuration is worse than no number.
+  wrong - a number that no longer matches its configuration is worse than no number.
 -->
 <script lang="ts">
 	import Button from '../common/Button.svelte';
@@ -27,7 +27,7 @@
 	const configVersion = $derived(JSON.stringify(entry.config.senses) + entry.config.preds);
 	// The HELD result, not only the still-valid one: a result whose config has moved must be shown
 	// struck through and labelled, never silently replaced by an empty "Evaluate" button as if it had
-	// never been measured. `configVersion` is touched so this re-derives when a condition changes —
+	// never been measured. `configVersion` is touched so this re-derives when a condition changes -
 	// the raw world it reads from is $state.raw and would never wake it.
 	const result = $derived(configVersion ? evals.held(entry.id) : null);
 	const stale = $derived(configVersion ? evals.isStale(entry.id, cfg) : false);
@@ -218,7 +218,7 @@
 		transition: width var(--dur-fast) linear;
 	}
 
-	@media (max-width: 560px) {
+	@media (max-width: 640px) {
 		.metrics {
 			grid-template-columns: repeat(2, 1fr);
 		}

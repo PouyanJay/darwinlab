@@ -4,8 +4,8 @@ import { gotoApp, waitForPrewarm } from './helpers';
 /**
  * The Phase 5 gate, driven in the real app.
  *
- * The claim the dialog makes about itself — "changes apply live to this world; brains keep evolving
- * from where they are" — is the whole reason it exists, and it is the kind of claim that is easy to
+ * The claim the dialog makes about itself - "changes apply live to this world; brains keep evolving
+ * from where they are" - is the whole reason it exists, and it is the kind of claim that is easy to
  * make and easy to quietly break. So it is tested against a running bench: edit the experiment, and
  * check both that the world CHANGED and that its fifteen generations of learning are still there.
  */
@@ -21,13 +21,13 @@ const dialog = (page: Page) => page.getByRole('dialog', { name: 'Conditions' });
  * Every query into the dialog is scoped to it, and that is not fussiness: the bench BEHIND the
  * dialog carries the same words. Five tiles each have a "world name" field and a sense pill
  * labelled "close", and the tile's meta chip echoes the very number the dialog is showing. An
- * unscoped locator here does not fail loudly — it matches six things and picks a fight.
+ * unscoped locator here does not fail loudly - it matches six things and picks a fight.
  */
 const field = (page: Page, name: string | RegExp) => dialog(page).getByRole('textbox', { name });
 const slider = (page: Page, name: RegExp) => dialog(page).getByRole('slider', { name });
 
 /**
- * The conditions are grouped into three tabs — Environment, Agents, Adversary — and a field only
+ * The conditions are grouped into three tabs - Environment, Agents, Adversary - and a field only
  * exists once its group is showing. Every test opens the group it needs.
  */
 const group = (page: Page, name: 'Environment' | 'Agents' | 'Adversary') =>
@@ -60,7 +60,7 @@ test('THE POINT: an edit changes the world and the world keeps what it learned',
 	await expect(tile(page, 2).getByTestId('gen')).toHaveText('Gen 15');
 
 	// …and the ENGINE really grew the population, not just the chip that describes it: the sharks
-	// keep eating, so `alive` alone says little — but alive + eaten is the generation's roster, and
+	// keep eating, so `alive` alone says little - but alive + eaten is the generation's roster, and
 	// it must now be the 22 fish that were asked for.
 	await expect
 		.poll(async () => {
@@ -80,7 +80,7 @@ test('the edit reaches the SIMULATION, not just the tile that describes it', asy
 	 * itself change shape.
 	 */
 	// Pause BEFORE reopening the dialog: a modal makes the page behind it inert, so the top bar's
-	// Pause button is genuinely unclickable while it is open — which is the modal doing its job.
+	// Pause button is genuinely unclickable while it is open - which is the modal doing its job.
 	await page.keyboard.press('Escape');
 	await expect(dialog(page)).toBeHidden();
 	await page.getByRole('button', { name: 'Pause' }).click();
@@ -124,19 +124,19 @@ test('every field writes through: sliders, senses, name, accent', async ({ page 
 		'true'
 	);
 
-	// the name is identity, not a condition — it stays visible above the group selector
+	// the name is identity, not a condition - it stays visible above the group selector
 	await field(page, /world name/i).fill('Direction (control)');
 	await expect(tile(page, 2)).toHaveAttribute('aria-label', 'world 3: Direction (control)');
 
 	await group(page, 'Environment');
 	await slider(page, /container width/i).fill('900');
-	// NB: this proves the chip was told, not that the tank was resized — the chip renders from the
+	// NB: this proves the chip was told, not that the tank was resized - the chip renders from the
 	// store's mirror of cfg. The test above is the one that proves the water itself changed shape.
 	await expect.poll(() => meta(page, 2)).toContain('900×400');
 });
 
 test('it is a real modal: Esc closes it, and it traps focus while open', async ({ page }) => {
-	// showModal() is what buys the focus trap and the inert background — assert we actually got one
+	// showModal() is what buys the focus trap and the inert background - assert we actually got one
 	expect(await dialog(page).evaluate((el) => el.matches(':modal'))).toBe(true);
 	expect(
 		await dialog(page).evaluate(() => document.activeElement?.closest('dialog') !== null)
@@ -155,7 +155,7 @@ test('closing and reopening shows the world as it now is, not as it was', async 
 
 	await tile(page, 2).getByRole('button', { name: 'Conditions' }).click();
 
-	// it reads the world, it does not keep a copy of it — reopen and the Agents group shows 22
+	// it reads the world, it does not keep a copy of it - reopen and the Agents group shows 22
 	await group(page, 'Agents');
 	const count = dialog(page).getByRole('group', { name: 'Fish' }).getByRole('status');
 	await expect(count).toHaveText('22');

@@ -1,8 +1,8 @@
 <!--
-  One question's section in the Report — a collapsible row. The head always shows the question, its
+  One question's section in the Report - a collapsible row. The head always shows the question, its
   one-line answer (the finding's own words, never invented), and a drill-through link back to the
   instrument that produced it; expanding reveals the numbered figure drawn from the evidence, and a
-  caveat. When nothing answers it, it says so plainly and offers to run the test that would — no
+  caveat. When nothing answers it, it says so plainly and offers to run the test that would - no
   placeholder graph, no fabricated verdict.
 
   The skeptic props (intervals, showData) ride down to the viz so the Report's toolbar can add the 95%
@@ -35,7 +35,7 @@
 		intervals: boolean;
 		showData: boolean;
 		ontoggle: () => void;
-		/** Un-answer this question — drop the backing finding so the section reverts to its "run the
+		/** Un-answer this question - drop the backing finding so the section reverts to its "run the
 		 *  test" prompt, ready to be answered again. Absent when the row offers no removal. */
 		onremove?: () => void;
 	} = $props();
@@ -44,7 +44,7 @@
 	const evidence = $derived(finding?.evidence);
 
 	/** The instrument to navigate to: the finding's own source when answered, else the one that WOULD
-	 *  settle this question — both from the typed domain maps, never matched off a display string. */
+	 *  settle this question - both from the typed domain maps, never matched off a display string. */
 	const target = $derived(
 		SOURCE_INSTRUMENT[finding?.source ?? QUESTION_SOURCE[section.question.id] ?? 'sweep']
 	);
@@ -68,7 +68,7 @@
 				{#if finding}
 					<span class="answer">{section.answer}</span>
 				{:else}
-					<span class="answer untested">Not answered yet — nothing has settled this.</span>
+					<span class="answer untested">Not answered yet - nothing has settled this.</span>
 				{/if}
 			</span>
 			<span class="chev" aria-hidden="true">›</span>
@@ -128,7 +128,7 @@
 			{:else}
 				<div class="gap-card">
 					<p>
-						The Report states this <b>only</b> once a real finding backs it — no placeholder verdict.
+						The Report states this <b>only</b> once a real finding backs it - no placeholder verdict.
 					</p>
 					<button class="run" onclick={() => app.setInstrument(target)}>
 						Run {section.producer} →
@@ -210,7 +210,7 @@
 		color: var(--ink3);
 	}
 
-	/* a button styled as the drill-through link — its own tab stop, beside the toggle (never nested). */
+	/* a button styled as the drill-through link - its own tab stop, beside the toggle (never nested). */
 	.src {
 		flex: none;
 		font-size: var(--fs-eyebrow);
@@ -239,7 +239,7 @@
 		cursor: default;
 	}
 
-	/* Un-answer this question — its own tab stop beside the drill-back link, muted until hovered so it
+	/* Un-answer this question - its own tab stop beside the drill-back link, muted until hovered so it
 	   never competes with the answer, then coral to say it deletes. */
 	.qremove {
 		flex: none;

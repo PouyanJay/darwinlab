@@ -3,7 +3,7 @@
  *
  * `shell` decides between its docked and overlay layouts by asking `matchMedia`, and neither jsdom
  * nor a browser test runner will hand a test the viewport it wants to prove things about. So the
- * question gets a stub, and the store is driven through its real `init()` — mocking the store's own
+ * question gets a stub, and the store is driven through its real `init()` - mocking the store's own
  * getters instead would be worse than useless: they are backed by `$state`, and replacing one with a
  * plain function silently kills the reactivity that makes the component under test re-render.
  */

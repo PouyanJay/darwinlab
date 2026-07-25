@@ -8,7 +8,7 @@ import { DEFAULT_WORLDS, bestAliveFish } from '$lib/engine';
 /**
  * The brain must be drawn from the world the fish is actually SWIMMING IN.
  *
- * It read `entry.world` — the real run — and an exhibit puts the selected fish somewhere else. The
+ * It read `entry.world` - the real run - and an exhibit puts the selected fish somewhere else. The
  * real world's sense snapshot is null in that case, and a null snapshot draws the empty scaffold:
  * eight input nodes, six hidden, two outputs, and not one weight between them. The panel next to it
  * went on printing live sense readings the whole time (it reads the store's published mind, which
@@ -26,7 +26,7 @@ function run(seconds: number) {
 	for (let i = 0; i < seconds * 60; i++) bench.tick(dt, dt);
 }
 
-/** How much of this canvas is edges — coloured strokes between the nodes. */
+/** How much of this canvas is edges - coloured strokes between the nodes. */
 function paintedPixels(canvas: HTMLCanvasElement): number {
 	const { data } = canvas.getContext('2d')!.getImageData(0, 0, canvas.width, canvas.height);
 	let painted = 0;
@@ -35,10 +35,10 @@ function paintedPixels(canvas: HTMLCanvasElement): number {
 }
 
 describe('BrainCanvas', () => {
-	it('survives its world being torn out from under it — a painter must never throw', () => {
+	it('survives its world being torn out from under it - a painter must never throw', () => {
 		/*
 		 * CI caught this and this machine did not. A canvas can be asked to repaint outside the sim
-		 * loop — a ResizeObserver fires, a DPR change lands — and that can happen in the same frame the
+		 * loop - a ResizeObserver fires, a DPR change lands - and that can happen in the same frame the
 		 * world it was drawing was removed. Reaching for the world through a throwing accessor turned
 		 * that into an unhandled error inside a platform callback, and a throw on this exact path once
 		 * killed the sim loop's timer chain and froze the entire bench (the note at the top of the
@@ -61,7 +61,7 @@ describe('BrainCanvas', () => {
 		const entry = bench.worlds[0];
 		run(35); // one generation, so the world has a brain worth exhibiting
 
-		// A fish in the REAL world first — this is the picture a working brain panel makes.
+		// A fish in the REAL world first - this is the picture a working brain panel makes.
 		bench.selectChampion(entry.id);
 		run(0.2);
 		const { container } = render(BrainCanvas, { entry });
@@ -81,7 +81,7 @@ describe('BrainCanvas', () => {
 
 		const inTheExhibit = paintedPixels(canvas);
 
-		// The brain of a clone is a brain. It must be drawn as densely as any other — the failure this
+		// The brain of a clone is a brain. It must be drawn as densely as any other - the failure this
 		// pins is a canvas with the nodes on it and nothing else, which is roughly a third of the ink.
 		expect(inTheExhibit).toBeGreaterThan(inTheRun * 0.6);
 		expect(bench.shown(entry.id)).not.toBe(entry.world); // …and it really was the exhibit

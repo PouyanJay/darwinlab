@@ -1,14 +1,14 @@
 /**
- * Research state — the lifecycle of the ONE batch that is running right now.
+ * Research state - the lifecycle of the ONE batch that is running right now.
  *
  * Every Research instrument (the Sweep, the Ledger, the Atlas) turns a question into a list of
  * EvalRequests and hands them here; this store runs them through the batch runner, exposes the
  * progress so the UI shows work rather than a hang, and owns the cancel. Only one batch runs at a
  * time: starting another aborts the one in flight, because the user asked a newer question and half
- * a stale sweep is worth nothing — the same rule the single-card `evals` store follows.
+ * a stale sweep is worth nothing - the same rule the single-card `evals` store follows.
  *
  * It returns the RAW per-job results; each instrument aggregates them its own way (effect sizes, a
- * verdict, a landscape). Nothing here touches the live bench — the runner clones every config.
+ * verdict, a landscape). Nothing here touches the live bench - the runner clones every config.
  */
 
 import { runBatch, type JobExecutor } from '../lab/runner';
@@ -24,7 +24,7 @@ class ResearchStore {
 		return this.#running;
 	}
 
-	/** 0–1 across the whole batch, so the UI can show it filling. */
+	/** 0-1 across the whole batch, so the UI can show it filling. */
 	get progress(): number {
 		return this.#progress;
 	}
@@ -33,10 +33,10 @@ class ResearchStore {
 	 * Run a batch of evaluations, cancelling any batch already in flight.
 	 *
 	 * Resolves to the per-job results (a null in a slot is a job that failed or was cancelled), or to
-	 * `null` for the WHOLE run when this call no longer owns the store — because a newer run has
-	 * superseded it, or `cancel()` stopped it outright — at which point it must publish nothing.
+	 * `null` for the WHOLE run when this call no longer owns the store - because a newer run has
+	 * superseded it, or `cancel()` stopped it outright - at which point it must publish nothing.
 	 *
-	 * `executor` overrides the runner's default pool — the seam the tests drive, and where a custom
+	 * `executor` overrides the runner's default pool - the seam the tests drive, and where a custom
 	 * pool would plug in.
 	 */
 	async run(jobs: EvalRequest[], executor?: JobExecutor): Promise<(Evaluation | null)[] | null> {
@@ -57,7 +57,7 @@ class ResearchStore {
 			executor
 		);
 
-		// A newer run may have started, or this one was cancelled — either way it no longer owns the
+		// A newer run may have started, or this one was cancelled - either way it no longer owns the
 		// store, so it publishes nothing.
 		if (controller.signal.aborted || this.#controller !== controller) return null;
 

@@ -4,7 +4,7 @@ import { newWorldConfig } from '../engine';
 
 /**
  * The trajectory trace: it records every fish's path and the predator's, for one frozen bout. The
- * paths' shapes are a live simulation and are not asserted; what is asserted is the CONTRACT — every
+ * paths' shapes are a live simulation and are not asserted; what is asserted is the CONTRACT - every
  * fish is traced, the death flag tracks who was actually eaten, and the same seed gives the same trace.
  */
 
@@ -22,7 +22,7 @@ describe('traceBout', () => {
 	});
 
 	it('with no predator, nothing dies and the predator path is empty', () => {
-		// preds:0 is the clean control — every fish must survive, so `died` is provably about eating,
+		// preds:0 is the clean control - every fish must survive, so `died` is provably about eating,
 		// not about the bout simply ending.
 		const trace = traceBout({ cfg: world({ prey: 6, preds: 0 }), seed: 2, seconds: 2 });
 
@@ -41,7 +41,7 @@ describe('traceBout', () => {
 		expect(trace.fish.find((f) => f.died)!.life).toBeLessThan(trace.seconds);
 	});
 
-	it('is deterministic — the same world and seed give the same trace', () => {
+	it('is deterministic - the same world and seed give the same trace', () => {
 		const cfg = world({ prey: 6, preds: 1 });
 		expect(traceBout({ cfg, seed: 7, seconds: 2 })).toEqual(
 			traceBout({ cfg, seed: 7, seconds: 2 })

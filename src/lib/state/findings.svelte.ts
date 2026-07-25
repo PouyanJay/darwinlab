@@ -1,13 +1,13 @@
 /**
- * The Findings notebook — the curated record the Report is assembled from.
+ * The Findings notebook - the curated record the Report is assembled from.
  *
- * An instrument produces a conclusion; "add to report" writes it here as a FINDING — small enough to
+ * An instrument produces a conclusion; "add to report" writes it here as a FINDING - small enough to
  * persist (numbers and a sentence, never raw genomes), tagged with the questions it answers and the
  * fingerprint that reproduces it. The notebook PERSISTS to localStorage, so a report survives across
  * sessions, and it generalises the Ledger's envelope (`{version, entries}`, a per-entry guard, a cap):
  * the Ledger keeps every verdict; the notebook keeps the ones you chose to report, from any instrument.
  *
- * Re-adding the same finding UPDATES it in place rather than duplicating — a report has one answer per
+ * Re-adding the same finding UPDATES it in place rather than duplicating - a report has one answer per
  * conclusion, not one per click.
  */
 
@@ -22,10 +22,10 @@ const STORAGE_VERSION = 1;
 /** The notebook is bounded; over this, the oldest findings are evicted. */
 export const MAX_FINDINGS = 50;
 
-/** A positive result vs a kept negative/limit — the honest distinction the Report preserves (Q6). */
+/** A positive result vs a kept negative/limit - the honest distinction the Report preserves (Q6). */
 export type FindingStatus = 'ok' | 'limit';
 
-/** One recorded conclusion — enough to read it, group it by question, and reproduce it. */
+/** One recorded conclusion - enough to read it, group it by question, and reproduce it. */
 export interface Finding {
 	id: string;
 	/** Dedupe identity: same source + variant + subject → the newer replaces the older. */
@@ -39,9 +39,9 @@ export interface Finding {
 	detail: string;
 	status: FindingStatus;
 	seeds: number;
-	/** The experiment's fingerprint — provenance (Q7). */
+	/** The experiment's fingerprint - provenance (Q7). */
 	configHash: string;
-	/** The subject this finding is about — stable across instruments, so the Report can scope to it. */
+	/** The subject this finding is about - stable across instruments, so the Report can scope to it. */
 	subjectHash: string;
 	/** The small graph payload the Report renders (optional: a text-only finding still answers a Q). */
 	evidence?: Evidence;
@@ -49,13 +49,13 @@ export interface Finding {
 	recorded: string;
 }
 
-/** What a producer hands to `add` — the store stamps the id, questions, subject, key and timestamp. */
+/** What a producer hands to `add` - the store stamps the id, questions, subject, key and timestamp. */
 export interface FindingInput {
 	source: FindingSource;
 	/** Distinguishes findings from the same source about the same subject (the Ledger's claimId); '' when
 	 *  a source contributes one finding per subject (the Sweep, the Atlas). */
 	variant: string;
-	/** The questions THIS finding settles — defaults to every question the source can answer
+	/** The questions THIS finding settles - defaults to every question the source can answer
 	 *  (`ANSWERS[source]`). A trace overrides it: its two findings answer different questions with
 	 *  different graphs (the curve settles Q1, the mechanism Q5), so they can't share one question set. */
 	questions?: QuestionId[];
@@ -69,7 +69,7 @@ export interface FindingInput {
 
 const VALID_SOURCES: FindingSource[] = ['sweep', 'ledger', 'atlas', 'trace'];
 
-/** A runtime shape check on ONE finding — persisted state can be hand-edited, half-written or from a
+/** A runtime shape check on ONE finding - persisted state can be hand-edited, half-written or from a
  *  future build, and the UI reads `.title`/`.status`/`.questions`, so a malformed one is dropped
  *  rather than trusted (a bare cast would let it through to crash a render). */
 function isFinding(value: unknown): value is Finding {
@@ -111,7 +111,7 @@ export function loadFindings(): Finding[] {
 }
 
 /**
- * The fingerprint of the world the console is currently pointed at — stable across instruments, since
+ * The fingerprint of the world the console is currently pointed at - stable across instruments, since
  * `configHash` ignores name/accent. `add` stamps it so a finding remembers which subject it is about
  * and the Report can show only the current one's findings.
  */
@@ -127,33 +127,33 @@ class FindingsStore {
 		return this.#entries;
 	}
 
-	/** The findings recorded about one subject — what the Report composes from. */
+	/** The findings recorded about one subject - what the Report composes from. */
 	forSubject(subjectHash: string): Finding[] {
 		return this.#entries.filter((finding) => finding.subjectHash === subjectHash);
 	}
 
 	/** Whether a finding from this source + variant about the CURRENT subject is already in the notebook
-	 *  — so a summary's button can read "in report" instead of inviting a duplicate. */
+	 *  - so a summary's button can read "in report" instead of inviting a duplicate. */
 	has(source: FindingSource, variant = ''): boolean {
 		const key = this.#keyFor(source, variant, currentSubjectHash());
 		return this.#entries.some((finding) => finding.key === key);
 	}
 
-	/** The dedupe identity of a finding — one place, so `add` and `has` can never disagree on it. */
+	/** The dedupe identity of a finding - one place, so `add` and `has` can never disagree on it. */
 	#keyFor(source: FindingSource, variant: string, subjectHash: string): string {
 		return `${source}:${variant}:${subjectHash}`;
 	}
 
 	/**
 	 * Record a conclusion. Derives the questions from the source, stamps the current subject and a
-	 * stable dedupe key, and prepends it — dropping any earlier finding with the same key so a re-add
+	 * stable dedupe key, and prepends it - dropping any earlier finding with the same key so a re-add
 	 * updates rather than duplicates.
 	 */
 	add(input: FindingInput): void {
 		const subjectHash = currentSubjectHash();
 		const key = `${input.source}:${input.variant}:${subjectHash}`;
 		const finding: Finding = {
-			// A globally-unique id — never a session counter, which would reset on reload and collide
+			// A globally-unique id - never a session counter, which would reset on reload and collide
 			// with an id already in the persisted array (the keyed rail list needs it unique).
 			id: crypto.randomUUID(),
 			key,
@@ -174,20 +174,20 @@ class FindingsStore {
 		this.#persist();
 	}
 
-	/** Drop one finding — curating the notebook. */
+	/** Drop one finding - curating the notebook. */
 	remove(id: string): void {
 		this.#entries = this.#entries.filter((finding) => finding.id !== id);
 		this.#persist();
 	}
 
-	/** Forget every finding about ONE subject — clearing a single report without touching the
+	/** Forget every finding about ONE subject - clearing a single report without touching the
 	 *  notebooks of other subjects the console has studied. */
 	clearSubject(subjectHash: string): void {
 		this.#entries = this.#entries.filter((finding) => finding.subjectHash !== subjectHash);
 		this.#persist();
 	}
 
-	/** The whole notebook as JSON — what a later "export" hands over. */
+	/** The whole notebook as JSON - what a later "export" hands over. */
 	toJson(): string {
 		return JSON.stringify({ version: STORAGE_VERSION, entries: this.#entries }, null, 2);
 	}
@@ -204,7 +204,7 @@ class FindingsStore {
 			const payload = JSON.stringify({ version: STORAGE_VERSION, entries: this.#entries });
 			localStorage.setItem(FINDINGS_STORAGE_KEY, payload);
 		} catch {
-			// Storage full or unavailable — the in-memory notebook still works for this session.
+			// Storage full or unavailable - the in-memory notebook still works for this session.
 		}
 	}
 }

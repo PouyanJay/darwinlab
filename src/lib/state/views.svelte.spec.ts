@@ -10,7 +10,7 @@ function world(over: Partial<World> & { selFish: World['selFish'] }): World {
 	return { cfg: testCfg(), ...over } as unknown as World;
 }
 
-/** A minimal world for WorldStats.syncFrom — enough fields for it not to throw. */
+/** A minimal world for WorldStats.syncFrom - enough fields for it not to throw. */
 function statsWorld(senses: Senses, fish: World['fish']): World {
 	return {
 		cfg: testCfg({ senses }),
@@ -29,7 +29,7 @@ function statsWorld(senses: Senses, fish: World['fish']): World {
 }
 const FULL: Senses = { dist: true, dir: true, closing: true, walls: true };
 
-describe('EscapeMapView — the memoised escape map', () => {
+describe('EscapeMapView - the memoised escape map', () => {
 	it('computes a map for the selected fish', () => {
 		const view = new EscapeMapView();
 		view.syncFrom(world({ selFish: testFish() }));
@@ -37,7 +37,7 @@ describe('EscapeMapView — the memoised escape map', () => {
 		expect(view.map!.samples.length).toBeGreaterThan(0);
 	});
 
-	it('does NOT recompute when nothing has changed — the whole point of the memo', () => {
+	it('does NOT recompute when nothing has changed - the whole point of the memo', () => {
 		// Reference identity is the proof: a skipped recompute returns the SAME object; a redundant
 		// one returns a fresh grid. Sabotage: drop the signature guard and this fails every frame.
 		const view = new EscapeMapView();
@@ -68,7 +68,7 @@ describe('EscapeMapView — the memoised escape map', () => {
 		expect(view.map).not.toBe(wired);
 	});
 
-	it('recomputes when the tank is resized — the agent sits at its centre, feeding the wall rays', () => {
+	it('recomputes when the tank is resized - the agent sits at its centre, feeding the wall rays', () => {
 		// Guards the signature actually covering bw/bh: with walls on, tank size shifts the wall
 		// inputs, so a resize that did not invalidate the memo would leave a stale map.
 		const view = new EscapeMapView();
@@ -95,7 +95,7 @@ describe('EscapeMapView — the memoised escape map', () => {
 	});
 });
 
-describe('WorldStats — the school readout', () => {
+describe('WorldStats - the school readout', () => {
 	it('shows the readout only for worlds whose brains carry the shoal senses (declared, even if off)', () => {
 		const ladder = new WorldStats();
 		ladder.syncFrom(statsWorld(FULL, [testFish(), testFish({ x: 20 })]));
@@ -103,7 +103,7 @@ describe('WorldStats — the school readout', () => {
 
 		const alone = new WorldStats();
 		alone.syncFrom(statsWorld({ ...FULL, cohesion: false, align: false }, [testFish()]));
-		expect(alone.schooling).toBe(true); // ablated to false, but PRESENT — the readout still compares
+		expect(alone.schooling).toBe(true); // ablated to false, but PRESENT - the readout still compares
 	});
 
 	it('publishes a RUNNING-mean spacing (not a single noisy frame) once it warms up', () => {
@@ -114,7 +114,7 @@ describe('WorldStats — the school readout', () => {
 		const w = statsWorld(cfg, fish);
 
 		stats.syncFrom(w);
-		expect(stats.schoolNND).toBeNull(); // one frame is not a mean — it withholds
+		expect(stats.schoolNND).toBeNull(); // one frame is not a mean - it withholds
 
 		for (let i = 0; i < 200; i++) stats.syncFrom(w);
 		expect(stats.schoolNND).toBe(20); // the steady gap, published once warm

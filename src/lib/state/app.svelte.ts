@@ -1,23 +1,23 @@
 /**
- * App mode + the analysis subject — the two things that make Studio and Research one lab.
+ * App mode + the analysis subject - the two things that make Studio and Research one lab.
  *
  * The lab is one place with two modes: STUDIO (watch a world evolve, read one brain) and RESEARCH
  * (run many simulations, extract conclusions). The mode is the highest-level lens over the SAME
- * worlds and the SAME engine — switching it swaps the stage and the controls, never the science.
+ * worlds and the SAME engine - switching it swaps the stage and the controls, never the science.
  * That is why it lives in the top bar, not the sidebar: a mode is identity, not a bench control.
  *
- * The store also owns the analysis SUBJECT — the one piece of state that rides along WITH a mode
+ * The store also owns the analysis SUBJECT - the one piece of state that rides along WITH a mode
  * switch rather than surviving one, because it IS the payload of the switch: "analyse the world I'm
  * watching" (`analyze`) both stashes that world and flips to Research, and every instrument builds
  * its runs on it (`subjectBase`). Mode persists; the subject deliberately does not (see `#subject`).
  *
- * Since the redesign, the store also owns the EDITABLE GENERIC BASE — the world Research explores
+ * Since the redesign, the store also owns the EDITABLE GENERIC BASE - the world Research explores
  * when nothing is analysed. The subject card edits it directly (population, tank, brain), so
  * building a control world needs no Studio detour. Every instrument still reads ONE base through
  * `subjectBase`.
  *
  * Mode resolves to `studio` on the server / first load (the prerendered SPA has no `window`),
- * adopting the saved value in `init()` once the browser is there — the same shape as the theme store.
+ * adopting the saved value in `init()` once the browser is there - the same shape as the theme store.
  */
 
 import { browser } from '$app/environment';
@@ -35,7 +35,7 @@ export type AppMode = 'studio' | 'research';
 
 export const MODE_STORAGE_KEY = 'darwinlab:mode';
 
-/** The neutral grey a Research run wears — chrome, since the science ignores name/accent. */
+/** The neutral grey a Research run wears - chrome, since the science ignores name/accent. */
 export const RESEARCH_NEUTRAL_ACCENT = '#8b8b8b';
 
 function resolveMode(): AppMode {
@@ -43,24 +43,24 @@ function resolveMode(): AppMode {
 	return localStorage.getItem(MODE_STORAGE_KEY) === 'research' ? 'research' : 'studio';
 }
 
-/** The name a fresh editable base wears — also what the subject card shows for it. */
+/** The name a fresh editable base wears - also what the subject card shows for it. */
 const GENERIC_NAME = 'Generic world';
 
 class AppStore {
 	#mode = $state<AppMode>('studio');
 
-	// Which Research instrument is active — lifted here (not local to the stage) so a drill-through
+	// Which Research instrument is active - lifted here (not local to the stage) so a drill-through
 	// link inside one instrument (the Report's "← The Sweep") can navigate to another. Session-only:
 	// like the subject, it is where you are right now, not a setting to restore.
 	#instrument = $state<ResearchInstrument>('sweep');
 
-	// The world Research is exploring around — set by "Analyse in Research" from a Studio world. Null
+	// The world Research is exploring around - set by "Analyse in Research" from a Studio world. Null
 	// means Research runs on the editable generic base below. `$state.raw`: it is a whole config, only
-	// ever replaced, never mutated in place. Deliberately NOT persisted — a subject is a live hand-off
+	// ever replaced, never mutated in place. Deliberately NOT persisted - a subject is a live hand-off
 	// from the world you were just watching, not a setting to restore into an empty next session.
 	#subject = $state.raw<WorldConfig | null>(null);
 
-	// The EDITABLE generic base — the world Research explores when nothing is analysed. The subject
+	// The EDITABLE generic base - the world Research explores when nothing is analysed. The subject
 	// card edits this in place (population, tank, brain), so "build the control right here" needs no
 	// Studio detour. Same replace-never-mutate discipline as the subject; session-only on purpose
 	// (presets are the durable form).
@@ -75,7 +75,7 @@ class AppStore {
 		return this.#mode;
 	}
 
-	/** True in Research — the one flag the shell branches on. */
+	/** True in Research - the one flag the shell branches on. */
 	get research(): boolean {
 		return this.#mode === 'research';
 	}
@@ -86,12 +86,12 @@ class AppStore {
 		if (browser) localStorage.setItem(MODE_STORAGE_KEY, mode);
 	}
 
-	/** The active Research instrument — the rail, the workspace and the sidebar read this one truth. */
+	/** The active Research instrument - the rail, the workspace and the sidebar read this one truth. */
 	get instrument(): ResearchInstrument {
 		return this.#instrument;
 	}
 
-	/** Navigate the console to an instrument — the rail's tabs and the Report's drill-through links
+	/** Navigate the console to an instrument - the rail's tabs and the Report's drill-through links
 	 *  both call this, so a jump from a conclusion back to its instrument is one path, not two. */
 	setInstrument(key: ResearchInstrument): void {
 		this.#instrument = key;
@@ -112,27 +112,27 @@ class AppStore {
 		this.setMode('research');
 	}
 
-	/** Drop the subject — Research goes back to the editable generic base (edits intact). */
+	/** Drop the subject - Research goes back to the editable generic base (edits intact). */
 	clearSubject(): void {
 		this.#subject = null;
 	}
 
 	/**
-	 * The base the console is pointed at RIGHT NOW — the analysed subject when one is set, otherwise
+	 * The base the console is pointed at RIGHT NOW - the analysed subject when one is set, otherwise
 	 * the editable generic. This is what the subject card reads and what every edit below writes.
 	 */
 	get base(): WorldConfig {
 		return this.#subject ?? this.#generic;
 	}
 
-	/** Route one edit at whichever config is the current base — replace, never mutate ($state.raw). */
+	/** Route one edit at whichever config is the current base - replace, never mutate ($state.raw). */
 	#editBase(change: (cfg: WorldConfig) => WorldConfig): void {
 		if (this.#subject) this.#subject = change(this.#subject);
 		else this.#generic = change(this.#generic);
 	}
 
 	/**
-	 * Edit one numeric condition of the base, clamped to WORLD_LIMITS on the way in — the same door
+	 * Edit one numeric condition of the base, clamped to WORLD_LIMITS on the way in - the same door
 	 * Studio's Conditions dialog uses (bench.setCondition), because a 40px tank or -3 prey is not an
 	 * experiment, it is a crash.
 	 */
@@ -141,14 +141,14 @@ class AppStore {
 		this.#editBase((cfg) => ({ ...cfg, [key]: clampToRange(value, WORLD_LIMITS[key]) }));
 	}
 
-	/** Set the base brain's hidden ARCHITECTURE — one shared sanitizer with bench.setBrainLayers. */
+	/** Set the base brain's hidden ARCHITECTURE - one shared sanitizer with bench.setBrainLayers. */
 	setBaseBrainLayers(layers: number[]): void {
 		this.#editBase((cfg) => ({ ...cfg, brainHidden: sanitizeBrainLayers(layers) }));
 	}
 
 	/**
 	 * The base brain's INPUT slots: 8 (the reference wiring) or 9 (adds the proprioceptive slot the
-	 * own-speed sense needs). Dropping to 8 strips the `speed` sense flag — a 9th-slot sense cannot
+	 * own-speed sense needs). Dropping to 8 strips the `speed` sense flag - a 9th-slot sense cannot
 	 * exist on a brain with no 9th wire (the same discipline bench.setSchooling applies).
 	 */
 	setBaseBrainInputs(inputs: 8 | 9): void {
@@ -159,7 +159,7 @@ class AppStore {
 		});
 	}
 
-	/** Rename the base — chrome only (instruments relabel per-run), but it is what the card shows. */
+	/** Rename the base - chrome only (instruments relabel per-run), but it is what the card shows. */
 	renameBase(name: string): void {
 		const clean = name.trim();
 		if (clean) this.#editBase((cfg) => ({ ...cfg, name: clean }));
@@ -170,7 +170,7 @@ class AppStore {
 		this.#generic = newWorldConfig(GENERIC_NAME, RESEARCH_NEUTRAL_ACCENT);
 	}
 
-	/** Replace the editable generic wholesale — the presets store's door for "apply this preset". */
+	/** Replace the editable generic wholesale - the presets store's door for "apply this preset". */
 	adoptBase(cfg: WorldConfig): void {
 		this.clearSubject(); // a preset IS the new base, not an overlay on an analysed subject
 		this.#generic = { ...cfg, senses: { ...cfg.senses } };
@@ -179,7 +179,7 @@ class AppStore {
 	/**
 	 * The base config a Research instrument builds its runs on: the current base, relabelled for the
 	 * instrument (name/accent are chrome the science ignores). One source, so the Sweep, the Ledger
-	 * and the Atlas all explore the SAME subject — now including the card's edits. The senses object
+	 * and the Atlas all explore the SAME subject - now including the card's edits. The senses object
 	 * is copied per hand-out so no instrument can reach back and mutate the stored base through it.
 	 */
 	subjectBase(label: string, accent: string = RESEARCH_NEUTRAL_ACCENT): WorldConfig {

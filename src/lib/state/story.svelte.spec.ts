@@ -3,7 +3,7 @@ import { bench } from './bench.svelte';
 import { story, SCENE_SECONDS, STORY_WORLD_ID } from './story.svelte';
 import { DEFAULT_WORLDS, SHOAL_WORLDS, seededRng } from '../engine';
 
-/** Open the bench on the two schooling worlds (Alone, The Shoal) with NO prewarm — the senses rail
+/** Open the bench on the two schooling worlds (Alone, The Shoal) with NO prewarm - the senses rail
  *  reads config, not evolved state, so gen 0 is enough to test it. */
 const openShoal = () => bench.init({ configs: SHOAL_WORLDS, rng: seededRng(5) });
 
@@ -23,7 +23,7 @@ const frame = (elapsed = 1 / 60, count = 1) => {
 /** Play a whole scene's worth of sim-seconds. */
 const playScene = () => frame(1 / 60, Math.ceil(SCENE_SECONDS * 60) + 2);
 
-describe('story — the scenes', () => {
+describe('story - the scenes', () => {
 	it('is one scene per world, in the order the argument is made', () => {
 		openBench();
 
@@ -43,14 +43,14 @@ describe('story — the scenes', () => {
 
 		bench.playStory();
 
-		// a scene opens with a full tank of competent fish — the same evolved population, just not
+		// a scene opens with a full tank of competent fish - the same evolved population, just not
 		// caught mid-slaughter
 		expect(story.entry!.world.fish.length).toBe(source.world.cfg.prey);
 		expect(story.entry!.world.gen).toBe(source.world.gen); // and it says which generation it is
 		expect(story.entry!.world).not.toBe(source.world); // a copy: the bench is left untouched
 	});
 
-	it('tags the sense each scene ADDS — that tag is the whole reason for the order', () => {
+	it('tags the sense each scene ADDS - that tag is the whole reason for the order', () => {
 		openBench();
 		bench.playStory();
 
@@ -62,7 +62,7 @@ describe('story — the scenes', () => {
 		story.next();
 		expect(tagged()).toEqual(['Direction']); // the one that pays
 		story.next();
-		// walls comes BEFORE closing speed now — the order the measurements put them in (walls pays
+		// walls comes BEFORE closing speed now - the order the measurements put them in (walls pays
 		// on top of direction; closing only stacks once everything else is in place)
 		expect(tagged()).toEqual(['Walls']);
 		story.next();
@@ -88,22 +88,22 @@ describe('story — the scenes', () => {
 		expect(names).not.toContain('Alignment');
 	});
 
-	it('a schooling world tags the shoal senses NEW in the second scene — the "what changed"', () => {
+	it('a schooling world tags the shoal senses NEW in the second scene - the "what changed"', () => {
 		openShoal();
 		bench.playStory();
 
-		story.goTo(0); // "Alone" — declares the shoal senses, but ablated off
+		story.goTo(0); // "Alone" - declares the shoal senses, but ablated off
 		const aloneTagged = story.senses.filter((s) => s.isNew).map((s) => s.name);
 		expect(story.senses.map((s) => s.name)).toContain('Shoal'); // present on the rail...
 		expect(aloneTagged).not.toContain('Shoal'); // ...but off, so not the "new" thing yet
 
-		story.goTo(1); // "The Shoal" — the sense turns on, and the rail says so
+		story.goTo(1); // "The Shoal" - the sense turns on, and the rail says so
 		const shoalTagged = story.senses.filter((s) => s.isNew).map((s) => s.name);
 		expect(shoalTagged).toEqual(['Shoal', 'Alignment']);
 	});
 });
 
-describe('story — the film runs itself', () => {
+describe('story - the film runs itself', () => {
 	it('advances to the next scene when a scene has run its length', () => {
 		openBench();
 		bench.playStory();
@@ -116,20 +116,20 @@ describe('story — the film runs itself', () => {
 		expect(story.elapsed).toBeLessThan(SCENE_SECONDS); // and a fresh clock
 	});
 
-	it('a jump to the scene already on screen is NOT a jump — the held film keeps its world', () => {
+	it('a jump to the scene already on screen is NOT a jump - the held film keeps its world', () => {
 		openBench(2);
 		bench.playStory();
 		const first = story.entry!.world;
 
 		story.goTo(story.index); // clicking the segment already filling
-		story.previous(); // one back from the first scene — clamped onto itself
+		story.previous(); // one back from the first scene - clamped onto itself
 		expect(story.entry!.world).toBe(first); // no silent re-cut
 
 		story.goTo(1);
 		const second = story.entry!.world;
 		expect(second).not.toBe(first); // a real jump still cuts fresh
 
-		story.next(); // one past the last scene — clamped onto itself
+		story.next(); // one past the last scene - clamped onto itself
 		expect(story.entry!.world).toBe(second);
 	});
 
@@ -146,7 +146,7 @@ describe('story — the film runs itself', () => {
 		expect(story.active).toBe(true);
 	});
 
-	it('holds the bench still while the film plays — the scene is the only thing moving', () => {
+	it('holds the bench still while the film plays - the scene is the only thing moving', () => {
 		openBench(2);
 		const benchWorld = bench.worlds[0].world;
 		bench.playStory();
@@ -181,7 +181,7 @@ describe('story — the film runs itself', () => {
 	});
 });
 
-describe('story — it will not roll over a moving bench', () => {
+describe('story - it will not roll over a moving bench', () => {
 	it('refuses to start while the bench is TRAINING, rather than stranding the turbo', () => {
 		// A story does not advance the bench, so a turbo burst caught mid-flight would simply hang:
 		// the pill spinning behind the film, the worlds frozen part way to their target.
@@ -211,7 +211,7 @@ describe('story — it will not roll over a moving bench', () => {
 	});
 });
 
-describe('story — the transport', () => {
+describe('story - the transport', () => {
 	it('jumps, and clamps to the film it actually has', () => {
 		openBench(3);
 		bench.playStory();
@@ -226,7 +226,7 @@ describe('story — the transport', () => {
 		expect(story.index).toBe(0);
 	});
 
-	it('re-cuts the scene when you jump back to it — the film does not resume mid-carnage', () => {
+	it('re-cuts the scene when you jump back to it - the film does not resume mid-carnage', () => {
 		openBench(2);
 		bench.playStory();
 		frame(1 / 60, 600); // ten seconds of hunting
@@ -256,7 +256,7 @@ describe('story — the transport', () => {
 	});
 });
 
-describe('story — the inspector works inside the film', () => {
+describe('story - the inspector works inside the film', () => {
 	it('finds the story world, which is not on the bench but is on screen', () => {
 		openBench(1);
 		bench.playStory();
@@ -277,7 +277,7 @@ describe('story — the inspector works inside the film', () => {
 		expect(bench.mind.lived).toBe(fish.fitness); // the panel is live over a scene, like anywhere
 	});
 
-	it('lets a selection go when the film moves on — that fish was in the last scene', () => {
+	it('lets a selection go when the film moves on - that fish was in the last scene', () => {
 		openBench(2);
 		bench.playStory();
 		bench.select(STORY_WORLD_ID, { type: 'fish', obj: story.entry!.world.fish[0] });

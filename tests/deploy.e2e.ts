@@ -6,7 +6,7 @@ import { gotoApp, waitForPrewarm } from './helpers';
  *
  * Training is the part everyone expects. Deployment is the part that makes it an argument: evolution
  * stops, the resets stop, and the population that was bred has to survive on its own. The claim the
- * whole act rests on is that it CANNOT be saved — nothing respawns — so that is what gets watched
+ * whole act rests on is that it CANNOT be saved - nothing respawns - so that is what gets watched
  * here, frame after frame, rather than merely asserted once at the end.
  */
 
@@ -27,15 +27,15 @@ async function deployAt(page: Page, generation: number) {
  * Make the run ACTUALLY end, through the Conditions dialog, the way a user would: more sharks, and
  * sharks fast enough to catch a fish.
  *
- * The bench's shark cruises at 140 px/s and a fish tops out at 176 — that inversion is the whole
+ * The bench's shark cruises at 140 px/s and a fish tops out at 176 - that inversion is the whole
  * reason a sense pays here (fleeing the right way finally means getting away). It also means a
  * well-evolved fish can OUTRUN every shark in the tank, forever, and persistence is off, so nothing
  * escalates to end the stalemate. Extinction has no time bound any more.
  *
- * So a test that waits for "wiped out" on the default bench is not testing the deploy lifecycle —
+ * So a test that waits for "wiped out" on the default bench is not testing the deploy lifecycle -
  * it is betting that no fish gets away, and it loses that bet on a slow machine (it lost in CI).
  * Cranking the predator speed past what a fish can swim restores the guarantee, and every claim
- * under test — nothing respawns, the generation is frozen, the run is reported — is indifferent to
+ * under test - nothing respawns, the generation is frozen, the run is reported - is indifferent to
  * how the fish came to die.
  */
 async function makeTheRunEnd(page: Page, index: number) {
@@ -63,7 +63,7 @@ test.beforeEach(async ({ page }) => {
 test('the bench opens with a training horizon, and the Train button names it', async ({ page }) => {
 	await expect(page.getByRole('button', { name: /Train to the end/ })).toBeVisible();
 
-	// nothing is deployed yet — there are 135 generations still to go
+	// nothing is deployed yet - there are 135 generations still to go
 	expect(await deployment(page, 2)).toBe('after training');
 	await expect(tile(page, 2).getByTestId('gen')).toHaveText('Gen 15');
 });
@@ -73,11 +73,11 @@ test('THE SECOND ACT: train to the horizon, and the population has to survive on
 }) => {
 	// The bench's generations are 30 sim-seconds now (they were 10), so training to the horizon is
 	// three times the turbo work it used to be, and the deployed run that follows is a real one:
-	// measured headlessly, these evolved populations take 16–34 sim-seconds to be wiped out. The
-	// default 30s budget covers none of that — and a test that dies of impatience reads exactly
+	// measured headlessly, these evolved populations take 16-34 sim-seconds to be wiped out. The
+	// default 30s budget covers none of that - and a test that dies of impatience reads exactly
 	// like a test that caught a bug.
 	test.setTimeout(240_000);
-	await makeTheRunEnd(page, 2); // the default bench has no guarantee of extinction — see the helper
+	await makeTheRunEnd(page, 2); // the default bench has no guarantee of extinction - see the helper
 	await deployAt(page, 20);
 	await expect(page.getByRole('button', { name: /Train to the end/ })).toBeVisible();
 
@@ -92,7 +92,7 @@ test('THE SECOND ACT: train to the horizon, and the population has to survive on
 
 	/*
 	 * AND IT ONLY GOES DOWN. A respawn slipping into deployed mode is the one bug that would turn this
-	 * whole act into a lie — you would be watching a population that cannot actually die.
+	 * whole act into a lie - you would be watching a population that cannot actually die.
 	 *
 	 * Watched by an observer inside the page rather than by polling from out here: sampling every
 	 * 500ms would let a population climb back and be eaten down again between two looks, and the test
@@ -129,19 +129,19 @@ test('THE SECOND ACT: train to the horizon, and the population has to survive on
 
 test('the generation stops climbing once a world is deployed', async ({ page }) => {
 	test.setTimeout(240_000);
-	await makeTheRunEnd(page, 2); // the default bench has no guarantee of extinction — see the helper
+	await makeTheRunEnd(page, 2); // the default bench has no guarantee of extinction - see the helper
 	await deployAt(page, 20);
 	await page.getByRole('button', { name: /Train to the end/ }).click();
 	await expect(page.getByTestId('turbo')).toBeHidden({ timeout: 120_000 });
 	await expect(tile(page, 2).getByTestId('gen')).toHaveText('Gen 20 · trained');
 
 	/*
-	 * Wait on the SIMULATION, not on the clock — but wait for the RIGHT thing. This test used to poll
+	 * Wait on the SIMULATION, not on the clock - but wait for the RIGHT thing. This test used to poll
 	 * the run's elapsed seconds out of the readout, and that readout changes shape as the run goes on:
 	 * the moment the half-life latches it becomes "half-life 4s · 8 left", so the regex started reading
 	 * 4 and the poll could never pass. It only went green when the half-life happened to land late.
 	 *
-	 * The end of the run is unambiguous, so wait for that. It takes tens of sim-seconds — several
+	 * The end of the run is unambiguous, so wait for that. It takes tens of sim-seconds - several
 	 * generations, had this world still been evolving. None pass.
 	 */
 	await page.getByRole('radio', { name: '2×' }).click();

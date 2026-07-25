@@ -1,7 +1,7 @@
 <!--
   A labelled range field: caption on the left, live value on the right, track below.
 
-  Controlled — it reports every change and never holds its own value. That is deliberate: sliders
+  Controlled - it reports every change and never holds its own value. That is deliberate: sliders
   in this app edit a live world (`cfg` → `applyCfg`), so the world's value is the only truth, and a
   slider that kept a private copy could drift from the sim it is supposedly steering.
 
@@ -20,7 +20,7 @@
 		max: number;
 		step: number;
 		onchange: (value: number) => void;
-		/** How the number reads to a human — "640 px", "1.20×". Defaults to the bare number. */
+		/** How the number reads to a human - "640 px", "1.20×". Defaults to the bare number. */
 		format?: (value: number) => string;
 		/** A quieter aside on the label, e.g. "(genetic drift per birth)". */
 		hint?: string;
@@ -41,7 +41,7 @@
 	}: Props = $props();
 
 	const display = $derived(format(value));
-	/** How far along the track the thumb sits — the track paints its own fill from this. */
+	/** How far along the track the thumb sits - the track paints its own fill from this. */
 	const progress = $derived(((value - min) / (max - min)) * 100);
 
 	/**
@@ -49,7 +49,7 @@
 	 *
 	 * Svelte only rewrites the DOM when `value` actually changes, so if the owner clamps or ignores
 	 * what we reported, the prop comes back identical and the thumb would silently stay where the
-	 * user dragged it — showing a number the world does not have. Re-asserting after `tick()` (once
+	 * user dragged it - showing a number the world does not have. Re-asserting after `tick()` (once
 	 * the owner's update, if any, has landed) keeps the control honest in both cases.
 	 */
 	async function drag(event: Event & { currentTarget: HTMLInputElement }) {
@@ -108,7 +108,7 @@
 	/*
 	 * The track is painted by hand rather than left to `accent-color`.
 	 *
-	 * `accent-color` colours the FILLED part and lets the browser derive the rest — and Chrome
+	 * `accent-color` colours the FILLED part and lets the browser derive the rest - and Chrome
 	 * derives that from the accent's contrast, so a warm red (the predator-speed slider) came out
 	 * with a near-black empty track while the blue ones stayed light grey. Two sliders side by side
 	 * in the same dialog, built the same way, looking nothing alike. Painting the fill from the
@@ -117,7 +117,7 @@
 	input {
 		--slider-tone: var(--accent);
 		width: 100%;
-		height: 18px; /* the hit area — bigger than the 6px it draws, so it is easy to grab */
+		height: 18px; /* the hit area - bigger than the 6px it draws, so it is easy to grab */
 		margin-top: var(--sp-1);
 		appearance: none;
 		background: transparent;

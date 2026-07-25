@@ -2,8 +2,8 @@
   The flee assay, on the card.
 
   A free-running tank cannot be asked anything: the shark goes where it goes, and the fish you happen
-  to see meet it are an anecdote. So this stages the question — one fish, one shark, dropped at a
-  known bearing — and walks it all the way round. You watch the trials in the tank, and what comes out
+  to see meet it are an anecdote. So this stages the question - one fish, one shark, dropped at a
+  known bearing - and walks it all the way round. You watch the trials in the tank, and what comes out
   is a compass: which way the fish TURNED, from every direction the shark came from.
 
   The verdict is a turn and not a flee error, and engine/assay.ts explains at length why: a fish that
@@ -34,11 +34,11 @@
 	const progress = $derived(bench.assayProgress(entry.id));
 	const result = $derived(bench.assayResult(entry.id));
 
-	/** Nothing has been judged yet — there is no brain to question. */
+	/** Nothing has been judged yet - there is no brain to question. */
 	const hasBrain = $derived(entry.stats.gen > 0);
 
 	/**
-	 * Chance is 0.5, and it is not a convention — it is arithmetic. A brain with no information about
+	 * Chance is 0.5, and it is not a convention - it is arithmetic. A brain with no information about
 	 * where the shark is turns towards escape exactly half the time. Everything above that is what the
 	 * senses bought, in the only currency that matters: a decision made correctly.
 	 */
@@ -46,7 +46,7 @@
 	const accuracy = $derived(result?.turnAccuracy ?? null);
 	const overChance = $derived(accuracy === null ? null : Math.round((accuracy - CHANCE) * 100));
 
-	// The chart only changes when a NEW verdict lands — not 60 times a second.
+	// The chart only changes when a NEW verdict lands - not 60 times a second.
 	const register = (render: () => void) => bench.painters.add(render);
 	const paint = paintOnChange(
 		() =>
@@ -85,7 +85,7 @@
 	</header>
 
 	{#if running && progress}
-		<!-- The run is HELD while this happens (see bench.runAssay) — asking a question must never cost
+		<!-- The run is HELD while this happens (see bench.runAssay) - asking a question must never cost
 		     the experiment a generation. -->
 		<!-- What you are watching is the CHAMPION walking the same bearings the population was measured
 		     on. The number is the population's; this is the film of one brain doing it. -->
@@ -96,7 +96,7 @@
 	{/if}
 
 	{#if result}
-		<!-- The verdict is on screen the moment it is measured — it is taken headlessly, across the whole
+		<!-- The verdict is on screen the moment it is measured - it is taken headlessly, across the whole
 		     population, when the button is pressed. The film that plays beside it is the champion
 		     demonstrating the same question. Hiding the answer until the film ended would have been
 		     showmanship: the number was already known, and pretending otherwise is not an experiment. -->
@@ -115,7 +115,7 @@
 				<div>
 					<dt>turned towards escape</dt>
 					<dd class="tabular" data-testid="turn-accuracy">
-						{accuracy === null ? '—' : `${Math.round(accuracy * 100)}%`}
+						{accuracy === null ? '-' : `${Math.round(accuracy * 100)}%`}
 					</dd>
 					{#if overChance !== null}
 						<dd class="sub tabular">
@@ -216,7 +216,7 @@
 	}
 
 	/* Squeezed narrow (the workbench's side column, a phone), the header stacks: label and button
-	   hold the first line, the blurb takes a full line beneath — never one word per line. AFTER the
+	   hold the first line, the blurb takes a full line beneath - never one word per line. AFTER the
 	   base rules on purpose: it overrides .blurb's flex-basis at equal specificity. */
 	@container (width < 360px) {
 		header {

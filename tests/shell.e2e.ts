@@ -2,11 +2,11 @@ import { expect, test, type Page } from '@playwright/test';
 import { gotoApp, waitForPrewarm } from './helpers';
 
 /**
- * The control column, at desktop size — where it is DOCKED at one fixed width.
+ * The control column, at desktop size - where it is DOCKED at one fixed width.
  *
  * `responsive.e2e.ts` covers the other layout (a phone, where the panel is an overlay). What is
  * proven here is the half a store test cannot reach: that the collapse really leaves the run
- * controls behind, and that it survives a reload — the claim "it is remembered" is worth nothing if
+ * controls behind, and that it survives a reload - the claim "it is remembered" is worth nothing if
  * it is only ever checked in the same page load that made the choice.
  */
 
@@ -46,14 +46,14 @@ test('the rail still drives the sim: its Pause is the bench Pause', async ({ pag
 	await expect(page.getByRole('button', { name: 'Evolve' })).toBeVisible();
 });
 
-test('a collapse is remembered too — the bench opens the way you left it', async ({ page }) => {
+test('a collapse is remembered too - the bench opens the way you left it', async ({ page }) => {
 	await panel(page).click();
 	await expect(page.getByRole('radio', { name: '1×' })).toBeHidden();
 
 	await gotoApp(page);
 	await waitForPrewarm(page);
 
-	// Still on the rail, and still the run controls — this is the state that was saved.
+	// Still on the rail, and still the run controls - this is the state that was saved.
 	await expect(rail(page)).toBeVisible();
 	await expect(page.getByRole('radio', { name: '1×' })).toBeHidden();
 	await expect(page.getByRole('button', { name: /Train/ })).toBeVisible();

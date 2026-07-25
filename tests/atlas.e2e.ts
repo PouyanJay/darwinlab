@@ -5,7 +5,7 @@ import { gotoApp, openAtlas, shrinkAtlasRun } from './helpers';
  * The Atlas instrument, end to end: that a landscape DESIGNED in the panel (resolution, seeds,
  * training length) runs through the worker pool in the built app and paints a survival map, and
  * that drilling a cell and choosing "Watch this world" carries that exact config back into Studio
- * — the Research→Studio round-trip.
+ * - the Research→Studio round-trip.
  *
  * The run is shrunk to the smallest honest design (5×5 at two seeds, minimum training) so it is a
  * modest batch, not a full landscape. The survival VALUES are a live measurement and are not
@@ -88,7 +88,7 @@ test('changing an axis after drilling does not relabel the measured cell', async
 	await page.keyboard.press('Enter');
 	await expect(page.getByTestId('atlas-drill')).toContainText('predator speed'); // measured on this axis
 
-	// The pickers are NOT disabled once a field exists, so this change really happens — and must not
+	// The pickers are NOT disabled once a field exists, so this change really happens - and must not
 	// relabel the frozen cell.
 	await page.getByLabel('x axis', { exact: true }).selectOption({ label: 'Vision' });
 	await expect(page.getByLabel('x axis', { exact: true })).toHaveValue('vision'); // the picker moved

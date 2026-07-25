@@ -1,12 +1,12 @@
 <!--
-  The Ledger's DESIGN PANEL — the console's second sidebar, where a sentence is composed into an
+  The Ledger's DESIGN PANEL - the console's second sidebar, where a sentence is composed into an
   experiment.
 
-  Top to bottom: TEMPLATE (the seven families as a radio list — the shape of the question), SLOTS
+  Top to bottom: TEMPLATE (the seven families as a radio list - the shape of the question), SLOTS
   (dropdowns from a closed vocabulary, never free text), THE CLAIM (the composed sentence with its
-  slot words marked, both arms as chips, and what "supported" would mean — spelled out BEFORE the
+  slot words marked, both arms as chips, and what "supported" would mean - spelled out BEFORE the
   run), EVIDENCE (seeds per arm, the one budget knob), the LIBRARY (the lab's own findings; one
-  click refills the composer), and a STICKY COMMIT BAR — the plan readout and Test claim pinned at
+  click refills the composer), and a STICKY COMMIT BAR - the plan readout and Test claim pinned at
   the panel's foot, with the anti-fishing line on the receipt: the run is recorded either way.
   Everything reads and writes the ledger store; the panel is the store's face, not a second brain.
 -->
@@ -22,20 +22,20 @@
 	const claim = $derived(ledger.active);
 	const parts = $derived(template.parts(values));
 
-	// What "supported" would mean, per reading — the lead word is bolded by the template, so the
+	// What "supported" would mean, per reading - the lead word is bolded by the template, so the
 	// text here starts after it (no string arithmetic to fall out of sync with a copy edit).
 	const MEANS: Record<typeof template.expect, string> = {
 		'A>B':
-			'= arm A reliably outlives arm B — the whole 95% interval clears zero. ' +
+			'= arm A reliably outlives arm B - the whole 95% interval clears zero. ' +
 			'A shortfall or a straddle both refute it.',
 		'A≈B':
-			'= the two arms are indistinguishable — the interval straddles zero. ' +
+			'= the two arms are indistinguishable - the interval straddles zero. ' +
 			'An interval that clears zero, either way, refutes it.'
 	};
 
-	// A slot's dropdown never offers its sibling's pick — a sense cannot rival itself. The gated
+	// A slot's dropdown never offers its sibling's pick - a sense cannot rival itself. The gated
 	// own-speed option stays VISIBLE but disabled, with the reason in its label (never silently
-	// dropped — the Sweep panel's discipline).
+	// dropped - the Sweep panel's discipline).
 	function slotOptions(slot: (typeof template.slots)[number]) {
 		const rival = slot.excl ? values[slot.excl] : null;
 		return optionsFor(slot.pool)
@@ -45,7 +45,7 @@
 				return {
 					...option,
 					disabled: reason !== null,
-					label: reason ? `${option.label} — ${reason}` : option.label
+					label: reason ? `${option.label} - ${reason}` : option.label
 				};
 			});
 	}
@@ -54,12 +54,12 @@
 	const hasExclSlot = $derived(template.slots.some((slot) => slot.excl));
 	const isSenseGated = $derived(hasSenseSlot && senseDisabledReason('speed', app.base) !== null);
 
-	// The slot caveats as ONE derived line — assembling it in markup once jammed three inline ifs
+	// The slot caveats as ONE derived line - assembling it in markup once jammed three inline ifs
 	// together and hid the joining logic in the template.
 	const slotNote = $derived(
 		[
 			isSenseGated && 'own speed is disabled: this subject has the 8-input brain',
-			hasExclSlot && 'a sense cannot rival itself — the second slot drops your first pick'
+			hasExclSlot && 'a sense cannot rival itself - the second slot drops your first pick'
 		]
 			.filter(Boolean)
 			.join(' · ')
@@ -69,7 +69,7 @@
 		ledger.estimatedSeconds < 60 ? '< 1 min' : `≈ ${Math.round(ledger.estimatedSeconds / 60)} min`
 	);
 
-	// The shelf shows each library claim with its latest verdict — the state of the argument, not
+	// The shelf shows each library claim with its latest verdict - the state of the argument, not
 	// just a menu. Built per render from the static library; `latestFor` is the reactive part.
 	const shelf = $derived(
 		ledger.library.map((item) => {
@@ -110,7 +110,7 @@
 			{/each}
 		</div>
 		<p class="lnote">
-			every template maps to <b>one</b> contrast the stats can judge — the vocabulary is fixed, so a claim
+			every template maps to <b>one</b> contrast the stats can judge - the vocabulary is fixed, so a claim
 			can never be reworded after the data is in.
 		</p>
 	</section>
@@ -118,7 +118,7 @@
 	<section class="dsec">
 		<header class="dsec-head">
 			<span class="eyebrow">Slots</span>
-			<span class="hint">dropdowns — a closed vocabulary</span>
+			<span class="hint">dropdowns - a closed vocabulary</span>
 		</header>
 		{#each template.slots as slot (slot.key)}
 			<label class="slotrow">
@@ -169,7 +169,7 @@
 			/>
 		</label>
 		<div class="brow">
-			<span class="bl">Training + scoring <i>fixed — records stay comparable</i></span>
+			<span class="bl">Training + scoring <i>fixed - records stay comparable</i></span>
 			<span class="fixed tabular">30 gens · 4 bouts</span>
 		</div>
 	</section>
@@ -177,7 +177,7 @@
 	<section class="dsec">
 		<header class="dsec-head">
 			<span class="eyebrow">Library</span>
-			<span class="hint">the lab's findings — click to refill</span>
+			<span class="hint">the lab's findings - click to refill</span>
 		</header>
 		<div class="tpl">
 			{#each shelf as row (row.text)}
@@ -212,7 +212,7 @@
 				>30 gens × 10s + 4 scoring bouts each · est. {estLabel} wall clock</span
 			>
 			<span class="detail"
-				>recorded either way — supported or refuted, the run enters the record</span
+				>recorded either way - supported or refuted, the run enters the record</span
 			>
 		</div>
 
@@ -229,7 +229,7 @@
 
 <style>
 	/* The panel is the console's second sidebar: its own scroller, chrome-free, with the commit bar
-	   sticky at its foot — the same skeleton as the Sweep's panel, so the console keeps one grammar. */
+	   sticky at its foot - the same skeleton as the Sweep's panel, so the console keeps one grammar. */
 	.panel {
 		display: flex;
 		flex-direction: column;
@@ -351,7 +351,7 @@
 		color: var(--ink2);
 	}
 
-	/* ---- slot dropdowns — a closed vocabulary, never free text ---- */
+	/* ---- slot dropdowns - a closed vocabulary, never free text ---- */
 	.slotrow {
 		display: flex;
 		align-items: center;
@@ -400,7 +400,7 @@
 		text-wrap: balance;
 	}
 
-	/* Slot words are dash-underlined — the fillable parts of the sentence, marked in monochrome
+	/* Slot words are dash-underlined - the fillable parts of the sentence, marked in monochrome
 	   (teal and coral live in the evidence, never in this furniture). */
 	.sw {
 		border-bottom: 1px dashed color-mix(in oklab, var(--ink) 45%, transparent);

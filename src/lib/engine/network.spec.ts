@@ -29,7 +29,7 @@ describe('network architecture', () => {
 
 	it('labels the inputs and their gating sense correctly', () => {
 		// Fourteen slots exist, but only the first eight belong to the REFERENCE brain: slot 8 is
-		// proprioception (9-input worlds), slots 9–13 are the shoal sense (14-input worlds). Each is
+		// proprioception (9-input worlds), slots 9-13 are the shoal sense (14-input worlds). Each is
 		// read only by a world whose brains carry it.
 		expect(IN_LABELS).toHaveLength(NIN_WITH_SHOAL);
 		expect(IN_SENSE).toEqual([
@@ -62,7 +62,7 @@ describe('brain shape (the reference brain, and the one that feels its own speed
 		expect(inputCount(makeGenome(seededRng(1), NIN_WITH_SPEED))).toBe(9);
 	});
 
-	it('reads the 9th input ONLY in a 9-input brain — proof the extra slot is really wired', () => {
+	it('reads the 9th input ONLY in a 9-input brain - proof the extra slot is really wired', () => {
 		const quiet = [1, 0, 0, 0, 0, 0, 0, 0, 0];
 		const sprinting = [1, 0, 0, 0, 0, 0, 0, 0, 1]; // same world, same instant, but flat out
 
@@ -74,7 +74,7 @@ describe('brain shape (the reference brain, and the one that feels its own speed
 		expect(forward(reference, sprinting)).toEqual(forward(reference, quiet));
 	});
 
-	it('supports a bigger HIDDEN layer — genome, forward and weights all read the deeper shape', () => {
+	it('supports a bigger HIDDEN layer - genome, forward and weights all read the deeper shape', () => {
 		// 14 inputs, 16 hidden: 16*14 + 16 + 2*16 + 2 = 274 weights
 		expect(genomeLength(14, 16)).toBe(274);
 		const g = makeGenome(seededRng(3), 14, 16);
@@ -90,7 +90,7 @@ describe('brain shape (the reference brain, and the one that feels its own speed
 		expect(out.thrust).toBeGreaterThanOrEqual(0);
 		expect(out.thrust).toBeLessThanOrEqual(1);
 
-		// the default NHID path is untouched — same genome, same result, which is what keeps fidelity
+		// the default NHID path is untouched - same genome, same result, which is what keeps fidelity
 		const ref = makeGenome(seededRng(3), NIN);
 		expect(forward(ref, new Array<number>(8).fill(0.3))).toEqual(
 			forward(ref, new Array<number>(8).fill(0.3), 6)
@@ -104,7 +104,7 @@ describe('brain shape (the reference brain, and the one that feels its own speed
 		expect(hiddenLayers([])).toEqual([NHID]);
 	});
 
-	it('supports MULTIPLE hidden layers — genome, forward and edges all read the deep shape', () => {
+	it('supports MULTIPLE hidden layers - genome, forward and edges all read the deep shape', () => {
 		// 14 inputs, two hidden layers [16, 8]: 16*14+16 + 8*16+8 + 2*8+2 = 240 + 136 + 18 = 394
 		expect(genomeLength(14, [16, 8])).toBe(394);
 		const g = makeGenome(seededRng(5), 14, [16, 8]);
@@ -120,7 +120,7 @@ describe('brain shape (the reference brain, and the one that feels its own speed
 		expect(out.thrust).toBeGreaterThanOrEqual(0);
 		expect(out.thrust).toBeLessThanOrEqual(1);
 
-		// edgeWeight walks the flat genome by [nin, ...hidden, nout] — transition 1 is h0→h1
+		// edgeWeight walks the flat genome by [nin, ...hidden, nout] - transition 1 is h0→h1
 		const sizes = [14, 16, 8, NOUT];
 		g.fill(0);
 		g[0] = 1; // input 0 → hidden-layer-0 neuron 0

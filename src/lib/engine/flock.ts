@@ -1,9 +1,9 @@
 /**
- * Flocking order parameters — pure, framework-free readings of how much a population moves as a
+ * Flocking order parameters - pure, framework-free readings of how much a population moves as a
  * school. They live in the engine (not the harness) because BOTH the headless sweep and the live
  * UI read them: the sweep to measure whether schooling evolved, the card to show it happening.
  *
- * Neither is ever an input to selection — fitness stays seconds survived. These only observe.
+ * Neither is ever an input to selection - fitness stays seconds survived. These only observe.
  */
 
 /** Below this speed a fish has no meaningful heading, so it does not vote on polarization. */
@@ -31,7 +31,7 @@ export function polarization(fish: readonly { vx: number; vy: number }[]): numbe
 /**
  * Mean nearest-neighbour distance (px): for each fish, the distance to its closest neighbour,
  * averaged. A tight school scores low. Undefined below two fish (there is no neighbour), so it
- * returns null — a caller time-averaging this must skip a null sample rather than fold a zero in
+ * returns null - a caller time-averaging this must skip a null sample rather than fold a zero in
  * (which would read as "perfectly packed" for an all-but-empty tank).
  */
 export function meanNearestNeighbor(fish: readonly { x: number; y: number }[]): number | null {

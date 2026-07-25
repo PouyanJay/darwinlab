@@ -1,12 +1,12 @@
 <!--
-  The lab's control column — organised as an instrument panel: a read-only STATUS header on top,
+  The lab's control column - organised as an instrument panel: a read-only STATUS header on top,
   then the controls split by what they ARE, not by an arbitrary topic. You read the state first, then
   reach for the kind of control you want:
 
-    STATUS      what is running and how far — the run/seed manifest and a progress meter (read-only)
-    TRANSPORT   the live now — evolve/pause and speed, the two things you touch every few seconds
-    SETTINGS    the knobs you set and leave — the deploy generation and the tank lens
-    ACTIONS     the one-shot commands — train to the end, add an environment, play the story, reset
+    STATUS      what is running and how far - the run/seed manifest and a progress meter (read-only)
+    TRANSPORT   the live now - evolve/pause and speed, the two things you touch every few seconds
+    SETTINGS    the knobs you set and leave - the deploy generation and the tank lens
+    ACTIONS     the one-shot commands - train to the end, add an environment, play the story, reset
 
   Status is stated once, at the top, so "how far along am I" never means hunting through the controls.
   The knobs are apart from the commands so a value you nudge can't be confused with a button that
@@ -47,7 +47,7 @@
 	const target = $derived(trainTarget(bench.generationsEvolved, bench.maxGenerations));
 	const label = $derived(trainLabel(bench.maxGenerations));
 
-	// The status meter. A deploy generation of 0 means "train forever" — there is no finish line to
+	// The status meter. A deploy generation of 0 means "train forever" - there is no finish line to
 	// fill toward, so the bar stays empty and the caption drops the "/ N" it would otherwise imply.
 	const deployAt = $derived(bench.maxGenerations);
 	const hasTarget = $derived(deployAt > 0);
@@ -70,7 +70,7 @@
 
 	/**
 	 * On the narrow layout the panel floats over the bench, so anything that TAKES the screen has to
-	 * shut it on the way out — otherwise the film plays behind an open control panel, and a new world
+	 * shut it on the way out - otherwise the film plays behind an open control panel, and a new world
 	 * scrolls into view underneath one.
 	 */
 	function andClose(run: () => void) {
@@ -103,7 +103,7 @@
 
 	<!-- An <aside>, not a <nav>: these are controls, not links, and a landmark is what keeps a screen
 	     reader able to jump to them (and what stops the axe `region` rule finding orphaned content).
-	     The rail carries the same label — only ever one of the two is live, the other is inert. -->
+	     The rail carries the same label - only ever one of the two is live, the other is inert. -->
 	<aside
 		class="sidebar"
 		class:overlay={shell.narrow}
@@ -126,7 +126,7 @@
 			</header>
 
 			<!--
-				STATUS — read, don't touch. What this run IS (the manifest chip, which opens the seed
+				STATUS - read, don't touch. What this run IS (the manifest chip, which opens the seed
 				editor) and how far it has got (the meter). It sits above every control so "where am I"
 				is answered before "what can I press", and it is the only block here you look at rather
 				than operate.
@@ -157,7 +157,7 @@
 			</div>
 
 			<!--
-				TRANSPORT — the live now. ONE full-width button, and it is the transport: the thing you
+				TRANSPORT - the live now. ONE full-width button, and it is the transport: the thing you
 				press most, and the only control that earns the whole measure. Speed sits under it on a
 				label-left / control-right row.
 
@@ -186,10 +186,10 @@
 			</section>
 
 			<!--
-				SETTINGS — the knobs you set and leave. The deploy generation the run climbs toward, and
+				SETTINGS - the knobs you set and leave. The deploy generation the run climbs toward, and
 				the lens that recolours the tanks. A LENS is a way of looking, not a way of changing: it
 				repaints what is already there and touches nothing that evolved, which is why it is safe
-				to leave on. Both are values, not commands — so they live apart from the Actions below.
+				to leave on. Both are values, not commands - so they live apart from the Actions below.
 			-->
 			<section>
 				<h2 class="field-label">Settings</h2>
@@ -227,7 +227,7 @@
 			</section>
 
 			<!--
-				ACTIONS — the one-shot commands, gathered so every button that DOES something lives in one
+				ACTIONS - the one-shot commands, gathered so every button that DOES something lives in one
 				place. Train fills the row (it is the one you reach for); add + play share the next; reset
 				is set apart and reddens on hover, because it throws every evolved brain away.
 			-->
@@ -298,7 +298,7 @@
 		top: var(--topbar-height);
 		left: 0;
 		z-index: var(--z-sidebar-overlay);
-		/* The rail stays uncovered, so the way out stays visible — measured off the rail's own token,
+		/* The rail stays uncovered, so the way out stays visible - measured off the rail's own token,
 		   not off a 64 that would quietly go stale the day the rail changes width. */
 		max-width: calc(100vw - var(--rail-width) - var(--sp-3));
 		box-shadow: var(--shadow-drawer);
@@ -328,7 +328,7 @@
 	}
 
 	/* A hairline between each group and the next, so the sections read as separate things rather than
-	   one long stack. The status header sits straight under the header, undivided — it is the label
+	   one long stack. The status header sits straight under the header, undivided - it is the label
 	   for everything below, not a peer of it. */
 	section + section {
 		padding-top: var(--sp-5);
@@ -368,7 +368,7 @@
 	}
 
 	/*
-		STATUS header — a recessed plate that reads as a readout, not a control surface. The manifest
+		STATUS header - a recessed plate that reads as a readout, not a control surface. The manifest
 		chip is stretched to fill it; the meter sits under it.
 	*/
 	.status {
@@ -426,7 +426,7 @@
 		color: var(--ink3);
 	}
 
-	/* The phase word sits quietly with the caption — same muted grey — except "deployed", the one
+	/* The phase word sits quietly with the caption - same muted grey - except "deployed", the one
 	   notable state (the run is over and the population is decaying), which carries the danger hue. */
 	.phase {
 		font-size: var(--fs-label);
@@ -437,7 +437,7 @@
 		color: var(--danger-ink);
 	}
 
-	/* The one control that takes the whole measure — see the note in the markup. */
+	/* The one control that takes the whole measure - see the note in the markup. */
 	.sidebar :global(.transport) {
 		width: 100%;
 		height: 40px;
@@ -446,7 +446,7 @@
 		letter-spacing: 0.01em;
 	}
 
-	/* A label on the left, the control it names on the right — the shape of a settings row, and the
+	/* A label on the left, the control it names on the right - the shape of a settings row, and the
 	   reason nothing here has to be stretched to fill a line it does not need. */
 	.field {
 		display: flex;
@@ -457,7 +457,7 @@
 	}
 
 	/*
-		ACTIONS — a two-column cluster of one-shot commands. Train and Reset each take the full width
+		ACTIONS - a two-column cluster of one-shot commands. Train and Reset each take the full width
 		(one is the primary reach, the other is set apart on purpose); add + play share the middle row.
 	*/
 	.cluster {
@@ -475,7 +475,7 @@
 	}
 
 	/* Reset throws every evolved brain away, so it is set apart from the framed commands above: no
-	   border, danger ink, flush left — a quiet red line, not a button competing for the press. It
+	   border, danger ink, flush left - a quiet red line, not a button competing for the press. It
 	   deepens on hover. Scoped under `.cluster` so it outweighs the `.cluster .btn` centring rule
 	   rather than losing to it on specificity. */
 	.sidebar :global(.cluster .reset) {

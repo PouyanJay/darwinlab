@@ -1,14 +1,14 @@
 <!--
-  The lineage canvas — the bench as a family tree instead of a grid.
+  The lineage canvas - the bench as a family tree instead of a grid.
 
   Every world is a draggable node on an infinite, pannable, zoomable plane. Drag empty space to pan,
   scroll to zoom (toward the cursor), and drag a node by its header to move it. Branching a world
-  drops a child below it, wired to its parent by a live curved edge — so the screen becomes the shape
+  drops a child below it, wired to its parent by a live curved edge - so the screen becomes the shape
   of the experiment: what was changed from what, and which line of reasoning it belongs to.
 
   The camera (pan + zoom) lives in the `canvas` store; each node's position lives on its own
   `entry.lineage`. This component only reads those and routes pointer gestures back through the store
-  (`moveWorld`) and the viewport (`panBy` / `zoomAt` / `fitBox`) — it never mutates a world.
+  (`moveWorld`) and the viewport (`panBy` / `zoomAt` / `fitBox`) - it never mutates a world.
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
@@ -20,28 +20,64 @@
 	import { NODE_W, ESTIMATED_NODE_H, edgePath } from '$lib/lab/lineage';
 
 	interface Props {
-		/** Add a fresh root world — the canvas offers it in its own corner, not only the sidebar. */
+		/** Add a fresh root world - the canvas offers it in its own corner, not only the sidebar. */
 		onaddworld: () => void;
 	}
 
 	let { onaddworld }: Props = $props();
 
 	let container: HTMLDivElement;
-	/** Each node's rendered height, measured live — the edges need it to leave from a parent's foot. */
+	/** Each node's rendered height, measured live - the edges need it to leave from a parent's foot. */
 	let heights = $state<Record<string, number>>({});
 
 	/** What a press is currently dragging: the whole plane, or one node by its handle. */
 	type Drag = { kind: 'pan' | 'node'; id?: string; lastX: number; lastY: number };
 	let drag: Drag | null = null;
-	/** Drives the grabbing cursor — reactive so the class survives Svelte's unused-selector pruning. */
+	/** Drives the grabbing cursor - reactive so the class survives Svelte's unused-selector pruning. */
 	let grabbing = $state(false);
+
+	/**
+	 * Every pointer currently down on the plane, keyed by pointerId. One entry drives a pan or a node
+	 * drag; two entries are a PINCH - the plane zooms and single-pointer dragging is suspended until a
+	 * finger lifts. `touch-action: none` on the container hands us the raw touch stream, so we own the
+	 * pinch instead of the browser zooming the whole page. A plain object, not $state: like `drag`, this
+	 * is transient gesture bookkeeping the template never reads.
+	 */
+	const points: Record<number, { x: number; y: number }> = {};
+	const pointerCount = () => Object.keys(points).length;
+	/** The finger span at the previous pinch frame, so a move can zoom by the ratio of the two. */
+	let pinchSpan = 0;
+
+	/** Straight-line distance between the two live pinch pointers. */
+	function pinchDistance(): number {
+		const [a, b] = Object.values(points);
+		return Math.hypot(a.x - b.x, a.y - b.y);
+	}
+	/** Midpoint of the two pinch pointers, in screen coords - the point the zoom holds fixed. */
+	function pinchMidpoint(): { x: number; y: number } {
+		const [a, b] = Object.values(points);
+		return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+	}
 
 	// A press that lands on any of these is that control's to handle, never the start of a drag.
 	const INTERACTIVE =
 		'button, a, input, textarea, select, summary, [role="button"], [contenteditable], .no-drag';
 
 	function onpointerdown(event: PointerEvent) {
-		if (event.button !== 0) return; // left button only; right-click is the browser's
+		if (event.button !== 0) return; // left button / primary touch only; right-click is the browser's
+		points[event.pointerId] = { x: event.clientX, y: event.clientY };
+
+		// A second finger turns whatever was happening into a pinch: abandon any pan/node drag, record
+		// the opening span, and let the moves below zoom the plane about the point between the fingers.
+		if (pointerCount() === 2) {
+			drag = null;
+			grabbing = false;
+			pinchSpan = pinchDistance();
+			container.setPointerCapture(event.pointerId);
+			event.preventDefault();
+			return;
+		}
+
 		const target = event.target as HTMLElement;
 		const nodeEl = target.closest('[data-node]') as HTMLElement | null;
 		const interactive = target.closest(INTERACTIVE);
@@ -50,11 +86,11 @@
 		if (nodeEl && onHandle) {
 			drag = { kind: 'node', id: nodeEl.dataset.node, lastX: event.clientX, lastY: event.clientY };
 		} else if (interactive) {
-			return; // a button/input — the floating controls, add-world, or a node's own actions
+			return; // a button/input - the floating controls, add-world, or a node's own actions
 		} else if (!nodeEl) {
 			drag = { kind: 'pan', lastX: event.clientX, lastY: event.clientY }; // empty plane
 		} else {
-			return; // inside a node but not on its handle — let the tank have the press
+			return; // inside a node but not on its handle - let the tank have the press
 		}
 		container.setPointerCapture(event.pointerId);
 		grabbing = true;
@@ -62,6 +98,23 @@
 	}
 
 	function onpointermove(event: PointerEvent) {
+		if (event.pointerId in points) {
+			points[event.pointerId] = { x: event.clientX, y: event.clientY };
+		}
+
+		// Two fingers down: zoom by how much the span grew or shrank since the last frame, holding the
+		// midpoint fixed. Pan and node-drag stay suspended until we are back to a single pointer.
+		if (pointerCount() >= 2) {
+			const span = pinchDistance();
+			if (pinchSpan > 0 && span > 0) {
+				const mid = pinchMidpoint();
+				const rect = container.getBoundingClientRect();
+				canvas.zoomAt(mid.x - rect.left, mid.y - rect.top, span / pinchSpan);
+			}
+			pinchSpan = span;
+			return;
+		}
+
 		if (!drag) return;
 		const dx = event.clientX - drag.lastX;
 		const dy = event.clientY - drag.lastY;
@@ -84,11 +137,16 @@
 	}
 
 	function endDrag(event: PointerEvent) {
+		delete points[event.pointerId];
+		// Back below two fingers ends the pinch. The finger left behind does NOT resume panning - that
+		// would jump the plane - it simply waits until it, too, lifts.
+		if (pointerCount() < 2) pinchSpan = 0;
+		if (container.hasPointerCapture(event.pointerId)) {
+			container.releasePointerCapture(event.pointerId);
+		}
 		if (!drag) return;
 		drag = null;
 		grabbing = false;
-		if (container.hasPointerCapture(event.pointerId))
-			container.releasePointerCapture(event.pointerId);
 	}
 
 	function onwheel(event: WheelEvent) {
@@ -107,7 +165,7 @@
 		canvas.zoomAt(rect.width / 2, rect.height / 2, factor);
 	}
 
-	/** The tree's bounding box in canvas coordinates — each node's footprint, measured or estimated. */
+	/** The tree's bounding box in canvas coordinates - each node's footprint, measured or estimated. */
 	function treeBounds(worlds: WorldEntry[]) {
 		let minX = Infinity;
 		let minY = Infinity;
@@ -122,7 +180,7 @@
 		return { minX, minY, maxX, maxY };
 	}
 
-	/** Frame the whole tree in the viewport — the "recenter" action. */
+	/** Frame the whole tree in the viewport - the "recenter" action. */
 	function recenter() {
 		const rect = container.getBoundingClientRect();
 		if (!bench.worlds.length) {
@@ -145,11 +203,11 @@
 	const MARGIN = 28;
 
 	/**
-	 * The opening frame. It opens at 100% (1:1) — the default the owner asked for — with the tree
+	 * The opening frame. It opens at 100% (1:1) - the default the owner asked for - with the tree
 	 * CENTRED in the canvas, so the worlds sit in the middle of the screen at full, readable size and
 	 * the rest is a pan (or a recenter) away. A phone too narrow for a whole node at 1:1 backs off
 	 * just enough to fit the node's width; everything wider opens at exactly 100%. Deliberately NOT
-	 * re-run on every add/branch — the camera stays where the user left it; recenter re-frames.
+	 * re-run on every add/branch - the camera stays where the user left it; recenter re-frames.
 	 */
 	function frameInitial() {
 		const rect = container.getBoundingClientRect();
@@ -192,7 +250,7 @@
 	class:grabbing
 	bind:this={container}
 	role="group"
-	aria-label="lineage canvas — worlds as draggable nodes; drag to pan, scroll to zoom"
+	aria-label="lineage canvas - worlds as draggable nodes; drag to pan, scroll or pinch to zoom"
 	{onpointerdown}
 	{onpointermove}
 	onpointerup={endDrag}
@@ -249,8 +307,8 @@
 		flex: 1;
 		min-height: 0;
 		overflow: hidden;
-		/* FULL BLEED: no border, no radius — the plane runs to the edges of the bench, not a card
-		   sitting on a layer. A plain, flat surface — pure black in dark. */
+		/* FULL BLEED: no border, no radius - the plane runs to the edges of the bench, not a card
+		   sitting on a layer. A plain, flat surface - pure black in dark. */
 		background: var(--canvas-bg);
 		cursor: grab;
 		touch-action: none;
@@ -268,7 +326,7 @@
 		will-change: transform;
 	}
 
-	/* A node's body is not draggable (only its header is) and not grab-cursored — the tank and its
+	/* A node's body is not draggable (only its header is) and not grab-cursored - the tank and its
 	   controls keep their own affordances. */
 	.node {
 		position: absolute;
@@ -292,7 +350,7 @@
 		stroke: var(--ink3);
 		stroke-width: 1.6;
 		stroke-linecap: round;
-		/* the wire stays the same weight at every zoom — it is a relationship, not an object in the water */
+		/* the wire stays the same weight at every zoom - it is a relationship, not an object in the water */
 		vector-effect: non-scaling-stroke;
 		stroke-dasharray: 5 6;
 		animation: edge-flow 0.9s linear infinite;
@@ -317,7 +375,7 @@
 		z-index: 2;
 	}
 
-	/* The same pill as "Add environment" across the way — one family of floating canvas controls. */
+	/* The same pill as "Add environment" across the way - one family of floating canvas controls. */
 	.controls {
 		right: var(--sp-4);
 		display: flex;

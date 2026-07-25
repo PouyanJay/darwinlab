@@ -83,14 +83,14 @@ describe('senseInputs', () => {
 	});
 });
 
-describe('senseInputs — the shoal sense (cohesion + alignment)', () => {
+describe('senseInputs - the shoal sense (cohesion + alignment)', () => {
 	const shoalCfg = (over: Partial<WorldConfig> = {}) =>
 		cfg({
 			brainInputs: 14,
 			senses: { ...allSenses, cohesion: true, align: true },
 			...over
 		});
-	/** A world carrying the shoal — senseInputs reads `w.fish` for the neighbour scan. */
+	/** A world carrying the shoal - senseInputs reads `w.fish` for the neighbour scan. */
 	const shoalWorld = (
 		self: ReturnType<typeof fish>,
 		others: ReturnType<typeof fish>[],
@@ -128,7 +128,7 @@ describe('senseInputs — the shoal sense (cohesion + alignment)', () => {
 		const self = fish({ x: 300, y: 200, heading: 0 });
 		const sameWay = fish({ x: 320, y: 200, heading: 0 }); // pointing the same way
 		const r = senseInputs(shoalWorld(self, [sameWay]), self);
-		expect(r.x[12]).toBeCloseTo(0, 6); // sin(0) — aligned
+		expect(r.x[12]).toBeCloseTo(0, 6); // sin(0) - aligned
 		expect(r.x[13]).toBeCloseTo(1, 6); // cos(0)
 	});
 

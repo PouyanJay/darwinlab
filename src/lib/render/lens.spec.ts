@@ -6,8 +6,8 @@ import type { World } from '../engine';
 /**
  * The lens's whole promise, in two parts:
  *
- *   1. it CHANGES WHAT YOU SEE — otherwise it is a switch that does nothing;
- *   2. it CHANGES NOTHING ELSE — no weight, no fitness, no position, no RNG draw.
+ *   1. it CHANGES WHAT YOU SEE - otherwise it is a switch that does nothing;
+ *   2. it CHANGES NOTHING ELSE - no weight, no fitness, no position, no RNG draw.
  *
  * The second is the one that matters. A "way of looking" that quietly perturbs the simulation would
  * mean every screenshot in this product was taken of a different experiment than the one the numbers
@@ -51,7 +51,7 @@ function recorder() {
 }
 
 function warmed(seconds: number): World {
-	const cfg = DEFAULT_WORLDS[2]; // Direction — a world whose fish actually flee
+	const cfg = DEFAULT_WORLDS[2]; // Direction - a world whose fish actually flee
 	const w = makeWorld(cfg, undefined, seededRng(11));
 	for (let i = 0; i < seconds * 60; i++) stepWorld(w, 1 / 60);
 	return w;
@@ -73,7 +73,7 @@ describe('the flee lens', () => {
 		expect(plain.fills.filter((c) => c.startsWith('rgb(') && !c.startsWith('rgba('))).toEqual([]);
 	});
 
-	it('does not touch the simulation — not one weight, position or draw', () => {
+	it('does not touch the simulation - not one weight, position or draw', () => {
 		const a = warmed(4);
 		const b = warmed(4);
 		expect(stateOf(a)).toBe(stateOf(b)); // the two runs start identical, or nothing below means anything

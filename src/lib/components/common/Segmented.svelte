@@ -1,9 +1,9 @@
 <!--
-  A segmented control — one choice out of a few (½× / 1× / 2×).
+  A segmented control - one choice out of a few (½× / 1× / 2×).
 
   It is a RADIO GROUP, not a row of toggle buttons: exactly one option is always chosen, which is
   what `role="radio"` + `aria-checked` tells a screen reader. That also buys the keyboard behaviour
-  users expect from a segmented control — Tab enters the group once (roving tabindex: only the
+  users expect from a segmented control - Tab enters the group once (roving tabindex: only the
   chosen segment is in the tab order), then ←/→/↑/↓ move the choice, Home/End jump to the ends.
 -->
 <script lang="ts" generics="T extends string | number">
@@ -19,12 +19,12 @@
 		/** Names the group for assistive tech, e.g. "simulation speed". */
 		label: string;
 		/**
-		 * The whole choice is unavailable — every segment goes quiet and none of them can be picked.
+		 * The whole choice is unavailable - every segment goes quiet and none of them can be picked.
 		 * A control that silently refuses is worse than one that says it cannot: the champion-clones
 		 * selector used to snap back to Off with no explanation whenever there was no brain to clone.
 		 */
 		disabled?: boolean;
-		/** 'xs' is the design panel's row size — many controls in a narrow column. */
+		/** 'xs' is the design panel's row size - many controls in a narrow column. */
 		size?: 'md' | 'xs';
 	}
 
@@ -32,7 +32,7 @@
 
 	let group = $state<HTMLDivElement>();
 
-	/** Move the selection and take focus with it — a radio group's selection *is* its focus. */
+	/** Move the selection and take focus with it - a radio group's selection *is* its focus. */
 	function select(index: number) {
 		if (disabled) return;
 		const wrapped = (index + options.length) % options.length;
@@ -117,7 +117,7 @@
 		box-shadow: var(--shadow-segment);
 	}
 
-	/* The panel's compact rows: eyebrow-sized type, tight padding — same roles, less chrome. */
+	/* The panel's compact rows: eyebrow-sized type, tight padding - same roles, less chrome. */
 	.segmented.xs {
 		padding: 2px;
 	}

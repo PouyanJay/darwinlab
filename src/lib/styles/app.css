@@ -26,7 +26,7 @@ body {
 /*
  * The lab notebook's ruling: a faint grid across the whole ground, behind every panel.
  *
- * It is the cheapest possible way to stop a large page reading as one dead field of colour — the eye
+ * It is the cheapest possible way to stop a large page reading as one dead field of colour - the eye
  * gets a scale to measure the cards against, and the surface becomes a surface. Fixed, so it is the
  * paper the bench sits on rather than a pattern that swims when the page scrolls, and `pointer-events:
  * none` so it can never take a click meant for anything above it.
@@ -53,7 +53,7 @@ body:has(dialog[open]) {
 	overflow: hidden;
 }
 
-/* Form controls don't inherit type by default — make them behave like everything else. */
+/* Form controls don't inherit type by default - make them behave like everything else. */
 button,
 input,
 textarea,
@@ -64,7 +64,7 @@ select {
 
 /*
  * One focus style for the whole app. `:focus-visible` (not `:focus`) so a mouse click doesn't
- * leave a ring behind, while every keyboard path stays visible — the Phase 3 gate.
+ * leave a ring behind, while every keyboard path stays visible - the Phase 3 gate.
  */
 :focus-visible {
 	outline: var(--focus-ring);
@@ -107,7 +107,7 @@ textarea,
 	touch-action: manipulation;
 }
 
-/* A zone that scrolls in place with no scrollbar chrome — the Research console's zones share it;
+/* A zone that scrolls in place with no scrollbar chrome - the Research console's zones share it;
    the content is the affordance (the redesign mock is the contract). */
 .no-scrollbar {
 	scrollbar-width: none;
@@ -152,7 +152,7 @@ textarea,
 	}
 }
 
-/* The control panel arriving over a phone's bench — off the edge it is docked to. */
+/* The control panel arriving over a phone's bench - off the edge it is docked to. */
 @keyframes slide-in-left {
 	from {
 		transform: translateX(-100%);
@@ -203,7 +203,7 @@ textarea,
 
 /*
  * Honour the OS preference. The canvas can't use a media query, so it reads the same signal as a
- * value through `state/motion.svelte.ts` — the two must agree.
+ * value through `state/motion.svelte.ts` - the two must agree.
  */
 @media (prefers-reduced-motion: reduce) {
 	*,
@@ -216,8 +216,8 @@ textarea,
 }
 
 /*
- * Print = "Save the Report as PDF". Only the report article prints; everything else — the rail, the
- * context sidebar, the top bar, the workspace header, the whole Studio — is on-screen chrome.
+ * Print = "Save the Report as PDF". Only the report article prints; everything else - the rail, the
+ * context sidebar, the top bar, the workspace header, the whole Studio - is on-screen chrome.
  *
  * The classic "print one element" trick: hide the whole document, then reveal only the marked region
  * and its descendants (visibility overrides down the tree even through a hidden ancestor), and pull the

@@ -3,7 +3,7 @@ import { gotoApp } from './helpers';
 
 /**
  * The Ledger, end to end: that COMPOSING a claim (template + slots), running it, produces a verdict
- * card and a dated record in the built app — and, the whole point of the Ledger, that the record
+ * card and a dated record in the built app - and, the whole point of the Ledger, that the record
  * SURVIVES A RELOAD and can be loaded back into the composer from its drill card.
  *
  * The verdict's value (supported/refuted) is a live measurement and is not asserted; what is
@@ -24,7 +24,7 @@ test('a composed claim runs to a verdict, and the record survives a reload', asy
 	await gotoApp(page);
 	await openLedger(page);
 
-	// Compose: pick the Rivalry family — the preview recomposes to its default sentence.
+	// Compose: pick the Rivalry family - the preview recomposes to its default sentence.
 	await page.getByRole('radio', { name: /Rivalry/ }).click();
 	await expect(page.getByTestId('ledger-claim-preview')).toHaveText(
 		'Direction pays more than distance.'
@@ -45,7 +45,7 @@ test('a composed claim runs to a verdict, and the record survives a reload', asy
 	await page.getByTestId('add-to-report').click();
 	await expect(page.getByTestId('findings')).toContainText('1 kept');
 
-	// Reload and re-enter. The mode persists (Research), so we only re-open the Ledger tab — and the
+	// Reload and re-enter. The mode persists (Research), so we only re-open the Ledger tab - and the
 	// record is still on disk.
 	await page.reload();
 	await expect(page.getByTestId('intro')).toBeVisible();
@@ -55,7 +55,7 @@ test('a composed claim runs to a verdict, and the record survives a reload', asy
 
 	await expect(page.getByTestId('record-feed')).toContainText('Direction pays more than distance');
 
-	// The record's drill card can hand the claim back to the composer — the round trip that makes
+	// The record's drill card can hand the claim back to the composer - the round trip that makes
 	// an old verdict re-testable in one gesture.
 	await page.getByRole('option', { name: /Direction pays more than distance/ }).click();
 	await page.getByTestId('drill-load-composer').click();

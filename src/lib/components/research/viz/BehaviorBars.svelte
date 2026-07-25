@@ -1,8 +1,8 @@
 <!--
-  Q5 — how do they do it (the mechanism), as numbers? For each behavioural signature, the evolved
+  Q5 - how do they do it (the mechanism), as numbers? For each behavioural signature, the evolved
   population's bar beside a random-brain control's, so the mechanism reads as the GAP between them:
   evolved fish flee accurately and keep their distance where random brains don't. Each row is scaled to
-  its own larger bar (the units differ — degrees, a rate, pixels — so an absolute scale would be
+  its own larger bar (the units differ - degrees, a rate, pixels - so an absolute scale would be
   meaningless); the number is printed, so the bar is the shape and the label the fact. Evolved is the
   survival teal (the behaviour that was selected for); the control is muted ink (the baseline it beat).
   A small "↑/↓ better" note says which direction is competence, since for flee-error the shorter bar wins.
@@ -22,7 +22,7 @@
 		open?: boolean;
 	} = $props();
 
-	/** Bar width as a fraction of the row max — both bars share the row's scale so their gap is honest. */
+	/** Bar width as a fraction of the row max - both bars share the row's scale so their gap is honest. */
 	const frac = (value: number, max: number) => (max > 0 ? Math.max(0, value / max) : 0);
 	const rowMax = (m: BehaviorMetric) => Math.max(m.evolved, m.control, 0);
 

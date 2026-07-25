@@ -1,5 +1,5 @@
 <!--
-  The middle zone of the console — a confined, centred scroll column the active instrument lives in.
+  The middle zone of the console - a confined, centred scroll column the active instrument lives in.
 
   It owns exactly two things the mock proved matter: it CAPS the content width so a map or an effect
   chart never stretches edge-to-edge on a large monitor, and it CENTRES that capped block so the
@@ -26,8 +26,8 @@
 		background: var(--bgfx);
 	}
 
-	/* The cap + auto margins are the whole job: a comfortable measure on a wide monitor, and — because
-	   auto margins collapse when the column is narrower than the cap — it still fills a small viewport. */
+	/* The cap + auto margins are the whole job: a comfortable measure on a wide monitor, and - because
+	   auto margins collapse when the column is narrower than the cap - it still fills a small viewport. */
 	.confine {
 		width: 100%;
 		max-width: 1080px;

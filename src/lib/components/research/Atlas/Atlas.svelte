@@ -1,5 +1,5 @@
 <!--
-  The Atlas instrument — two knobs in, a survival landscape out.
+  The Atlas instrument - two knobs in, a survival landscape out.
 
   Since the landscape-panel redesign the workspace holds only EVIDENCE: the honesty tiles (the
   run's receipts, with the measured fall-off as the headline), the painted landscape with its
@@ -54,13 +54,13 @@
 					<span class="tv">{field.axisX.format(falloff.x)}</span>
 					<span class="ts">steepest fall-off · −{falloff.drop.toFixed(1)}s per step</span>
 				{:else}
-					<span class="tv">—</span>
+					<span class="tv">-</span>
 					<span class="ts">no sharp fall-off along {field.axisX.label.toLowerCase()}</span>
 				{/if}
 			</div>
 		</div>
 
-		<!-- THE MAP — the instrument itself. -->
+		<!-- THE MAP - the instrument itself. -->
 		<section class="card">
 			<header class="card-head">
 				<span class="eyebrow">The landscape</span>
@@ -69,13 +69,13 @@
 			<LandscapeMap />
 			<p class="read">
 				Every cell is a full evolution experiment on the subject, coloured by mean survival. The
-				<b>gold dashes trace the cliff</b> — each row's steepest survival drop, found by the run, not
+				<b>gold dashes trace the cliff</b> - each row's steepest survival drop, found by the run, not
 				drawn by hand. This is the Q4 answer as a picture: the region where the world holds, and the edge
 				where it stops holding.
 			</p>
 		</section>
 
-		<!-- THE CROSS-SECTION — the map's geometry as the Q4 sentence. -->
+		<!-- THE CROSS-SECTION - the map's geometry as the Q4 sentence. -->
 		<section class="card" data-testid="atlas-section-card">
 			<header class="card-head">
 				<span class="eyebrow">The cliff, read as a curve</span>
@@ -84,7 +84,7 @@
 			<CliffSection />
 			<p class="read">
 				Two rows of the map, read as curves, each with its own measured edge marked. If the edges
-				sit apart, <b>{field.axisY.label.toLowerCase()} moves the cliff</b> — that sentence, where the
+				sit apart, <b>{field.axisY.label.toLowerCase()} moves the cliff</b> - that sentence, where the
 				edge is and what moves it, is the finding the notebook receives.
 			</p>
 		</section>
@@ -99,8 +99,8 @@
 	{:else}
 		<section class="card empty">
 			<p class="hint">
-				Design the plane on the left — two axes with real ranges, the resolution, the pinned
-				background — and paint it. Every cell of the grid is a world measured across your chosen
+				Design the plane on the left - two axes with real ranges, the resolution, the pinned
+				background - and paint it. Every cell of the grid is a world measured across your chosen
 				seeds, coloured by how long its fish survive; the cliff where survival falls off is traced
 				in gold. Click any cell to drill in, and watch that exact world back in Studio.
 			</p>
@@ -109,7 +109,7 @@
 </div>
 
 <style>
-	/* A CONTAINER, so the tiles reflow on the Atlas's OWN width — it sits in a workspace whose width
+	/* A CONTAINER, so the tiles reflow on the Atlas's OWN width - it sits in a workspace whose width
 	   the rail, panel and sidebar change independently of the viewport. */
 	.atlas {
 		display: flex;
@@ -151,7 +151,7 @@
 		color: var(--ink3);
 	}
 
-	@container (max-width: 720px) {
+	@container (max-width: 768px) {
 		.tiles {
 			grid-template-columns: repeat(3, minmax(0, 1fr));
 		}

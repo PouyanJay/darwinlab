@@ -1,17 +1,17 @@
 /**
- * The microscope store — the behaviour trace, folded into the Sweep's drill card (the trace-in-drill
+ * The microscope store - the behaviour trace, folded into the Sweep's drill card (the trace-in-drill
  * mock is the contract; the standalone Trace instrument retired with it).
  *
- * It owns one study at a time, keyed by the RECIPE it studied — the drilled cell's frozen config plus
+ * It owns one study at a time, keyed by the RECIPE it studied - the drilled cell's frozen config plus
  * the training budget inherited from the run's receipt. Keying by recipe (not by grid position) means
  * a re-run sweep whose grid re-uses condition numbers can never present another recipe's trace, and
  * two cells with identical recipes honestly share one deterministic study. It runs `runTraceStudy`
- * (a deliberate, time-sliced action — NOT a worker batch, so it carries its own busy/progress and
+ * (a deliberate, time-sliced action - NOT a worker batch, so it carries its own busy/progress and
  * AbortController, not the shared `research` lifecycle the batch instruments use).
  *
  * The result is DELIBERATELY not persisted: the learning curve and the behaviour signatures are small
  * and go into the notebook via "send trace", but the full trajectories are too large to carry across
- * a reload — they live here for the live paths panels and are re-run on demand.
+ * a reload - they live here for the live paths panels and are re-run on demand.
  *
  * "Send trace" writes TWO findings, because a trace answers two different questions with two different
  * graphs: the learning curve settles Q1, the evolved-vs-control mechanism settles Q5.
@@ -29,23 +29,23 @@ import { configHash } from '../lab/run';
 import { loadSimRate } from './sweep.svelte';
 import { formatSurvivalPct } from '../format';
 
-/** What the drill card asks the microscope to study — everything frozen at the click. */
+/** What the drill card asks the microscope to study - everything frozen at the click. */
 export interface TraceRequest {
-	/** The drilled cell's config — the exact recipe the sweep measured, re-evolved brains-kept. */
+	/** The drilled cell's config - the exact recipe the sweep measured, re-evolved brains-kept. */
 	cfg: WorldConfig;
-	/** Training budget inherited from the run's receipt (generations), NOT a fixed trace length —
+	/** Training budget inherited from the run's receipt (generations), NOT a fixed trace length -
 	 *  that inheritance is what makes the traced curve comparable to the cell's own. */
 	episodes: number;
-	/** How the findings name the cell, e.g. "Condition 12" — frozen with the study. */
+	/** How the findings name the cell, e.g. "Condition 12" - frozen with the study. */
 	label: string;
 }
 
-/** The recipe identity a study belongs to — config and budget, nothing positional. */
+/** The recipe identity a study belongs to - config and budget, nothing positional. */
 export function traceKey(cfg: WorldConfig, episodes: number): string {
 	return `${configHash([cfg])}·${episodes}`;
 }
 
-/** One completed study, frozen with everything its findings need — nothing is re-read at send time,
+/** One completed study, frozen with everything its findings need - nothing is re-read at send time,
  *  so a panel or subject edit after the run cannot relabel what was measured. */
 export interface TraceRecord {
 	key: string;
@@ -55,7 +55,7 @@ export interface TraceRecord {
 }
 
 /**
- * A study's two report findings — the learning curve (Q1) and the evolved-vs-control mechanism (Q5).
+ * A study's two report findings - the learning curve (Q1) and the evolved-vs-control mechanism (Q5).
  * TWO findings, not one: they answer different questions with different evidence, so each declares its
  * own single question via the notebook's `questions` override rather than sharing the source's whole
  * `[Q1, Q5]` set. Variants carry the recipe key, so each traced cell files its own pair and the door's
@@ -94,7 +94,7 @@ export function traceFindings({ key, study, hash, label }: TraceRecord): Finding
 	];
 }
 
-/** The two frozen bouts a study prices beside its evolve — the evolved school's and the control's. */
+/** The two frozen bouts a study prices beside its evolve - the evolved school's and the control's. */
 const FROZEN_BOUTS = 2;
 
 class TraceStore {
@@ -103,7 +103,7 @@ class TraceStore {
 	#progress = $state(0);
 	#controller: AbortController | null = null;
 
-	/** The study for THIS recipe, or null — a drill card only ever sees its own cell's trace. */
+	/** The study for THIS recipe, or null - a drill card only ever sees its own cell's trace. */
 	resultFor(key: string): TraceStudy | null {
 		return this.#done?.key === key ? this.#done.study : null;
 	}
@@ -113,17 +113,17 @@ class TraceStore {
 		return this.#busyKey === key;
 	}
 
-	/** A study is running for a DIFFERENT recipe — this card's door waits instead of cancelling it. */
+	/** A study is running for a DIFFERENT recipe - this card's door waits instead of cancelling it. */
 	busyElsewhere(key: string): boolean {
 		return this.#busyKey !== null && this.#busyKey !== key;
 	}
 
-	/** 0–1 while a study runs — the evolve loop is the bulk of it. */
+	/** 0-1 while a study runs - the evolve loop is the bulk of it. */
 	get progress(): number {
 		return this.#progress;
 	}
 
-	/** Price one trace — the evolve plus its two frozen bouts — with the same calibrated rate every
+	/** Price one trace - the evolve plus its two frozen bouts - with the same calibrated rate every
 	 *  console estimate uses, so the button's "≈ n s" can't drift from the Sweep's arithmetic. */
 	estimateSeconds(episodes: number, genDuration: number): number {
 		return ((episodes + FROZEN_BOUTS) * genDuration) / loadSimRate();
@@ -162,7 +162,7 @@ class TraceStore {
 		return findings.has('trace', `curve-${key}`) && findings.has('trace', `mechanism-${key}`);
 	}
 
-	/** Add the frozen study's two findings — the learning curve (Q1) and the mechanism (Q5). */
+	/** Add the frozen study's two findings - the learning curve (Q1) and the mechanism (Q5). */
 	addToReport(): void {
 		if (!this.#done) return;
 		for (const finding of traceFindings(this.#done)) findings.add(finding);

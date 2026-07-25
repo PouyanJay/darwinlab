@@ -8,7 +8,7 @@ import { DEFAULT_WORLDS, ACCENTS } from '$lib/engine';
 afterEach(() => bench.destroy());
 
 /**
- * The dialog edits a REAL world through the store — that wiring is most of what it is.
+ * The dialog edits a REAL world through the store - that wiring is most of what it is.
  *
  * PAUSED, though. `init` starts the genuine sim loop, and a running world has sharks eating fish in
  * the background: `fish.length` would then be a moving target, and `fish[0]` could be swallowed
@@ -23,7 +23,7 @@ const open = (onclose = vi.fn()) => {
 };
 
 /**
- * The conditions are grouped into three tabs now — Environment, Agents, Adversary. A field only
+ * The conditions are grouped into three tabs now - Environment, Agents, Adversary. A field only
  * exists once its group is showing, so every test that reaches for one opens its group first.
  */
 const openGroup = (name: 'Environment' | 'Agents' | 'Adversary') =>
@@ -124,7 +124,7 @@ describe('ConditionsModal', () => {
 
 	it('says when the adversary has become too fast for any sense to matter', async () => {
 		// The most consequential comparison on the bench: above the agent's own top speed, nothing can
-		// outswim the adversary — knowing which way to flee buys a delay and never an escape, and every
+		// outswim the adversary - knowing which way to flee buys a delay and never an escape, and every
 		// sense stops paying. The dialog has to SAY that, from the adversary's own group.
 		open();
 		await openGroup('Adversary');
@@ -151,7 +151,7 @@ describe('ConditionsModal', () => {
 	it('the accent swatches are radios named by colour, so the row is usable without eyes or a mouse', async () => {
 		const { world } = open();
 
-		// "violet", not "#8a5ad8" — a screen reader spells a hex out digit by digit
+		// "violet", not "#8a5ad8" - a screen reader spells a hex out digit by digit
 		const violet = page.getByRole('radio', { name: 'violet' });
 		await violet.click();
 

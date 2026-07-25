@@ -2,8 +2,8 @@
   The top bar: who this is and what it is pointed at. Not what you can do to it.
 
   Every control that DRIVES the bench lives in the sidebar now, so the bar carries only identity (the
-  mark, the wordmark, and the Studio/Research mode — which instrument the lab is presenting) and the
-  scenario — the lab is the instrument, the scenario is what it is aimed at, and saying both is what
+  mark, the wordmark, and the Studio/Research mode - which instrument the lab is presenting) and the
+  scenario - the lab is the instrument, the scenario is what it is aimed at, and saying both is what
   keeps this from reading as a fish game with charts on it. Point it at a maze tomorrow and only the
   binding changes.
 
@@ -71,13 +71,13 @@
 	<div class="spacer"></div>
 
 	<!--
-		Theme first, lab settings second — reading order matches how often they are pressed and how
+		Theme first, lab settings second - reading order matches how often they are pressed and how
 		much they weigh: a theme flip is a whim, the lab settings decide when evolution STOPS FOR GOOD
 		(the deploy generation). The heavier switch sits at the end, where a hand does not land on it
 		by accident on the way to the light switch.
 
 		And both now say what they are. A half-filled circle ◐ is a shape, not a meaning; the button
-		shows the theme you would GET — a sun to go light, a moon to go dark — which is the only one of
+		shows the theme you would GET - a sun to go light, a moon to go dark - which is the only one of
 		the two conventions a user can act on without pressing it to find out.
 	-->
 	<!-- The repo, one click away. A real <a> (not a Button firing window.open) so it middle-clicks,
@@ -192,7 +192,7 @@
 		outline-offset: var(--focus-offset);
 	}
 
-	/* A fingertip is not a cursor — full-size target on coarse pointers, as Button does. */
+	/* A fingertip is not a cursor - full-size target on coarse pointers, as Button does. */
 	@media (pointer: coarse) {
 		.gh {
 			min-height: 44px;
@@ -203,13 +203,13 @@
 	 * The lab blurb is the first thing to go when the bar runs out of room: it is context, not a
 	 * control, and the two buttons on the right are not negotiable.
 	 */
-	@media (max-width: 720px) {
+	@media (max-width: 768px) {
 		.lab-blurb {
 			display: none;
 		}
 	}
 
-	@media (max-width: 560px) {
+	@media (max-width: 640px) {
 		.lab,
 		.divider {
 			display: none;

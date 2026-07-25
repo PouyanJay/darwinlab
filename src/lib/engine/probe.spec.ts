@@ -6,15 +6,15 @@ import { seededRng } from './rng';
 import { testCfg, testFish, testPred } from './testkit';
 import type { World, Senses } from './types';
 
-/** Senses with everything off — the starting point for isolating one channel at a time. */
+/** Senses with everything off - the starting point for isolating one channel at a time. */
 const NO_SENSES: Senses = { dist: false, dir: false, closing: false, walls: false };
 
-describe('samplePolicyAt — the seam', () => {
+describe('samplePolicyAt - the seam', () => {
 	it('reproduces the sim’s own snapshot bit-for-bit', () => {
 		// The probe must read the brain through the SAME sensing+forward the simulation runs, not
 		// a private re-implementation. `updateSenseSnapshot` is that live path; probe the same
 		// fish against the same single adversary and the motor output must be identical to the bit.
-		// Sabotage: negate `turn` in samplePolicyAt, or inline a simplified sensing — this fails.
+		// Sabotage: negate `turn` in samplePolicyAt, or inline a simplified sensing - this fails.
 		const cfg = testCfg();
 		const fish = testFish({ x: 100, y: 120, heading: 0.5, genome: makeGenome(seededRng(7)) });
 		const adversary = testPred(180, 160, -50, 20);
@@ -29,7 +29,7 @@ describe('samplePolicyAt — the seam', () => {
 	});
 });
 
-describe('probePolicy — reading the rule off the brain', () => {
+describe('probePolicy - reading the rule off the brain', () => {
 	it('a blind agent reads FLAT: position it cannot sense changes nothing', () => {
 		const cfg = testCfg({ senses: { ...NO_SENSES } });
 		const map = probePolicy(cfg, makeGenome(seededRng(3)));
@@ -37,7 +37,7 @@ describe('probePolicy — reading the rule off the brain', () => {
 		expect(map.flat).toBe(true);
 		expect(map.turnRange[0]).toBe(map.turnRange[1]);
 		expect(map.thrustRange[0]).toBe(map.thrustRange[1]);
-		// Not just the summary — every cell is the one response. Opposite corners of the grid agree.
+		// Not just the summary - every cell is the one response. Opposite corners of the grid agree.
 		expect(map.samples[0]).toEqual(map.samples[map.samples.length - 1]);
 	});
 
@@ -68,7 +68,7 @@ describe('probePolicy — reading the rule off the brain', () => {
 		expect(map.flat).toBe(false);
 	});
 
-	it('a closing-only agent reads FLAT — this slice holds the closing rate fixed', () => {
+	it('a closing-only agent reads FLAT - this slice holds the closing rate fixed', () => {
 		// An honest limit of the position map, pinned so no one "fixes" it by faking a varying
 		// closing rate: with the agent at rest and the adversary bearing down at cruise, the
 		// closing input is the same in every cell, so a closing-only brain cannot vary here.

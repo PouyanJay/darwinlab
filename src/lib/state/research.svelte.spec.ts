@@ -5,7 +5,7 @@ import { newWorldConfig } from '../engine';
 import type { EvalRequest, Evaluation } from '../lab/evaluator';
 
 /**
- * The batch LIFECYCLE — progress, completion, cancel, and the cancel-on-new guard — driven through
+ * The batch LIFECYCLE - progress, completion, cancel, and the cancel-on-new guard - driven through
  * injected executors so it is deterministic and fast, not through the real worker pool (that path is
  * the runner's own spec). The store is a singleton, so each test cancels it back to idle first.
  */
@@ -17,7 +17,7 @@ const tiny = (name: string): EvalRequest => ({
 	bouts: 1
 });
 
-/** An executor whose jobs never finish on their own — only a cancel (signal abort) settles them. */
+/** An executor whose jobs never finish on their own - only a cancel (signal abort) settles them. */
 class HangingExecutor implements JobExecutor {
 	readonly concurrency = 1;
 	submit(
@@ -58,7 +58,7 @@ describe('research batch lifecycle', () => {
 		const first = research.run([tiny('a')], new HangingExecutor()); // hangs, holding the store
 		const second = research.run([tiny('b')], new InThreadExecutor()); // aborts the first, then runs
 
-		expect(await first).toBeNull(); // superseded — it owns nothing now
+		expect(await first).toBeNull(); // superseded - it owns nothing now
 		const secondResults = await second;
 		expect(secondResults).not.toBeNull();
 		expect(secondResults).toHaveLength(1);

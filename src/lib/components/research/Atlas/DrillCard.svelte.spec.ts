@@ -5,7 +5,7 @@ import DrillCard from './DrillCard.svelte';
 import { landscape } from '$lib/state';
 import { restoreLandscapeDefaults, CannedExecutor, evalMean } from '$lib/state/landscape.testkit';
 
-// Columns average 10, 5, 4.7, 4.5, 4.4 — a cliff between columns 0 and 1, then a plateau whose
+// Columns average 10, 5, 4.7, 4.5, 4.4 - a cliff between columns 0 and 1, then a plateau whose
 // steps sit safely under the edge threshold, so the two where-lines are both reachable.
 const cannedField = () =>
 	new CannedExecutor(Array.from({ length: 25 }, (_, i) => evalMean([10, 5, 4.7, 4.5, 4.4][i % 5])));
@@ -36,7 +36,7 @@ describe('DrillCard', () => {
 		await expect.element(page.getByTestId('drill-where')).toHaveTextContent(/standing at the edge/);
 	});
 
-	it('says plateau when the neighbours hold — the edge line is measured, not decorative', async () => {
+	it('says plateau when the neighbours hold - the edge line is measured, not decorative', async () => {
 		landscape.select(2, 2); // 4.7 → 4.5 to the right: a gentle slope, not the cliff
 		render(DrillCard);
 		await expect.element(page.getByTestId('drill-where')).toHaveTextContent(/on the plateau/);

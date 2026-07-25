@@ -1,5 +1,5 @@
 /**
- * Tuning constants — EMPIRICALLY FOUND (README §9). Values are byte-identical to
+ * Tuning constants - EMPIRICALLY FOUND (README §9). Values are byte-identical to
  * engine2.js. Do NOT change any of these to flatter results without re-measuring the §8
  * survival numbers headlessly (Golden rule #1/#4 in CLAUDE.md).
  *
@@ -37,7 +37,7 @@ export const MUTATION_RESET_RATE = 0.25;
 /** Curve smoothing: `surv = prev*0.65 + raw*0.35` so the trend reads through noise. */
 export const CURVE_SMOOTH_PREV = 0.65;
 export const CURVE_SMOOTH_RAW = 0.35;
-/** Display band — the survival axis is zoomed to [0.1, 0.9] so the real trend is legible. */
+/** Display band - the survival axis is zoomed to [0.1, 0.9] so the real trend is legible. */
 export const CURVE_LO = 0.1;
 export const CURVE_HI = 0.9;
 /** Max samples retained in a curve/decay buffer before shifting. */
@@ -53,14 +53,14 @@ export const WALL_RAY_NORM = 170;
 /** Seconds between decay-curve samples in deployed mode. */
 export const DECAY_SAMPLE_INTERVAL = 0.3;
 
-// ---- schooling (Phase 14) — these are NOT reference numbers; they only take effect when a
+// ---- schooling (Phase 14) - these are NOT reference numbers; they only take effect when a
 //      world opts into the confusion effect / shoal sense, both default-off (see WorldConfig). ----
 /** Default radius the shoal sense summarises neighbours over (px). */
 export const SOCIAL_RADIUS = 70;
 /** Neighbour count that reads as full shoal density (x[9] = min(1, n / this)). */
 export const SHOAL_DENSITY_NORM = 8;
 /** Default radius around a shark's target that counts as its crowd (px). Matched to SOCIAL_RADIUS
- *  so a group the fish can FEEL is a group that actually protects — otherwise a fish steers to keep
+ *  so a group the fish can FEEL is a group that actually protects - otherwise a fish steers to keep
  *  neighbours it senses at 70px while the safety only reaches 45, and grouping never pays. */
 export const CONFUSION_RADIUS = 70;
 /** Neighbour count around the target at which the confusion effect saturates. Low on purpose: a
@@ -73,7 +73,7 @@ export const CONFUSION_MAX_JITTER = 1;
 export const CONFUSION_TELEGRAPH_K = 1.8;
 /** ISOLATION-HUNTING: virtual px added to a fully-crowded fish's targeting score, so the shark
  *  prefers the exposed straggler and lets a surrounded fish be. This is the confusion effect acting
- *  on TARGET ACQUISITION — the interior of a group becomes the safe place, and since any group has
+ *  on TARGET ACQUISITION - the interior of a group becomes the safe place, and since any group has
  *  an edge, someone is always catchable (no immortal school). The gradient that pays for grouping. */
 export const ISOLATION_WEIGHT = 220;
 /** PREDATOR ATTENTION: expected lock-losses per second when the locked target is at full crowd
@@ -83,6 +83,6 @@ export const LOCK_LOSS_RATE = 2.5;
 export const DISTRACT_TIME = 0.6;
 /** THE SELFISH-HERD KNOB: how far a full crowd shrinks the catch radius for a packed victim
  *  (cr ×(1 − this) at saturation). This is what makes the INTERIOR of a school safe and a lone
- *  or edge fish catchable — the gradient that pays for grouping. Capped below 1 so a crowd is
+ *  or edge fish catchable - the gradient that pays for grouping. Capped below 1 so a crowd is
  *  hard to grab, never impossible (no immortal school). */
 export const CONFUSION_CATCH_SHRINK = 0.7;

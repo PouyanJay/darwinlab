@@ -1,6 +1,6 @@
 <!--
-  Q2 — what actually moves survival? Each factor's main effect, with its 95% bootstrap interval. Bars
-  run from a centred zero line — right for a factor that helps (teal), left for one that costs (coral).
+  Q2 - what actually moves survival? Each factor's main effect, with its 95% bootstrap interval. Bars
+  run from a centred zero line - right for a factor that helps (teal), left for one that costs (coral).
   A bar whose interval straddles zero is drawn muted: it does nothing here, and the lab says so rather
   than rounding it into a finding. The Sweep and the Report both draw from this one component.
 -->
@@ -48,8 +48,8 @@
 	const rows = $derived(
 		effects.map((e) => ({
 			factor: e.label,
-			effect: Number.isNaN(e.delta) ? '—' : formatSignedSeconds(e.delta),
-			ci: Number.isNaN(e.lo) ? '—' : `[${formatSignedSeconds(e.lo)}, ${formatSignedSeconds(e.hi)}]`
+			effect: Number.isNaN(e.delta) ? '-' : formatSignedSeconds(e.delta),
+			ci: Number.isNaN(e.lo) ? '-' : `[${formatSignedSeconds(e.lo)}, ${formatSignedSeconds(e.hi)}]`
 		}))
 	);
 </script>
@@ -81,7 +81,7 @@
 					{/if}
 				</div>
 				<span class="val" class:cost class:flat>
-					{missing ? '—' : formatSignedSeconds(e.delta)}
+					{missing ? '-' : formatSignedSeconds(e.delta)}
 				</span>
 			</div>
 		{/each}
@@ -200,7 +200,7 @@
 		color: var(--ink3);
 	}
 
-	/* The scale under the bars — its middle column lines up with the tracks above it, so its 0 sits on
+	/* The scale under the bars - its middle column lines up with the tracks above it, so its 0 sits on
 	   the zero line and its ends mark the widest bar the axis can hold. */
 	.axis {
 		margin-top: 2px;

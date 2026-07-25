@@ -131,7 +131,7 @@ describe('deployment (post-training)', () => {
 			steps++;
 		}
 
-		expect(firstRespawnAtStep).toBe(-1); // population never grew — no respawn in deployed mode
+		expect(firstRespawnAtStep).toBe(-1); // population never grew - no respawn in deployed mode
 		expect(w.fish).toHaveLength(0);
 		expect(w.extinctT).not.toBeNull();
 		expect(w.halfLife).not.toBeNull();
@@ -161,9 +161,9 @@ describe('pointer cleanup when a tracked fish is eaten', () => {
 		expect(w.championFish).toBeNull();
 	});
 
-	it('clears them at a generation turnover too — the whole generation is gone, not just one fish', () => {
+	it('clears them at a generation turnover too - the whole generation is gone, not just one fish', () => {
 		// NO predators, deliberately. With sharks in the tank the watched fish tends to be eaten
-		// before its generation ends, and the catch path would clear the pointer — the test would
+		// before its generation ends, and the catch path would clear the pointer - the test would
 		// then pass without ever exercising the turnover it claims to be about.
 		const w = makeWorld(cfg({ prey: 6, preds: 0, bw: 400, bh: 300 }), undefined, seededRng(7));
 		const watched = w.fish[0];
@@ -174,7 +174,7 @@ describe('pointer cleanup when a tracked fish is eaten', () => {
 
 		expect(w.eaten).toBe(0); // nothing was eaten: the turnover is the ONLY thing under test
 		// Without this cleanup the pointer survives as a ghost, and the UI goes on drawing a fish that
-		// is not in the water — frozen where it was, with a "live" brain that no longer runs.
+		// is not in the water - frozen where it was, with a "live" brain that no longer runs.
 		expect(w.fish).not.toContain(watched);
 		expect(w.selFish).toBeNull();
 		expect(w.hover).toBeNull();
@@ -214,7 +214,7 @@ describe('applyCfg', () => {
 	});
 });
 
-describe('confusion — isolation-hunting (the reason a school pays)', () => {
+describe('confusion - isolation-hunting (the reason a school pays)', () => {
 	/**
 	 * Lay a tight cluster right next to the shark and one lone straggler farther away, then take a
 	 * single tick so `assignPredatorTargets` runs on the layout we placed. With the confusion effect
@@ -245,11 +245,11 @@ describe('confusion — isolation-hunting (the reason a school pays)', () => {
 
 	it('SABOTAGE: with confusion off, the same shark takes the nearest (crowded) fish', () => {
 		const w = stagedWorld(false);
-		expect(w.preds[0]._tgt).not.toBe(w.fish[0]); // nearest-unclaimed — a cluster fish
+		expect(w.preds[0]._tgt).not.toBe(w.fish[0]); // nearest-unclaimed - a cluster fish
 	});
 });
 
-describe('confusion — predator attention / lock-loss (what makes ACTIVE schooling pay)', () => {
+describe('confusion - predator attention / lock-loss (what makes ACTIVE schooling pay)', () => {
 	/**
 	 * Pack every fish into one tight ball with the shark right on it. With lock-loss on, a shark
 	 * whose target sits in that dense crowd should be shaken off (distracted) within a beat; off, it
@@ -300,11 +300,11 @@ describe('confusion — predator attention / lock-loss (what makes ACTIVE school
 	});
 });
 
-describe('confusion — the selfish herd (confusionCatch)', () => {
+describe('confusion - the selfish herd (confusionCatch)', () => {
 	/**
 	 * Pack a population into a tight ball in a small tank and let one shark hunt it for two seconds,
 	 * with the catch shrink cranked. A fish buried among neighbours is hard to grab even on contact,
-	 * so far fewer are eaten than in the SAME seeded run with the shrink off — the comparison is the
+	 * so far fewer are eaten than in the SAME seeded run with the shrink off - the comparison is the
 	 * guard: strip the mechanic (make catchRadiusFor return the base radius) and the two runs become
 	 * identical. Only the catch mechanic differs; a staged single contact is a degenerate edge (a
 	 * zero-velocity shark on a fish never resolves), so this drives the real hunt instead.

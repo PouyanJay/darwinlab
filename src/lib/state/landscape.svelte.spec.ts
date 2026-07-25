@@ -12,11 +12,11 @@ import { newWorldConfig } from '../engine';
 
 /**
  * The Atlas store, driven through a canned executor so the field is fixed and the cliff/selection
- * logic is deterministic (a real landscape is a live measurement — not something to assert). The
+ * logic is deterministic (a real landscape is a live measurement - not something to assert). The
  * store is a singleton, so each test walks the whole design back to the defaults first.
  */
 
-// A 5×5 field whose columns average 10, 5, 4, 3, 2 — a cliff between columns 0 and 1.
+// A 5×5 field whose columns average 10, 5, 4, 3, 2 - a cliff between columns 0 and 1.
 const COLUMN_MEANS = [10, 5, 4, 3, 2];
 const cannedField = () =>
 	new CannedExecutor(Array.from({ length: 25 }, (_, i) => evalMean(COLUMN_MEANS[i % 5])));
@@ -40,20 +40,20 @@ describe('the Atlas store', () => {
 		expect(field?.max).toBeCloseTo(10);
 	});
 
-	it('finds the cliff — the steepest fall-off along X', async () => {
+	it('finds the cliff - the steepest fall-off along X', async () => {
 		await landscape.run(cannedField());
 		expect(landscape.falloff?.ix).toBe(0); // 10 → 5, between columns 0 and 1
 		expect(landscape.falloff?.drop).toBeCloseTo(5);
 	});
 
-	it('traces each row its own cliff — the gold dashes read off the same field', async () => {
+	it('traces each row its own cliff - the gold dashes read off the same field', async () => {
 		await landscape.run(cannedField());
 		// every canned row falls hardest between columns 0 and 1
 		expect(landscape.cliffRows).toHaveLength(5);
 		for (const cliff of landscape.cliffRows) expect(cliff?.ix).toBe(0);
 	});
 
-	it('serves the cross-section rows — the Y extremes as curves', async () => {
+	it('serves the cross-section rows - the Y extremes as curves', async () => {
 		await landscape.run(cannedField());
 		const sections = landscape.sections;
 		expect(sections).toHaveLength(2);
@@ -69,14 +69,14 @@ describe('the Atlas store', () => {
 		expect(landscape.axisY.key).toBe('predSpeed'); // Y took X's old axis
 	});
 
-	it('choosing Y already on the X axis swaps them too — setY is its own branch', () => {
+	it('choosing Y already on the X axis swaps them too - setY is its own branch', () => {
 		expect(landscape.axisY.key).toBe('mutation'); // starts here
 		landscape.setY('predSpeed'); // Y wants X's axis
 		expect(landscape.axisY.key).toBe('predSpeed');
 		expect(landscape.axisX.key).toBe('mutation'); // X took Y's old axis
 	});
 
-	it('remembers an edited range PER AXIS — swap away and back, the range is still yours', () => {
+	it('remembers an edited range PER AXIS - swap away and back, the range is still yours', () => {
 		landscape.setSpan('predSpeed', 0.8, 1.1);
 		expect(landscape.axisX.min).toBeCloseTo(0.8);
 		landscape.setX('vision'); // leave the axis…
@@ -85,7 +85,7 @@ describe('the Atlas store', () => {
 		expect(landscape.axisX.max).toBeCloseTo(1.1);
 	});
 
-	it('normalises a span through the lab rules — clamped, ordered, degenerate resets', () => {
+	it('normalises a span through the lab rules - clamped, ordered, degenerate resets', () => {
 		landscape.setSpan('predSpeed', 1.9, 0.3); // inverted AND out of bounds
 		expect(landscape.axisX.min).toBeCloseTo(0.6);
 		expect(landscape.axisX.max).toBeCloseTo(1.4);
@@ -122,7 +122,7 @@ describe('the Atlas store', () => {
 		expect(landscape.selected?.cfg.persistence).toBe(true); // the pin reached the cell's config
 	});
 
-	it('prices the plan by its training length — longer costs more', () => {
+	it('prices the plan by its training length - longer costs more', () => {
 		expect(landscape.estimatedSeconds).toBeGreaterThan(0);
 		landscape.setEpisodes(40);
 		const dearer = landscape.estimatedSeconds;
@@ -130,7 +130,7 @@ describe('the Atlas store', () => {
 		expect(dearer).toBeGreaterThan(landscape.estimatedSeconds);
 	});
 
-	it('freezes the receipt with the run — what the tiles print is the measured budget', async () => {
+	it('freezes the receipt with the run - what the tiles print is the measured budget', async () => {
 		await landscape.run(cannedField());
 		expect(landscape.receipt).toMatchObject({ seeds: 2, episodes: 20 });
 		expect(landscape.receipt!.wallSeconds).toBeGreaterThanOrEqual(0);
@@ -144,7 +144,7 @@ describe('the Atlas store', () => {
 		expect(landscape.field?.axisX.key).toBe('predSpeed'); // …but the measured field's axis is frozen
 	});
 
-	it('runs on the analysis subject when Studio hands one over — its config reaches every cell', async () => {
+	it('runs on the analysis subject when Studio hands one over - its config reaches every cell', async () => {
 		// A world with a distinctive vision the default axes (predSpeed × mutation) never overwrite.
 		app.analyze({ ...newWorldConfig('Watched', '#123456'), vision: 999 });
 		await landscape.run(cannedField());
@@ -152,7 +152,7 @@ describe('the Atlas store', () => {
 		expect(landscape.selected?.cfg.vision).toBe(999); // the subject's own vision, not a generic default
 	});
 
-	it('a superseded run publishes nothing — the field is the newer run, not the hung one', async () => {
+	it('a superseded run publishes nothing - the field is the newer run, not the hung one', async () => {
 		const first = landscape.run(new HangingExecutor()); // hangs, holding the store
 		const second = landscape.run(cannedField()); // aborts the first, then runs to a field
 		await second;
@@ -171,7 +171,7 @@ describe('the Atlas store', () => {
 		expect(landscape.selected).toBeNull();
 	});
 
-	it('reads the neighbours — the drop to the right, the flat step up, the map edge', async () => {
+	it('reads the neighbours - the drop to the right, the flat step up, the map edge', async () => {
 		await landscape.run(cannedField());
 		landscape.select(0, 0);
 		expect(landscape.neighborDelta(1, 0)).toBeCloseTo(-5); // one step right falls off the cliff
@@ -182,17 +182,17 @@ describe('the Atlas store', () => {
 		expect(landscape.neighborDelta(0, 1)).toBeNull();
 	});
 
-	it('reports the map edge on a SINGLE axis — no wrap into the next row', async () => {
+	it('reports the map edge on a SINGLE axis - no wrap into the next row', async () => {
 		// The sabotage that found this: dropping the ix >= cols bound made a right-edge cell read the
 		// NEXT ROW's first value through the flat index. The double corner can't catch that (its index
-		// falls off the array's end either way) — only a one-axis edge distinguishes the guard.
+		// falls off the array's end either way) - only a one-axis edge distinguishes the guard.
 		await landscape.run(cannedField());
 		landscape.select(4, 2); // the right edge, an interior row
 		expect(landscape.neighborDelta(1, 0)).toBeNull(); // off the map, not row 3's first cell
 		expect(landscape.neighborDelta(0, 1)).not.toBeNull(); // the same cell still has an up-neighbour
 	});
 
-	it('a fresh run clears any prior drill — the old cell is not in the new grid', async () => {
+	it('a fresh run clears any prior drill - the old cell is not in the new grid', async () => {
 		await landscape.run(cannedField());
 		landscape.select(2, 2);
 		expect(landscape.selected).not.toBeNull(); // it really was drilled before the rerun

@@ -1,6 +1,6 @@
 <!--
   The training indicator: while a turbo burst is running, the bench is fast-forwarding generations
-  in time-sliced chunks and the tanks are not being animated. This says so — and says how far it
+  in time-sliced chunks and the tanks are not being animated. This says so - and says how far it
   has got, because "nothing is moving" and "it froze" look identical without it.
 
   role="status" so the progress is announced, not just drawn.
@@ -26,7 +26,7 @@
 	.turbo {
 		position: fixed;
 		top: calc(var(--topbar-height) + var(--sp-1));
-		/* Centred on the bench rather than the window — see the note in FirstRunHint. */
+		/* Centred on the bench rather than the window - see the note in FirstRunHint. */
 		left: calc(50% + var(--shell-gutter, 0px) / 2);
 		transform: translateX(-50%);
 		z-index: var(--z-turbo);

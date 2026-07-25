@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Publish Darwin Lab to GitHub Pages — on demand, never automatically. Merging to main only proves
+# Publish Darwin Lab to GitHub Pages - on demand, never automatically. Merging to main only proves
 # main is healthy (CI runs verify + e2e, nothing ships); THIS is the only thing that goes live.
 #
 # It publishes origin/main, not your working tree: the deploy runs in CI, which re-does the whole
 # bar fresh (verify + e2e) and ships the exact bytes it just tested. Before triggering it shows the
-# gap — what is live now vs what main is about to become — so you are never guessing what ships.
+# gap - what is live now vs what main is about to become - so you are never guessing what ships.
 #
 #   make deploy              publish, after showing the gap and asking to confirm
 #   scripts/make/deploy.sh --yes   skip the confirmation (for automation)
@@ -51,22 +51,22 @@ git fetch --quiet origin "$BRANCH"
 TARGET=$(git rev-parse "origin/$BRANCH")
 ui::ok "publishing origin/$BRANCH @ $(git rev-parse --short "origin/$BRANCH")"
 
-# Unpushed local commits would NOT ship — the deploy takes origin/main, not your tree.
+# Unpushed local commits would NOT ship - the deploy takes origin/main, not your tree.
 if git rev-parse --verify --quiet "$BRANCH" >/dev/null; then
 	AHEAD=$(git rev-list --count "origin/$BRANCH..$BRANCH" 2>/dev/null || echo 0)
-	[ "$AHEAD" -gt 0 ] && ui::warn "your local $BRANCH is $AHEAD commit(s) ahead of origin — those will NOT ship (push them first)"
+	[ "$AHEAD" -gt 0 ] && ui::warn "your local $BRANCH is $AHEAD commit(s) ahead of origin - those will NOT ship (push them first)"
 fi
 
 # The gap: the SHA Pages last shipped, and every commit between it and what we're about to ship.
 LAST=$(gh api "repos/$SLUG/deployments?environment=github-pages&per_page=1" --jq '.[0].sha // empty' 2>/dev/null || true)
 if [ -z "$LAST" ]; then
-	ui::info "no previous Pages deploy on record — this is the first"
+	ui::info "no previous Pages deploy on record - this is the first"
 elif [ "$LAST" = "$TARGET" ]; then
-	ui::warn "origin/$BRANCH is already live — nothing new to publish (re-deploying anyway is fine)"
+	ui::warn "origin/$BRANCH is already live - nothing new to publish (re-deploying anyway is fine)"
 else
 	COUNT=$(git rev-list --count "$LAST..$TARGET" 2>/dev/null || echo '?')
 	ui::info "$COUNT commit(s) since the live build ($(git rev-parse --short "$LAST" 2>/dev/null || echo "$LAST")):"
-	git --no-pager log --oneline "$LAST..$TARGET" 2>/dev/null | sed 's/^/      /' || ui::info "  (live SHA not in local history — fetch to see the list)"
+	git --no-pager log --oneline "$LAST..$TARGET" 2>/dev/null | sed 's/^/      /' || ui::info "  (live SHA not in local history - fetch to see the list)"
 fi
 
 # ---- 3 · confirm ----
@@ -77,13 +77,13 @@ if [ "$YES" = 0 ]; then
 	case "$reply" in
 		y | Y | yes | YES) ;;
 		*)
-			ui::warn "aborted — nothing deployed"
+			ui::warn "aborted - nothing deployed"
 			exit 0
 			;;
 	esac
 fi
 
-# The live build stamp, captured BEFORE we trigger — every build rewrites version.json, so once the
+# The live build stamp, captured BEFORE we trigger - every build rewrites version.json, so once the
 # live value moves off this one we know the new bytes are actually being served, not just deployed.
 BEFORE_VER=$(curl -fsS "${SITE_URL%/}/_app/version.json" 2>/dev/null || echo "none")
 
@@ -103,14 +103,14 @@ while [ -z "$RUN_ID" ] || [ "$RUN_ID" = "$PREV_RUN" ]; do
 	[ "$_tries" -ge 30 ] && ui::die "the dispatched run never appeared." "check: gh run list --workflow $WORKFLOW"
 done
 RUN_URL=$(gh run view "$RUN_ID" --json url --jq .url 2>/dev/null || true)
-ui::ok "run $RUN_ID — verify + e2e + deploy"
+ui::ok "run $RUN_ID - verify + e2e + deploy"
 [ -n "$RUN_URL" ] && ui::info "watch live: $RUN_URL"
 
-ui::step 5 5 "Running the pipeline (verify · e2e · deploy) — a few minutes"
+ui::step 5 5 "Running the pipeline (verify · e2e · deploy) - a few minutes"
 if gh run watch "$RUN_ID" --exit-status >/dev/null 2>&1; then
 	ui::ok "pipeline green"
 else
-	ui::fail "the deploy run failed — nothing was published"
+	ui::fail "the deploy run failed - nothing was published"
 	ui::info "logs: gh run view $RUN_ID --log-failed"
 	exit 1
 fi
@@ -131,4 +131,4 @@ while [ "$_waited" -lt 90 ]; do
 	sleep 5
 	_waited=$((_waited + 5))
 done
-ui::warn "run is green but the live build stamp hasn't changed yet — Pages CDN can lag; check $SITE_URL shortly"
+ui::warn "run is green but the live build stamp hasn't changed yet - Pages CDN can lag; check $SITE_URL shortly"

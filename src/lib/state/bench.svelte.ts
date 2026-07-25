@@ -1,5 +1,5 @@
 /**
- * Bench state — the ONLY seam through which the UI touches the simulation.
+ * Bench state - the ONLY seam through which the UI touches the simulation.
  *
  * Per README §7, components never mutate engine internals directly: they go through this store,
  * which calls engine functions (`applyCfg`, `resetWorld`, sense toggles, hover). If you find
@@ -9,17 +9,17 @@
  * turbo) and `PainterRegistry` owns *who repaints*. This store owns *which worlds exist* and
  * bridges them together once per frame.
  *
- * PERFORMANCE — why worlds are NOT reactive:
+ * PERFORMANCE - why worlds are NOT reactive:
  * A `World` is mutated ~60×/s and holds every fish, trail point and 68-weight genome. Wrapping
  * it in `$state` would deep-proxy all of that and fire reactivity on every mutation, which is
  * catastrophic at frame rate. So worlds live in `$state.raw` (reassigned on add/remove, never
  * proxied), the canvas paints straight from the raw objects, and the UI binds instead to two
  * small reactive projections of each world:
  *
- *   WorldStats       what the world is DOING — alive, eaten, gen, survival. Refreshed each frame.
- *   WorldConfigView  what the world IS — name, senses, tank, accent. Refreshed when the store
+ *   WorldStats       what the world is DOING - alive, eaten, gen, survival. Refreshed each frame.
+ *   WorldConfigView  what the world IS - name, senses, tank, accent. Refreshed when the store
  *                    writes to `cfg`, which is the only way `cfg` ever changes.
- *   MindView         what the SELECTED FISH is thinking — its senses and motor outputs, refreshed
+ *   MindView         what the SELECTED FISH is thinking - its senses and motor outputs, refreshed
  *                    each frame. One of these, because there is one inspector.
  *
  * All three are projections; `world` remains the single source of truth for every one of them.
@@ -80,7 +80,7 @@ export { WorldStats, WorldConfigView, MindView, EscapeMapView, type WorldEntry }
  * What a card is showing in place of its own population.
  *
  * 'frozen' holds the real run still; 'live' lets it keep evolving and re-clones the exhibit each
- * generation. Neither one breeds, scores, or writes to a curve — see engine/exhibit.ts.
+ * generation. Neither one breeds, scores, or writes to a curve - see engine/exhibit.ts.
  */
 export type ExhibitMode = 'off' | 'frozen' | 'live';
 
@@ -105,8 +105,8 @@ export interface Selection {
 	/**
 	 * True when the user asked for "the best brain alive" (the ★ Champion button) rather than one
 	 * particular fish. That distinction is what a generation turnover hangs on: a champion selection
-	 * re-resolves to the new generation's best fish — that lineage is exactly what the product is
-	 * about — while a hand-picked fish is simply gone, and the inspector closes rather than quietly
+	 * re-resolves to the new generation's best fish - that lineage is exactly what the product is
+	 * about - while a hand-picked fish is simply gone, and the inspector closes rather than quietly
 	 * swapping in a different creature and letting you believe it is still yours.
 	 */
 	readonly followsChampion: boolean;
@@ -129,7 +129,7 @@ export interface BenchInit {
 }
 
 /** Hold a value inside the range the lab offers. The engine does not validate; the store must. */
-/** Thrown when a caller passes an id the bench doesn't know — always a caller bug, never data. */
+/** Thrown when a caller passes an id the bench doesn't know - always a caller bug, never data. */
 function assertEntry(entry: WorldEntry | undefined, id: string): WorldEntry {
 	if (!entry) throw new Error(`bench: no world with id "${id}"`);
 	return entry;
@@ -140,7 +140,7 @@ class BenchStore {
 	worlds = $state.raw<WorldEntry[]>([]);
 	/** Highest generation reached across the bench (the top-bar readout). */
 	generationsEvolved = $state(0);
-	/** What the inspector is showing — one across the bench. `$state.raw`: replaced, never mutated. */
+	/** What the inspector is showing - one across the bench. `$state.raw`: replaced, never mutated. */
 	selection = $state.raw<Selection | null>(null);
 	/** The world whose Conditions dialog is open, or null. One dialog, like one inspector. */
 	conditionsWorldId = $state<string | null>(null);
@@ -152,7 +152,7 @@ class BenchStore {
 	focusedId = $state<string | null>(null);
 	/** What the selected fish is thinking, refreshed every frame while a fish is selected. */
 	readonly mind = new MindView();
-	/** The selected fish's escape map — its policy over adversary positions. Memoised; recomputes
+	/** The selected fish's escape map - its policy over adversary positions. Memoised; recomputes
 	 *  only when the genome or a map-shaping condition changes. */
 	readonly escape = new EscapeMapView();
 
@@ -162,16 +162,16 @@ class BenchStore {
 	/**
 	 * $state, not a plain field: the tile's "· trained" suffix and the top bar's Train label are
 	 * derived from it, and a getter over a non-reactive field never wakes a reader. Invisible while
-	 * it is always 0 — and quietly broken the moment Phase 7 starts driving it.
+	 * it is always 0 - and quietly broken the moment Phase 7 starts driving it.
 	 */
 	#maxGenerations = $state(0);
 	/**
-	 * The story stage's render detail — 'cinematic' until this machine proves it can't afford it.
+	 * The story stage's render detail - 'cinematic' until this machine proves it can't afford it.
 	 * `$state` because the stage binds to it and must re-render the frame the governor flips it.
 	 */
 	#detail = $state<'cinematic' | 'performance'>('cinematic');
 	/**
-	 * What every tank is coloured BY — one lens across the whole bench, deliberately.
+	 * What every tank is coloured BY - one lens across the whole bench, deliberately.
 	 *
 	 * The lens exists to make a COMPARISON legible ("blind is confetti, bearing is calm"), and a
 	 * comparison you have to switch on five times, card by card, is a comparison nobody makes. It is
@@ -181,14 +181,14 @@ class BenchStore {
 	/**
 	 * Which worlds are showing an EXHIBIT instead of their own population, and in which mode.
 	 *
-	 * `frozen` — the real run is HELD, exactly as it was, and a sealed tank of champion clones swims
+	 * `frozen` - the real run is HELD, exactly as it was, and a sealed tank of champion clones swims
 	 *            in its place. Switch it off and the run resumes where it stood.
-	 * `live`   — the real run keeps evolving underneath, and the exhibit is re-cloned from the newest
+	 * `live`   - the real run keeps evolving underneath, and the exhibit is re-cloned from the newest
 	 *            champion at every generation, so you watch the strategy sharpen. What you are looking
 	 *            at is still never the population being selected.
 	 *
 	 * Reactive, because the card's banner and the tank both change with it. The exhibit WORLDS
-	 * themselves live in a plain Map beside it — like every other world in this store, they are
+	 * themselves live in a plain Map beside it - like every other world in this store, they are
 	 * mutated 60×/s and must never be proxied.
 	 */
 	#exhibits = $state<Record<string, ExhibitMode>>({});
@@ -196,7 +196,7 @@ class BenchStore {
 	/** The generation each live exhibit was last cloned at, so it re-clones exactly once per turn. */
 	#exhibitGen = new Map<string, number>();
 	/**
-	 * The assay each world is RUNNING, if any — the staged trials, played in the tank.
+	 * The assay each world is RUNNING, if any - the staged trials, played in the tank.
 	 *
 	 * The trials are the engine's (engine/assay.ts), stepped one frame at a time by the tick instead
 	 * of run to completion in a loop. That is the only difference between what you watch and what the
@@ -205,15 +205,15 @@ class BenchStore {
 	 * clothes, and the picture would stop being evidence for the number printed beside it.
 	 */
 	#assays = new Map<string, RunningAssay>();
-	/** The finished verdicts, per world — reactive, because the card prints them. */
+	/** The finished verdicts, per world - reactive, because the card prints them. */
 	#assayResults = $state<Record<string, PopulationAssay>>({});
 	/** Which bearing each running assay is on, so the card can say "3 of 12". */
 	#assayProgress = $state<Record<string, number>>({});
-	/** One repaint owed outside the sim advancing — set by every method that changes pixels. */
+	/** One repaint owed outside the sim advancing - set by every method that changes pixels. */
 	#needsPaint = false;
 	/**
 	 * True when the current selection was made by the tank's keyboard cycler. The inspector reads
-	 * this to leave the walker's focus alone — a walk is not a click, and stealing focus on the
+	 * this to leave the walker's focus alone - a walk is not a click, and stealing focus on the
 	 * first arrow-press would end it one creature in. `$state` because the drawer binds to it.
 	 */
 	#walkSelection = $state(false);
@@ -232,7 +232,7 @@ class BenchStore {
 	 * that printed a seed anyway would be lying about what it can hand you.
 	 */
 	#seed = $state<number | null>(null);
-	/** What each environment was CREATED as — the baseline its "overrides" chip is measured against. */
+	/** What each environment was CREATED as - the baseline its "overrides" chip is measured against. */
 	#baselines = new Map<string, WorldConfig>();
 
 	// read-only projections of playback, so the UI binds to one object
@@ -263,7 +263,7 @@ class BenchStore {
 		return this.#walkSelection;
 	}
 
-	/** The seed this run was launched with — null when unseeded, and therefore unreproducible. */
+	/** The seed this run was launched with - null when unseeded, and therefore unreproducible. */
 	get seed(): number | null {
 		return this.#seed;
 	}
@@ -273,7 +273,7 @@ class BenchStore {
 		return configHash(this.worlds.map((entry) => entry.world.cfg));
 	}
 
-	/** The full run manifest — what "copy config" hands to someone who wants your numbers. */
+	/** The full run manifest - what "copy config" hands to someone who wants your numbers. */
 	get manifest(): Record<string, unknown> {
 		return manifest(
 			this.worlds.map((entry) => entry.world.cfg),
@@ -294,7 +294,7 @@ class BenchStore {
 		this.#rng = rng ?? (seed === null ? undefined : seededRng(seed));
 		this.#baselines.clear();
 		const roots = configs.map((cfg) => this.#create(structuredClone(cfg)));
-		// The launched worlds are the roots of the tree — laid out in a row across the canvas, so a
+		// The launched worlds are the roots of the tree - laid out in a row across the canvas, so a
 		// fresh bench reads left-to-right the way the old grid did before the canvas recenters on it.
 		roots.forEach((entry, i) => {
 			entry.lineage.x = i * (NODE_W + NODE_GAP_X);
@@ -305,9 +305,9 @@ class BenchStore {
 		this.playback.start((elapsed, frameSeconds) => this.tick(elapsed, frameSeconds));
 	}
 
-	/** Tear down completely — every field returns to its construction default, no state survives. */
+	/** Tear down completely - every field returns to its construction default, no state survives. */
 	destroy(): void {
-		story.exit(); // the film is composed from bench worlds — it cannot outlive them
+		story.exit(); // the film is composed from bench worlds - it cannot outlive them
 		this.playback.reset();
 		this.painters.clear();
 		this.worlds = [];
@@ -330,9 +330,9 @@ class BenchStore {
 	}
 
 	/*
-	 * EVERYTHING keyed by world id, cleared — or it leaks into the next bench.
+	 * EVERYTHING keyed by world id, cleared - or it leaks into the next bench.
 	 *
-	 * Ids are handed out from #nextId, which the callers reset to 0 — so the world called `w1` in the
+	 * Ids are handed out from #nextId, which the callers reset to 0 - so the world called `w1` in the
 	 * next bench is a different world with the same name, and a stale exhibit or assay left behind
 	 * would attach itself to it. The tank would show clones of a brain from a run that no longer
 	 * exists. (Found by two tests failing in a way that depended on the ORDER they ran in.)
@@ -359,7 +359,7 @@ class BenchStore {
 		this.requestPaint();
 	}
 
-	/** What a card is SHOWING — a staged trial, an exhibit, or (usually) the real run. */
+	/** What a card is SHOWING - a staged trial, an exhibit, or (usually) the real run. */
 	shown(id: string): World {
 		const world = this.shownOrNull(id);
 		if (!world) throw new Error(`bench: no world with id "${id}"`);
@@ -369,8 +369,8 @@ class BenchStore {
 	/**
 	 * The same answer, but `null` instead of a throw when the world is gone.
 	 *
-	 * PAINTERS MUST USE THIS ONE. A canvas can be asked to repaint outside the sim loop — a
-	 * ResizeObserver fires, a DPR change lands — and it can happen in the same frame the world it was
+	 * PAINTERS MUST USE THIS ONE. A canvas can be asked to repaint outside the sim loop - a
+	 * ResizeObserver fires, a DPR change lands - and it can happen in the same frame the world it was
 	 * drawing was removed. `shown()` throws there, by design, because a store method called with a
 	 * dead id is a caller bug. A PAINTER, though, is not a caller: it is a callback the platform can
 	 * run whenever it likes, and a throw inside one killed the sim loop's timer chain once already
@@ -392,7 +392,7 @@ class BenchStore {
 	/*
 	 * Both of these read the REACTIVE record, never the Map the trials live in.
 	 *
-	 * The Map is a plain field — the trial inside it is a world, mutated 60×/s, and proxying that would
+	 * The Map is a plain field - the trial inside it is a world, mutated 60×/s, and proxying that would
 	 * be as ruinous here as anywhere else in this store. But a component that asked the Map "is an
 	 * assay running?" would be asking a question nothing ever wakes it from: the panel rendered its
 	 * idle state and stayed there while twelve trials played out behind it. The reactive record is what
@@ -404,7 +404,7 @@ class BenchStore {
 		return this.#assayProgress[id] !== undefined;
 	}
 
-	/** How far through the bearings it is — for "trial 3 of 12". */
+	/** How far through the bearings it is - for "trial 3 of 12". */
 	assayProgress(id: string): { index: number; total: number } | null {
 		const index = this.#assayProgress[id];
 		if (index === undefined) return null;
@@ -419,14 +419,14 @@ class BenchStore {
 	/**
 	 * Ask this world's best brain the same question from every direction.
 	 *
-	 * Takes over the tank — one fish, one shark, staged — because that IS the experiment: a free-
+	 * Takes over the tank - one fish, one shark, staged - because that IS the experiment: a free-
 	 * running tank cannot be asked anything on demand. The run underneath is HELD while it happens,
 	 * exactly as a frozen exhibit holds it, so an answer never costs the experiment a generation.
 	 */
 	runAssay(id: string): boolean {
 		const entry = this.entry(id);
 		const genome = championGenome(entry.world);
-		if (!genome) return false; // nothing has been judged yet — there is no brain to question
+		if (!genome) return false; // nothing has been judged yet - there is no brain to question
 
 		this.#closeExhibit(id); // one thing in a tank at a time
 		if (this.selection?.worldId === id) this.clearSelection();
@@ -437,7 +437,7 @@ class BenchStore {
 		 * THE MEASUREMENT is the whole population's, and it is taken here, at once, headlessly.
 		 *
 		 * One brain answers about ten scoreable bearings, and ten coin flips carry an error bar of some
-		 * sixteen percentage points — the same champion measured 50% one run and 60% the next while
+		 * sixteen percentage points - the same champion measured 50% one run and 60% the next while
 		 * nothing about it had changed. A few hundred decisions across every living brain is an
 		 * instrument; ten is an anecdote with a percent sign.
 		 */
@@ -465,7 +465,7 @@ class BenchStore {
 		return true;
 	}
 
-	/** Put a finished assay's verdict away — the panel collapses back to just its button. */
+	/** Put a finished assay's verdict away - the panel collapses back to just its button. */
 	clearAssayResult(id: string): void {
 		if (this.#assayResults[id] === undefined) return;
 		const next = { ...this.#assayResults };
@@ -485,7 +485,7 @@ class BenchStore {
 	}
 
 	/**
-	 * Put champion clones in a tank — or take them out again.
+	 * Put champion clones in a tank - or take them out again.
 	 *
 	 * Refuses when there is no champion yet (generation 0 has nothing to exhibit, and exhibiting a
 	 * random brain as "the best" would be a lie the UI would happily tell). Returns whether it took.
@@ -530,7 +530,7 @@ class BenchStore {
 	}
 
 	/**
-	 * Play a staged assay forward — the SAME trials the harness runs, one frame at a time.
+	 * Play a staged assay forward - the SAME trials the harness runs, one frame at a time.
 	 *
 	 * When a trial ends it is scored and the next bearing is set up, so the tank walks all the way
 	 * round the fish. When the last one ends the verdict is published and the tank goes back to its
@@ -546,7 +546,7 @@ class BenchStore {
 		for (let i = 0; i < steps; i++) {
 			if (!stepTrial(assay.trial, dt)) continue;
 
-			// This bearing has been shown. Move round. (Nothing is SCORED here — the verdict was
+			// This bearing has been shown. Move round. (Nothing is SCORED here - the verdict was
 			// measured across the whole population when the assay was started; this is the film of it.)
 			assay.index++;
 
@@ -555,7 +555,7 @@ class BenchStore {
 				return;
 			}
 
-			// The selection cannot follow a fish into the next trial — that fish no longer exists.
+			// The selection cannot follow a fish into the next trial - that fish no longer exists.
 			if (this.selection?.worldId === id) this.clearSelection();
 			assay.trial = makeTrial(entry.world.cfg, assay.genome, assay.bearings[assay.index], {
 				seed: assay.seed
@@ -578,12 +578,12 @@ class BenchStore {
 	}
 
 	/**
-	 * An exhibit's OWN random stream — never the real world's.
+	 * An exhibit's OWN random stream - never the real world's.
 	 *
 	 * Handing it `world.rng` was the bug the sabotage pass found: the exhibit would then draw from the
 	 * run's stream every time it spawned a shark or stepped a fish, so a run you merely LOOKED at came
 	 * out different from one you did not. The whole promise of a sealed exhibit is that observing it
-	 * costs the experiment nothing, and an experiment shares nothing with an observer — including its
+	 * costs the experiment nothing, and an experiment shares nothing with an observer - including its
 	 * dice.
 	 */
 	#exhibitRng(world: World): Rng {
@@ -598,12 +598,12 @@ class BenchStore {
 	trainTo(gen: number): void {
 		/*
 		 * A training burst fast-forwards every real run, so an exhibit's champion is about to be
-		 * superseded — possibly a hundred times over.
+		 * superseded - possibly a hundred times over.
 		 *
 		 * The first version CLOSED the exhibits, which the owner rightly called a bug: you switch the
 		 * clones on, press Train, and the thing you were looking at is gone. Pressing Train is not a
 		 * request to stop looking at clones. So the MODE survives the burst, and each exhibit is
-		 * re-cloned from the new champion when the burst ends (see #tickBench) — you come back to the
+		 * re-cloned from the new champion when the burst ends (see #tickBench) - you come back to the
 		 * same view, showing the brain that just finished evolving.
 		 *
 		 * An assay in flight is a different thing: it is a measurement of a brain that is about to stop
@@ -617,7 +617,7 @@ class BenchStore {
 	 * How many generations a world trains for before it deploys. 0 = never.
 	 *
 	 * Lowering it below where a world already is deploys that world on the spot; raising it puts the
-	 * world back to evolving, which is the honest thing to do — the run is over, and what is left of
+	 * world back to evolving, which is the honest thing to do - the run is over, and what is left of
 	 * the population breeds on. Reaching a limit is not a one-way door, it is just a limit.
 	 */
 	setMaxGenerations(gen: number): void {
@@ -631,7 +631,7 @@ class BenchStore {
 	addWorld(cfg: WorldConfig): void {
 		const entry = this.#create(structuredClone(cfg));
 		// A hand-added world is a NEW root, dropped to the right of the rightmost node so it never
-		// lands on top of one. (It has no parent — only a branch wires an edge.)
+		// lands on top of one. (It has no parent - only a branch wires an edge.)
 		const rightEdge = this.worlds.reduce((x, e) => Math.max(x, e.lineage.x + NODE_W), -NODE_GAP_X);
 		entry.lineage.x = this.worlds.length ? rightEdge + NODE_GAP_X : 0;
 		entry.lineage.y = 0;
@@ -641,7 +641,7 @@ class BenchStore {
 	/**
 	 * Take this world into Research: hand its config to the app store as the analysis subject and
 	 * switch to Research. The Studio→Research half of the round-trip. A CLONE is handed over so the
-	 * subject is a frozen snapshot — later edits to the live world never mutate what Research measures.
+	 * subject is a frozen snapshot - later edits to the live world never mutate what Research measures.
 	 */
 	analyzeWorld(id: string): void {
 		const entry = this.find(id);
@@ -649,7 +649,7 @@ class BenchStore {
 		app.analyze(structuredClone(entry.world.cfg));
 	}
 
-	/** Slide a node to a new canvas position (the drag handler's one job). View-only — no sim touched. */
+	/** Slide a node to a new canvas position (the drag handler's one job). View-only - no sim touched. */
 	moveWorld(id: string, x: number, y: number): void {
 		const entry = this.find(id);
 		if (!entry) return;
@@ -658,7 +658,7 @@ class BenchStore {
 	}
 
 	/**
-	 * Fork a world into a wired child — the controlled experiment.
+	 * Fork a world into a wired child - the controlled experiment.
 	 *
 	 * The child inherits the parent's CURRENT evolved brains (every genome as it stands this
 	 * generation), so the two share an evolutionary starting point and any later difference is caused
@@ -695,7 +695,7 @@ class BenchStore {
 	/**
 	 * A wrapped new world that starts EXACTLY where `source` is: its config, its evolved genomes
 	 * (cloned, not shared), and its generation / survival curve / champion carried across. The shared
-	 * heart of both fork paths — branch (wires a lineage edge) and duplicate (a free-standing copy) —
+	 * heart of both fork paths - branch (wires a lineage edge) and duplicate (a free-standing copy) -
 	 * so the carry-over rule lives in one place. Does not touch the source, nor place the new node.
 	 */
 	#forkFrom(source: WorldEntry, nameSuffix: string): WorldEntry {
@@ -729,7 +729,7 @@ class BenchStore {
 			if (entry.lineage.parentId === id) entry.lineage.parentId = null;
 		}
 		this.#setWorlds(this.worlds.filter((entry) => entry.id !== id));
-		// Anything pointing INTO the world that just went away has to go with it, now — not on the
+		// Anything pointing INTO the world that just went away has to go with it, now - not on the
 		// next frame, or a component could render one frame against a world the bench no longer has.
 		if (this.selection?.worldId === id) this.selection = null;
 		if (this.conditionsWorldId === id) this.conditionsWorldId = null;
@@ -747,14 +747,14 @@ class BenchStore {
 		this.requestPaint();
 	}
 
-	/** Restart every world from random brains — the whole bench back to generation zero. */
+	/** Restart every world from random brains - the whole bench back to generation zero. */
 	resetAll(): void {
 		for (const entry of this.worlds) this.resetWorld(entry.id);
 		this.generationsEvolved = 0;
 	}
 
 	/**
-	 * Rename a world. A name is a label, not a condition — nothing about the simulation changes, so
+	 * Rename a world. A name is a label, not a condition - nothing about the simulation changes, so
 	 * this deliberately does NOT go through applyCfg.
 	 */
 	renameWorld(id: string, name: string): void {
@@ -764,7 +764,7 @@ class BenchStore {
 
 	/** Apply live config edits without wiping learning. */
 	applyConfig(id: string): void {
-		// The conditions the exhibit — or the assay — was staged in have changed underneath it.
+		// The conditions the exhibit - or the assay - was staged in have changed underneath it.
 		this.stopAssay(id);
 		this.#closeExhibit(id);
 		engineApplyCfg(this.entry(id).world);
@@ -780,14 +780,14 @@ class BenchStore {
 	 * rather than dropping in random brains; removing prey takes them out of the roster too. That is
 	 * `applyCfg`'s job, and it is why every edit here ends in it.
 	 *
-	 * The value is clamped to WORLD_LIMITS on the way in — the engine does not validate, and a
+	 * The value is clamped to WORLD_LIMITS on the way in - the engine does not validate, and a
 	 * container 40px wide or a population of -3 is not an experiment, it is a crash.
 	 */
 	setCondition(id: string, key: NumericCondition, value: number): void {
 		const { world } = this.entry(id);
 		world.cfg[key] = clamp(value, WORLD_LIMITS[key]);
 		// Changing the brain SHAPE (its hidden-neuron count) rebuilds every genome, so the old evolved
-		// weights no longer fit — evolution has to restart at the new shape. Every other condition is a
+		// weights no longer fit - evolution has to restart at the new shape. Every other condition is a
 		// live edit that keeps the run going (applyCfg). resetWorld also clears the exhibit/assay/eval
 		// that described the population that just went away.
 		engineApplyCfg(world);
@@ -795,7 +795,7 @@ class BenchStore {
 	}
 
 	/**
-	 * Set the brain's ARCHITECTURE — the hidden layers, as a list of neuron counts ([6] is the
+	 * Set the brain's ARCHITECTURE - the hidden layers, as a list of neuron counts ([6] is the
 	 * reference single layer; [16, 8] is two hidden layers). The genome shape changes, so evolution
 	 * restarts (resetWorld): you are wiring a differently-shaped brain, not editing the one you had.
 	 * Each layer's size and the layer count are clamped to sane bounds.
@@ -809,7 +809,7 @@ class BenchStore {
 
 	/**
 	 * The shark's hunger ramp: on, it gets faster and wider-jawed the longer it goes without a
-	 * kill, so no stalemate lasts forever and nothing stays safe. Off — the bench's default — it
+	 * kill, so no stalemate lasts forever and nothing stays safe. Off - the bench's default - it
 	 * is the same hunter all run long, and a population that genuinely learned is allowed to LOOK
 	 * safe, which is the only way evolved evasion ever reads on screen.
 	 *
@@ -831,7 +831,7 @@ class BenchStore {
 
 	/**
 	 * Does the adversary DART? On is the reference strike; off, it only pursues at cruise and eats on
-	 * contact. Live, like every other condition — the population meets the change where it stands.
+	 * contact. Live, like every other condition - the population meets the change where it stands.
 	 */
 	setLunge(id: string, on: boolean): void {
 		const { world } = this.entry(id);
@@ -840,7 +840,7 @@ class BenchStore {
 		this.#publishConfig(id);
 	}
 
-	/** The world's colour. A label, like the name — nothing about the simulation changes. */
+	/** The world's colour. A label, like the name - nothing about the simulation changes. */
 	setAccent(id: string, accent: string): void {
 		this.entry(id).world.cfg.accent = accent;
 		this.#publishConfig(id);
@@ -852,7 +852,7 @@ class BenchStore {
 		this.#publishConfig(id);
 	}
 
-	/** Toggle one sense — a true live ablation (the input neuron then receives 0). */
+	/** Toggle one sense - a true live ablation (the input neuron then receives 0). */
 	toggleSense(id: string, sense: keyof Senses): void {
 		this.setSense(id, sense, !this.entry(id).world.cfg.senses[sense]);
 	}
@@ -896,15 +896,15 @@ class BenchStore {
 	 */
 	setHover(id: string, target: Fish | Predator | null): void {
 		if (!this.find(id)) return;
-		const world = this.shown(id); // the tank you are pointing AT — the exhibit, when one is up
-		if (world.hover === target) return; // mousemove fires at pointer rate —
+		const world = this.shown(id); // the tank you are pointing AT - the exhibit, when one is up
+		if (world.hover === target) return; // mousemove fires at pointer rate -
 		world.hover = target; // an unchanged hover must not wake a paused bench's canvases
 		this.requestPaint();
 	}
 
 	// ---- selection (one inspector, so one selection across the bench) ----
 
-	/** Select what the pointer landed on — a fish, the shark, or (on empty water) nothing. */
+	/** Select what the pointer landed on - a fish, the shark, or (on empty water) nothing. */
 	select(id: string, picked: Picked | null): void {
 		this.#walkSelection = false; // a pick is a pointer act unless cycleSelection says otherwise
 		this.#deselectEverywhere();
@@ -919,10 +919,10 @@ class BenchStore {
 		this.#watch(id, picked.obj, false);
 	}
 
-	/** "★ Champion" — watch the best brain currently alive, and keep watching it as it evolves. */
+	/** "★ Champion" - watch the best brain currently alive, and keep watching it as it evolves. */
 	selectChampion(id: string): void {
 		const best = bestAliveFish(this.shown(id));
-		if (!best) return; // nothing alive to watch — leave the current selection alone
+		if (!best) return; // nothing alive to watch - leave the current selection alone
 		this.#walkSelection = false;
 		this.#deselectEverywhere();
 		this.#watch(id, best, true);
@@ -934,7 +934,7 @@ class BenchStore {
 	}
 
 	/**
-	 * Move the selection to the next or previous creature in a world — the keyboard's click.
+	 * Move the selection to the next or previous creature in a world - the keyboard's click.
 	 *
 	 * The walk is the fish as the engine lists them, then ONE stop for the predator: sharks are
 	 * identical rule-machines and the store records a predator selection without saying which,
@@ -951,7 +951,7 @@ class BenchStore {
 		if (stops.length === 0) return;
 
 		// Entering from nothing: one step forward lands on the first stop, one step back on the
-		// last — as if the selection had been standing just outside the matching end.
+		// last - as if the selection had been standing just outside the matching end.
 		const current = this.#selectedStop(id, world, stops);
 		const start = current ?? (direction === 1 ? -1 : stops.length);
 		const target = stops[(start + direction + stops.length) % stops.length];
@@ -969,7 +969,7 @@ class BenchStore {
 			const index = stops.indexOf(world.selFish);
 			return index === -1 ? null : index;
 		}
-		// The single predator stop — which only exists while predators do. A pred selection can
+		// The single predator stop - which only exists while predators do. A pred selection can
 		// outlive its predators (Conditions can set them to 0), and treating it as a stop then
 		// would start the walk one past the end and skip the first fish.
 		if (this.selection.type === 'pred') return world.preds.length ? world.fish.length : null;
@@ -980,7 +980,7 @@ class BenchStore {
 	 * Roll the film. The bench stops where it is and waits.
 	 *
 	 * Not while it is TRAINING, though: a story does not advance the bench, so a turbo burst caught
-	 * mid-flight would simply hang there — the pill spinning behind the film, the worlds frozen part
+	 * mid-flight would simply hang there - the pill spinning behind the film, the worlds frozen part
 	 * way to their target. Let the training land first.
 	 */
 	playStory(): boolean {
@@ -997,7 +997,7 @@ class BenchStore {
 		this.clearSelection();
 		story.exit();
 		this.playback.play();
-		this.requestPaint(); // the bench slept through the film — wake its canvases
+		this.requestPaint(); // the bench slept through the film - wake its canvases
 	}
 
 	/** Look up a world, throwing on an unknown id (a miss is always a caller bug). */
@@ -1007,7 +1007,7 @@ class BenchStore {
 
 	/**
 	 * Look up a world. Includes the STORY world, which is not on the bench but is very much on
-	 * screen — you can click a fish mid-film and read its brain, and the inspector has no idea it is
+	 * screen - you can click a fish mid-film and read its brain, and the inspector has no idea it is
 	 * looking at a scene.
 	 */
 	find(id: string): WorldEntry | undefined {
@@ -1024,10 +1024,10 @@ class BenchStore {
 	}
 
 	/**
-	 * Relaunch the whole bench on a seed — the control that makes a run REPRODUCIBLE.
+	 * Relaunch the whole bench on a seed - the control that makes a run REPRODUCIBLE.
 	 *
 	 * Everything goes: the worlds, their evolved brains, the curves, the selection. That is the
-	 * point — a seeded run is a fresh experiment, not the old one relabelled, and pretending
+	 * point - a seeded run is a fresh experiment, not the old one relabelled, and pretending
 	 * otherwise would hand someone a manifest that does not reproduce what they are looking at.
 	 * Pass null to go back to an unseeded run.
 	 */
@@ -1042,12 +1042,12 @@ class BenchStore {
 	}
 
 	/**
-	 * Turn SCHOOLING on or off for one world — grouping as a config option, not a separate exhibit.
+	 * Turn SCHOOLING on or off for one world - grouping as a config option, not a separate exhibit.
 	 *
 	 * On: the world gains the confusion effect (the reason to group), the 14-slot brain that carries
 	 * the shoal senses, wall-avoidance so a school does not trap in a corner, and the cohesion/align
 	 * senses switched on. Off: back to the reference 8-slot brain with no confusion and the shoal
-	 * senses removed. Either way the brain SHAPE changes, so evolution restarts (resetWorld) — you are
+	 * senses removed. Either way the brain SHAPE changes, so evolution restarts (resetWorld) - you are
 	 * asking a differently-wired brain to evolve, not editing the one you had. Everything not in the
 	 * schooling bundle (predator speed, tank, the predator senses) is left exactly as the world had it.
 	 */
@@ -1065,7 +1065,7 @@ class BenchStore {
 			delete next.align;
 			c.senses = next;
 		}
-		this.resetWorld(id); // the brain shape changed — the run starts over at the new wiring
+		this.resetWorld(id); // the brain shape changed - the run starts over at the new wiring
 		this.#publishConfig(id);
 	}
 
@@ -1075,7 +1075,7 @@ class BenchStore {
 	 */
 	tick(elapsed: number, frameSeconds: number = elapsed): void {
 		// The governor judges RENDERING, so it must not see training frames: turbo deliberately
-		// burns a 15ms slice per frame, which reads as ~31ms — past the downgrade line — and the
+		// burns a 15ms slice per frame, which reads as ~31ms - past the downgrade line - and the
 		// load-time prewarm alone would ratchet every machine to 'performance' before the first
 		// story ever played.
 		if (!this.playback.training && this.#governor.sample(frameSeconds)) {
@@ -1093,7 +1093,7 @@ class BenchStore {
 	/**
 	 * Ask for one repaint even though the sim is not advancing. Every store method that changes
 	 * what the pixels are built from calls this, so a PAUSED bench still shows a hover ring or a
-	 * widened tank the frame after the interaction — and shows nothing at all the rest of the time.
+	 * widened tank the frame after the interaction - and shows nothing at all the rest of the time.
 	 */
 	requestPaint(): void {
 		this.#needsPaint = true;
@@ -1102,7 +1102,7 @@ class BenchStore {
 	/**
 	 * Repaint only when there is something new to show: the sim advanced, or an interaction
 	 * changed the picture. A paused bench repainting sixteen canvases at 60fps was Phase 9's
-	 * biggest measured waste — worse, it kept doing it behind a playing film.
+	 * biggest measured waste - worse, it kept doing it behind a playing film.
 	 */
 	#paint(): void {
 		const advanced = this.playback.running || this.playback.training;
@@ -1137,7 +1137,7 @@ class BenchStore {
 	 *
 	 * The clock runs on SIM time, so ½× and 2× slow down and speed up the film itself: a scene lasts
 	 * as long as it takes the fish to live 18 seconds, not 18 of ours. The last scene does not hand
-	 * over — it stops, holding its final image.
+	 * over - it stops, holding its final image.
 	 */
 	#advanceScene(elapsed: number): void {
 		if (!story.advance(elapsed * this.playback.speed)) return;
@@ -1152,10 +1152,10 @@ class BenchStore {
 			/*
 			 * AN EXHIBIT KEEPS SWIMMING THROUGH A BURST.
 			 *
-			 * Turbo fast-forwards the real runs and does not animate them — that is the whole bargain,
+			 * Turbo fast-forwards the real runs and does not animate them - that is the whole bargain,
 			 * and the pill says so. But an exhibit is not one of the runs being trained: it is a tank the
 			 * user is watching. Leaving it unstepped left a STILL IMAGE on screen for as long as the
-			 * burst lasted (gen 1 → 150 is a long minute), which reads as an application that has hung —
+			 * burst lasted (gen 1 → 150 is a long minute), which reads as an application that has hung -
 			 * and it reads that way ONLY when the clones are on, which is exactly what the owner saw.
 			 * Twenty fish in one tank is nothing next to a training burst; it can afford to swim.
 			 */
@@ -1169,9 +1169,9 @@ class BenchStore {
 				this.playback.finishTraining();
 				// The burst is over and every champion has moved. Any exhibit that was up is re-cloned
 				// from the brain that just came out of it, so the view the user left is the view they
-				// come back to — showing what the run has learned rather than what it used to know.
+				// come back to - showing what the run has learned rather than what it used to know.
 				for (const id of [...this.#exhibitWorlds.keys()]) this.#rebuildExhibit(id);
-				this.requestPaint(); // the flag is already down when #paint runs — still show the result
+				this.requestPaint(); // the flag is already down when #paint runs - still show the result
 			}
 		} else if (this.playback.running) {
 			const { steps, dt } = subSteps(elapsed, this.playback.speed);
@@ -1181,7 +1181,7 @@ class BenchStore {
 				const assay = this.#assays.get(entry.id);
 
 				// An assay HOLDS the run, exactly as a frozen exhibit does: asking a question must never
-				// cost the experiment a generation. FROZEN is the same promise — the real run does not
+				// cost the experiment a generation. FROZEN is the same promise - the real run does not
 				// advance one step while you are looking at the clones, so switching the exhibit off puts
 				// you back exactly where you were.
 				if (!assay && mode !== 'frozen') {
@@ -1192,7 +1192,7 @@ class BenchStore {
 					for (let i = 0; i < steps; i++) stepWorld(exhibit, dt);
 
 					// An exhibit never respawns (it cannot: nothing in it breeds), so when the sharks have
-					// eaten the last clone the show is over — put the same brain back in the water and run
+					// eaten the last clone the show is over - put the same brain back in the water and run
 					// it again. A live exhibit ALSO re-clones whenever its world turns a generation, which
 					// is what lets you watch the strategy sharpen.
 					const turned = mode === 'live' && entry.world.gen !== this.#exhibitGen.get(entry.id);
@@ -1206,7 +1206,7 @@ class BenchStore {
 		for (const entry of this.worlds) {
 			entry.world.championFish = bestAliveFish(entry.world);
 			entry.stats.syncFrom(entry.world);
-			// The lens reads what is IN THE WATER — which, under an exhibit, is the champion's clones.
+			// The lens reads what is IN THE WATER - which, under an exhibit, is the champion's clones.
 			// That is the point: the lens on an exhibit is the champion's own flee error, with the
 			// mutant smear removed.
 			entry.stats.syncLens(this.shown(entry.id), lensOn);
@@ -1227,7 +1227,7 @@ class BenchStore {
 	}
 
 	/**
-	 * There is one inspector, so at most one world may hold a selected fish — the scene included.
+	 * There is one inspector, so at most one world may hold a selected fish - the scene included.
 	 * Every selection change passes through here, so this is also where the repaint is owed: a
 	 * ring appearing or vanishing must reach a paused canvas too.
 	 */
@@ -1247,7 +1247,7 @@ class BenchStore {
 	/**
 	 * Keep the selection honest once the world has moved on.
 	 *
-	 * The engine drops `selFish` the moment that fish stops existing — eaten, or replaced when its
+	 * The engine drops `selFish` the moment that fish stops existing - eaten, or replaced when its
 	 * generation ended. So a null pointer here means the creature the user was watching is gone, and
 	 * we either follow the champion lineage into the new generation or admit the selection is over.
 	 * Nothing is ever left pointing at a fish that isn't swimming.
@@ -1263,7 +1263,7 @@ class BenchStore {
 		}
 		const world = this.shown(selection.worldId); // the tank the watched creature is swimming in
 		if (selection.type === 'pred') {
-			// Conditions can remove every predator live — the inspector must not keep presenting
+			// Conditions can remove every predator live - the inspector must not keep presenting
 			// a shark that is no longer in the water.
 			if (world.preds.length === 0) this.selection = null;
 			return;
@@ -1292,7 +1292,7 @@ class BenchStore {
 		return `w${++this.#nextId}`;
 	}
 
-	/** A name no live world is using — two tiles reading "Direction copy" are simply ambiguous. */
+	/** A name no live world is using - two tiles reading "Direction copy" are simply ambiguous. */
 	#uniqueName(wanted: string): string {
 		const taken = new Set(this.worlds.map((entry) => entry.world.cfg.name));
 		if (!taken.has(wanted)) return wanted;
@@ -1304,7 +1304,7 @@ class BenchStore {
 	#wrap(world: World): WorldEntry {
 		world.maxGen = this.#maxGenerations;
 		const entry = makeEntry(this.#id(), world);
-		// what it was created as — every override chip is measured against this
+		// what it was created as - every override chip is measured against this
 		this.#baselines.set(entry.id, structuredClone(world.cfg));
 		return entry;
 	}
@@ -1313,7 +1313,7 @@ class BenchStore {
 	#publishConfig(id: string): void {
 		const entry = this.entry(id);
 		entry.config.syncFrom(entry.world.cfg);
-		// A sense cut or a resized tank reshapes the selected fish's escape map — refresh it now so
+		// A sense cut or a resized tank reshapes the selected fish's escape map - refresh it now so
 		// the edit is visible while paused, too (memoised, so a label-only edit does no work).
 		if (this.selection?.type === 'fish' && this.selection.worldId === id) {
 			this.escape.syncFrom(this.shown(id));

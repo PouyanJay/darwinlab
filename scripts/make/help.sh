@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# The `make help` screen — the command reference a developer sees on a bare `make`.
+# The `make help` screen - the command reference a developer sees on a bare `make`.
 
 set -euo pipefail
 cd "$(dirname "$0")/../.."
@@ -8,7 +8,7 @@ source scripts/make/lib/ui.sh
 row() { printf '    %s%-18s%s %s%s%s\n' "$UI_PRIMARY" "$1" "$UI_RESET" "$UI_DIM" "$2" "$UI_RESET"; }
 head_() { printf '\n  %s%s%s\n' "$UI_BOLD" "$1" "$UI_RESET"; }
 
-printf '\n  %sDarwin Lab%s %s— a browser lab for neuroevolution%s\n' "$UI_BOLD" "$UI_RESET" "$UI_DIM" "$UI_RESET"
+printf '\n  %sDarwin Lab%s %s- a browser lab for neuroevolution%s\n' "$UI_BOLD" "$UI_RESET" "$UI_DIM" "$UI_RESET"
 
 head_ "Setup & Run"
 row "make run" "Everything, end to end: setup + start the dev server"
@@ -22,7 +22,7 @@ head_ "Deploy"
 row "make deploy" "Publish to GitHub Pages on demand (merging never deploys)"
 
 head_ "Testing"
-row "make test" "All suites — unit + e2e — never stopping at the first red"
+row "make test" "All suites - unit + e2e - never stopping at the first red"
 row "make test-unit" "Vitest only"
 row "make test-e2e" "Playwright only (clears stale :4173 servers first)"
 

@@ -12,7 +12,7 @@ describe('SensePill', () => {
 	it('says whether the neuron is live, not just colours it in', () => {
 		const { button } = pill(true);
 
-		// the fill is not the only place this information exists — a screen reader hears "pressed"
+		// the fill is not the only place this information exists - a screen reader hears "pressed"
 		expect(button.element()).toHaveAttribute('aria-pressed', 'true');
 	});
 
@@ -26,7 +26,7 @@ describe('SensePill', () => {
 		expect(cut.button.element()).toHaveAttribute('title', 'grow direction input neuron');
 	});
 
-	it('reports the toggle rather than deciding it — the world is what changes', async () => {
+	it('reports the toggle rather than deciding it - the world is what changes', async () => {
 		const { onclick, button } = pill(true);
 
 		await button.click();

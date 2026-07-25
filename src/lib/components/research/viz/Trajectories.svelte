@@ -1,9 +1,9 @@
 <!--
-  Q5 — how do they DO it (the mechanism)? Small-multiples of the paths a whole population traced through
+  Q5 - how do they DO it (the mechanism)? Small-multiples of the paths a whole population traced through
   one frozen bout, one mini-arena per population, so the shape of one behaviour sits beside another
   (evolved against a random-brain control). A survivor ends its path in a teal dot; a fish that was
   eaten ends in a coral ✕ where its path stops; the hunter is the dashed grey line threading between
-  them. The arena frame and the paths are monochrome — teal (survived) and coral (died) are the only
+  them. The arena frame and the paths are monochrome - teal (survived) and coral (died) are the only
   colours, because the outcome is the data.
 -->
 <script lang="ts">
@@ -14,7 +14,7 @@
 
 	let { panels }: { panels: { title: string; trace: BoutTrace }[] } = $props();
 
-	/** Half-length of an outcome mark (✕ arm / dot radius), in arena units — small and fixed. */
+	/** Half-length of an outcome mark (✕ arm / dot radius), in arena units - small and fixed. */
 	const MARK = 8;
 
 	const points = (path: Point[]) =>

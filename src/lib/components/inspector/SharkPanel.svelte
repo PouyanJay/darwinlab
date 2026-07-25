@@ -1,5 +1,5 @@
 <!--
-  Click the shark and you get told, plainly, that there is nothing to inspect — and why that is the
+  Click the shark and you get told, plainly, that there is nothing to inspect - and why that is the
   design rather than an omission.
 
   The predator has no brain on purpose. A steady, predictable threat is what lets the PREY's evolved

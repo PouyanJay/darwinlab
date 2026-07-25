@@ -1,8 +1,8 @@
 /**
  * The two charts. Faithful port of engine2.js `drawCurve` / `drawDecay`.
  *
- * - drawCurve: the learning curve — survival % across generations (training).
- * - drawDecay: the real-world run — fraction of the deployed batch still alive over time.
+ * - drawCurve: the learning curve - survival % across generations (training).
+ * - drawDecay: the real-world run - fraction of the deployed batch still alive over time.
  *
  * Both are the same sparkline (baseline, line, area fill, head dot) and differ only in the
  * value→y mapping and the colour, so they share one painter.
@@ -16,7 +16,7 @@ import { THEMES, type ThemeName } from './theme';
 
 interface SparklineStyle {
 	color: string;
-	/** value (0–1) → y pixel. */
+	/** value (0-1) → y pixel. */
 	map: (v: number) => number;
 	baselineAlpha: number;
 	fillAlpha: number;
@@ -95,8 +95,8 @@ export function drawCurve(
  * line RISES as a school forms (consistent with the learning curve, where up is the good direction).
  * A loose population sits near the floor; a tight bait-ball climbs toward the top.
  */
-const SCHOOL_TIGHT = 20; // px — a genuinely packed ball
-const SCHOOL_LOOSE = 120; // px — scattered across the tank
+const SCHOOL_TIGHT = 20; // px - a genuinely packed ball
+const SCHOOL_LOOSE = 120; // px - scattered across the tank
 export function drawSchoolCurve(
 	ctx: CanvasRenderingContext2D,
 	W: number,
@@ -115,10 +115,10 @@ export function drawSchoolCurve(
 }
 
 /**
- * The learning curve on a TRUE 0–1 axis — for charts that print an axis (the workbench's metric
+ * The learning curve on a TRUE 0-1 axis - for charts that print an axis (the workbench's metric
  * cards say 1.0 / 0.5 / 0.0), where the sparkline's legibility zoom would make the labels lie:
  * zoomed, a 1% survival rate clamps flat onto the floor and reads as a broken, empty chart.
- * The tile sparklines keep the zoomed drawCurve — they carry no axis, so the zoom misleads nobody.
+ * The tile sparklines keep the zoomed drawCurve - they carry no axis, so the zoom misleads nobody.
  */
 export function drawRate(
 	ctx: CanvasRenderingContext2D,
@@ -137,7 +137,7 @@ export function drawRate(
 }
 
 /** Real-world population decay: fraction of the deployed batch still alive, over time.
- *  In the WORLD'S accent, like every other chart on the card — the accent owns the graphs. */
+ *  In the WORLD'S accent, like every other chart on the card - the accent owns the graphs. */
 export function drawDecay(
 	ctx: CanvasRenderingContext2D,
 	W: number,

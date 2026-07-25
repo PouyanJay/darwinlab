@@ -1,9 +1,9 @@
 <!--
-  The Brain Inspector — the product's soul: a real evolved mind, thinking, while you watch it swim.
+  The Brain Inspector - the product's soul: a real evolved mind, thinking, while you watch it swim.
 
   It is a NON-modal drawer (see Drawer), and that is the whole point: the bench behind it stays live,
   so the fish you are inspecting is still being hunted while you read its brain. Everything in here
-  is the fish's own — its senses this frame, its 68 weights, the motor outputs those weights just
+  is the fish's own - its senses this frame, its 68 weights, the motor outputs those weights just
   produced. Nothing is illustrative.
 
   It closes when the fish stops existing, because the store lets a dead selection go (a hand-picked
@@ -38,10 +38,10 @@
 
 	// The best time of the last generation, not the all-time elite: the elite saturates at the
 	// generation length and sat stuck at 30.0s (see WorldStats.bestFitness).
-	const best = $derived(entry.stats.bestFitness ? `${entry.stats.bestFitness.toFixed(1)}s` : '—');
+	const best = $derived(entry.stats.bestFitness ? `${entry.stats.bestFitness.toFixed(1)}s` : '-');
 </script>
 
-<!-- takeFocus: a selection made by the tank's keyboard walk keeps the walker's focus — a click
+<!-- takeFocus: a selection made by the tank's keyboard walk keeps the walker's focus - a click
      or the ★ Champion button still moves the reader into the panel, announcement and all. -->
 <Drawer
 	open
@@ -111,7 +111,7 @@
 
 	/* The champion's time is the bar this fish is measured against, so it wears the champion's gold. */
 	.gold {
-		color: var(--gold-ink); /* gold AS TEXT — see tokens.css */
+		color: var(--gold-ink); /* gold AS TEXT - see tokens.css */
 	}
 
 	.section {

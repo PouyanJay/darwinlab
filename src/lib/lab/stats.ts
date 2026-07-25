@@ -1,13 +1,13 @@
 /**
- * Statistics for Research — the honest math over what an evaluation already measures.
+ * Statistics for Research - the honest math over what an evaluation already measures.
  *
  * `evaluate()` returns `returns: number[]`, one seconds-survived figure per independent seed. This
  * module turns those samples into the things a conclusion is made of: a mean, a confidence interval
  * that does not overstate what a handful of seeds can tell you, a standardized effect size, and a
- * two-arm contrast. Nothing here re-measures anything — it is arithmetic over the returns.
+ * two-arm contrast. Nothing here re-measures anything - it is arithmetic over the returns.
  *
  * The confidence intervals are BOOTSTRAP intervals, and the resampling runs off a SEEDED rng by
- * default, so the same data always yields the same interval — reproducible, like every other number
+ * default, so the same data always yields the same interval - reproducible, like every other number
  * the lab reports. Pass your own rng to vary it.
  *
  * Pure: no Svelte, no DOM. It is imported by the worker as readily as by a component.
@@ -25,7 +25,7 @@ export interface Contrast {
 	delta: number;
 	/** Bootstrap confidence interval on `delta`. Clears zero ⇒ a real difference at this level. */
 	ci: Interval;
-	/** Cohen's d — the difference in pooled-standard-deviation units. */
+	/** Cohen's d - the difference in pooled-standard-deviation units. */
 	d: number;
 }
 
@@ -43,14 +43,14 @@ export function mean(xs: number[]): number {
 	return xs.reduce((a, b) => a + b, 0) / xs.length;
 }
 
-/** Population standard deviation (÷n) — the same error bar `evaluate()` reports as `sdReturn`. */
+/** Population standard deviation (÷n) - the same error bar `evaluate()` reports as `sdReturn`. */
 export function stdev(xs: number[]): number {
 	if (xs.length === 0) return NaN;
 	const m = mean(xs);
 	return Math.sqrt(xs.reduce((a, v) => a + (v - m) ** 2, 0) / xs.length);
 }
 
-/** Sample variance (÷n−1) — the unbiased estimator Cohen's d's pooled sd is built from. */
+/** Sample variance (÷n−1) - the unbiased estimator Cohen's d's pooled sd is built from. */
 function sampleVariance(xs: number[]): number {
 	if (xs.length < 2) return 0;
 	const m = mean(xs);
@@ -67,7 +67,7 @@ function percentile(sorted: number[], p: number): number {
 	return sorted[lo] + (sorted[hi] - sorted[lo]) * (rank - lo);
 }
 
-/** The two-sided interval from a sorted bootstrap distribution — shared by both bootstrap functions. */
+/** The two-sided interval from a sorted bootstrap distribution - shared by both bootstrap functions. */
 function boundsFrom(sortedValues: number[], alpha: number): Interval {
 	return { lo: percentile(sortedValues, alpha / 2), hi: percentile(sortedValues, 1 - alpha / 2) };
 }
@@ -91,7 +91,7 @@ function resampleMean(xs: number[], rng: () => number): number {
 /**
  * A bootstrap confidence interval for the mean of `xs`.
  *
- * With no variation in the sample the interval collapses to the value itself — a bootstrap of
+ * With no variation in the sample the interval collapses to the value itself - a bootstrap of
  * identical numbers can only ever resample identical numbers, which is the honest answer.
  */
 export function bootstrapCI(xs: number[], options: BootstrapOptions = {}): Interval {
@@ -105,7 +105,7 @@ export function bootstrapCI(xs: number[], options: BootstrapOptions = {}): Inter
 }
 
 /**
- * Cohen's d — how far apart two samples are, measured in their shared spread. The denominator is
+ * Cohen's d - how far apart two samples are, measured in their shared spread. The denominator is
  * the pooled SAMPLE standard deviation (÷n−1), the conventional definition. Zero spread ⇒ zero
  * (a difference with no scale to measure it against is not an effect size).
  */
@@ -118,7 +118,7 @@ export function cohensD(a: number[], b: number[]): number {
 	return pooledSd === 0 ? 0 : (mean(a) - mean(b)) / pooledSd;
 }
 
-/** A contrast with no standardized effect size — the interaction's shape (Cohen's d has no clean
+/** A contrast with no standardized effect size - the interaction's shape (Cohen's d has no clean
  *  meaning for a difference of differences, so none is invented). */
 export interface DifferenceContrast {
 	delta: number;
@@ -129,7 +129,7 @@ export interface DifferenceContrast {
  * The 2×2 INTERACTION contrast: (A's effect with B at its top) − (A's effect with B at its bottom),
  * i.e. (mean(tt) − mean(bt)) − (mean(tb) − mean(bb)) where the first letter is A's level and the
  * second is B's. The bootstrap resamples all four pools independently. An interval clearing zero
- * means A's value genuinely DEPENDS on B — parallel lines are the null.
+ * means A's value genuinely DEPENDS on B - parallel lines are the null.
  */
 export function interactionContrast(
 	tt: number[],
@@ -142,7 +142,7 @@ export function interactionContrast(
 		return { delta: NaN, ci: { lo: NaN, hi: NaN } };
 	}
 	const { alpha, resamples, rng } = resolveOptions(options);
-	// tt − bt − tb + bb. NOTE: algebraically SYMMETRIC under tb↔bt — "A's dependence on B" and
+	// tt − bt − tb + bb. NOTE: algebraically SYMMETRIC under tb↔bt - "A's dependence on B" and
 	// "B's dependence on A" are the same interaction, so a swapped middle pair is not a bug a
 	// delta assertion could ever catch (and not a bug at all).
 	const statistic = (a: number, b: number, c: number, d: number) => a - c - (b - d);
@@ -169,7 +169,7 @@ export function interactionContrast(
  * makes "a pays more than b" a claim rather than a hope.
  */
 export function contrast(a: number[], b: number[], options: BootstrapOptions = {}): Contrast {
-	// An empty arm has no difference to report — say so, rather than returning a delta of NaN dressed
+	// An empty arm has no difference to report - say so, rather than returning a delta of NaN dressed
 	// as a number, mirroring bootstrapCI's explicit empty handling.
 	if (a.length === 0 || b.length === 0) return { delta: NaN, ci: { lo: NaN, hi: NaN }, d: NaN };
 	const { alpha, resamples, rng } = resolveOptions(options);

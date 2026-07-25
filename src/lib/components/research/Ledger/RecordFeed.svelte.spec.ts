@@ -6,7 +6,7 @@ import { app, ledger } from '$lib/state';
 import type { JobExecutor } from '$lib/lab/runner';
 import type { Evaluation } from '$lib/lab/evaluator';
 
-/** Hands back pre-baked evaluations in submit order — arm A first, then arm B. */
+/** Hands back pre-baked evaluations in submit order - arm A first, then arm B. */
 class CannedExecutor implements JobExecutor {
 	readonly concurrency = 1;
 	#queue: (Evaluation | null)[];
@@ -32,7 +32,7 @@ describe('RecordFeed', () => {
 		render(RecordFeed);
 		await expect
 			.element(page.getByTestId('record-feed'))
-			.toHaveTextContent(/No verdicts yet — compose a claim/);
+			.toHaveTextContent(/No verdicts yet - compose a claim/);
 	});
 
 	it('renders one row per settled record with its verdict, delta and fingerprint', async () => {
@@ -51,7 +51,7 @@ describe('RecordFeed', () => {
 		await expect.element(rows.first()).toHaveTextContent(ledger.entries[0].configHash);
 	});
 
-	it('clicking a row opens it in the drill — the selection reaches the store', async () => {
+	it('clicking a row opens it in the drill - the selection reaches the store', async () => {
 		ledger.compose('rivalry', { x: 'dir', y: 'dist' });
 		await ledger.run(new CannedExecutor([evalWith([5]), evalWith([3])]));
 		ledger.compose('solo', { x: 'walls' });

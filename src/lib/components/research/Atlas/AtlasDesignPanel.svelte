@@ -1,9 +1,9 @@
 <!--
-  The Atlas's DESIGN PANEL — the console's second sidebar, where the plane is designed.
+  The Atlas's DESIGN PANEL - the console's second sidebar, where the plane is designed.
 
   Top to bottom: AXES (two dropdowns that can never face each other, each with a continuous
-  from → to range — the Atlas's whole difference from the Sweep's chips), RESOLUTION (a fixed menu,
-  priced honestly: finer costs quadratically), the PINNED BACKGROUND (two-state off·on rows — the
+  from → to range - the Atlas's whole difference from the Sweep's chips), RESOLUTION (a fixed menu,
+  priced honestly: finer costs quadratically), the PINNED BACKGROUND (two-state off·on rows - the
   axes are the only things that vary on this instrument), the BUDGET, and a STICKY COMMIT BAR with
   the plan readout and Paint landscape pinned at the panel's foot. Everything reads and writes the
   landscape store, which owns every clamp and snap; the panel is the store's face, not a second brain.
@@ -26,7 +26,7 @@
 	const knob = (key: string) => BOOL_KNOBS.find((k) => k.key === key);
 
 	// The two slots, uniformly: which axis each holds, the setter a pick commits through, and a
-	// LIVE read of the slot's axis — handlers close over a stale render's slot, so a post-commit
+	// LIVE read of the slot's axis - handlers close over a stale render's slot, so a post-commit
 	// read must go through the store, not the captured object.
 	const slots = $derived([
 		{
@@ -45,7 +45,7 @@
 		}
 	]);
 
-	/** The other slot's pick — an axis can never face itself, so it leaves the dropdown. */
+	/** The other slot's pick - an axis can never face itself, so it leaves the dropdown. */
 	const rivalOf = (label: string) =>
 		label === 'x axis' ? landscape.axisY.key : landscape.axisX.key;
 
@@ -53,7 +53,7 @@
 	 * Commit one edge of a slot's range, then write the NORMALISED value back into the input. The
 	 * write-back matters: when the store rejects an edit back to the value the input already showed
 	 * (a degenerate span resets to the full range), the one-way binding sees no change and would
-	 * leave the rejected text on screen — an input quietly lying about what a run would use.
+	 * leave the rejected text on screen - an input quietly lying about what a run would use.
 	 */
 	function commitSpan(
 		slot: (typeof slots)[number],
@@ -83,7 +83,7 @@
 	<section class="dsec">
 		<header class="dsec-head">
 			<span class="eyebrow">Axes</span>
-			<span class="hint">continuous ranges — not chips</span>
+			<span class="hint">continuous ranges - not chips</span>
 		</header>
 		{#each slots as slot (slot.label)}
 			<div class="axisrow">
@@ -119,7 +119,7 @@
 			</div>
 		{/each}
 		<p class="lnote">
-			an axis can't face itself — picking one drops it from the other dropdown. Ranges are the map's
+			an axis can't face itself - picking one drops it from the other dropdown. Ranges are the map's
 			edges; the resolution below slices them evenly.
 		</p>
 	</section>
@@ -141,7 +141,7 @@
 			{/each}
 		</div>
 		<p class="lnote">
-			finer sees the cliff sharper and costs quadratically — <b
+			finer sees the cliff sharper and costs quadratically - <b
 				>the estimate below is the honest price</b
 			>.
 		</p>
@@ -176,7 +176,7 @@
 			</div>
 		{/each}
 		<p class="lnote">
-			two states, no “sweep” — <b>the axes are the only things that vary here</b>. An untouched pin
+			two states, no “sweep” - <b>the axes are the only things that vary here</b>. An untouched pin
 			follows the subject's own truth.
 		</p>
 	</section>
@@ -223,7 +223,7 @@
 			<span class="detail tabular">est. {estLabel} wall clock</span>
 			{#if estMinutes >= GUARD_WARN_MINUTES}
 				<span class="warn"
-					>⚠ medium run: {estLabel} of compute — over {GUARD_WARN_MINUTES} min.</span
+					>⚠ medium run: {estLabel} of compute - over {GUARD_WARN_MINUTES} min.</span
 				>
 			{/if}
 		</div>
@@ -246,7 +246,7 @@
 
 <style>
 	/* The panel is the console's second sidebar: its own scroller, chrome-free, with the commit bar
-	   sticky at its foot — the same skeleton as the Sweep's and the Ledger's panels. */
+	   sticky at its foot - the same skeleton as the Sweep's and the Ledger's panels. */
 	.panel {
 		display: flex;
 		flex-direction: column;

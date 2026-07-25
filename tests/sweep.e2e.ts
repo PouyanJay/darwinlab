@@ -6,7 +6,7 @@ import { gotoApp, runMinimalSweep, scanForViolations } from './helpers';
  * and turns into an effect chart and a run grid, and that the grid-size summary warns honestly when
  * the factorial would overflow the cap.
  *
- * The run is shrunk to the bone — one factor (two conditions) at two seeds — so it is a few worker
+ * The run is shrunk to the bone - one factor (two conditions) at two seeds - so it is a few worker
  * jobs, not a real measurement. The effect's SIGN is not asserted (it is a live measurement); what is
  * asserted is that the pipeline produced a value and a grid at all.
  */
@@ -24,10 +24,10 @@ test('a sweep runs and reports an effect with its run grid', async ({ page }) =>
 	await openSweep(page);
 	await runMinimalSweep(page);
 
-	// The honesty tiles lead: the receipts of the run that actually happened — cells vs planned,
+	// The honesty tiles lead: the receipts of the run that actually happened - cells vs planned,
 	// seeds from the FROZEN receipt, and a wall clock. Values that vary (the clock) are not pinned.
 	const tiles = page.getByTestId('sweep-tiles');
-	await expect(tiles).toContainText('2 / 2'); // cells run of cells planned — fixed by the design
+	await expect(tiles).toContainText('2 / 2'); // cells run of cells planned - fixed by the design
 	await expect(tiles).toContainText('cells · full factorial');
 	await expect(tiles).toContainText('2 seeds each');
 	await expect(tiles).toContainText('wall clock');
@@ -41,20 +41,20 @@ test('a sweep runs and reports an effect with its run grid', async ({ page }) =>
 	await expect(page.getByTestId('sweep-convergence')).toBeVisible();
 	await expect(page.getByTestId('sweep-convergence')).toContainText('learning curves');
 
-	// The conclusion lands: exactly one effect row (Direction — the only factor left in the grid), with
-	// a seconds value. One row, asserted — a second unwanted row would fail loudly, not slip past.
+	// The conclusion lands: exactly one effect row (Direction - the only factor left in the grid), with
+	// a seconds value. One row, asserted - a second unwanted row would fail loudly, not slip past.
 	const effects = page.locator('[data-testid="sweep"] .effects');
 	await expect(effects.locator('.row')).toHaveCount(1);
 	await expect(effects.locator('.row')).toHaveText(/Direction/);
 	await expect(effects.locator('.val')).toHaveText(/[−+]?\d/);
 
 	// The run grid is a canvas now (no per-cell DOM), so assert its fixed shape structurally: 2
-	// conditions × 2 seeds. A real count is safe here — the grid shape is fixed, not a live population.
+	// conditions × 2 seeds. A real count is safe here - the grid shape is fixed, not a live population.
 	const heat = page.getByTestId('sweep-heat');
 	await expect(heat).toHaveAttribute('data-conds', '2');
 	await expect(heat).toHaveAttribute('data-seeds', '2');
 
-	// …and the canvas actually PAINTED — the attributes above only report the intended shape, so sample
+	// …and the canvas actually PAINTED - the attributes above only report the intended shape, so sample
 	// the pixels and prove they aren't one flat colour (cells were filled, not an empty early-return).
 	const painted = await page
 		.locator('[data-testid="sweep-heat"] canvas')
@@ -68,7 +68,7 @@ test('a sweep runs and reports an effect with its run grid', async ({ page }) =>
 		});
 	expect(painted).toBe(true);
 
-	// The redesigned toolbar, the two result cards and the canvas heatmap are all new surface — the
+	// The redesigned toolbar, the two result cards and the canvas heatmap are all new surface - the
 	// painted Sweep must scan axe-clean (the drillable canvas is a role=application widget with a label).
 	expect(await scanForViolations(page)).toEqual([]);
 });
@@ -79,7 +79,7 @@ test('hovering the run grid reads out the cell under the pointer', async ({ page
 
 	// Hover the top of the grid → the first seed row; the bottom → the last. This exercises the picking
 	// math (a chart-relative point back to a condition/seed) and pins that the canvas box and the box
-	// `cellAt` measures are the same space — a padding mismatch between them would read the wrong row.
+	// `cellAt` measures are the same space - a padding mismatch between them would read the wrong row.
 	const canvas = page.locator('[data-testid="sweep-heat"] canvas');
 	const box = (await canvas.boundingBox())!;
 
@@ -113,25 +113,25 @@ test('drilling a cell opens its world in the sidebar, and watches it in Studio',
 	await expect(card).toContainText('enable Live scoring'); // champion honesty: not measured, says so
 	await expect(card.locator('.dot.me').first()).toBeVisible(); // "you are here" ringed in the strip
 
-	// The drill's notebook door files THIS cell — the rail's notebook counts it.
+	// The drill's notebook door files THIS cell - the rail's notebook counts it.
 	await card.getByRole('button', { name: 'Send cell finding to notebook' }).click();
 	await expect(page.getByTestId('findings')).toContainText('kept');
 
 	// And the workspace offers the CSV export, its note naming what the file carries.
 	await expect(page.getByRole('button', { name: 'Export CSV' })).toBeVisible();
 
-	// "Watch this world" carries the condition into Studio — the round-trip out of the run grid.
+	// "Watch this world" carries the condition into Studio - the round-trip out of the run grid.
 	await card.getByRole('button', { name: 'Watch this world' }).click();
 	await expect(page.getByTestId('research-stage')).toBeHidden();
 	await expect(
 		page.getByRole('radiogroup', { name: 'lab mode' }).getByRole('radio', { name: 'Studio' })
 	).toBeChecked();
-	// …and the world that landed is THIS condition, named for its factor — not just a mode flip. (The
+	// …and the world that landed is THIS condition, named for its factor - not just a mode flip. (The
 	// minimal sweep varies only Direction, so the new Studio world is named "Direction off/on".)
 	await expect(page.getByRole('textbox', { name: 'world name' }).last()).toHaveValue(/Direction/);
 });
 
-test('the run grid is keyboard-drillable — arrow to a cell, Enter opens it', async ({ page }) => {
+test('the run grid is keyboard-drillable - arrow to a cell, Enter opens it', async ({ page }) => {
 	await openSweep(page);
 	await runMinimalSweep(page);
 
@@ -141,7 +141,7 @@ test('the run grid is keyboard-drillable — arrow to a cell, Enter opens it', a
 	await page.keyboard.press('Enter'); // …and drill it
 	await expect(page.getByTestId('sweep-drill')).toBeVisible();
 
-	// The drilled sidebar card is new surface — scan clean.
+	// The drilled sidebar card is new surface - scan clean.
 	expect(await scanForViolations(page)).toEqual([]);
 
 	// The close control dismisses it again.
@@ -152,7 +152,7 @@ test('the run grid is keyboard-drillable — arrow to a cell, Enter opens it', a
 test('the cap, switched on, warns that it will sample the grid', async ({ page }) => {
 	await openSweep(page);
 
-	// The default design is 48 cells and the cap is OFF (the full factorial is the honest default) —
+	// The default design is 48 cells and the cap is OFF (the full factorial is the honest default) -
 	// switching it on at its default 32 must announce the sampling before anything runs.
 	await expect(page.getByTestId('sweep-summary')).toContainText('48 cells');
 	await expect(page.getByTestId('sweep-sampled-warn')).toHaveCount(0); // no warning before the cap

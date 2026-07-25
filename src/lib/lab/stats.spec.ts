@@ -66,7 +66,7 @@ describe('contrast', () => {
 		const { delta, ci, d } = contrast(withDirection, distanceOnly);
 
 		expect(delta).toBeCloseTo(mean(withDirection) - mean(distanceOnly), 6);
-		expect(ci.lo).toBeGreaterThan(0); // the whole interval is above zero — a real difference
+		expect(ci.lo).toBeGreaterThan(0); // the whole interval is above zero - a real difference
 		expect(d).toBeGreaterThan(0);
 	});
 
@@ -92,7 +92,7 @@ describe('interactionContrast', () => {
 		// A's effect is 6 when B is top (8 vs 2) and 1 when B is bottom (5 vs 4) → interaction 5.
 		const result = interactionContrast([8], [5], [2], [4]);
 		expect(result.delta).toBeCloseTo(5, 9);
-		// swapping tt↔tb (the ASYMMETRIC pair) must change the answer — the structure is real
+		// swapping tt↔tb (the ASYMMETRIC pair) must change the answer - the structure is real
 		expect(interactionContrast([5], [8], [2], [4]).delta).toBeCloseTo(-1, 9);
 	});
 

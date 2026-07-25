@@ -1,11 +1,11 @@
 /**
- * Named base presets — the durable form of the editable subject base.
+ * Named base presets - the durable form of the editable subject base.
  *
  * The analysed subject is deliberately session-only (see app.svelte.ts); a PRESET is the owner's
  * explicit "keep this world", so presets persist in localStorage. Saving snapshots the CURRENT base
- * under its name (subject or generic alike — whatever the console is pointed at is what you keep);
+ * under its name (subject or generic alike - whatever the console is pointed at is what you keep);
  * applying adopts the preset as the editable generic through `app.adoptBase`, which also drops any
- * analysed subject — a preset IS the new base, not an overlay.
+ * analysed subject - a preset IS the new base, not an overlay.
  */
 
 import { browser } from '$app/environment';
@@ -15,7 +15,7 @@ import { app } from './app.svelte';
 export const PRESETS_STORAGE_KEY = 'darwinlab:base-presets';
 const STORAGE_VERSION = 1;
 
-/** Newest-first cap — the rail is a list of favourites, not an archive. */
+/** Newest-first cap - the rail is a list of favourites, not an archive. */
 const MAX_PRESETS = 12;
 
 export interface BasePreset {
@@ -23,7 +23,7 @@ export interface BasePreset {
 	cfg: WorldConfig;
 }
 
-/** The minimal shape check a stored entry must pass — garbage in storage is dropped, not thrown. */
+/** The minimal shape check a stored entry must pass - garbage in storage is dropped, not thrown. */
 function isPreset(value: unknown): value is BasePreset {
 	if (typeof value !== 'object' || value === null) return false;
 	const preset = value as Partial<BasePreset>;
@@ -67,10 +67,10 @@ class PresetsStore {
 
 	/**
 	 * Snapshot the current base under its own name. Saving again under the same name replaces the
-	 * old snapshot — a preset is "the world called X", not a history of it.
+	 * old snapshot - a preset is "the world called X", not a history of it.
 	 *
 	 * The copy is defence-in-depth, not a testable guard: today no code path mutates a config in
-	 * place (the app store replaces, never mutates — sabotaging this copy fails no test), but a
+	 * place (the app store replaces, never mutates - sabotaging this copy fails no test), but a
 	 * preset is PERSISTED, so a future in-place mutation anywhere would otherwise corrupt saved
 	 * worlds silently. One spread is cheap insurance across that module boundary.
 	 */
@@ -85,9 +85,9 @@ class PresetsStore {
 	}
 
 	/**
-	 * Adopt a preset as the editable base (drops any analysed subject — see app.adoptBase). A miss
+	 * Adopt a preset as the editable base (drops any analysed subject - see app.adoptBase). A miss
 	 * is a deliberate no-op, not a throw: unlike a bench id (always a caller bug), a preset name can
-	 * arrive from stale UI or another tab's deletion — data, not a bug.
+	 * arrive from stale UI or another tab's deletion - data, not a bug.
 	 */
 	apply(name: string): void {
 		const preset = this.#entries.find((p) => p.name === name);

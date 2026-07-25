@@ -1,23 +1,23 @@
 /**
- * Policy probe — turns an evolved brain into a readable picture of the rule it learned.
+ * Policy probe - turns an evolved brain into a readable picture of the rule it learned.
  *
  * The Brain Inspector shows the WIRING (dots and lines); this shows the POLICY. We hold the
- * agent still and ask its brain the same question at every point around it — "adversary here:
- * what do you do?" — by placing a synthetic adversary at each bearing/distance and reading the
+ * agent still and ask its brain the same question at every point around it - "adversary here:
+ * what do you do?" - by placing a synthetic adversary at each bearing/distance and reading the
  * motor output back. Swept over a polar grid, the answers ARE the strategy: "when it's behind
  * me, turn hard; when it's far, ignore it."
  *
- * HONEST BY CONSTRUCTION. This module invents no sensing of its own — it calls the exact
+ * HONEST BY CONSTRUCTION. This module invents no sensing of its own - it calls the exact
  * `senseInputs` + `forward` the simulation runs every tick (see `updateSenseSnapshot`), so the
  * map can only ever show what the fish actually perceives. `samplePolicyAt` is the single seam
  * where that happens; `probePolicy` is that seam swept over a grid. A test pins the seam to the
  * sim's own snapshot bit-for-bit, so the probe can never quietly drift into a private encoding.
  *
  * WHAT THE MAP HOLDS FIXED (the slice, stated plainly so the UI can too): the brain has up to
- * nine inputs and this picture varies only TWO of them — the adversary's bearing and distance.
+ * nine inputs and this picture varies only TWO of them - the adversary's bearing and distance.
  * The agent is at rest and centred, so wall pressure reads its far, uniform value; the adversary
  * approaches at cruise, so the closing rate is the same everywhere. A fish whose only sense is
- * closing or walls therefore reads FLAT here — truthfully: moving the adversary around it changes
+ * closing or walls therefore reads FLAT here - truthfully: moving the adversary around it changes
  * nothing it can feel. The map is the position rule, not the whole mind. No DOM, no Svelte.
  */
 
@@ -25,14 +25,14 @@ import { senseInputs } from './sensing';
 import { forward, NHID } from './network';
 import type { WorldConfig, Fish, Predator, Genome } from './types';
 
-/** Default angular resolution — samples around the full turn. */
+/** Default angular resolution - samples around the full turn. */
 export const PROBE_BEARINGS = 48;
-/** Default radial resolution — samples from the agent out to its vision edge. */
+/** Default radial resolution - samples from the agent out to its vision edge. */
 export const PROBE_RADII = 16;
 /** Below this spread in every output, the policy doesn't depend on adversary position → flat. */
 const FLAT_EPS = 1e-9;
 /**
- * The adversary's cruise speed at `predSpeed = 1`, px/s — the honest "bearing down at cruise" pose.
+ * The adversary's cruise speed at `predSpeed = 1`, px/s - the honest "bearing down at cruise" pose.
  * Mirrors the cruise cap in world.ts (`200 * ps * frust`); kept in step BY HAND because the project
  * deliberately keeps predator-internal constants inline at their world.ts call sites, verbatim (see
  * constants.ts). If that cruise cap is ever retuned, this must move with it.
@@ -63,7 +63,7 @@ export interface PolicyMap {
 	 */
 	samples: PolicySample[];
 	/**
-	 * True when the response is the same in every cell — the agent ignores where the adversary
+	 * True when the response is the same in every cell - the agent ignores where the adversary
 	 * is. A blind agent (no position sense), OR one that HAS the sense but evolved weights near
 	 * zero on it, OR one whose only senses are the ones this slice holds fixed. All three are
 	 * real findings the UI can name; the flag is measured, not inferred from the sense config.
@@ -81,7 +81,7 @@ export interface ProbeOptions {
 
 /**
  * THE SEAM. Places `adversary` as the sole predator and reads the agent's motor response through
- * the simulation's own sensing + forward pass — nothing else. `updateSenseSnapshot` does exactly
+ * the simulation's own sensing + forward pass - nothing else. `updateSenseSnapshot` does exactly
  * this for the live fish; a test asserts the two agree bit-for-bit.
  */
 export function samplePolicyAt(cfg: WorldConfig, agent: Fish, adversary: Predator): PolicySample {
@@ -141,11 +141,11 @@ function adversaryAt(cfg: WorldConfig, agent: Fish, bearing: number, distance: n
 }
 
 /**
- * Sweep a brain's policy over a polar grid of adversary positions — the escape map.
+ * Sweep a brain's policy over a polar grid of adversary positions - the escape map.
  *
  * Takes a genome rather than a live fish on purpose: the map is a property of the evolved brain,
  * not of wherever the selected fish happens to be swimming this frame. ~`bearings · radii`
- * forward passes (768 at defaults) — cheap, but meant to run on selection / generation change,
+ * forward passes (768 at defaults) - cheap, but meant to run on selection / generation change,
  * never per frame.
  */
 export function probePolicy(cfg: WorldConfig, genome: Genome, opts: ProbeOptions = {}): PolicyMap {

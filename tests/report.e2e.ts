@@ -2,13 +2,13 @@ import { expect, test, type Page } from '@playwright/test';
 import { gotoApp, openResearch, runMinimalSweep, scanForViolations } from './helpers';
 
 /**
- * The Report end to end: with a Sweep finding recorded, it assembles the seven-question brief — a
+ * The Report end to end: with a Sweep finding recorded, it assembles the seven-question brief - a
  * coverage spine, an auto-composed abstract, the questions the Sweep answers (Q2, Q6) with real
  * figures, the method (Q7), and every OTHER question as an honest "run the test" prompt, never a
  * fabricated verdict. The redesign adds reading modes, skeptic toggles and drill-through; those are
  * exercised here too. The brief survives a reload, since it is assembled from the persisted notebook.
  *
- * The Sweep's numbers are a live measurement and are not asserted; what is asserted is the STRUCTURE —
+ * The Sweep's numbers are a live measurement and are not asserted; what is asserted is the STRUCTURE -
  * which questions are answered, which are prompts, that the interactions work, and that it stays clean.
  */
 
@@ -37,17 +37,17 @@ test('the Report answers what the Sweep settled and prompts for the rest', async
 	await expect(page.getByTestId('report-qQ4')).toContainText('Run The Atlas');
 	await expect(page.getByTestId('report-qQ1')).toContainText('Run a behaviour trace');
 
-	// Q7 always states the method that reproduces it — the config fingerprint + seeds.
+	// Q7 always states the method that reproduces it - the config fingerprint + seeds.
 	await expect(page.getByTestId('report-qQ7')).toContainText('config');
 
-	// Q6 keeps the negatives (the honesty rule) — the "what did not work" panel renders through the
+	// Q6 keeps the negatives (the honesty rule) - the "what did not work" panel renders through the
 	// live sweep → notebook → evidence pipeline, in one of its honest states.
 	await expect(page.getByTestId('report-qQ6')).toContainText('did not work');
 
-	// The unanswered questions read honestly — an untested one says so, never a fabricated verdict.
+	// The unanswered questions read honestly - an untested one says so, never a fabricated verdict.
 	await expect(page.getByTestId('report-qQ3')).toContainText('Not answered yet');
 
-	// The auto-abstract composed at least one cited clause from the real finding — and is flagged as
+	// The auto-abstract composed at least one cited clause from the real finding - and is flagged as
 	// assembled, not authored.
 	await expect(page.getByTestId('report-abstract')).toContainText('assembled from findings');
 });
@@ -66,7 +66,7 @@ test('the reading modes and skeptic toggles interrogate the brief', async ({ pag
 	await modes.getByRole('button', { name: 'Full' }).click();
 	await expect(q2.locator('.effects')).toBeVisible();
 
-	// The 95%-interval skeptic toggle adds/removes the whiskers on the effect figure — a real layer,
+	// The 95%-interval skeptic toggle adds/removes the whiskers on the effect figure - a real layer,
 	// on by default. Unchecking it removes them; the bars themselves stay.
 	await expect(q2.locator('.whisk').first()).toBeVisible();
 	await page.getByTestId('report-tog-intervals').uncheck();
@@ -77,7 +77,7 @@ test('the reading modes and skeptic toggles interrogate the brief', async ({ pag
 test('a source drill-through carries the reader back to the instrument', async ({ page }) => {
 	await reportWithASweep(page);
 
-	// Clicking Q2's "← The Sweep" navigates the console to the Sweep — conclusion back to its evidence.
+	// Clicking Q2's "← The Sweep" navigates the console to the Sweep - conclusion back to its evidence.
 	await page
 		.getByTestId('report-qQ2')
 		.getByRole('button', { name: /The Sweep/ })
@@ -86,7 +86,7 @@ test('a source drill-through carries the reader back to the instrument', async (
 	await expect(page.locator('#rtab-sweep')).toHaveAttribute('aria-selected', 'true');
 });
 
-test('the Report is assembled from the persisted notebook — it survives a reload', async ({
+test('the Report is assembled from the persisted notebook - it survives a reload', async ({
 	page
 }) => {
 	await reportWithASweep(page);
@@ -98,15 +98,15 @@ test('the Report is assembled from the persisted notebook — it survives a relo
 	await expect(page.getByTestId('intro')).toBeHidden();
 	await page.getByRole('tab', { name: 'The Report' }).click();
 
-	// The Sweep's answer is still here — the report re-assembled from the notebook on disk.
+	// The Sweep's answer is still here - the report re-assembled from the notebook on disk.
 	await expect(page.getByTestId('report-qQ2').locator('.effects')).toBeVisible();
 });
 
-test('the Report scans clean — the spine, abstract, sections and figures are new surface', async ({
+test('the Report scans clean - the spine, abstract, sections and figures are new surface', async ({
 	page
 }) => {
 	await reportWithASweep(page);
-	// scanForViolations settles the fade-in (capped) before reading computed colours — no blind wait.
+	// scanForViolations settles the fade-in (capped) before reading computed colours - no blind wait.
 	expect(await scanForViolations(page)).toEqual([]);
 });
 
@@ -117,10 +117,10 @@ test('the workspace header tags each instrument with the questions it answers', 
 	await openResearch(page);
 
 	// The Sweep leads: its own questions (Q2 what matters, Q6 what did not) plus the microscope's
-	// (Q1 did it learn, Q5 the mechanism) — the behaviour trace lives in its drill now.
+	// (Q1 did it learn, Q5 the mechanism) - the behaviour trace lives in its drill now.
 	await expect(page.getByRole('group', { name: 'answers Q1, Q2, Q5, Q6' })).toBeVisible();
 
-	// Switch instruments and the tag follows — the Ledger settles whether a winner is real (Q3).
+	// Switch instruments and the tag follows - the Ledger settles whether a winner is real (Q3).
 	await page.getByRole('tab', { name: 'The Ledger' }).click();
 	await expect(page.getByRole('group', { name: 'answers Q3' })).toBeVisible();
 	await expect(page.getByRole('group', { name: 'answers Q1, Q2, Q5, Q6' })).toBeHidden();
@@ -135,7 +135,7 @@ test('the Report exports as a Markdown file the study can keep', async ({ page }
 	]);
 	expect(download.suggestedFilename()).toBe('darwin-lab-report.md');
 
-	// The file is the brief itself, not an empty stub — its title and the Sweep's answered question are in it.
+	// The file is the brief itself, not an empty stub - its title and the Sweep's answered question are in it.
 	const stream = await download.createReadStream();
 	const text = await new Promise<string>((resolve, reject) => {
 		const chunks: Buffer[] = [];
@@ -143,11 +143,11 @@ test('the Report exports as a Markdown file the study can keep', async ({ page }
 		stream.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
 		stream.on('error', reject);
 	});
-	expect(text).toContain('# Research report —');
+	expect(text).toContain('# Research report -');
 	expect(text).toContain('## Q2 · What actually moves survival?');
 });
 
-test('the Print action asks the browser to print — the "save as PDF" path', async ({ page }) => {
+test('the Print action asks the browser to print - the "save as PDF" path', async ({ page }) => {
 	await reportWithASweep(page);
 
 	// Stub window.print BEFORE clicking: a real print dialog would hang the headless run, and the flag
@@ -162,13 +162,13 @@ test('the Print action asks the browser to print — the "save as PDF" path', as
 	expect(await page.evaluate(() => (window as unknown as { __prints: number }).__prints)).toBe(1);
 });
 
-test('the print stylesheet isolates the report — only the brief is on the page', async ({
+test('the print stylesheet isolates the report - only the brief is on the page', async ({
 	page
 }) => {
 	await reportWithASweep(page);
 
 	// Emulate the print medium and read computed visibility: the "hide everything, reveal one region"
-	// trick must actually hide the console chrome and show the report — the CSS itself under test, not
+	// trick must actually hide the console chrome and show the report - the CSS itself under test, not
 	// just the button that triggers it. (A wrong selector or lost specificity would silently blank the
 	// wrong thing; the click test alone would never notice.)
 	await page.emulateMedia({ media: 'print' });
@@ -186,13 +186,13 @@ test('removing a question’s answer confirms, reverts it to a prompt, and clear
 	await expect(page.getByTestId('report-qQ2').locator('.effects')).toBeVisible();
 	await expect(page.getByTestId('report-qQ6')).not.toContainText('run The Sweep');
 
-	// The ✕ on Q2 opens a confirm that names the sibling Q6 it will also clear — no silent double-delete.
+	// The ✕ on Q2 opens a confirm that names the sibling Q6 it will also clear - no silent double-delete.
 	await page.getByTestId('remove-answer-Q2').click();
 	const dialog = page.getByRole('dialog', { name: 'Remove this answer?' });
 	await expect(dialog).toBeVisible();
 	await expect(dialog).toContainText('Q6');
 
-	// Cancel first — a probe: the answer must survive a dismissed confirm.
+	// Cancel first - a probe: the answer must survive a dismissed confirm.
 	await dialog.getByRole('button', { name: 'Cancel' }).click();
 	await expect(page.getByTestId('report-qQ2').locator('.effects')).toBeVisible();
 

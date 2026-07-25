@@ -1,5 +1,5 @@
 /**
- * The worker wire protocol — the one place the pool and the worker agree on message shapes.
+ * The worker wire protocol - the one place the pool and the worker agree on message shapes.
  *
  * Declared once and imported by both `runner.ts` (the pool) and `eval.worker.ts` (the worker), so
  * the compiler enforces they match. Two independent declarations would compile fine after a rename

@@ -1,10 +1,10 @@
 <!--
-  The welcome screen — the product's finding, stated full-screen before you see a single tank.
+  The welcome screen - the product's finding, stated full-screen before you see a single tank.
 
   This replaces the "what you're watching" banner that used to sit above the bench: the same claim,
   reasoning and method strip, but as an opening page rather than permanent chrome, so the canvas
-  gets the whole screen once you are in. The first interaction — a mouse move, a click, a key, or
-  the Enter button — fades it out and the live platform is simply there underneath (the sim has been
+  gets the whole screen once you are in. The first interaction - a mouse move, a click, a key, or
+  the Enter button - fades it out and the live platform is simply there underneath (the sim has been
   running the whole time; nothing is loaded on dismissal, only revealed).
 
   Mouse-move dismissal is ARMED after a beat: the cursor almost always moves during page load, and
@@ -20,7 +20,7 @@
 	import { startShoal } from './shoal';
 
 	interface Props {
-		/** Called once the fade has played — the page then unmounts the intro entirely. */
+		/** Called once the fade has played - the page then unmounts the intro entirely. */
 		ondismiss: () => void;
 	}
 
@@ -56,7 +56,7 @@
 		return () => clearTimeout(arm);
 	});
 
-	// The reveal: one slow, even fade — reduced motion gets an instant cut instead.
+	// The reveal: one slow, even fade - reduced motion gets an instant cut instead.
 	const duration = $derived(prefersReducedMotion() ? 0 : 700);
 
 	// The shoal fills the right half; it keeps swimming through the fade-out and stops on unmount.
@@ -88,7 +88,7 @@
 		</header>
 
 		<!--
-			The shoal and the hunter — the product, wordless, across the intro's whole right half: a real
+			The shoal and the hunter - the product, wordless, across the intro's whole right half: a real
 			flocking school of prey (separation + cohesion + alignment) and one cruising shark, the school
 			flash-expanding around it and reforming behind. Decorative (aria-hidden); under reduced motion
 			the flock is settled and shown parked, one still frame.
@@ -133,13 +133,13 @@
 		display: flex;
 		flex-direction: column;
 		padding: var(--sp-6) clamp(24px, 6vw, 96px);
-		/* The same plain ground as the page beneath — the fade is a reveal, not a scene change. */
+		/* The same plain ground as the page beneath - the fade is a reveal, not a scene change. */
 		background: var(--bgfx);
 		color: var(--ink);
 		cursor: pointer; /* the whole screen is the way in */
 	}
 
-	/* Pinned to the top-left, OUT of the vertical flow — so the claim below can centre against the
+	/* Pinned to the top-left, OUT of the vertical flow - so the claim below can centre against the
 	   whole viewport rather than against the band left between the brand and a taller footer (which
 	   pulled it up off-centre, most visibly as an empty void under the text on tall screens). */
 	.brand {
@@ -151,11 +151,11 @@
 		gap: var(--sp-3);
 	}
 
-	/* The shoal owns the WHOLE right half — edge to edge vertically, behind the text's stacking
+	/* The shoal owns the WHOLE right half - edge to edge vertically, behind the text's stacking
 	   context, gone where there is no room for it beside the copy.
 
 	   height: 100% is load-bearing, not a tidy-up. A <canvas> is a REPLACED element, so top:0 + bottom:0
-	   with an auto height does NOT stretch it the way it would a <div> — it keeps its intrinsic ratio
+	   with an auto height does NOT stretch it the way it would a <div> - it keeps its intrinsic ratio
 	   (the default 300×150), so the box came out ~half the viewport tall, pinned to the top, and the
 	   shoal filled only the top half with dead black below. An explicit height fills the column, and
 	   the fit() measurement then spawns the school across the whole height. */
@@ -193,7 +193,7 @@
 	}
 
 	/* The claim owns the screen: display type at poster size, the reasoning at a readable measure.
-	   Positioned so it stacks ABOVE the shoal canvas where the two overlap on mid-width screens —
+	   Positioned so it stacks ABOVE the shoal canvas where the two overlap on mid-width screens -
 	   a fish may pass behind the headline, never over it. */
 	.stage {
 		position: relative;
@@ -204,8 +204,8 @@
 		gap: var(--sp-5);
 		max-width: 880px;
 		/* EQUAL top and bottom reserve (sized to clear the taller of the two out-of-flow bands, the
-		   footer) so the claim centres on the true viewport middle — asymmetric reserve would just tip
-		   it off-centre again — while never riding under the logo or over the method strip when the
+		   footer) so the claim centres on the true viewport middle - asymmetric reserve would just tip
+		   it off-centre again - while never riding under the logo or over the method strip when the
 		   viewport is short. */
 		padding-block: calc(90px + var(--sp-6));
 	}
@@ -253,7 +253,7 @@
 		color: var(--ink3);
 	}
 
-	/* Pinned to the bottom, OUT of the vertical flow — the counterpart to the absolute brand, so the
+	/* Pinned to the bottom, OUT of the vertical flow - the counterpart to the absolute brand, so the
 	   stage between them centres on the whole viewport. */
 	footer {
 		position: absolute;
@@ -265,7 +265,7 @@
 		gap: var(--sp-4);
 	}
 
-	/* The method as a spec strip, ruled off from the argument — how the numbers are got. */
+	/* The method as a spec strip, ruled off from the argument - how the numbers are got. */
 	.method {
 		display: grid;
 		grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
@@ -294,5 +294,48 @@
 		margin: 0;
 		font-size: var(--fs-xs);
 		color: var(--ink3);
+	}
+
+	/* Phones and short windows. The claim is centred between an ABSOLUTE brand and an ABSOLUTE footer,
+	   with the stage reserving a fixed ~106px band to clear them. That reserve assumes a short footer -
+	   but the method strip stacks tall at narrow width, and a landscape phone is short outright, so the
+	   headline/CTA were being clipped (the page cannot scroll: any pointer or wheel dismisses the intro).
+	   Fold the brand and footer back into the flow and drop the reserve, so the column simply fits and
+	   the stage still centres the claim in the band left between them. */
+	@media (max-width: 640px), (max-height: 640px) {
+		.brand,
+		footer {
+			position: static;
+			inset: auto;
+		}
+
+		.stage {
+			padding-block: var(--sp-6);
+		}
+	}
+
+	/* Short outright (landscape phones, small windows): also drop the method strip and tighten the type,
+	   so the headline and CTA clear on very little height. */
+	@media (max-height: 640px) {
+		.intro {
+			padding-block: var(--sp-4);
+		}
+
+		.stage {
+			padding-block: 0;
+			gap: var(--sp-3);
+		}
+
+		h1 {
+			font-size: clamp(22px, 5vh, 38px);
+		}
+
+		.argument {
+			font-size: var(--fs-sm);
+		}
+
+		.method {
+			display: none;
+		}
 	}
 </style>

@@ -1,16 +1,16 @@
 <!--
-  The one-time hint. The bench's most important interaction — click a fish, read its evolved
-  mind — is painted pixels with no affordance at all, so the first visit gets one line of help.
+  The one-time hint. The bench's most important interaction - click a fish, read its evolved
+  mind - is painted pixels with no affordance at all, so the first visit gets one line of help.
 
   It leaves two ways and never comes back (localStorage): the ✕, or the moment the user opens a
-  mind on their own — at which point the hint's job is done and repeating it would be nagging.
+  mind on their own - at which point the hint's job is done and repeating it would be nagging.
 -->
 <script lang="ts">
 	import { bench, shell, story } from '$lib/state';
 
 	const HINT_STORAGE_KEY = 'darwinlab:hint-dismissed';
 
-	// Client-only app (ssr=false), so localStorage is safe to read at init — same as the theme.
+	// Client-only app (ssr=false), so localStorage is safe to read at init - same as the theme.
 	let dismissed = $state(localStorage.getItem(HINT_STORAGE_KEY) !== null);
 
 	function dismiss() {
@@ -44,7 +44,7 @@
 		bottom: 14px;
 		z-index: var(--z-footer);
 		transform: translateX(-50%);
-		/* Float over the lineage plane without stealing presses meant for a node beneath it — only the
+		/* Float over the lineage plane without stealing presses meant for a node beneath it - only the
 		   dismiss button below opts back in. (It was intercepting clicks on deep canvas controls.) */
 		pointer-events: none;
 		display: flex;
@@ -81,7 +81,7 @@
 		color: var(--ink);
 	}
 
-	/* On a phone the footer disclaimer owns the bottom edge — stack the hint above it. */
+	/* On a phone the footer disclaimer owns the bottom edge - stack the hint above it. */
 	@media (max-width: 640px) {
 		.hint {
 			bottom: 54px;

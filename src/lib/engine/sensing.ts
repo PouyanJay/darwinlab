@@ -1,10 +1,10 @@
 /**
- * Sensing — builds a fish brain's input vector: 8 slots (the reference brain), 9 with
+ * Sensing - builds a fish brain's input vector: 8 slots (the reference brain), 9 with
  * proprioception, or 14 with the shoal senses, per the world's `brainInputs`. Faithful port of
  * engine2.js `senseInputs`, extended one optional slot-group at a time.
  *
  * THE ABLATION RULE: a disabled sense feeds 0 into its input slot. The neuron still
- * exists; it just receives nothing — so toggling a sense off is a true ablation, not a
+ * exists; it just receives nothing - so toggling a sense off is a true ablation, not a
  * network-shape change (CLAUDE.md golden rule).
  *
  * Inputs found only within `cfg.vision` of the nearest predator; wall rays cast three
@@ -41,9 +41,9 @@ export function senseInputs(
 	const inVis = !!np && nd < c.vision;
 
 	// The vector is as long as this world's brains are wide: 8 slots (the reference brain) or
-	// 9, where the extra one is PROPRIOCEPTION — the fish's own speed. Unlike every other
+	// 9, where the extra one is PROPRIOCEPTION - the fish's own speed. Unlike every other
 	// input it does not depend on the predator at all, and it is the only way a brain can
-	// learn "I am slower than that thing, so running straight is death — cut instead".
+	// learn "I am slower than that thing, so running straight is death - cut instead".
 	const nin = c.brainInputs ?? NIN;
 	const x = new Array<number>(nin).fill(0);
 	x[0] = 1;
@@ -90,13 +90,13 @@ export function senseInputs(
 		wF = t;
 	}
 
-	// slot 8 — own speed, normalized by the fish's own top speed (so 1 = flat out).
+	// slot 8 - own speed, normalized by the fish's own top speed (so 1 = flat out).
 	// Ablated like any other sense: off feeds 0, the neuron stays, the shape never changes.
 	// Normalised by the agent's OWN top speed, not the constant: in a world where the fish max out at
 	// 250, a fish going 250 must read 1.0, not 250/176.
 	if (nin > 8 && S.speed) x[8] = clamp(Math.hypot(f.vx, f.vy) / (w.cfg.maxSpeed ?? MAXSPEED), 0, 1);
 
-	// slots 9–13 — the shoal sense, filled by senseShoal (kept out of line, like the wall-ray block
+	// slots 9-13 - the shoal sense, filled by senseShoal (kept out of line, like the wall-ray block
 	// would be if it were newer, so senseInputs reads as one slot-group after another).
 	if (nin > 8 && (S.cohesion || S.align)) senseShoal(w, f, x);
 
@@ -104,13 +104,13 @@ export function senseInputs(
 }
 
 /**
- * The SHOAL sense (cohesion + alignment), slots 9–13. Unlike every predator sense it is about OTHER
+ * The SHOAL sense (cohesion + alignment), slots 9-13. Unlike every predator sense it is about OTHER
  * FISH: a single scan of the neighbours within `socialRadius` yields how crowded it is (density),
  * which way their centre-of-mass lies (cohesion), and which way they are collectively pointing
  * (alignment). Bearings are relative to the fish's own heading (sin/cos), the same encoding the
  * direction sense uses, so the network reads "turn toward the group" the way it reads "flee the
- * shark". Ablated like the rest — a slot whose sense is off keeps its 0. Absent `w.fish` (staged
- * single-fish trials — the flee assay) there is no shoal, so the slots stay 0, which is right.
+ * shark". Ablated like the rest - a slot whose sense is off keeps its 0. Absent `w.fish` (staged
+ * single-fish trials - the flee assay) there is no shoal, so the slots stay 0, which is right.
  */
 function senseShoal(w: Pick<World, 'cfg'> & { fish?: Fish[] }, f: Fish, x: number[]): void {
 	if (!w.fish) return;

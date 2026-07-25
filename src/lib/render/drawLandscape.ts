@@ -1,5 +1,5 @@
 /**
- * The Atlas heatmap — a survival landscape painted under a pan/zoom camera.
+ * The Atlas heatmap - a survival landscape painted under a pan/zoom camera.
  *
  * Each grid cell is a filled square, coral where fish die fast, teal where they last, brightness
  * riding the same scale so the terrain reads at a glance. The camera (tx, ty, scale) is applied by
@@ -16,15 +16,15 @@ import type { LandscapeField, Falloff } from '../lab/landscape';
 
 type Rgb = [number, number, number];
 // The survival ramp's ends, for the canvas. ⚠️ MIRROR of --data-coral / --data-teal in
-// styles/tokens.css — the DOM (verdict, effect bars, legends) reads those tokens and the canvas paints
+// styles/tokens.css - the DOM (verdict, effect bars, legends) reads those tokens and the canvas paints
 // from these triples, so they must stay the same two colours or a legend lies about the map beside it.
-/** Short survival — the cliff. */
+/** Short survival - the cliff. */
 const CORAL: Rgb = [232, 96, 76];
-/** Long survival — the ridge. */
+/** Long survival - the ridge. */
 const TEAL: Rgb = [14, 148, 136];
 
 /**
- * A point on the survival ramp — coral (t=0, short) → teal (t=1, long). The ONE survival palette the
+ * A point on the survival ramp - coral (t=0, short) → teal (t=1, long). The ONE survival palette the
  * whole platform speaks: the Atlas and the Sweep's run grid paint it on canvas from here; the DOM
  * (effect bars, legends, the verdict) reads the matching `--data-*` tokens. Returns a CSS `rgb(...)`.
  */
@@ -37,7 +37,7 @@ interface Palette {
 	empty: string;
 	/** Cell outlines (hover, drill). */
 	line: string;
-	/** The gold cliff dashes — the measured fall-off, traced row by row. */
+	/** The gold cliff dashes - the measured fall-off, traced row by row. */
 	cliff: string;
 }
 
@@ -57,7 +57,7 @@ export interface LandscapePaint {
 	theme: 'light' | 'dark';
 	hovered: CellRef | null;
 	selected: CellRef | null;
-	/** Each row's own steepest fall-off (null rows stay untraced) — the gold dashes. */
+	/** Each row's own steepest fall-off (null rows stay untraced) - the gold dashes. */
 	cliffRows: (Falloff | null)[];
 }
 
@@ -68,7 +68,7 @@ function lerp(a: Rgb, b: Rgb, t: number): string {
 }
 
 /**
- * Paint the landscape FILLING the canvas — the grid stretches to the full width × height, so cells
+ * Paint the landscape FILLING the canvas - the grid stretches to the full width × height, so cells
  * are rectangles that leave no dead margin (a small square grid lost in a black frame was the old
  * look). Grid coordinates map straight to pixels: a column is `width / cols` wide, a row
  * `height / rows` tall, which is also exactly how the component hit-tests a pointer back to a cell.
@@ -85,7 +85,7 @@ export function drawLandscape(
 	const cw = width / field.cols;
 	const ch = height / field.rows;
 
-	// Row iy=0 is the Y axis's MINIMUM, drawn at the BOTTOM — the map reads like a chart (Y grows
+	// Row iy=0 is the Y axis's MINIMUM, drawn at the BOTTOM - the map reads like a chart (Y grows
 	// upward), and the component's hit-test uses the same flip. One mapping, used everywhere here.
 	const rowTop = (iy: number) => (field.rows - 1 - iy) * ch;
 
@@ -103,7 +103,7 @@ export function drawLandscape(
 
 	// The measured cliff, traced ROW BY ROW: each row's steepest fall-off cell wears a gold dashed
 	// outline, so the edge reads as terrain (it can bend) rather than one straight line. A row with
-	// no positive drop stays untraced — a flat or rising row gets no fake cliff drawn on it.
+	// no positive drop stays untraced - a flat or rising row gets no fake cliff drawn on it.
 	ctx.save();
 	ctx.strokeStyle = palette.cliff;
 	ctx.lineWidth = 1.5;

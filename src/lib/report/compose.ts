@@ -1,9 +1,9 @@
 /**
- * Composing the Report's PROSE — the auto-abstract and the tensions check — from the settled findings.
+ * Composing the Report's PROSE - the auto-abstract and the tensions check - from the settled findings.
  *
  * Both are pure functions of the report sections, and both keep the honesty rail the rest of the Report
  * keeps: a clause appears ONLY when a real finding backs it, and every number is READ from the finding's
- * own evidence, never invented. The sentences are templates with real values slotted in — the same move
+ * own evidence, never invented. The sentences are templates with real values slotted in - the same move
  * the glance table makes ("config X · N seeds"), not a fabricated verdict. An unanswered question never
  * produces a clause; instead the abstract closes with an honest "not yet tested" naming the gap.
  *
@@ -16,30 +16,30 @@ import type { ReportSection } from '../state/report.svelte';
 import { strongestEffect, negativesOf, type EffectRow, type Evidence } from '../lab/evidence';
 import { formatSignedSeconds, formatSurvivalPct } from '../format';
 
-/** One clause of the abstract — its sentence, and the question it is drawn from (for the ← link). A
+/** One clause of the abstract - its sentence, and the question it is drawn from (for the ← link). A
  *  `gap` clause is the honest closer naming an unanswered question; it cites no finding. */
 export interface AbstractClause {
 	text: string;
-	/** The question this clause is READ from — the citation the view superscripts. Null on the gap clause. */
+	/** The question this clause is READ from - the citation the view superscripts. Null on the gap clause. */
 	questionId: QuestionId | null;
 	gap?: boolean;
 }
 
-/** A flagged conflict between two findings that both stand — surfaced, not averaged away. */
+/** A flagged conflict between two findings that both stand - surfaced, not averaged away. */
 export interface Tension {
 	id: string;
 	title: string;
 	body: string;
-	/** The two findings in tension — each a question + its source, for the "between … and …" line. */
+	/** The two findings in tension - each a question + its source, for the "between … and …" line. */
 	between: { questionId: QuestionId; source: string }[];
 }
 
-/** The finding answering a question, or null — a thin lookup over the already-built sections. */
+/** The finding answering a question, or null - a thin lookup over the already-built sections. */
 function findingFor(sections: ReportSection[], id: QuestionId) {
 	return sections.find((s) => s.question.id === id)?.finding ?? null;
 }
 
-/** The typed evidence of a question's finding, when it is the kind asked for — else null, so a caller
+/** The typed evidence of a question's finding, when it is the kind asked for - else null, so a caller
  *  reads the payload it expects or gets nothing (never a wrong-kind read). */
 function evidenceFor<K extends Evidence['kind']>(
 	sections: ReportSection[],
@@ -50,13 +50,13 @@ function evidenceFor<K extends Evidence['kind']>(
 	return evidence?.kind === kind ? (evidence as Extract<Evidence, { kind: K }>) : null;
 }
 
-/** The first UNANSWERED content question (Q1–Q6, skipping Q7 which is always provenance) — the honest
+/** The first UNANSWERED content question (Q1-Q6, skipping Q7 which is always provenance) - the honest
  *  gap the abstract closes on. Null when everything a study needs is settled. */
 function firstGap(sections: ReportSection[]): ReportSection | null {
 	return sections.find((s) => s.question.id !== 'Q7' && !s.finding) ?? null;
 }
 
-/** Q2 · what matters — the dominant mover, read from the Sweep's effect bars. */
+/** Q2 · what matters - the dominant mover, read from the Sweep's effect bars. */
 function moverClause(sections: ReportSection[]): AbstractClause | null {
 	const effects = evidenceFor(sections, 'Q2', 'effects');
 	const dominant = effects ? strongestEffect(effects.effects) : null;
@@ -67,15 +67,15 @@ function moverClause(sections: ReportSection[]): AbstractClause | null {
 	};
 }
 
-/** Q6 · what did not — the kept negatives, from the same Sweep evidence. */
+/** Q6 · what did not - the kept negatives, from the same Sweep evidence. */
 function negativesClause(sections: ReportSection[]): AbstractClause | null {
 	const negatives = negativesOf(findingFor(sections, 'Q6')?.evidence);
 	if (!negatives.length) return null;
 	return { text: `${negatives.join(', ')} did not measurably help`, questionId: 'Q6' };
 }
 
-/** Q1 · did it learn — the survival the learning curve reached. The verb is gated on the ACTUAL
- *  trajectory: "climbed to" only when the curve genuinely rose (it is not guaranteed monotonic — GA
+/** Q1 · did it learn - the survival the learning curve reached. The verb is gated on the ACTUAL
+ *  trajectory: "climbed to" only when the curve genuinely rose (it is not guaranteed monotonic - GA
  *  noise can leave the last generation below an earlier peak), else the trend-neutral "reached". The
  *  number is read off the evidence either way; only the claimed direction is checked. */
 function learnedClause(sections: ReportSection[]): AbstractClause | null {
@@ -89,13 +89,13 @@ function learnedClause(sections: ReportSection[]): AbstractClause | null {
 	};
 }
 
-/** Q5 · how — the mechanism is the finding's own headline (a behaviour contrast reads best in words). */
+/** Q5 · how - the mechanism is the finding's own headline (a behaviour contrast reads best in words). */
 function mechanismClause(sections: ReportSection[]): AbstractClause | null {
 	const mechanism = findingFor(sections, 'Q5');
 	return mechanism ? { text: mechanism.title.toLowerCase(), questionId: 'Q5' } : null;
 }
 
-/** Q4 · where it holds — bounded by the Atlas's cliff, when one was found. */
+/** Q4 · where it holds - bounded by the Atlas's cliff, when one was found. */
 function boundClause(sections: ReportSection[]): AbstractClause | null {
 	const landscape = evidenceFor(sections, 'Q4', 'landscape');
 	if (!landscape) return null;
@@ -110,7 +110,7 @@ function boundClause(sections: ReportSection[]): AbstractClause | null {
 
 /**
  * The auto-abstract: a handful of sentences composed from the settled findings, in the order a paper
- * would state them — what matters, what did not, that it learned, how, where it holds — each closing
+ * would state them - what matters, what did not, that it learned, how, where it holds - each closing
  * with a citation to the question it came from, and a final honest clause naming the first gap.
  *
  * Each clause builder emits a sentence ONLY when its finding exists, so the abstract can never claim a
@@ -122,13 +122,13 @@ export function composeAbstract(sections: ReportSection[]): AbstractClause[] {
 		.map((build) => build(sections))
 		.filter((clause): clause is AbstractClause => clause !== null);
 
-	// The honest closer — the first content question still without a finding. Only when something WAS
+	// The honest closer - the first content question still without a finding. Only when something WAS
 	// settled (an empty abstract needs no "but one thing is missing"); with nothing settled, return [].
 	if (clauses.length) {
 		const gap = firstGap(sections);
 		if (gap) {
 			clauses.push({
-				text: `one question — ${gap.question.short} — is not yet tested`,
+				text: `one question - ${gap.question.short} - is not yet tested`,
 				questionId: null,
 				gap: true
 			});
@@ -139,10 +139,10 @@ export function composeAbstract(sections: ReportSection[]): AbstractClause[] {
 }
 
 /**
- * The tensions check — conflicts the Report surfaces rather than averaging away.
+ * The tensions check - conflicts the Report surfaces rather than averaging away.
  *
  * This round detects the one that is genuinely computable from persisted evidence: a strong main effect
- * (Q2) that the Atlas shows is BOUNDED — survival is not flat, it falls off a cliff (Q4). Both findings
+ * (Q2) that the Atlas shows is BOUNDED - survival is not flat, it falls off a cliff (Q4). Both findings
  * stand; the point is that the headline result is real AND conditional. A tension is emitted only when
  * both findings exist and the landscape actually has a cliff, so it can never manufacture a conflict.
  */
@@ -156,11 +156,11 @@ export function detectTensions(sections: ReportSection[]): Tension[] {
 	if (dominant && landscape && landscape.cliffX !== undefined) {
 		tensions.push({
 			id: 'bounded-effect',
-			title: `${dominant.label} pays — but only within bounds`,
+			title: `${dominant.label} pays - but only within bounds`,
 			body:
 				`The Sweep ranks ${dominant.label.toLowerCase()} as a real effect (${formatSignedSeconds(dominant.delta)}). ` +
 				`The Atlas shows that result is conditional: survival is a plateau that falls off a cliff along ` +
-				`${landscape.axisLabel.toLowerCase()}. Both stand — the effect is real and bounded. The Report ` +
+				`${landscape.axisLabel.toLowerCase()}. Both stand - the effect is real and bounded. The Report ` +
 				`surfaces the conflict rather than averaging it away.`,
 			between: [
 				{ questionId: 'Q2', source: 'The Sweep' },

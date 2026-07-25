@@ -1,12 +1,12 @@
 /**
- * The Sweep store — the state behind the design panel.
+ * The Sweep store - the state behind the design panel.
  *
  * It owns the panel's pin-or-sweep choices (every boolean knob's off·on·sweep, every graded knob's
  * selected chips), the run budget (seeds, generations, generation length), and the cap; turns them
  * into a batch of evaluations through the shared `research` lifecycle store; and, once the results
  * are in, derives the per-cell survival grid and the per-factor main effects.
  *
- * Nothing here re-implements the measurement or the batch lifecycle — it composes `sweep.ts` (the
+ * Nothing here re-implements the measurement or the batch lifecycle - it composes `sweep.ts` (the
  * knob catalog compiled onto the pure factorial) with the `research` store (the run) and `stats`
  * (the effect sizes, via sweep.ts).
  *
@@ -14,7 +14,7 @@
  *  - the estimate is CALIBRATED: the measured sim-rate of the last real run (localStorage) prices
  *    the next one; before any run a conservative fallback is used and the panel says "≈".
  *  - run sizes are tiered: a medium run warns, a large one refuses to start unless the caller
- *    passes the cell count back (`confirmedCells`) — the typed-confirm contract.
+ *    passes the cell count back (`confirmedCells`) - the typed-confirm contract.
  *  - the own-speed sense cannot be swept on an 8-wire brain: the choice is refused at the setter
  *    AND forced off at plan time, so a stale 'sweep' can never produce a two-level factor whose
  *    levels are the same world.
@@ -50,14 +50,14 @@ import { SvelteMap } from 'svelte/reactivity';
 import type { JobExecutor } from '../lab/runner';
 import type { Evaluation } from '../lab/evaluator';
 
-/** A drilled cell of the run grid — its condition column and seed row. */
+/** A drilled cell of the run grid - its condition column and seed row. */
 export interface SweepSelection {
 	condition: number;
 	seed: number;
 }
 
 /**
- * The receipt of the last run — its budget and wall clock FROZEN at run time, so the honesty tiles
+ * The receipt of the last run - its budget and wall clock FROZEN at run time, so the honesty tiles
  * describe the run that happened even after the panel's inputs move on (the same rule as
  * `#lastFactors`: results are never re-described against a design they were not measured on).
  */
@@ -70,13 +70,13 @@ export interface SweepRunReceipt {
 	championOn: boolean;
 }
 
-/** The store's own clamps — a bad input never reaches a job. */
+/** The store's own clamps - a bad input never reaches a job. */
 const SEED_RANGE = { min: 2, max: 12 };
 const EPISODE_RANGE = { min: 5, max: 120 };
 const CAP_RANGE = { min: 8, max: 256 };
 
 /**
- * Run-size guard tiers, in minutes of ESTIMATED wall clock — the owner's call: a medium run warns,
+ * Run-size guard tiers, in minutes of ESTIMATED wall clock - the owner's call: a medium run warns,
  * a large one demands the cell count typed back. Exported so the panel and the store cannot
  * disagree about where the tiers sit. Deliberately tunable.
  */
@@ -87,7 +87,7 @@ export const GUARD_CONFIRM_MINUTES = 45;
 const FALLBACK_SIM_RATE = 300;
 const SIM_RATE_KEY = 'darwinlab:sweep-sim-rate';
 
-/** The calibrated (or fallback) sim rate — exported so the Ledger's estimate is priced by the same
+/** The calibrated (or fallback) sim rate - exported so the Ledger's estimate is priced by the same
  *  measurement as the Sweep's, instead of keeping a second, drifting constant. */
 export function loadSimRate(): number {
 	if (!browser) return FALLBACK_SIM_RATE;
@@ -113,11 +113,11 @@ class SweepStore {
 	// The Measurement toggle: score champion clones beside the population, every cell ("live").
 	#championOn = $state(false);
 
-	// The calibrated estimate's rate — replaced after every real run (see #recordSimRate).
+	// The calibrated estimate's rate - replaced after every real run (see #recordSimRate).
 	#simRate = $state<number>(loadSimRate());
 	#calibrated = $state<boolean>(browser ? localStorage.getItem(SIM_RATE_KEY) !== null : false);
 
-	// The run's outputs, replaced wholesale — never mutated in place. `cells` and `results` stay
+	// The run's outputs, replaced wholesale - never mutated in place. `cells` and `results` stay
 	// index-aligned: results[i] is the result for cells[i].
 	#cells = $state.raw<SweepCell[]>([]);
 	#results = $state.raw<(Evaluation | null)[] | null>(null);
@@ -128,11 +128,11 @@ class SweepStore {
 	// a run does not re-pool the old results against a design they were never measured on.
 	#lastFactors: Factor[] = [];
 
-	// The last run's receipt (budget + wall clock, frozen) — what the honesty tiles print.
+	// The last run's receipt (budget + wall clock, frozen) - what the honesty tiles print.
 	#receipt = $state.raw<SweepRunReceipt | null>(null);
 
 	// The drilled cell of the run grid, or null. Store-owned so a new run clears it AS PART of the
-	// run — its indices belonged to the old grid.
+	// run - its indices belonged to the old grid.
 	#drilled = $state.raw<SweepSelection | null>(null);
 
 	/* ---------------------------------- the panel's choices ---------------------------------- */
@@ -153,7 +153,7 @@ class SweepStore {
 
 	/**
 	 * Move a boolean knob between off·on·sweep. The own-speed sense is refused anywhere but 'off'
-	 * while the base brain has no 9th wire — the panel offers "switch the subject's brain" instead
+	 * while the base brain has no 9th wire - the panel offers "switch the subject's brain" instead
 	 * of silently changing the control (the owner's call).
 	 */
 	setBoolState(key: string, state: KnobState): void {
@@ -168,7 +168,7 @@ class SweepStore {
 	}
 
 	/**
-	 * Toggle one chip of a graded knob. The LAST chip cannot be deselected — a knob always has a
+	 * Toggle one chip of a graded knob. The LAST chip cannot be deselected - a knob always has a
 	 * value (one chip = the pin), so the plan is never built over an undefined level.
 	 */
 	toggleLevel(key: string, value: number): void {
@@ -253,7 +253,7 @@ class SweepStore {
 
 	/* ------------------------------------ the plan readout ------------------------------------ */
 
-	/** The factors the current choices sweep — what the plan line names. */
+	/** The factors the current choices sweep - what the plan line names. */
 	get plannedFactors(): Factor[] {
 		return sweptFactors(this.#choices());
 	}
@@ -273,7 +273,7 @@ class SweepStore {
 		return this.#capOn && this.plannedCells > this.#capN;
 	}
 
-	/** ONE sim-seconds formula for the estimate AND the calibration — champion doubles the bouts,
+	/** ONE sim-seconds formula for the estimate AND the calibration - champion doubles the bouts,
 	 *  and pricing a finished run with fewer seconds than it spent would silently skew every
 	 *  estimate after it (the drift the calibration exists to prevent). */
 	#simSecondsFor(cells: number, championOn: boolean): number {
@@ -281,7 +281,7 @@ class SweepStore {
 		return cells * this.#seeds * (this.#episodes + bouts) * this.#genDuration;
 	}
 
-	/** Total sim-seconds the design asks for — the estimate must price what the toggle costs. */
+	/** Total sim-seconds the design asks for - the estimate must price what the toggle costs. */
 	get plannedSimSeconds(): number {
 		return this.#simSecondsFor(this.cellsToRun, this.#championOn);
 	}
@@ -291,12 +291,12 @@ class SweepStore {
 		return this.plannedSimSeconds / this.#simRate;
 	}
 
-	/** True once a real run has calibrated the estimate — before that the panel hedges with "≈". */
+	/** True once a real run has calibrated the estimate - before that the panel hedges with "≈". */
 	get estimateCalibrated(): boolean {
 		return this.#calibrated;
 	}
 
-	/** Forget the calibrated rate and fall back to the conservative default — the door a
+	/** Forget the calibrated rate and fall back to the conservative default - the door a
 	 *  recalibration control (and the test kit) uses. */
 	resetCalibration(): void {
 		this.#simRate = FALLBACK_SIM_RATE;
@@ -304,7 +304,7 @@ class SweepStore {
 		if (browser) localStorage.removeItem(SIM_RATE_KEY);
 	}
 
-	/** The run-size tier: none, warn (medium), or confirm (large — run() demands the cell count). */
+	/** The run-size tier: none, warn (medium), or confirm (large - run() demands the cell count). */
 	get guard(): 'none' | 'warn' | 'confirm' {
 		const minutes = this.estimatedSeconds / 60;
 		if (minutes >= GUARD_CONFIRM_MINUTES) return 'confirm';
@@ -357,24 +357,24 @@ class SweepStore {
 		this.#drilled = null;
 	}
 
-	/** The per-factor main effects of the last run — empty until there is a result. */
+	/** The per-factor main effects of the last run - empty until there is a result. */
 	get effects(): FactorEffect[] {
 		if (!this.#results) return [];
 		return sweepEffects(this.#lastFactors, this.#cells, this.#results);
 	}
 
-	/** Every factor pair's interaction from the last run — empty until there are two factors. */
+	/** Every factor pair's interaction from the last run - empty until there are two factors. */
 	get interactions(): InteractionEffect[] {
 		if (!this.#results) return [];
 		return sweepInteractions(this.#lastFactors, this.#cells, this.#results);
 	}
 
-	/** The factors the last run measured — what the convergence card picks its arms from. */
+	/** The factors the last run measured - what the convergence card picks its arms from. */
 	get lastFactors(): Factor[] {
 		return this.#lastFactors;
 	}
 
-	/** Price a finished run and remember it — the next estimate is bought with this one's receipt. */
+	/** Price a finished run and remember it - the next estimate is bought with this one's receipt. */
 	#recordSimRate(simSeconds: number, wallSeconds: number): void {
 		if (wallSeconds < 1) return; // a test executor settling in microseconds is not a price
 		this.#simRate = simSeconds / wallSeconds;
@@ -383,9 +383,9 @@ class SweepStore {
 	}
 
 	/**
-	 * Run the design. A zero-factor design is legal — one cell, the pinned world, measured. A
+	 * Run the design. A zero-factor design is legal - one cell, the pinned world, measured. A
 	 * 'confirm'-tier run REFUSES to start unless the caller passes the exact cell count back
-	 * (`confirmedCells`) — the typed-confirm contract the panel implements.
+	 * (`confirmedCells`) - the typed-confirm contract the panel implements.
 	 */
 	async run(executor?: JobExecutor, opts: { confirmedCells?: number } = {}): Promise<void> {
 		if (this.guard === 'confirm' && opts.confirmedCells !== this.cellsToRun) return;
@@ -433,7 +433,7 @@ class SweepStore {
 		this.#total = plan.total;
 		this.#sampled = plan.sampled;
 		this.#results = results;
-		this.#drilled = null; // a fresh grid — the old drilled cell is gone
+		this.#drilled = null; // a fresh grid - the old drilled cell is gone
 	}
 
 	cancel(): void {
@@ -441,7 +441,7 @@ class SweepStore {
 	}
 
 	/**
-	 * Watch a drilled condition evolve in Studio — the Sweep→Studio round-trip. The name encodes
+	 * Watch a drilled condition evolve in Studio - the Sweep→Studio round-trip. The name encodes
 	 * the factor levels that define the condition, looked up in the knob catalogs so it says
 	 * "Direction on", never "dir on".
 	 */

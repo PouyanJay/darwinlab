@@ -28,7 +28,7 @@ describe('Drawer', () => {
 		expect(page.getByRole('dialog', { name: 'Fish mind, live' }).element()).toBeTruthy();
 	});
 
-	it('leaves the bench behind it live — it is a panel, not a modal', async () => {
+	it('leaves the bench behind it live - it is a panel, not a modal', async () => {
 		await inspector(true);
 
 		const drawer = page.getByRole('dialog').element();

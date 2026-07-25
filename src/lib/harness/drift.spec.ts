@@ -1,8 +1,8 @@
 /**
- * The drift watch's own guard, spec'd with synthetic stats (no sweep — that lives in
+ * The drift watch's own guard, spec'd with synthetic stats (no sweep - that lives in
  * survival.spec.ts and is slow). The nightly bench can only prove this logic fires by
  * running for hours with a genuinely drifted engine; these tests make its failure modes
- * cheap to see — including the one that shipped: a world missing from the baseline table
+ * cheap to see - including the one that shipped: a world missing from the baseline table
  * compared as NaN and was silently exempt from the watch.
  */
 
@@ -36,7 +36,7 @@ describe('findDrift', () => {
 	});
 
 	it('throws for a world with no baseline instead of silently exempting it', () => {
-		// The NaN hole: meanPct - undefined is NaN, NaN > tolerance is false — without the
+		// The NaN hole: meanPct - undefined is NaN, NaN > tolerance is false - without the
 		// guard, a renamed or added world could drift forever and the watch would stay green.
 		const stats = [stat('Corner sense', 99)];
 		expect(() => findDrift(stats, BASELINES, 5)).toThrowError(/Corner sense/);

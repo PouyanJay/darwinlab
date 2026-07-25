@@ -1,5 +1,5 @@
 /**
- * The evaluator — what makes a number on this bench a RESULT rather than a lucky run.
+ * The evaluator - what makes a number on this bench a RESULT rather than a lucky run.
  *
  * A card shows one live population, and one population is one sample: its curve wanders by ±6
  * points between seeds, so reading a ladder off five single runs is reading noise. An evaluation
@@ -11,7 +11,7 @@
  * slices, so an evaluation the user walked away from does not go on burning the frame budget.
  *
  * NOTHING here touches the live bench. It clones the config, builds its own worlds, and throws
- * them away — the population you are watching keeps evolving, unobserved by the measurement.
+ * them away - the population you are watching keeps evolving, unobserved by the measurement.
  */
 
 import { GEN_DURATION, championGenome, cloneGenome } from '../engine';
@@ -27,21 +27,21 @@ export interface Evaluation {
 	episodes: number;
 	/** Mean seconds survived per agent, over frozen populations. */
 	meanReturn: number;
-	/** Standard deviation across seeds, in seconds — the honest error bar. */
+	/** Standard deviation across seeds, in seconds - the honest error bar. */
 	sdReturn: number;
 	/** The behavior signatures, averaged across replicates. */
 	behavior: BehaviorStats;
 	/** Per-seed returns, so a card can plot the spread rather than assert it. */
 	returns: number[];
 	/**
-	 * The learning curve — mean per-generation survival fraction, averaged across the seeds — present
+	 * The learning curve - mean per-generation survival fraction, averaged across the seeds - present
 	 * only when the request opted in (`curve: true`). It is a READ of `World.lifeCurve`, which the
 	 * engine already fills during evolution, taken after each seed is fully evolved: no extra evolving,
 	 * no touch of the RNG stream, so it cannot perturb anything the fidelity gate measures.
 	 */
 	curve?: number[];
 	/**
-	 * Per-seed mean survival of a sealed population of CHAMPION CLONES — the best genome of each
+	 * Per-seed mean survival of a sealed population of CHAMPION CLONES - the best genome of each
 	 * replicate, cloned to the population size and scored on the SAME bout seeds as the evolved
 	 * population (a paired comparison: the arena is identical, only the genomes differ). Present
 	 * only when the request opted in (`champion: true`) AND at least one replicate had a champion
@@ -59,12 +59,12 @@ export interface EvalRequest {
 	/** Scoring bouts per replicate, each one generation long. */
 	bouts?: number;
 	/**
-	 * Capture the learning curve (`Evaluation.curve`). Off by default — a sweep or a landscape runs
+	 * Capture the learning curve (`Evaluation.curve`). Off by default - a sweep or a landscape runs
 	 * hundreds of cells and does not need it (and would ship hundreds of arrays across the worker
 	 * boundary); the Ledger and behaviour runs, which answer "did it learn", turn it on.
 	 */
 	curve?: boolean;
-	/** Additionally score champion clones per seed (`Evaluation.championReturns`). Off by default —
+	/** Additionally score champion clones per seed (`Evaluation.championReturns`). Off by default -
 	 *  it roughly doubles the scoring bouts, and only the Sweep's "live" toggle asks for it. */
 	champion?: boolean;
 }
@@ -85,7 +85,7 @@ function stats(values: number[]): { mean: number; sd: number } {
 
 /**
  * Average the per-seed learning curves index-by-index into one curve. Truncates to the shortest
- * (they are equal length in practice — every seed evolves the same number of generations — but a
+ * (they are equal length in practice - every seed evolves the same number of generations - but a
  * capped or cancelled curve must not read past its end).
  */
 export function averageCurves(curves: number[][]): number[] {
@@ -98,7 +98,7 @@ export function averageCurves(curves: number[][]): number[] {
 	return out;
 }
 
-/** Average the behavior signatures across replicates — each is already a mean over bouts. */
+/** Average the behavior signatures across replicates - each is already a mean over bouts. */
 function meanBehavior(rows: BehaviorStats[]): BehaviorStats {
 	const avg = (pick: (r: BehaviorStats) => number) =>
 		rows.reduce((a, r) => a + pick(r), 0) / rows.length;
@@ -119,7 +119,7 @@ function meanBehavior(rows: BehaviorStats[]): BehaviorStats {
 /**
  * Run one evaluation in time-boxed slices.
  *
- * `onProgress` is called with 0–1 so the UI can show that work is happening rather than that the
+ * `onProgress` is called with 0-1 so the UI can show that work is happening rather than that the
  * app has hung. `signal` cancels between slices. The generator yields control to the browser
  * roughly every `budgetMs`, which is what keeps the bench painting while its own numbers are
  * being measured.
@@ -148,7 +148,7 @@ export async function evaluate(
 	// One yield point, reused: `await breathe()` hands the frame back so the tab keeps painting.
 	const breathe = () => new Promise((resolve) => setTimeout(resolve, 0));
 
-	/** Score one frozen roster over the bouts — the SAME loop for the population and the champion
+	/** Score one frozen roster over the bouts - the SAME loop for the population and the champion
 	 *  clones, so the two passes cannot drift; the seed base is the caller's pairing decision. */
 	const scoreBouts = async (
 		genomes: Genome[],
@@ -166,8 +166,8 @@ export async function evaluate(
 	for (let s = 0; s < seeds; s++) {
 		if (signal?.aborted) return null;
 
-		// EVOLVE this replicate in slices — its own seed, nothing shared with the bench. onProgress is
-		// remapped from this one evolution's 0–1 to its span of the whole run.
+		// EVOLVE this replicate in slices - its own seed, nothing shared with the bench. onProgress is
+		// remapped from this one evolution's 0-1 to its span of the whole run.
 		const world = await evolveInSlices(cfg, 1000 + s, episodes, {
 			budgetMs,
 			signal,
@@ -175,7 +175,7 @@ export async function evaluate(
 		});
 		if (!world) return null;
 
-		// Capture this seed's learning curve — a pure read of state the engine already filled while it
+		// Capture this seed's learning curve - a pure read of state the engine already filled while it
 		// evolved. Done here, after the evolve loop, so it never sits on the RNG-driven hot path.
 		if (captureCurve) curves.push([...world.lifeCurve]);
 
@@ -191,7 +191,7 @@ export async function evaluate(
 		returns.push(row.meanLife);
 
 		// CHAMPION CLONES, when asked: the replicate's best genome cloned to the population size and
-		// scored on the SAME bout seed base — a paired comparison, so the arena cannot take the credit.
+		// scored on the SAME bout seed base - a paired comparison, so the arena cannot take the credit.
 		if (scoreChampion) {
 			const best = championGenome(world);
 			if (best) {

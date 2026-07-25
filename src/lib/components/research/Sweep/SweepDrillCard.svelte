@@ -1,15 +1,15 @@
 <!--
   The drilled cell, opened in the console's right sidebar (the mock is the contract). A cell is a
-  RUN (condition × seed); the card answers, in order: WHICH world (the recipe — swept levels loud,
+  RUN (condition × seed); the card answers, in order: WHICH world (the recipe - swept levels loud,
   pinned quiet, all frozen in the cell's own config), WHAT happened (this run → the seed spread →
   the cell mean → its rank among every condition), HOW they survive (the behaviour fingerprint the
   harness already measured, with the sweep-wide average ticked), whether THIS world converged, the
   champion beside its population when Live scoring ran, THE MICROSCOPE (the behaviour trace, folded
   in from the retired Trace instrument: re-evolve this exact recipe keeping the brains, then pit the
-  evolved school against a random-brain control on one frozen bout — Q1 and Q5, on demand) — and the
+  evolved school against a random-brain control on one frozen bout - Q1 and Q5, on demand) - and the
   door into Studio.
 
-  NO decorative world preview, on purpose (the owner's call): every pixel here is a measurement —
+  NO decorative world preview, on purpose (the owner's call): every pixel here is a measurement -
   "measured, not watched". Watching is what the door is for. The microscope keeps that rule: its
   paths panels are the traced bout, not an animation.
 -->
@@ -55,15 +55,15 @@
 		allResults: (Evaluation | null)[];
 		/** Whether the run scored champion clones (the receipt's flag, frozen at run time). */
 		championScored: boolean;
-		/** The run's training budget (the receipt's, frozen) — the microscope inherits it, which is
+		/** The run's training budget (the receipt's, frozen) - the microscope inherits it, which is
 		 *  what makes the traced curve comparable to the cell's own. */
 		episodes: number;
-		/** Sim-seconds per generation, from the same frozen receipt — prices the trace estimate. */
+		/** Sim-seconds per generation, from the same frozen receipt - prices the trace estimate. */
 		genDuration: number;
 		onclose: () => void;
 	} = $props();
 
-	/** This run's survival — the one seed clicked. */
+	/** This run's survival - the one seed clicked. */
 	const value = $derived(evaluation?.returns[seed]);
 	const chips = $derived(cellRecipe(cell));
 
@@ -74,7 +74,7 @@
 	const along = (v: number, lo: number, hi: number) =>
 		hi > lo ? ((v - lo) / (hi - lo)) * 100 : 50;
 
-	// Rank among every measured condition — identity by index, ties share the higher rank.
+	// Rank among every measured condition - identity by index, ties share the higher rank.
 	const condMeans = $derived(
 		allResults
 			.map((r, index) => ({ index, value: r?.meanReturn }))
@@ -83,7 +83,7 @@
 	const thisMean = $derived(evaluation?.meanReturn ?? NaN);
 	const rank = $derived(condMeans.filter((e) => e.value > thisMean).length + 1);
 
-	// The champion beside its population — a paired comparison the evaluator measured. The delta
+	// The champion beside its population - a paired comparison the evaluator measured. The delta
 	// is vs the CELL MEAN: both are means over the same seeds and arenas; a single run's value
 	// would mix baselines.
 	const championMean = $derived(
@@ -91,7 +91,7 @@
 	);
 
 	/** The behaviour fingerprint: each metric's value on a bar scaled across EVERY condition, with
-	 *  the sweep-wide average ticked — "this world bolts harder than a typical cell", readable. */
+	 *  the sweep-wide average ticked - "this world bolts harder than a typical cell", readable. */
 	const FINGERPRINT: {
 		label: string;
 		note: string;
@@ -149,7 +149,7 @@
 	});
 
 	// The notebook door: one finding per drilled CONDITION (variant-keyed), its own curve as the
-	// evidence — a cell the drill found interesting becomes citable in the Report.
+	// evidence - a cell the drill found interesting becomes citable in the Report.
 	const inReport = $derived(findings.has('sweep', `cell-${conditionIndex}`));
 
 	function addToReport(): void {
@@ -189,7 +189,7 @@
 	);
 	const estimate = $derived(Math.max(1, Math.round(trace.estimateSeconds(episodes, genDuration))));
 
-	// The progress narrated as its stages — the boundaries are runTraceStudy's own exported split,
+	// The progress narrated as its stages - the boundaries are runTraceStudy's own exported split,
 	// so the strip says WHAT is happening and can never desync from the number it describes.
 	const stage = $derived.by(() => {
 		const p = trace.progress;
@@ -198,7 +198,7 @@
 				1,
 				Math.min(episodes, Math.ceil((p / EVOLVE_PROGRESS_SHARE) * episodes))
 			);
-			return `evolving at this recipe · gen ${gen}/${episodes} — keeping the brains`;
+			return `evolving at this recipe · gen ${gen}/${episodes} - keeping the brains`;
 		}
 		return p < CONTROL_BOUT_PROGRESS
 			? 'frozen bout · tracing the evolved school'
@@ -207,7 +207,7 @@
 
 	// The sidebar hides its scrollbar, so the microscope brings itself to the user instead of hoping
 	// they scroll: once when the study starts (the progress strip) and again when the results land.
-	// Driven from the click handler, not an effect — re-drilling an already-traced cell must NOT jump.
+	// Driven from the click handler, not an effect - re-drilling an already-traced cell must NOT jump.
 	let microscopeEl: HTMLElement | undefined = $state();
 
 	function showMicroscope(): void {
@@ -229,7 +229,7 @@
 	const underTrained = $derived(isUnderTrained(curve));
 
 	// The convergence spark, with the traced school overlaid once a study is in. The two curves share
-	// one y-scale — the overlay is a comparison, and separate scales would fake agreement — and each
+	// one y-scale - the overlay is a comparison, and separate scales would fake agreement - and each
 	// spans the full width on its own x (both trained for the same budget; lengths differ only by a
 	// cancelled tail).
 	const sparkScale = $derived.by(() => {
@@ -267,7 +267,7 @@
 			<span class="chip" class:hot={chip.swept}>{chip.text}</span>
 		{/each}
 	</div>
-	<p class="frozen">frozen at measurement — later panel edits can't relabel it</p>
+	<p class="frozen">frozen at measurement - later panel edits can't relabel it</p>
 
 	<hr class="sep" />
 
@@ -275,7 +275,7 @@
 	{#if evaluation}
 		<div class="row">
 			<span>this run</span>
-			<b class="tabular">{value != null ? formatSeconds(value) : '—'}</b>
+			<b class="tabular">{value != null ? formatSeconds(value) : '-'}</b>
 		</div>
 		<svg class="strip" viewBox="0 0 240 26" aria-label="this condition's seeds; this run ringed">
 			<line x1="4" y1="14" x2="236" y2="14" class="track" />
@@ -308,7 +308,7 @@
 				<b class="tabular">
 					{championMean != null
 						? `${formatSeconds(championMean)} `
-						: '—'}{#if championMean != null}<i class="delta" class:up={championMean > thisMean}
+						: '-'}{#if championMean != null}<i class="delta" class:up={championMean > thisMean}
 							>{formatSignedSeconds(championMean - thisMean)}</i
 						>{/if}
 				</b>
@@ -322,7 +322,7 @@
 
 		<hr class="sep" />
 
-		<!-- 3 · how they survive — measured, not watched -->
+		<!-- 3 · how they survive - measured, not watched -->
 		<div class="row">
 			<span class="eyebrow">How they survive</span><span class="quiet">measured, not watched</span>
 		</div>
@@ -338,12 +338,12 @@
 			{/each}
 		</div>
 		<p class="fpread">
-			gold ticks = the run's average cell — how this world differs from a typical one.
+			gold ticks = the run's average cell - how this world differs from a typical one.
 		</p>
 
 		{#if curve.length >= 2}
 			<hr class="sep" />
-			<!-- 4 · did THIS world converge — after a trace, the traced school's own curve lands here
+			<!-- 4 · did THIS world converge - after a trace, the traced school's own curve lands here
 			     as a dashed gold line: one seed beside the cell mean, labeled, never averaged together -->
 			<svg class="spark" viewBox="0 0 240 52" aria-label="this cell's learning curve">
 				<polyline points={sparkPath} class="curve" />
@@ -359,16 +359,16 @@
 			{/if}
 			{#if underTrained}
 				<p class="fpread warn" data-testid="drill-under-trained">
-					⚠ still climbing at the budget's edge — under-trained
+					⚠ still climbing at the budget's edge - under-trained
 				</p>
 			{:else}
-				<p class="fpread">converged ✓ — the curve plateaus before the budget ends</p>
+				<p class="fpread">converged ✓ - the curve plateaus before the budget ends</p>
 			{/if}
 		{/if}
 
 		<hr class="sep" />
 
-		<!-- 5 · the microscope — the behaviour trace, folded in: re-evolve THIS recipe keeping the
+		<!-- 5 · the microscope - the behaviour trace, folded in: re-evolve THIS recipe keeping the
 		     brains, then the evolved school against a random-brain control on one frozen bout -->
 		<div class="microscope" bind:this={microscopeEl} data-testid="drill-microscope">
 			<div class="row">
@@ -389,7 +389,7 @@
 				<Trajectories {panels} />
 				<BehaviorBars {metrics} />
 				<p class="fpread">
-					Same recipe, same frozen bout — only the brains differ. That contrast is the mechanism:
+					Same recipe, same frozen bout - only the brains differ. That contrast is the mechanism:
 					learning, not luck.
 				</p>
 
@@ -407,7 +407,7 @@
 			{:else}
 				<p class="fpread">
 					The sweep scored this world, then discarded its brains. The microscope re-runs the exact
-					recipe — same budget, fresh seed — <b>keeps the school it grew</b>, and pits it against a
+					recipe - same budget, fresh seed - <b>keeps the school it grew</b>, and pits it against a
 					random-brain control on one frozen bout.
 				</p>
 				<Button
@@ -420,13 +420,13 @@
 					<span>Trace this world · ≈ {estimate} s</span>
 				</Button>
 				{#if trace.busyElsewhere(microscopeKey)}
-					<p class="fpread">a trace is already running for another cell — it finishes first</p>
+					<p class="fpread">a trace is already running for another cell - it finishes first</p>
 				{/if}
 			{/if}
 		</div>
 	{:else}
 		<p class="frozen">
-			This cell was cancelled before it was measured — there is nothing to report.
+			This cell was cancelled before it was measured - there is nothing to report.
 		</p>
 	{/if}
 
@@ -484,7 +484,7 @@
 		white-space: nowrap;
 	}
 
-	/* a swept chip is the cell's identity — full-ink hairline, the platform's loud */
+	/* a swept chip is the cell's identity - full-ink hairline, the platform's loud */
 	.chip.hot {
 		border-color: var(--ink);
 		box-shadow: inset 0 0 0 1px var(--ink);
@@ -632,7 +632,7 @@
 		stroke-width: 1.8;
 	}
 
-	/* The traced school's curve rides the same axes as the cell mean — one seed, dashed gold, so the
+	/* The traced school's curve rides the same axes as the cell mean - one seed, dashed gold, so the
 	   comparison is visible without ever being averaged into the teal line. */
 	.curve.traced {
 		stroke: var(--gold-ink);
@@ -668,7 +668,7 @@
 		gap: var(--sp-3);
 	}
 
-	/* The control's number is muted ink — the baseline that never learned gets no colour. */
+	/* The control's number is muted ink - the baseline that never learned gets no colour. */
 	.row b.control {
 		color: var(--ink3);
 	}

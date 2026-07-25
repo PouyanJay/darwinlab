@@ -54,10 +54,10 @@ describe('createSimLoop', () => {
 		expect(seen[0]).toBeCloseTo(0.016, 6);
 	});
 
-	it('outlives a throwing frame — one bad onFrame must not kill the chain', () => {
+	it('outlives a throwing frame - one bad onFrame must not kill the chain', () => {
 		// This shipped as a total freeze once: a painter threw during the tick that ended a
 		// selection, the next setTimeout was never scheduled, and every tank froze while the
-		// page stayed alive. The throw must still PROPAGATE (nothing swallowed here) — but
+		// page stayed alive. The throw must still PROPAGATE (nothing swallowed here) - but
 		// the chain must survive it.
 		const c = clock();
 		let calls = 0;
@@ -183,11 +183,11 @@ describe('turboSlice', () => {
 	});
 });
 
-describe('createSimLoop — visibility safety (CLAUDE.md gotcha #1)', () => {
+describe('createSimLoop - visibility safety (CLAUDE.md gotcha #1)', () => {
 	afterEach(() => vi.restoreAllMocks());
 
 	it('never schedules through requestAnimationFrame (it is suspended in background tabs)', async () => {
-		// rAF does not exist in node, so install a spy for it — if the loop ever reaches for it,
+		// rAF does not exist in node, so install a spy for it - if the loop ever reaches for it,
 		// we see the call. (The e2e suite proves the same thing in a real browser by making rAF a
 		// black hole and checking the sim still runs.)
 		const raf = vi.fn(() => 0);
@@ -207,7 +207,7 @@ describe('createSimLoop — visibility safety (CLAUDE.md gotcha #1)', () => {
 	});
 });
 
-describe('createSimLoop — clock safety', () => {
+describe('createSimLoop - clock safety', () => {
 	beforeEach(() => vi.useFakeTimers());
 	afterEach(() => vi.useRealTimers());
 
@@ -217,7 +217,7 @@ describe('createSimLoop — clock safety', () => {
 		const loop = createSimLoop({ onFrame: (e) => seen.push(e), now: () => t });
 
 		loop.start();
-		t = 0; // clock jumps backwards — must not produce a negative dt (physics would reverse)
+		t = 0; // clock jumps backwards - must not produce a negative dt (physics would reverse)
 		vi.advanceTimersByTime(16);
 		loop.stop();
 

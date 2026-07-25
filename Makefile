@@ -1,4 +1,4 @@
-# Darwin Lab — the universal entry point. Thin wrapper only: every target is one script call;
+# Darwin Lab - the universal entry point. Thin wrapper only: every target is one script call;
 # the logic (checks, ports, PIDs, readiness, aggregation) lives in scripts/make/.
 
 SHELL := /bin/bash
@@ -27,7 +27,7 @@ stop:
 logs:
 	@./scripts/make/run.sh --logs
 
-# Publish to GitHub Pages — on demand only. Merging never deploys; this does.
+# Publish to GitHub Pages - on demand only. Merging never deploys; this does.
 deploy:
 	@./scripts/make/deploy.sh
 

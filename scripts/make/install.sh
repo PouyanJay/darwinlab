@@ -2,7 +2,7 @@
 # One-command dev environment setup for Darwin Lab. Idempotent: every step checks state first and
 # skips what is already in place, so re-running is a fast no-op.
 #
-# This is a pure Node/SvelteKit static app — no Python, no Docker, no databases, no secrets. The
+# This is a pure Node/SvelteKit static app - no Python, no Docker, no databases, no secrets. The
 # whole environment is: a modern Node, npm dependencies, and Playwright's browsers for e2e.
 
 set -euo pipefail
@@ -34,7 +34,7 @@ mkdir -p "$STATE_DIR"
 # ---- 1 · Node runtime (hard requirement) ----
 ui::step 1 $TOTAL "Node runtime"
 command -v node >/dev/null 2>&1 ||
-	ui::die "Node is not installed." "brew install node   (or https://nodejs.org — v${MIN_NODE_MAJOR}+)"
+	ui::die "Node is not installed." "brew install node   (or https://nodejs.org - v${MIN_NODE_MAJOR}+)"
 NODE_V=$(node --version)
 NODE_MAJOR=${NODE_V#v}
 NODE_MAJOR=${NODE_MAJOR%%.*}
@@ -60,7 +60,7 @@ ui::step 3 $TOTAL "Playwright browsers"
 if ui::run "playwright install (skips browsers already present)" npx playwright install; then
 	:
 else
-	ui::warn "browsers not installed — 'make test-e2e' will not run until this succeeds"
+	ui::warn "browsers not installed - 'make test-e2e' will not run until this succeeds"
 fi
 
 # ---- 4 · Summary ----

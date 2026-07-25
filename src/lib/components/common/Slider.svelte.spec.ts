@@ -44,7 +44,7 @@ describe('Slider', () => {
 		expect(page.getByText('0.060').element()).toBeTruthy();
 	});
 
-	it('holds no value of its own — what it shows is what it was given', async () => {
+	it('holds no value of its own - what it shows is what it was given', async () => {
 		// A slider that kept a private copy could drift from the world it is steering.
 		const onchange = vi.fn();
 		const { rerender } = render(Slider, {
@@ -61,7 +61,7 @@ describe('Slider', () => {
 		slider.dispatchEvent(new Event('input', { bubbles: true }));
 		expect(onchange).toHaveBeenCalledWith(200);
 
-		await rerender({ value: 130 }); // the store said 130, not 200 — the slider must obey
+		await rerender({ value: 130 }); // the store said 130, not 200 - the slider must obey
 		expect(slider.value).toBe('130');
 	});
 

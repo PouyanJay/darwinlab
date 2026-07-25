@@ -30,7 +30,7 @@ describe('Distribution', () => {
 
 		const bodyRows = container.querySelectorAll('tbody tr');
 		expect(bodyRows).toHaveLength(seeds.length);
-		// Second column is the survival time, one decimal + "s" — the exact cell, in seed order.
+		// Second column is the survival time, one decimal + "s" - the exact cell, in seed order.
 		expect(bodyRows[0].querySelectorAll('td')[1].textContent).toBe('3.1s');
 	});
 

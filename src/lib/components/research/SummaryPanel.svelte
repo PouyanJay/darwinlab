@@ -1,7 +1,7 @@
 <!--
   The shared shell for the right-sidebar summaries (the Sweep's run, the Ledger's claim, the Atlas's
-  landscape). It owns the common shape — an eyebrow, a lead headline card, a two-up stat grid, an
-  empty prompt — so each summary supplies only its own data and its footer (the notes + the "add to
+  landscape). It owns the common shape - an eyebrow, a lead headline card, a two-up stat grid, an
+  empty prompt - so each summary supplies only its own data and its footer (the notes + the "add to
   report" button, passed as children). One place for the panel's look, so a fourth instrument reuses
   it rather than copying it a fourth time.
 -->
@@ -20,7 +20,7 @@
 		/** The lead headline in the display face (the Ledger's claim text), not the default stat face. */
 		display = false,
 		stats = [],
-		/** Shown when there is nothing measured yet — the honest "run the instrument" prompt. */
+		/** Shown when there is nothing measured yet - the honest "run the instrument" prompt. */
 		empty,
 		children
 	}: {

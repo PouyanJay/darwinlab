@@ -1,9 +1,9 @@
 /**
- * Detail governor — watches real frame times and decides when this machine cannot afford
+ * Detail governor - watches real frame times and decides when this machine cannot afford
  * cinematic rendering.
  *
  * One lever: the story stage's `cinematic` detail (god-rays, animated gradients). Bench tiles
- * already run at `performance`. The governor is a one-way ratchet — no recovery path — because
+ * already run at `performance`. The governor is a one-way ratchet - no recovery path - because
  * the cost it removes is exactly what would make the average recover, and a stage that flaps
  * between two looks is worse than either of them.
  *
@@ -12,13 +12,13 @@
  * breakpoint, or a laptop lid), not as evidence.
  */
 
-/** Frames longer than this are hidden-tab / debugger gaps, not rendering cost — never counted. */
+/** Frames longer than this are hidden-tab / debugger gaps, not rendering cost - never counted. */
 export const OUTLIER_SECONDS = 0.25;
-/** Downgrade once the smoothed frame time crosses this (≈42fps — visibly not keeping up). */
+/** Downgrade once the smoothed frame time crosses this (≈42fps - visibly not keeping up). */
 export const DOWNGRADE_SECONDS = 0.024;
-/** Withhold judgment for the first frames — startup jank would downgrade every machine. */
+/** Withhold judgment for the first frames - startup jank would downgrade every machine. */
 export const WARMUP_FRAMES = 30;
-/** EMA smoothing per frame — small enough that one GC pause cannot cross the line alone. */
+/** EMA smoothing per frame - small enough that one GC pause cannot cross the line alone. */
 const SMOOTHING = 0.05;
 
 export class DetailGovernor {

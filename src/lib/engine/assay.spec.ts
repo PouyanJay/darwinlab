@@ -33,7 +33,7 @@ describe('the staged trial', () => {
 		expect(Math.hypot(pred.x - fish.x, pred.y - fish.y)).toBeCloseTo(150, 6);
 	});
 
-	it('stages ONE shark — a controlled trial with an uncontrolled variable is not one', () => {
+	it('stages ONE shark - a controlled trial with an uncontrolled variable is not one', () => {
 		// makeWorld spawns the configured predators twice, so every trial was running with the shark
 		// under test PLUS a second one dropped at random. See the note in assay.ts.
 		const genome = randomBrains(DIRECTION, 1, 3)[0];
@@ -68,7 +68,7 @@ describe('the staged trial', () => {
 
 		const notAsked = makeTrial(DIRECTION, genome, 180);
 		notAsked.turnedRad = 0.4;
-		expect(scoreTrial(notAsked).turnedRight).toBeNull(); // not "wrong" — not asked
+		expect(scoreTrial(notAsked).turnedRight).toBeNull(); // not "wrong" - not asked
 	});
 
 	it('judges the turn over the reaction window, not the whole chase', () => {
@@ -96,7 +96,7 @@ describe('the population assay', () => {
 		expect(result.brains).toBe(6);
 		expect(result.bearings).toHaveLength(assayBearings().length);
 		// Two of the twelve bearings have no right answer (dead ahead and dead astern), so they are not
-		// asked of anybody — see ASSAY_AMBIGUOUS_DEG.
+		// asked of anybody - see ASSAY_AMBIGUOUS_DEG.
 		const asked = result.bearings.filter((b) => b.share !== null);
 		expect(asked.length).toBeLessThan(result.bearings.length);
 		expect(result.asked).toBe(asked.reduce((sum, b) => sum + b.asked, 0));
@@ -107,12 +107,12 @@ describe('the population assay', () => {
 		/*
 		 * This is the assay's calibration, and the reason the whole metric was rewritten: a population
 		 * with no information about where the shark is must score chance. Not "roughly better than
-		 * nothing" — chance, 50%, because a coin has no bias.
+		 * nothing" - chance, 50%, because a coin has no bias.
 		 *
 		 * The previous verdict (mean flee error) failed this: blind brains scored far better than
 		 * chance on it, because a fish swimming in a straight line rotates the away-vector onto its own
 		 * velocity for free. If this test ever drifts away from 50%, the metric has started measuring
-		 * something other than the decision — and every number the assay prints is worthless.
+		 * something other than the decision - and every number the assay prints is worthless.
 		 */
 		const blind = randomBrains(BLIND, 20, 7);
 		const result = runPopulationAssay(BLIND, blind);

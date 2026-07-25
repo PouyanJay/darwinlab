@@ -7,11 +7,11 @@ import { restoreLandscapeDefaults } from '$lib/state/landscape.testkit';
 
 /**
  * The landscape panel's EDITING contract: a pick made in the panel must land in the landscape
- * store (which owns every clamp, snap and swap) — asserted against the store, not the panel's own
+ * store (which owns every clamp, snap and swap) - asserted against the store, not the panel's own
  * display, so a panel that renders a pick it never committed fails loudly. The span/snap maths has
  * its own specs (landscape.spec, landscape.svelte.spec); this one proves the panel is wired to it.
  *
- * Selects and inputs commit on `change`, which Svelte 5 DELEGATES to the app root — a dispatched
+ * Selects and inputs commit on `change`, which Svelte 5 DELEGATES to the app root - a dispatched
  * event must BUBBLE to be heard (the SubjectCard spec found that the hard way).
  */
 const commit = (el: Element, value: string) => {
@@ -24,7 +24,7 @@ describe('AtlasDesignPanel', () => {
 		restoreLandscapeDefaults();
 	});
 
-	it('an axis dropdown never offers the other slot’s pick — an axis can’t face itself', async () => {
+	it('an axis dropdown never offers the other slot’s pick - an axis can’t face itself', async () => {
 		render(AtlasDesignPanel);
 		const values = (label: string) =>
 			[...page.getByLabelText(label, { exact: true }).element().querySelectorAll('option')].map(

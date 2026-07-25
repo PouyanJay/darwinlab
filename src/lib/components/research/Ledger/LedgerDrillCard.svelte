@@ -1,9 +1,9 @@
 <!--
   The drilled record, opened in the console's right sidebar. The card answers, in order: WHICH claim
   (the sentence, its verdict, when it was settled), WHICH two worlds (arm chips loud, the shared
-  background quiet — the reader can see the arms differ in the claimed knob only, all frozen at
+  background quiet - the reader can see the arms differ in the claimed knob only, all frozen at
   measurement), WHAT the numbers were (both intervals re-plotted, Δ with its CI, effect size, seeds,
-  fingerprint), WHY the verdict fell that way (the pre-registered reading, in plain words) — and the
+  fingerprint), WHY the verdict fell that way (the pre-registered reading, in plain words) - and the
   doors: load the record back into the composer, re-test the same claim at today's base, or send the
   finding to the notebook, where the Report's Q3 picks it up.
 -->
@@ -17,7 +17,7 @@
 
 	const entry = $derived(ledger.selected);
 
-	/** Pre-composer records carry no template pick — their claims may no longer be composable, so
+	/** Pre-composer records carry no template pick - their claims may no longer be composable, so
 	 *  the composer doors close rather than guess. */
 	const isComposable = $derived(entry?.templateId != null && entry?.slots != null);
 
@@ -36,7 +36,7 @@
 		ledger.run();
 	}
 
-	// One finding per claim per subject — keyed by the CLAIM, so re-testing updates the same slot.
+	// One finding per claim per subject - keyed by the CLAIM, so re-testing updates the same slot.
 	const inReport = $derived(entry ? findings.has('ledger', entry.claimId) : false);
 
 	function addToReport(): void {
@@ -56,12 +56,12 @@
 
 {#if entry}
 	<div class="drill" data-testid="ledger-drill">
-		<span class="eyebrow">The record — this verdict</span>
+		<span class="eyebrow">The record - this verdict</span>
 		<p class="sentence">{entry.text}</p>
 		<div class="vrow">
 			<span class="badge verdict-{entry.verdict}">{entry.verdict}</span>
 			<span class="when tabular"
-				>recorded {entry.recorded ? entry.recorded.slice(0, 10) : '—'} · {entry.seeds} seeds/arm</span
+				>recorded {entry.recorded ? entry.recorded.slice(0, 10) : '-'} · {entry.seeds} seeds/arm</span
 			>
 		</div>
 
@@ -80,7 +80,7 @@
 				{/each}
 			</div>
 			<p class="frozen">
-				quiet chips = the shared background, frozen at measurement — the arms differ in the loud
+				quiet chips = the shared background, frozen at measurement - the arms differ in the loud
 				chips only
 			</p>
 		{/if}
@@ -126,7 +126,7 @@
 				</Button>
 			{:else}
 				<p class="frozen">
-					settled before the composer existed — re-compose it from the templates to re-test
+					settled before the composer existed - re-compose it from the templates to re-test
 				</p>
 			{/if}
 			<ReportButton {inReport} onadd={addToReport} />

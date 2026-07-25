@@ -54,7 +54,7 @@ describe('expandLandscape', () => {
 		expect(cell.cfg.vision).toBe(b.vision); // an untouched field is unchanged
 	});
 
-	it('snaps integer axes to their real step — even prey, whole pixels of top speed', () => {
+	it('snaps integer axes to their real step - even prey, whole pixels of top speed', () => {
 		const preyCells = expandLandscape(
 			{ base: base(), axisX: axis('prey'), axisY: axis('mutation') },
 			4,
@@ -83,7 +83,7 @@ describe('planLandscape + landscapeJobs', () => {
 
 		const jobs = landscapeJobs(plan.cells, { seeds: 4, episodes: 18, bouts: 3 });
 		expect(jobs).toHaveLength(25);
-		// The run size travels onto every job wholesale — seeds AND episodes AND bouts.
+		// The run size travels onto every job wholesale - seeds AND episodes AND bouts.
 		expect(jobs[0]).toMatchObject({ seeds: 4, episodes: 18, bouts: 3 });
 		expect(jobs[0].cfg).toBe(plan.cells[0].cfg);
 	});
@@ -137,7 +137,7 @@ function fieldWithColumnMeans(columnMeans: number[]): LandscapeField {
 	};
 }
 
-describe('xMarginal — the field collapsed onto its X axis for the Report strip', () => {
+describe('xMarginal - the field collapsed onto its X axis for the Report strip', () => {
 	it('pairs each column mean with its X value, in axis order', () => {
 		// column means [10, 6, 3, 2]; xs = linspace(0.6, 1.4, 4) ends at the axis bounds
 		const band = xMarginal(fieldWithColumnMeans([10, 6, 3, 2]));
@@ -163,7 +163,7 @@ describe('xMarginal — the field collapsed onto its X axis for the Report strip
 	});
 });
 
-describe('steepestFalloff — the cliff, measured not assumed', () => {
+describe('steepestFalloff - the cliff, measured not assumed', () => {
 	it('finds the column boundary where survival drops hardest', () => {
 		// column means fall off a cliff between columns 1 and 2
 		const field = fieldWithColumnMeans([10, 9, 3, 2]);
@@ -174,7 +174,7 @@ describe('steepestFalloff — the cliff, measured not assumed', () => {
 		expect(cliff?.x).toBeCloseTo(1.0);
 	});
 
-	it('returns null when survival never falls along X — no fake cliff on a rising field', () => {
+	it('returns null when survival never falls along X - no fake cliff on a rising field', () => {
 		expect(steepestFalloff(fieldWithColumnMeans([2, 3, 4, 5]))).toBeNull();
 	});
 
@@ -186,7 +186,7 @@ describe('steepestFalloff — the cliff, measured not assumed', () => {
 	});
 
 	it('averages a partially-dead column over its FINITE rows, not down to NaN', () => {
-		// col 1 has a single failed cell (row 1). Its column mean must be the surviving row's 4 — so the
+		// col 1 has a single failed cell (row 1). Its column mean must be the surviving row's 4 - so the
 		// 10→4 drop is real. Drop the finite-row guard and col 1's mean collapses to NaN, both its drops
 		// vanish, and this returns null: this asymmetric case is what distinguishes the guard.
 		const field: LandscapeField = {
@@ -203,7 +203,7 @@ describe('steepestFalloff — the cliff, measured not assumed', () => {
 		expect(cliff?.drop).toBeCloseTo(6);
 	});
 
-	it('returns null for a single-column field — no slope to fall off', () => {
+	it('returns null for a single-column field - no slope to fall off', () => {
 		const field: LandscapeField = {
 			cols: 1,
 			rows: 3,
@@ -217,7 +217,7 @@ describe('steepestFalloff — the cliff, measured not assumed', () => {
 	});
 });
 
-describe('spanAxis — an edited range, made legal', () => {
+describe('spanAxis - an edited range, made legal', () => {
 	it('clamps into the axis bounds and orders an inverted pair', () => {
 		const spanned = spanAxis(axis('predSpeed'), 1.9, 0.3);
 		expect(spanned.min).toBeCloseTo(0.6); // clamped up to the axis bound
@@ -239,7 +239,7 @@ describe('spanAxis — an edited range, made legal', () => {
 		expect(garbage.max).toBeCloseTo(0.14);
 	});
 
-	it('everything downstream reads the span — a plan over it hits the edited corners', () => {
+	it('everything downstream reads the span - a plan over it hits the edited corners', () => {
 		const cells = expandLandscape(
 			{ base: base(), axisX: spanAxis(axis('predSpeed'), 0.8, 1.0), axisY: axis('mutation') },
 			3,
@@ -250,9 +250,9 @@ describe('spanAxis — an edited range, made legal', () => {
 	});
 });
 
-describe('rowCliffs — the cliff, traced row by row', () => {
+describe('rowCliffs - the cliff, traced row by row', () => {
 	it('finds each row its own steepest drop, so the edge can bend', () => {
-		// row 0 falls between columns 1→2; row 1 falls earlier, between 0→1 — the edge moved left
+		// row 0 falls between columns 1→2; row 1 falls earlier, between 0→1 - the edge moved left
 		const field: LandscapeField = {
 			cols: 3,
 			rows: 2,
@@ -269,7 +269,7 @@ describe('rowCliffs — the cliff, traced row by row', () => {
 		expect(cliffs[1]?.drop).toBeCloseTo(5);
 	});
 
-	it('leaves a flat or rising row untraced — no fake cliff', () => {
+	it('leaves a flat or rising row untraced - no fake cliff', () => {
 		const field: LandscapeField = {
 			cols: 3,
 			rows: 2,
@@ -296,7 +296,7 @@ describe('rowCliffs — the cliff, traced row by row', () => {
 	});
 });
 
-describe('rowSection — one row of the map as a curve', () => {
+describe('rowSection - one row of the map as a curve', () => {
 	it('pairs each cell with its X value, for the given row', () => {
 		const field = fieldWithColumnMeans([10, 6, 3, 2]); // both rows equal
 		const section = rowSection(field, 1);
@@ -306,7 +306,7 @@ describe('rowSection — one row of the map as a curve', () => {
 	});
 });
 
-describe('pinnedBase — the two-state background, compiled', () => {
+describe('pinnedBase - the two-state background, compiled', () => {
 	it('applies explicit pins through the Sweep knob catalog and leaves unpinned keys alone', () => {
 		const cfg = pinnedBase(base(), { persistence: true, dir: false });
 		expect(cfg.persistence).toBe(true); // the pin reached the config

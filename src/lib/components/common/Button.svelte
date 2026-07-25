@@ -1,10 +1,10 @@
 <!--
   The app's button, in the four shapes the design uses:
 
-    primary  the dark/light solid — Pause/Evolve, Ablate
-    accent   the coloured call to action — Play story
-    ghost    a panel-coloured button with a hairline border — Train, theme, + add, Conditions
-    icon     a bare square that only holds a glyph — ↻ ⧉ ✕ (`tone="danger"` reddens ✕ on hover)
+    primary  the dark/light solid - Pause/Evolve, Ablate
+    accent   the coloured call to action - Play story
+    ghost    a panel-coloured button with a hairline border - Train, theme, + add, Conditions
+    icon     a bare square that only holds a glyph - ↻ ⧉ ✕ (`tone="danger"` reddens ✕ on hover)
 
   Anything a <button> takes (onclick, disabled, title, aria-*, style) passes straight through.
 -->
@@ -32,7 +32,7 @@
 </script>
 
 <!-- `class` is pulled out of the rest props and MERGED, not spread. Spread, it would land after the
-     variant classes and replace them wholesale — a caller adding a layout class (`.wide`) would
+     variant classes and replace them wholesale - a caller adding a layout class (`.wide`) would
      silently strip the button of its own styling. -->
 <button {type} class={['btn', variant, size, tone, extra]} {...rest}>
 	{@render children()}
@@ -110,7 +110,7 @@
 	}
 
 	.icon.danger:not(:disabled):hover {
-		color: var(--danger-ink); /* danger AS TEXT — see tokens.css */
+		color: var(--danger-ink); /* danger AS TEXT - see tokens.css */
 	}
 
 	.icon.sm {

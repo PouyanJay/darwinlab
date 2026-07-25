@@ -1,5 +1,5 @@
 /**
- * The escape map — an evolved policy painted as one readable picture.
+ * The escape map - an evolved policy painted as one readable picture.
  *
  * The Brain Inspector shows the WIRING; this shows the RULE. `probePolicy` (engine/probe.ts) has
  * already asked the brain "adversary here: what do you do?" at every bearing and distance; this
@@ -9,9 +9,9 @@
  * ENCODING (the owner's call):
  *   • angle around the disc = the adversary's bearing (top = dead ahead, right = the agent's right)
  *   • radius = the adversary's distance (centre = on top of it, rim = the edge of vision)
- *   • HUE = which way the agent steers there — cool (excite) = turns left, warm (inhibit) = right
+ *   • HUE = which way the agent steers there - cool (excite) = turns left, warm (inhibit) = right
  *   • SATURATION = how decisively it steers (|turn|); a near-zero turn washes out to neutral grey
- *   • BRIGHTNESS = throttle (thrust) — a coasting cell is dark, a bolting one is bright
+ *   • BRIGHTNESS = throttle (thrust) - a coasting cell is dark, a bolting one is bright
  * So a bright warm arc behind the fish reads "when the shark is behind me I turn right and run";
  * a uniformly dim grey disc reads "this fish ignores where the shark is" (see `map.flat`).
  *
@@ -37,7 +37,7 @@ export interface DrawEscapeMapOpts {
 	map: PolicyMap;
 	/** Where the real adversary is right now, or null when nothing is in the agent's vision. */
 	marker: EscapeMarker | null;
-	/** World clock — drives a gentle ping on the live marker. */
+	/** World clock - drives a gentle ping on the live marker. */
 	t: number;
 	theme: ThemeName;
 	reducedMotion?: boolean;
@@ -70,7 +70,7 @@ function canvasAngle(bearing: number): number {
 	return bearing - Math.PI / 2;
 }
 
-/** The disc's placement on the canvas — shared by every layer below. */
+/** The disc's placement on the canvas - shared by every layer below. */
 interface Disc {
 	cx: number;
 	cy: number;
@@ -85,8 +85,8 @@ function drawPolicyCells(
 	theme: ThemeName
 ): void {
 	const th = THEMES[theme];
-	const LEFT = hexToRgb(th.excite); // cool — turns left  (turn < 0)
-	const RIGHT = hexToRgb(th.inhibit); // warm — turns right (turn ≥ 0)
+	const LEFT = hexToRgb(th.excite); // cool - turns left  (turn < 0)
+	const RIGHT = hexToRgb(th.inhibit); // warm - turns right (turn ≥ 0)
 	const NEUTRAL = tripletToRgb(th.lensIdle); // no strong steer
 	const bg: Rgb = theme === 'light' ? [247, 247, 242] : [18, 18, 25];
 
@@ -133,7 +133,7 @@ function drawDistanceRings(
 	ctx.globalAlpha = 1;
 }
 
-/** Where the real adversary sits on the map right now — a gently breathing ring and dot. */
+/** Where the real adversary sits on the map right now - a gently breathing ring and dot. */
 function drawLiveMarker(
 	ctx: CanvasRenderingContext2D,
 	{ cx, cy, radius }: Disc,

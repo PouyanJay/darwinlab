@@ -2,11 +2,11 @@ import { expect, test } from '@playwright/test';
 import { gotoApp, waitForPrewarm, openAnalysis } from './helpers';
 
 /**
- * The MEASUREMENT suite — the two tests that make this a benchmark rather than a demo.
+ * The MEASUREMENT suite - the two tests that make this a benchmark rather than a demo.
  *
  * They are in their own file because they burn real CPU: an evaluation replicates an environment
  * across independent seeds, and the ablation matrix does it six times over. Run alongside the rest
- * of the suite they starve the other workers, and the sims those tests are watching crawl — which
+ * of the suite they starve the other workers, and the sims those tests are watching crawl - which
  * surfaces as a DIFFERENT story or bench test failing on each run, which is the worst kind of
  * flake: one that never accuses the thing actually at fault.
  *
@@ -44,7 +44,7 @@ test('EVALUATION: a card reports a result with an error bar, and withdraws it wh
 	// the result is NOT stale yet
 	await expect(tile.getByTestId('eval-stale')).toHaveCount(0);
 
-	// change the environment out from under it — one sense pill is enough
+	// change the environment out from under it - one sense pill is enough
 	await tile.getByRole('button', { name: 'close', exact: true }).click();
 
 	await expect(tile.getByTestId('eval-stale')).toBeVisible();
@@ -57,14 +57,14 @@ test("THE ABLATION MATRIX is PER CARD: it runs in that environment's own conditi
 	 * The point of the fix this test exists for: a channel is worth exactly what ITS OWN environment
 	 * makes it worth. Boundary rays pay in a world with no free wall-avoidance and are worthless in
 	 * one that has it; bearing pays when the adversary is slow enough to escape and buys nothing when
-	 * it is not. A single bench-wide matrix — which is what shipped first — answered a question
+	 * it is not. A single bench-wide matrix - which is what shipped first - answered a question
 	 * nobody asked, because it measured somebody else's tank.
 	 */
 	test.setTimeout(300_000);
 	const tile = page.locator('section[aria-label^="world"]').nth(2);
 	const matrix = tile.getByRole('region', { name: /ablation matrix/ });
 
-	// every card carries its own, and it is on the card — not once at the bottom of the bench. The
+	// every card carries its own, and it is on the card - not once at the bottom of the bench. The
 	// panels are folded into each node's analysis disclosure now, so count them including the hidden.
 	await expect(
 		page.getByRole('region', { name: /ablation matrix/, includeHidden: true })
@@ -82,8 +82,8 @@ test("THE ABLATION MATRIX is PER CARD: it runs in that environment's own conditi
 	await expect(matrix.getByRole('row', { name: /^blind/ })).toContainText('0%'); // the baseline
 
 	/*
-	 * AND IT BELONGS TO THESE CONDITIONS. Change what the environment IS — not its pills, which the
-	 * matrix varies itself — and the numbers stop describing it. They are struck through and said so,
+	 * AND IT BELONGS TO THESE CONDITIONS. Change what the environment IS - not its pills, which the
+	 * matrix varies itself - and the numbers stop describing it. They are struck through and said so,
 	 * rather than sitting there answering a question about a tank that no longer exists.
 	 */
 	await tile.getByRole('button', { name: 'Conditions' }).click();

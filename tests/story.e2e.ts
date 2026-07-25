@@ -4,7 +4,7 @@ import { gotoApp, waitForPrewarm } from './helpers';
 /**
  * The Phase 8 gate: the bench told as a film, driven in the real app.
  *
- * The gate for this phase is a presentation one — the tour has to run itself, end where it should,
+ * The gate for this phase is a presentation one - the tour has to run itself, end where it should,
  * and be steerable from the keyboard by someone standing in front of a room. Everything on screen is
  * still the live simulation: the fish are a fresh generation of that world's evolved brains, and you
  * can stop the film, click one, and read its mind.
@@ -20,7 +20,7 @@ test.beforeEach(async ({ page }) => {
 	// is theme-agnostic otherwise, and dark story mode is scanned for contrast over in a11y.e2e.
 	await page.addInitScript(() => localStorage.setItem('darwinlab:theme', 'light'));
 	await gotoApp(page);
-	// The prewarm must LAND before the film rolls. (The trap cost a debugging session once — the
+	// The prewarm must LAND before the film rolls. (The trap cost a debugging session once - the
 	// story opened over a bench that was still at generation 3.)
 	await expect(page.getByRole('button', { name: 'Pause' })).toBeVisible();
 	await waitForPrewarm(page);
@@ -33,22 +33,22 @@ test('opens on the first scene: the world that was given nothing', async ({ page
 	await expect(caption(page)).toHaveText('Blind drift');
 	await expect(counter(page)).toContainText('scene 1 of 5');
 
-	// The fish are the world's evolved brains — a full FRESH generation of them, not the handful of
+	// The fish are the world's evolved brains - a full FRESH generation of them, not the handful of
 	// survivors the bench had. Deliberately a WIDE range, not an exact 20: the scene opens with the
 	// gen-0 double predators and Blind drift dies fast, so by the time this line polls (a beat later,
-	// and a longer beat under CI load) several are already gone — an 18-20 bound flaked exactly here.
+	// and a longer beat under CI load) several are already gone - an 18-20 bound flaked exactly here.
 	// The claim is only "a full tank, not the remains of one": ten-plus of twenty is well clear of the
 	// bench's Blind drift, which is down to a third or fewer by now.
 	await expect(story(page).getByTestId('story-alive')).toHaveText(/^(1[0-9]|20)$/);
 	await expect(story(page)).toContainText('/ 20'); // …out of the full generation
 	// …bred to AT LEAST the generation the prewarm reached (15). Not an exact 15: Blind drift's
-	// population collapses, and a generation ends the instant its last fish is eaten — so by the time
+	// population collapses, and a generation ends the instant its last fish is eaten - so by the time
 	// the film rolls this world may already have churned a generation or two past the prewarm target.
 	// A slow CI runner made that visible; the claim is "the bench's real generation, not gen 0".
 	await expect(story(page)).toContainText(/Gen (1[5-9]|[2-9]\d)/);
 });
 
-test('the rail tags the sense each scene ADDS — the reason the scenes are in this order', async ({
+test('the rail tags the sense each scene ADDS - the reason the scenes are in this order', async ({
 	page
 }) => {
 	const rail = story(page).getByText('Brain inputs this world').locator('..');
@@ -69,11 +69,11 @@ test('THE TOUR: it auto-advances through every scene and ends PAUSED on the last
 	page
 }) => {
 	// Five scenes of 18 sim-seconds each, at 2×, is ~45 real seconds of film. That is the point of
-	// the phase — it has to run itself unattended — so the test gets the time to sit and watch it.
+	// the phase - it has to run itself unattended - so the test gets the time to sit and watch it.
 	test.setTimeout(150_000);
 
 	// 18 sim-seconds a scene × 5 scenes: run it at 2× so the tour is watchable inside a test. The
-	// film's own speed control, not the bench's behind it — both exist, and both say "2×".
+	// film's own speed control, not the bench's behind it - both exist, and both say "2×".
 	await story(page).getByRole('radio', { name: '2×' }).click();
 
 	for (const [index, name] of [
@@ -93,7 +93,7 @@ test('THE TOUR: it auto-advances through every scene and ends PAUSED on the last
 	await expect(counter(page)).toContainText('scene 5 of 5');
 });
 
-test('the arrows belong to the speed control while it has focus — the film must not jump', async ({
+test('the arrows belong to the speed control while it has focus - the film must not jump', async ({
 	page
 }) => {
 	// A presenter changing pace with the arrow keys must not have the scene skip out from under
@@ -123,12 +123,12 @@ test('the keyboard is the transport: arrows move, Space holds, Esc leaves', asyn
 	await expect(page.locator('section[aria-label^="world"]')).toHaveCount(5); // back on the bench
 });
 
-test('the takeover TAKES focus — or Space would re-cut the film under the presenter', async ({
+test('the takeover TAKES focus - or Space would re-cut the film under the presenter', async ({
 	page
 }) => {
 	/*
 	 * The bug this guards was worse than "the key does nothing". Focus stayed on the "Play story"
-	 * button in the top bar, now hidden behind a full-screen film — so Space pressed THAT button
+	 * button in the top bar, now hidden behind a full-screen film - so Space pressed THAT button
 	 * again and restarted the story from scene one, mid-presentation.
 	 */
 	const focused = () =>
@@ -147,12 +147,12 @@ test('the takeover TAKES focus — or Space would re-cut the film under the pres
 	await expect(page.getByRole('button', { name: 'Play story' })).toBeFocused();
 });
 
-test('the bench behind the film is INERT — Tab cannot reach a control nobody can see', async ({
+test('the bench behind the film is INERT - Tab cannot reach a control nobody can see', async ({
 	page
 }) => {
 	/*
 	 * Without this, a keyboard user tabbing during a film walks straight into the bench hidden behind
-	 * it — and Enter on an invisible "remove world" button removes a world, mid-presentation, with no
+	 * it - and Enter on an invisible "remove world" button removes a world, mid-presentation, with no
 	 * way to see it happen.
 	 */
 	const reachable: string[] = [];
@@ -184,10 +184,10 @@ test('nothing here is a recording: a fish can be stopped and read mid-scene', as
 	const tank = story(page).getByRole('application', { name: /tank/i });
 	const box = (await tank.boundingBox())!;
 
-	// Find a fish by its colour and click it — the same pickCreature path a presenter's click takes.
+	// Find a fish by its colour and click it - the same pickCreature path a presenter's click takes.
 	//
 	// POLLED, not scanned once: the stage paints on the sim loop, and a single scan taken before the
-	// scene's first frame lands finds an empty canvas and reports "no fish in the tank" — which is a
+	// scene's first frame lands finds an empty canvas and reports "no fish in the tank" - which is a
 	// lie about the product and a truth about the test's timing. It only ever bit under a loaded
 	// suite, which is exactly when a flake is least welcome.
 	const findFish = () =>
@@ -208,7 +208,7 @@ test('nothing here is a recording: a fish can be stopped and read mid-scene', as
 
 	const inspector = page.getByRole('dialog', { name: /Fish mind/ });
 
-	// Poll the WHOLE gesture — find a fish, click it, check the mind opened — not just "a fish exists".
+	// Poll the WHOLE gesture - find a fish, click it, check the mind opened - not just "a fish exists".
 	// Pausing the story takes a frame to still the tank, and a click that lands a pixel off the pickable
 	// body selects nothing; a single find-then-click therefore misses under a loaded suite (it did).
 	// Retrying the gesture makes it robust without weakening what it proves: a live brain opened on a
@@ -224,7 +224,7 @@ test('nothing here is a recording: a fish can be stopped and read mid-scene', as
 			{ timeout: 15_000 }
 		)
 		.toBe(true);
-	// The film is a real takeover — the app behind it (the inspector included) is inert, so the panel
+	// The film is a real takeover - the app behind it (the inspector included) is inert, so the panel
 	// opens READ-ONLY. Its default escape map is this fish's own evolved rule, which is proof enough a
 	// live brain opened mid-scene; the wiring toggle needs interaction the inert film withholds.
 	await expect(inspector).toContainText('what it does at every shark position');

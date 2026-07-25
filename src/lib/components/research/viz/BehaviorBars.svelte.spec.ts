@@ -23,18 +23,18 @@ describe('BehaviorBars', () => {
 		expect(container.textContent).toContain('80px');
 	});
 
-	it('scales the two bars of a row to their own larger value — control-max and evolved-max both', () => {
+	it('scales the two bars of a row to their own larger value - control-max and evolved-max both', () => {
 		const { container } = render(BehaviorBars, { metrics });
 		const rows = container.querySelectorAll('.metric');
 
-		// Flee error: control (90) is the row max — it fills the track, evolved is 20/90 ≈ 22%.
+		// Flee error: control (90) is the row max - it fills the track, evolved is 20/90 ≈ 22%.
 		const flee = rows[0];
 		expect((flee.querySelector('.fill.control') as HTMLElement).style.width).toBe('100%');
 		expect(
 			parseFloat((flee.querySelector('.fill.evolved') as HTMLElement).style.width)
 		).toBeCloseTo((20 / 90) * 100, 1);
 
-		// Distance kept: evolved (80) is the row max — so THIS row proves the scale follows the larger
+		// Distance kept: evolved (80) is the row max - so THIS row proves the scale follows the larger
 		// side, not always the control (a bug that scaled by control would still pass the flee row).
 		const dist = rows[2];
 		expect((dist.querySelector('.fill.evolved') as HTMLElement).style.width).toBe('100%');

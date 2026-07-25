@@ -1,11 +1,11 @@
 /**
- * The sim loop — bridges the pure engine to the browser.
+ * The sim loop - bridges the pure engine to the browser.
  *
  * ⚠️ VISIBILITY-SAFE BY DESIGN (CLAUDE.md gotcha #1): this drives the simulation with a
  * self-scheduling `setTimeout`, NOT `requestAnimationFrame`. rAF is *suspended entirely* when
  * the tab or frame is offscreen, which froze the sim in an earlier build. `setTimeout` is
- * throttled in background tabs (to ~1s) but never stops, so the simulation keeps advancing —
- * slowly — instead of dying. Do not "optimize" this back to rAF.
+ * throttled in background tabs (to ~1s) but never stops, so the simulation keeps advancing -
+ * slowly - instead of dying. Do not "optimize" this back to rAF.
  *
  * Frame time is clamped (`maxFrameSeconds`) so a long stall (background tab, breakpoint) can
  * never deliver one enormous dt that would tunnel agents through walls.
@@ -26,14 +26,14 @@ export const TURBO_DT = 1 / 60;
 export interface SimLoopOptions {
 	/**
 	 * Called once per frame. `elapsed` is the real elapsed time in seconds, already clamped, and
-	 * is what the physics steps on. `frameSeconds` is the same gap UNclamped — the honest frame
+	 * is what the physics steps on. `frameSeconds` is the same gap UNclamped - the honest frame
 	 * time, which is what a performance governor needs (a clamped value would report a struggling
 	 * machine as a healthy 50ms forever).
 	 */
 	onFrame: (elapsed: number, frameSeconds: number) => void;
 	intervalMs?: number;
 	maxFrameSeconds?: number;
-	/** Injectable clock — tests supply a controllable one. */
+	/** Injectable clock - tests supply a controllable one. */
 	now?: () => number;
 }
 
@@ -67,7 +67,7 @@ export function createSimLoop(options: SimLoopOptions): SimLoop {
 		const elapsed = Math.min(maxFrameSeconds, seconds);
 		last = ts;
 		// `finally`, so one bad frame cannot kill the chain: without it, a throw anywhere in
-		// onFrame ends the loop forever — page alive, every tank frozen. The exception still
+		// onFrame ends the loop forever - page alive, every tank frozen. The exception still
 		// propagates (uncaught, loud in the console); nothing is swallowed here.
 		try {
 			onFrame(elapsed, seconds);
@@ -78,7 +78,7 @@ export function createSimLoop(options: SimLoopOptions): SimLoop {
 
 	return {
 		start() {
-			if (running) return; // idempotent — never stack two timer chains
+			if (running) return; // idempotent - never stack two timer chains
 			running = true;
 			last = now();
 			timer = setTimeout(tick, intervalMs);
@@ -99,7 +99,7 @@ export function createSimLoop(options: SimLoopOptions): SimLoop {
 /**
  * Split one frame into fixed sub-steps scaled by the speed control (½× / 1× / 2×).
  *
- * Speed multiplies how much SIM time passes per real second — it does not change the frame
+ * Speed multiplies how much SIM time passes per real second - it does not change the frame
  * rate. At 2× we take two sub-steps rather than one double-sized step, so the integrator stays
  * stable and fast-forwarding never changes the physics.
  */
@@ -110,7 +110,7 @@ export function subSteps(elapsed: number, speed: number): { steps: number; dt: n
 
 export interface TurboSliceOptions {
 	budgetMs?: number;
-	/** Injectable clock — tests supply a deterministic one. */
+	/** Injectable clock - tests supply a deterministic one. */
 	now?: () => number;
 }
 
@@ -136,6 +136,6 @@ export function turboSlice(
 			}
 		}
 		if (allDone) return true;
-		if (now() - started >= budgetMs) return false; // out of budget — resume next frame
+		if (now() - started >= budgetMs) return false; // out of budget - resume next frame
 	}
 }

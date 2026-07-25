@@ -7,7 +7,7 @@ import { gotoApp, waitForPrewarm } from './helpers';
  * The engine specs prove schooling evolves and pays; the store specs prove the toggle rewires the
  * brain. What is left for the browser is the part a USER touches: that turning "Sense the shoal" on
  * in a world's Conditions gives that world the shoal-sense pills and the live school readout, and
- * that turning it off takes them away again — no separate exhibit, any world can school.
+ * that turning it off takes them away again - no separate exhibit, any world can school.
  */
 
 const tile = (page: Page, i: number) => page.locator('section[aria-label^="world"]').nth(i);
@@ -29,7 +29,7 @@ test('a world schools when you toggle it on in Conditions, and stops when you to
 	await gotoApp(page);
 	await waitForPrewarm(page);
 
-	// no world schools to start — no school readout anywhere
+	// no world schools to start - no school readout anywhere
 	await expect(page.getByTestId('school-nnd')).toHaveCount(0);
 
 	await openAgentsConditions(page);
@@ -39,11 +39,11 @@ test('a world schools when you toggle it on in Conditions, and stops when you to
 	await page.keyboard.press('Escape'); // close the dialog
 
 	// that one world now carries a live spacing readout; the others still do not. (Pills read "shoal"
-	// in the DOM — uppercased only by CSS — so the readout is the robust check.)
+	// in the DOM - uppercased only by CSS - so the readout is the robust check.)
 	await expect(page.getByTestId('school-nnd')).toHaveCount(1); // only the world we turned on
 	await expect(tile(page, 0).getByTestId('school-nnd')).toHaveText(/\d+px apart/); // a live number warms in
 
-	// turn it back off — the schooling chrome goes with it
+	// turn it back off - the schooling chrome goes with it
 	await openAgentsConditions(page);
 	await shoalToggle(page).click();
 	await expect(shoalToggle(page)).not.toBeChecked();

@@ -1,12 +1,12 @@
 <!--
-  The landscape — a survival heatmap that FILLS its frame, read like a chart of the whole plane.
+  The landscape - a survival heatmap that FILLS its frame, read like a chart of the whole plane.
 
   The grid stretches to the full width × height (rectangular cells, no dead margin), with the two
   parameters as real axes: predator speed and its partner ticked along the bottom and up the side.
   Hover a cell for its numbers, click (or Enter on a keyboard-moved cursor) to drill in. The measured
   cliff is traced in gold, row by row, where survival falls off hardest, and the colour scale sits on
-  the map so "coral = wiped, teal = survives" is right there. Coordinates map straight to pixels — a
-  column is width/cols wide, with row 0 at the BOTTOM (Y grows upward, like a chart) — and the
+  the map so "coral = wiped, teal = survives" is right there. Coordinates map straight to pixels - a
+  column is width/cols wide, with row 0 at the BOTTOM (Y grows upward, like a chart) - and the
   hit-test uses the same mapping.
 -->
 <script lang="ts">
@@ -18,7 +18,7 @@
 
 	let chart = $state<HTMLDivElement>();
 
-	/** The outlined cell — set by hover or the keyboard cursor; the one Enter/click drills. */
+	/** The outlined cell - set by hover or the keyboard cursor; the one Enter/click drills. */
 	let focus = $state<CellRef | null>(null);
 	/** Pointer position within the chart, for placing the tooltip. */
 	let pointer = $state<{ x: number; y: number } | null>(null);
@@ -56,7 +56,7 @@
 	});
 
 	/** Which grid cell a chart-relative point falls on, or null if outside. Row iy=0 sits at the
-	 *  BOTTOM (Y grows upward, like a chart) — the same flip drawLandscape paints with. */
+	 *  BOTTOM (Y grows upward, like a chart) - the same flip drawLandscape paints with. */
 	function cellAt(x: number, y: number): CellRef | null {
 		const field = landscape.field;
 		if (!field || !chart) return null;
@@ -76,7 +76,7 @@
 		if (cell) landscape.select(cell.ix, cell.iy);
 	}
 
-	/** Arrow keys move a cursor cell; Enter/Space drills it — the keyboard path to the same drill-in. */
+	/** Arrow keys move a cursor cell; Enter/Space drills it - the keyboard path to the same drill-in. */
 	function onkeydown(event: KeyboardEvent): void {
 		const field = landscape.field;
 		if (!field) return;
@@ -112,7 +112,7 @@
 		field ? [...axisTicks(field.axisY.min, field.axisY.max, field.axisY.format)].reverse() : []
 	);
 
-	/** The focused cell's labels, axis values and survival — the tooltip's contents. */
+	/** The focused cell's labels, axis values and survival - the tooltip's contents. */
 	const focusValues = $derived.by(() => {
 		if (!field || !focus) return null;
 		const xs = field.axisX;
@@ -127,7 +127,7 @@
 		field
 			? `Survival landscape, ${field.cols} by ${field.rows} grid of ${field.axisX.label} ` +
 					`against ${field.axisY.label}. Arrow keys move the cursor, Enter opens a cell.`
-			: 'Survival landscape — run the Atlas to fill it.'
+			: 'Survival landscape - run the Atlas to fill it.'
 	);
 </script>
 
@@ -165,7 +165,7 @@
 					<span class="tip-line tabular">{focusValues.xLabel} {focusValues.x}</span>
 					<span class="tip-line tabular">{focusValues.yLabel} {focusValues.y}</span>
 					<span class="tip-val tabular"
-						>{Number.isFinite(focusValues.value) ? `${focusValues.value.toFixed(1)}s` : '—'}</span
+						>{Number.isFinite(focusValues.value) ? `${focusValues.value.toFixed(1)}s` : '-'}</span
 					>
 				</ChartTooltip>
 			{/if}
@@ -198,7 +198,7 @@
 		justify-content: center;
 	}
 
-	/* The Y tick values, top-down beside the frame — the mock's second difference from the old map
+	/* The Y tick values, top-down beside the frame - the mock's second difference from the old map
 	   (the first is the row-traced cliff). */
 	.yticks {
 		grid-column: 2;

@@ -1,9 +1,9 @@
 <!--
-  "How would you test that?" — the epistemic beat, and the reason this product is a lab.
+  "How would you test that?" - the epistemic beat, and the reason this product is a lab.
 
   Watching a fish swerve early, you will want to say it PREDICTS the attack. Maybe it does. The card
   hands you the way to find out instead of guessing: cut the closing-speed neuron and watch. If the
-  prediction really lived there, the early dodge collapses — and then, over the next generations,
+  prediction really lived there, the early dodge collapses - and then, over the next generations,
   the learning curve dips and re-heals as evolution routes around the loss.
 
   The button is not a demo. It is the same live ablation the tile's sense pill performs, on twenty
@@ -45,7 +45,7 @@
 	}
 
 	.danger {
-		color: var(--danger-ink); /* danger AS TEXT — see tokens.css */
+		color: var(--danger-ink); /* danger AS TEXT - see tokens.css */
 	}
 
 	.claim {

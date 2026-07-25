@@ -1,5 +1,5 @@
 <!--
-  The cliff, read as a curve — two rows of the map (the Y axis's low and high extremes) drawn as
+  The cliff, read as a curve - two rows of the map (the Y axis's low and high extremes) drawn as
   survival-vs-X lines, each with its own measured edge marked in gold. This is the map's geometry
   turned into the Q4 sentence: where the edge is, and what moves it. Reads the landscape store's
   frozen field only; nothing here measures.
@@ -47,7 +47,7 @@
 			.map((p) => `${sx(p.x).toFixed(1)},${sy(p.survival).toFixed(1)}`)
 			.join(' ');
 
-	/** Each drawn section's edge — its row's measured fall-off midpoint, or null when the row never falls. */
+	/** Each drawn section's edge - its row's measured fall-off midpoint, or null when the row never falls. */
 	const edges = $derived.by(() => {
 		if (!field) return [];
 		const cliffs = rowCliffs(field);

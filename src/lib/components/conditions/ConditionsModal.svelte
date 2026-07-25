@@ -1,12 +1,12 @@
 <!--
-  Conditions — the dialog that edits an experiment while it is running.
+  Conditions - the dialog that edits an experiment while it is running.
 
   Nothing here restarts anything. Every field writes straight through to the live world: the
   generation counter keeps counting, the learning curve keeps its history, the champion stays on
   record, and the population you have spent fifteen generations breeding carries on from exactly
   where it was. That is what makes this an instrument rather than a settings screen.
 
-  The knobs are grouped the way the scenario is described — ENVIRONMENT, AGENTS, ADVERSARY — because
+  The knobs are grouped the way the scenario is described - ENVIRONMENT, AGENTS, ADVERSARY - because
   that is the vocabulary the whole product uses (scenario.ts), and a reader who thinks "the shark is
   too fast" should not have to hunt for the shark's speed among the tank's dimensions and the fish's
   senses. A selector switches between the three; identity (name, accent) stays visible above it,
@@ -44,7 +44,7 @@
 	/**
 	 * The crossover, now with BOTH sides editable. The adversary cruises at 200 × predSpeed; the agent
 	 * tops out at maxSpeed. Whether a correct escape gets away or merely delays the end is decided
-	 * here, and it is the most consequential comparison on the bench — so it is stated in whichever
+	 * here, and it is the most consequential comparison on the bench - so it is stated in whichever
 	 * group you are looking at the two halves from.
 	 */
 	const cruise = $derived(Math.round(200 * config.predSpeed));
@@ -67,7 +67,7 @@
 				: SCENARIO.adversary.many
 	);
 
-	/** The scenario's own words, capitalised for a field label — "Fish", "Sharks". */
+	/** The scenario's own words, capitalised for a field label - "Fish", "Sharks". */
 	const cap = (word: string) => word[0].toUpperCase() + word.slice(1);
 	const agentNoun = cap(SCENARIO.agent.many);
 	const adversaryNoun = cap(SCENARIO.adversary.many);
@@ -162,7 +162,7 @@
 			/>
 			<!-- The single most consequential comparison on the bench: is the agent faster than the
 			     adversary's cruise? Below the line, a correct escape only delays the end, and every
-			     sense stops paying for itself. Both halves are editable now — drag either across it. -->
+			     sense stops paying for itself. Both halves are editable now - drag either across it. -->
 			<p class="speed-note" class:warn={outruns}>
 				{config.maxSpeed} px/s vs the adversary's {cruise} cruise.
 				{#if outruns}
@@ -189,7 +189,7 @@
 			/>
 			<Slider
 				label="Episode length"
-				hint="(sim-seconds per generation — more time to learn)"
+				hint="(sim-seconds per generation - more time to learn)"
 				value={config.genDuration}
 				{...WORLD_LIMITS.genDuration}
 				format={(v) => `${v}s`}
@@ -198,7 +198,7 @@
 		</div>
 
 		<!-- The brain's architecture: one stepper per hidden layer, plus add/remove. A deeper or wider
-		     brain has more capacity but more weights to tune, so it is not automatically better — and
+		     brain has more capacity but more weights to tune, so it is not automatically better - and
 		     changing the shape restarts evolution (the genome is rebuilt at the new wiring). -->
 		<fieldset class="persistence">
 			<legend class="field-label">Brain: hidden layers</legend>
@@ -226,7 +226,7 @@
 				{/if}
 			</div>
 			<p class="description">
-				Neurons per hidden layer — the brain's capacity and depth. More is not automatically better:
+				Neurons per hidden layer - the brain's capacity and depth. More is not automatically better:
 				a bigger brain has more weights to tune, so it needs more generations to converge. Changing
 				the shape restarts evolution.
 			</p>
@@ -245,8 +245,8 @@
 				<span>
 					<b>Sense the shoal</b>
 					<span class="description">
-						Wires two more inputs into the brain — where the neighbours are, and which way they
-						point — and gives the adversary a confusion effect: it loses its target in a dense swarm
+						Wires two more inputs into the brain - where the neighbours are, and which way they
+						point - and gives the adversary a confusion effect: it loses its target in a dense swarm
 						and cannot grab a packed fish. Grouping starts to PAY, so a school can evolve. Restarts
 						evolution (the brain gains slots), and pays best against a shark you cannot outswim.
 						With it on, the two shoal pills below can be ablated like any other sense.
@@ -314,7 +314,7 @@
 			</p>
 		</div>
 
-		<!-- The dart — the cruise → aim → lunge strike. Off, the adversary only pursues at cruise and
+		<!-- The dart - the cruise → aim → lunge strike. Off, the adversary only pursues at cruise and
 		     eats what it catches up to. It is a real ablation, and it has an honest edge stated on it:
 		     a cruise-only adversary below the agent's speed can never run a good one down. -->
 		<fieldset class="toggle">
@@ -340,7 +340,7 @@
 
 		<!-- The hunger ramp. OFF by default, and that is a product decision: with it on, the adversary
 		     gets faster and wider-jawed until it kills, so no agent is ever allowed to look safe. Off,
-		     it is the same hunter all run long — and evolved evasion finally reads on screen. -->
+		     it is the same hunter all run long - and evolved evasion finally reads on screen. -->
 		<fieldset class="persistence">
 			<legend class="field-label">Persistence: the hunger ramp</legend>
 
@@ -439,7 +439,7 @@
 		border-color: var(--accent);
 	}
 
-	/* The selector that switches the three groups — with a quiet reminder of what each one IS. */
+	/* The selector that switches the three groups - with a quiet reminder of what each one IS. */
 	.group-select {
 		display: flex;
 		align-items: center;
@@ -560,7 +560,7 @@
 		color: var(--ink3);
 	}
 
-	/* The one comparison that decides whether ANY sense can pay — say so when it crosses the line. */
+	/* The one comparison that decides whether ANY sense can pay - say so when it crosses the line. */
 	.speed-note.warn {
 		color: var(--danger-ink);
 	}
@@ -634,6 +634,15 @@
 	.swatch:has(input:focus-visible) {
 		outline: var(--focus-ring);
 		outline-offset: var(--focus-offset);
+	}
+
+	/* On a small phone the modal is a full-screen sheet (Modal.svelte): two columns of steppers and
+	   sense toggles get cramped, so drop the paired grids to a single full-width column. (--bp-xs) */
+	@media (max-width: 480px) {
+		.pair,
+		.senses {
+			grid-template-columns: 1fr;
+		}
 	}
 
 	/* A fingertip-sized colour dot. */

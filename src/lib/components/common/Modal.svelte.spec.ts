@@ -49,7 +49,7 @@ describe('Modal', () => {
 		await page.getByText('fields go here').click();
 		expect(onclose).not.toHaveBeenCalled(); // a click on the content is not a dismissal
 
-		dialog.click(); // the click landed on the dialog box itself — i.e. the backdrop
+		dialog.click(); // the click landed on the dialog box itself - i.e. the backdrop
 		expect(onclose).toHaveBeenCalledTimes(1);
 	});
 

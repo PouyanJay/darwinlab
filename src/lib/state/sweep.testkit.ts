@@ -1,5 +1,5 @@
 /**
- * Test helpers for the sweep design — the singleton walk-backs both the store spec and the panel
+ * Test helpers for the sweep design - the singleton walk-backs both the store spec and the panel
  * spec need (the common/testkit.ts precedent: shared test support beside the code it supports).
  * One source of truth for "what the panel's defaults are", so the two specs cannot drift.
  */
@@ -27,7 +27,7 @@ export function restoreSweepDefaults(): void {
 	sweep.resetCalibration(); // a prior test's real-wall run must not leak its price
 }
 
-/** Collapse every knob to a single pinned value — the zero-factor, one-cell design. */
+/** Collapse every knob to a single pinned value - the zero-factor, one-cell design. */
 export function pinEveryKnob(): void {
 	for (const knob of sweep.boolKnobs) {
 		if (sweep.boolState(knob.key) === 'sweep') sweep.setBoolState(knob.key, 'on');

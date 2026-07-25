@@ -1,5 +1,5 @@
 <!--
-  A batch's progress + cancel — the "something is running" strip every Research instrument shows while
+  A batch's progress + cancel - the "something is running" strip every Research instrument shows while
   its sweep, evaluation or landscape is measuring. Extracted so the Sweep, the Ledger and the Atlas
   read the same, and a change to how progress looks lands in one place.
 -->
@@ -7,7 +7,7 @@
 	import Button from '../common/Button.svelte';
 
 	interface Props {
-		/** 0–1 across the whole batch. */
+		/** 0-1 across the whole batch. */
 		progress: number;
 		oncancel: () => void;
 	}

@@ -32,7 +32,7 @@ describe('app mode', () => {
 		expect(localStorage.getItem(MODE_STORAGE_KEY)).toBe('research');
 	});
 
-	// Leaving Research must persist too — otherwise a store that only bothers writing the non-default
+	// Leaving Research must persist too - otherwise a store that only bothers writing the non-default
 	// mode would dump a returning user straight back into Research, which is the bug this store exists
 	// to prevent.
 	it('setMode persists studio when switching back from research', () => {
@@ -59,14 +59,14 @@ describe('the analysis subject (the Studio→Research round-trip)', () => {
 	beforeEach(() => {
 		app.setMode('studio');
 		app.clearSubject();
-		app.resetBase(); // the editable generic is a singleton too — start every test from the factory base
+		app.resetBase(); // the editable generic is a singleton too - start every test from the factory base
 	});
 
-	// These tests add a world to the shared bench singleton — clear it so a later test never starts
+	// These tests add a world to the shared bench singleton - clear it so a later test never starts
 	// from a polluted bench (the same discipline bench.svelte.spec follows).
 	afterEach(() => bench.destroy());
 
-	it('has no subject by default — Research explores a generic world', () => {
+	it('has no subject by default - Research explores a generic world', () => {
 		expect(app.subject).toBeNull();
 	});
 
@@ -115,7 +115,7 @@ describe('the analysis subject (the Studio→Research round-trip)', () => {
 		expect(app.subject).not.toBe(added.world.cfg); // …but a snapshot, so later edits don't mutate it
 	});
 
-	it('bench.analyzeWorld on an unknown id is a no-op — no subject, no mode change', () => {
+	it('bench.analyzeWorld on an unknown id is a no-op - no subject, no mode change', () => {
 		bench.analyzeWorld('does-not-exist');
 		expect(app.subject).toBeNull(); // nothing was handed over
 		expect(app.mode).toBe('studio'); // and we did not lurch into Research on a bad id
@@ -136,14 +136,14 @@ describe('the editable base (the subject card is a real editor)', () => {
 		expect(app.subjectBase('Sweep').prey).toBe(40); // the run base carries the edit
 	});
 
-	it('setBaseCondition clamps to WORLD_LIMITS — the store owns the clamp, not the input', () => {
+	it('setBaseCondition clamps to WORLD_LIMITS - the store owns the clamp, not the input', () => {
 		app.setBaseCondition('prey', 9999);
 		expect(app.base.prey).toBe(80);
 		app.setBaseCondition('bw', 1);
 		expect(app.base.bw).toBe(320);
 	});
 
-	it('setBaseCondition ignores a non-finite value — an emptied input is not an edit', () => {
+	it('setBaseCondition ignores a non-finite value - an emptied input is not an edit', () => {
 		const before = app.base.prey;
 		app.setBaseCondition('prey', NaN);
 		expect(app.base.prey).toBe(before);
@@ -165,8 +165,8 @@ describe('the editable base (the subject card is a real editor)', () => {
 		expect(app.base.brainHidden).toEqual([4]); // a brain with no hidden layer is not offered
 	});
 
-	it('setBaseBrainInputs(8) strips the speed sense — no 9th-slot sense on an 8-wire brain', () => {
-		// adoptBase is the public door that can genuinely set speed:true — without it this test
+	it('setBaseBrainInputs(8) strips the speed sense - no 9th-slot sense on an 8-wire brain', () => {
+		// adoptBase is the public door that can genuinely set speed:true - without it this test
 		// passed with the strip deleted (speed was undefined before AND after: the 13th theater test).
 		app.setBaseBrainInputs(9);
 		app.adoptBase({ ...app.base, senses: { ...app.base.senses, speed: true } });
@@ -190,13 +190,13 @@ describe('the editable base (the subject card is a real editor)', () => {
 		expect(app.base.prey).toBe(newWorldConfig('x', '#000').prey);
 	});
 
-	it('adoptBase replaces the generic AND drops any analysed subject — a preset IS the base', () => {
+	it('adoptBase replaces the generic AND drops any analysed subject - a preset IS the base', () => {
 		app.analyze(newWorldConfig('Watched', '#123456'));
 		const preset = { ...newWorldConfig('Reef', '#8b8b8b'), prey: 36 };
 		app.adoptBase(preset);
 		expect(app.subject).toBeNull();
 		expect(app.base.prey).toBe(36);
-		expect(app.base.senses).not.toBe(preset.senses); // a copy — the preset can't be mutated through us
+		expect(app.base.senses).not.toBe(preset.senses); // a copy - the preset can't be mutated through us
 	});
 
 	it('subjectBase hands out a COPY of the senses, so an instrument cannot mutate the base', () => {

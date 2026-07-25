@@ -1,5 +1,5 @@
 <!--
-  One numeric knob of the subject base — an input wired to the app store's clamped door, with its
+  One numeric knob of the subject base - an input wired to the app store's clamped door, with its
   bounds spread straight from WORLD_LIMITS so the input's hints and the store's clamp cannot drift.
   Extracted because the subject card wires this identically four times (prey, predators, tank w/h).
   Commit-on-change on purpose: mid-typing values are not edits.

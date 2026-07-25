@@ -2,7 +2,7 @@
  * The assay's answer, drawn as a compass.
  *
  * One spoke per bearing the shark was dropped at, pointing where the shark was. The spoke is GREEN if
- * the fish turned towards escape and RED if it turned into the shark — that yes/no is the assay's
+ * the fish turned towards escape and RED if it turned into the shark - that yes/no is the assay's
  * verdict (see engine/assay.ts for why it is a turn and not a flee error). Its LENGTH is how far the
  * fish turned in the moment it was asked, so a brain that reacts hard and correctly draws a big green
  * star, and a brain that dithers draws a small one whatever colour it is.
@@ -65,7 +65,7 @@ export function drawAssay(
 	ctx.stroke();
 	ctx.setLineDash([]);
 
-	// which way the fish was facing — every bearing is read off this nose
+	// which way the fish was facing - every bearing is read off this nose
 	ctx.fillStyle = th.inkSoft;
 	ctx.beginPath();
 	ctx.moveTo(cx + radius + 9, cy);

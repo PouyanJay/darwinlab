@@ -1,10 +1,10 @@
 /// <reference lib="webworker" />
 /**
- * The evaluation worker — where a Research batch actually runs.
+ * The evaluation worker - where a Research batch actually runs.
  *
  * It does one thing: receive an EvalRequest, run the SAME `evaluate()` the main thread would, and
  * post progress and the result back. Because the engine and the evaluator are pure (no Svelte, no
- * DOM), this file imports them untouched — the whole point of keeping those layers pure is that
+ * DOM), this file imports them untouched - the whole point of keeping those layers pure is that
  * they run here, off the main thread, so a thousand-bout sweep never freezes the tab.
  *
  * Cancel is a message, not a kill: aborting the job's controller lets `evaluate()` stop between its
@@ -39,6 +39,6 @@ ctx.onmessage = async (event: MessageEvent<WorkerRequest>) => {
 	});
 
 	controllers.delete(jobId);
-	// `result` is null if the job was cancelled mid-flight — the pool resolves that job to null.
+	// `result` is null if the job was cancelled mid-flight - the pool resolves that job to null.
 	ctx.postMessage({ jobId, result } satisfies WorkerResponse);
 };

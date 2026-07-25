@@ -1,11 +1,11 @@
 <!--
-  The run manifest — the chip that turns a simulation into an experiment.
+  The run manifest - the chip that turns a simulation into an experiment.
 
   A demo runs. An instrument runs SOMETHING SPECIFIC, and can hand it to someone else who gets the
   same numbers back. That is three facts: the config fingerprint, the seed, and how far it has got.
 
   It states the uncomfortable one plainly. The bench opens UNSEEDED (Math.random), so the opening
-  run is genuinely not reproducible — the chip says "unseeded", not a number that would reproduce
+  run is genuinely not reproducible - the chip says "unseeded", not a number that would reproduce
   nothing. Click it and you can pin a seed, which relaunches the bench: a seeded run is a fresh
   experiment, not the old one relabelled.
 -->

@@ -1,10 +1,10 @@
 /**
- * Behavior signatures — measures whether evolved behavior is VISIBLE, not just fitter.
+ * Behavior signatures - measures whether evolved behavior is VISIBLE, not just fitter.
  *
  * The narration the product wants to earn makes four claims you can see: fish BOLT when
  * the predator nears, flee the RIGHT WAY, DODGE the lunge so the shark sails past, and
  * stop CORNERING themselves. Each claim is a number here, measured on a frozen population
- * (no evolution during the bout), so environment variants can be compared honestly —
+ * (no evolution during the bout), so environment variants can be compared honestly -
  * the ladder must emerge from selection, never from a script.
  */
 
@@ -21,14 +21,14 @@ export interface BehaviorStats {
 	/** Mean |angle between velocity and dead-away-from-predator| while in vision, degrees.
 	 *  90° is what aimless drift scores; low means they flee the right way. */
 	fleeAngleErrorDeg: number;
-	/** Fraction of lunges that end with no kill during the strike — the shark sails past. */
+	/** Fraction of lunges that end with no kill during the strike - the shark sails past. */
 	dodgeRate: number;
 	/** Of all deaths, the share that happened boxed near two walls at once. */
 	cornerDeathShare: number;
-	/** Share of living fish-time spent boxed near two walls — exposure-normalized, unlike
+	/** Share of living fish-time spent boxed near two walls - exposure-normalized, unlike
 	 *  the death share (long-lived populations otherwise look MORE corner-prone). */
 	cornerTimeShare: number;
-	/** Mean distance kept from the nearest predator, px — "keeping distance" is the
+	/** Mean distance kept from the nearest predator, px - "keeping distance" is the
 	 *  Distance sense's visible story even when bolting isn't. */
 	meanPredDistance: number;
 	/** Mean seconds survived per fish over the bout. */
@@ -45,7 +45,7 @@ export function measureBout(
 	seed: number,
 	seconds = 10
 ): BehaviorStats {
-	// A frozen bout, shared with traceBout — see makeFrozenWorld for why applyCfg is load-bearing (the
+	// A frozen bout, shared with traceBout - see makeFrozenWorld for why applyCfg is load-bearing (the
 	// double-predator normalisation, which is why these absolute numbers ran against over-hunting).
 	const w = makeFrozenWorld(cfg, genomes, seed);
 
@@ -108,7 +108,7 @@ export function measureBout(
 			if (np && nd < cfg.vision) {
 				seenSpeed += speed;
 				seenN++;
-				// The SAME reading the lens paints on the fish — see engine/flee.ts. It returns null
+				// The SAME reading the lens paints on the fish - see engine/flee.ts. It returns null
 				// under exactly the conditions this branch used to spell out for itself (in vision,
 				// moving), so a null here is "no reading", never a zero.
 				const err = fleeError(cfg, f, w.preds);
@@ -138,7 +138,7 @@ export function measureBout(
 	};
 }
 
-/** Mean of `measureBout` across seeds — one row of the variant table. */
+/** Mean of `measureBout` across seeds - one row of the variant table. */
 export function measureBouts(
 	cfg: WorldConfig,
 	genomes: Genome[] | undefined,

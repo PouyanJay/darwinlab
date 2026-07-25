@@ -17,7 +17,7 @@
 		label: string;
 		children: Snippet;
 		table: Snippet;
-		/** Force the data table open — the Report's "show data" skeptic toggle drives this. Undefined
+		/** Force the data table open - the Report's "show data" skeptic toggle drives this. Undefined
 		 *  leaves it user-controlled (the per-figure summary), so ordinary callers are unaffected. */
 		open?: boolean;
 	} = $props();

@@ -2,10 +2,10 @@
  * Diagnostic: is training real? Run with `npx vite-node scripts/diagnose-learning.ts`.
  *
  * Three measurements, per world:
- *  1. The learning curve — survival per generation across 150 generations (does it climb?).
- *  2. Genome motion — per-generation population mean |weight|, population spread (are the
+ *  1. The learning curve - survival per generation across 150 generations (does it climb?).
+ *  2. Genome motion - per-generation population mean |weight|, population spread (are the
  *     weights actually moving and then converging, or being reset?).
- *  3. The showdown — the gen-150 population vs a FRESH RANDOM population, dropped into
+ *  3. The showdown - the gen-150 population vs a FRESH RANDOM population, dropped into
  *     identical tanks (same seeds), no evolution, 20 bouts of one generation-length each:
  *     mean seconds survived per fish. If evolution taught nothing, these are equal.
  */
@@ -76,7 +76,7 @@ for (const cfg of DEFAULT_WORLDS) {
 		}
 	}
 
-	// 3: showdown — evolved population vs fresh random population, same bouts
+	// 3: showdown - evolved population vs fresh random population, same bouts
 	const evolvedGenomes = (evolved.roster.length ? evolved.roster : evolved.fish).map(
 		(f) => f.genome
 	);

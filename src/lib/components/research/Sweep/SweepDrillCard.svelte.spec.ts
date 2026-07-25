@@ -10,7 +10,7 @@ import type { BehaviorStats } from '$lib/harness/behavior';
 
 /**
  * The sidebar drill card answers its questions from data the sweep already measured, so they are
- * pinned here with fixed data — each value asserted against ITS OWN row, so a swapped field or an
+ * pinned here with fixed data - each value asserted against ITS OWN row, so a swapped field or an
  * inverted rank fails loudly rather than passing because the string appears somewhere. (Ported
  * from RunCellCard's spec when the drill moved into the sidebar; extended with the fingerprint's
  * ticks, the champion states and the convergence badge.)
@@ -53,7 +53,7 @@ const props = {
 	evaluation,
 	allResults,
 	championScored: false,
-	// the microscope inherits the run's frozen budget — the card prices its door from these
+	// the microscope inherits the run's frozen budget - the card prices its door from these
 	episodes: 30,
 	genDuration: 10,
 	onclose: () => {}
@@ -69,7 +69,7 @@ describe('SweepDrillCard', () => {
 
 	beforeEach(() => removeCellFinding('cell-0'));
 
-	it('shows THIS run against the CELL mean — two distinct numbers, bound to the right source', () => {
+	it('shows THIS run against the CELL mean - two distinct numbers, bound to the right source', () => {
 		const { container } = render(SweepDrillCard, props);
 		const rows = [...container.querySelectorAll('.row')].map((r) => r.textContent ?? '');
 		expect(rows.find((r) => r.includes('this run'))).toContain('7.9s'); // seed 0's own value
@@ -122,7 +122,7 @@ describe('SweepDrillCard', () => {
 			r.textContent?.includes('champion clones')
 		);
 		expect(row?.textContent).toContain('9.2s');
-		// the delta is vs the CELL MEAN (8.1) — champion and population are both means over the
+		// the delta is vs the CELL MEAN (8.1) - champion and population are both means over the
 		// same seeds and arenas; comparing the champion to one seed's run would mix baselines
 		expect(row?.textContent).toContain('+1.1');
 	});
@@ -157,23 +157,23 @@ describe('SweepDrillCard', () => {
 		await expect.element(page.getByRole('button', { name: 'In the report' })).toBeDisabled();
 	});
 
-	it('says plainly when the condition was not measured — no invented numbers', () => {
+	it('says plainly when the condition was not measured - no invented numbers', () => {
 		const { container } = render(SweepDrillCard, { ...props, evaluation: null });
 		expect(container.textContent).toContain('nothing to report');
 		expect(container.querySelectorAll('.fprow')).toHaveLength(0);
 	});
 
-	it('offers the microscope on a measured cell — the trace door priced by the frozen budget', () => {
+	it('offers the microscope on a measured cell - the trace door priced by the frozen budget', () => {
 		const { container } = render(SweepDrillCard, props);
 		const microscope = container.querySelector('[data-testid="drill-microscope"]');
 		expect(microscope?.textContent).toContain('The microscope');
 		expect(microscope?.textContent).toContain('Q1'); // the questions a trace settles…
 		expect(microscope?.textContent).toContain('Q5'); // …worn right on the section
-		// the door names the study and carries a wall-clock estimate — a number, not a promise
+		// the door names the study and carries a wall-clock estimate - a number, not a promise
 		expect(microscope?.textContent).toMatch(/Trace this world · ≈ \d+ s/);
 	});
 
-	it('offers NO microscope on an unmeasured cell — there is no recipe worth re-running', () => {
+	it('offers NO microscope on an unmeasured cell - there is no recipe worth re-running', () => {
 		const { container } = render(SweepDrillCard, { ...props, evaluation: null });
 		expect(container.querySelector('[data-testid="drill-microscope"]')).toBeNull();
 	});

@@ -3,7 +3,7 @@ import AxeBuilder from '@axe-core/playwright';
 
 /**
  * Axe-scan the page, returning one line per violation (empty = clean). Settles FINITE animations first
- * (capped at 2s in the browser, so a stuck transition can't wedge it) — axe reads computed colours, and
+ * (capped at 2s in the browser, so a stuck transition can't wedge it) - axe reads computed colours, and
  * text caught mid fade-up sits at partial opacity, a contrast failure that belongs to no real state.
  * Shared so no spec reintroduces a blind `waitForTimeout` before scanning.
  */
@@ -29,10 +29,10 @@ export async function scanForViolations(page: Page): Promise<string[]> {
  * served at the origin root or under a GitHub Pages sub-path (BASE_PATH=/darwinlab). A
  * goto('/') would not: an absolute path resolves against the origin and escapes the base.
  *
- * The lab opens on the INTRO screen — enter it the way a user does (the button), and wait for the
+ * The lab opens on the INTRO screen - enter it the way a user does (the button), and wait for the
  * fade to land. Then, on a desktop-sized viewport, re-frame the camera to fit the whole tree: the
  * product default is 100% zoom centred on the tree, which deliberately leaves the outer worlds a
- * pan away — correct for a person, but every suite here interacts with tiles across the bench, so
+ * pan away - correct for a person, but every suite here interacts with tiles across the bench, so
  * they all start from the fitted framing. (A phone viewport skips this: fitting five worlds into
  * 375px makes every node an untappable sliver, and at 100% its first node is already in view.)
  */
@@ -52,11 +52,11 @@ export async function gotoApp(page: Page): Promise<void> {
 /**
  * Wait for the load-time prewarm to have LANDED.
  *
- * This used to wait for the turbo pill to appear and then vanish — but the prewarm runs behind the
+ * This used to wait for the turbo pill to appear and then vanish - but the prewarm runs behind the
  * intro, and entering the lab takes long enough (the fade alone is 700ms) that on a fast machine
  * the burst is already over before the first look: waiting for the pill to APPEAR then hangs on a
  * pill that came and went. So wait for the burst's POSTCONDITION instead: the first world trained
- * to the prewarm generation (15; the range allows a slow run to have started gen 16+ live) — and
+ * to the prewarm generation (15; the range allows a slow run to have started gen 16+ live) - and
  * THEN the pill gone, because tile 0 can reach 15 while the burst is still finishing its siblings,
  * and a reset clicked in that window is retrained right back up by the running turbo (it was; the
  * reset e2e caught it). The gen check proves hydration happened, which is what made a bare
@@ -68,7 +68,7 @@ export async function waitForPrewarm(page: Page): Promise<void> {
 }
 
 /**
- * Open a node's "Analysis & assays" disclosure — where the assay, evaluation and ablation matrix now
+ * Open a node's "Analysis & assays" disclosure - where the assay, evaluation and ablation matrix now
  * live, folded away by default so a canvas node stays compact enough to see its neighbours.
  */
 export async function openAnalysis(card: Locator): Promise<void> {
@@ -93,7 +93,7 @@ export async function openAtlas(page: Page): Promise<void> {
 }
 
 /**
- * Shrink the Sweep to a single factor (Direction) at two seeds — two cells, four jobs — and PROVE
+ * Shrink the Sweep to a single factor (Direction) at two seeds - two cells, four jobs - and PROVE
  * the shrink applied before running, so a test can't kick a full-size grid off by accident.
  * Assumes the Sweep is open (the design panel is on screen): the other default sweeps are PINNED
  * through their three-states, the default-swept graded knobs are brought down to one chip each
@@ -103,7 +103,7 @@ export async function runMinimalSweep(page: Page): Promise<void> {
 	for (const knob of ['Distance', 'Hunger escalation']) {
 		await page.getByRole('radiogroup', { name: knob }).getByRole('radio', { name: 'on' }).click();
 	}
-	// exact names throughout — '50%' would otherwise substring-match '150%' too
+	// exact names throughout - '50%' would otherwise substring-match '150%' too
 	const speeds = page.getByRole('group', { name: 'Predator speed ×' });
 	await speeds.getByRole('button', { name: '0.6×', exact: true }).click();
 	await speeds.getByRole('button', { name: '0.8×', exact: true }).click();
@@ -121,9 +121,9 @@ export async function runMinimalSweep(page: Page): Promise<void> {
 }
 
 /**
- * Shrink the Atlas to the smallest honest design — the 5×5 chip, two seeds, minimum training — and
+ * Shrink the Atlas to the smallest honest design - the 5×5 chip, two seeds, minimum training - and
  * PROVE it applied before running. The store reads the inputs on `change`, so this waits for the
- * plan readout to confirm the new size — a run kicked off on the assumption the change fired could
+ * plan readout to confirm the new size - a run kicked off on the assumption the change fired could
  * silently measure the full default grid.
  */
 export async function shrinkAtlasRun(page: Page): Promise<void> {

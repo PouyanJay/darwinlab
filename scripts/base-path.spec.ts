@@ -1,6 +1,6 @@
 /**
  * Lock-in for the BASE_PATH guard. This validation runs at build time, so nothing else
- * automated would ever watch it fail — and a guard nobody has seen fail is not a guard.
+ * automated would ever watch it fail - and a guard nobody has seen fail is not a guard.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -20,7 +20,7 @@ describe('resolveBasePath', () => {
 		expect(() => resolveBasePath({ BASE_PATH: 'darwinlab' })).toThrowError(/must start with "\/"/);
 	});
 
-	it('rejects a trailing slash — SvelteKit would die later with a far vaguer error', () => {
+	it('rejects a trailing slash - SvelteKit would die later with a far vaguer error', () => {
 		expect(() => resolveBasePath({ BASE_PATH: '/darwinlab/' })).toThrowError(/must not end/);
 	});
 

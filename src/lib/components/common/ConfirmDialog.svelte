@@ -1,5 +1,5 @@
 <!--
-  A confirm-or-cancel dialog for a destructive action — built on the app's Modal, so it inherits the
+  A confirm-or-cancel dialog for a destructive action - built on the app's Modal, so it inherits the
   real focus trap, Esc, the top layer and focus return. It only ASKS: the owner drives `open` and
   decides what confirm and cancel do. The message spells out what will be lost, because these actions
   delete findings that persist across sessions; the confirm button leads and reddens, so the
@@ -51,7 +51,7 @@
 		gap: var(--sp-3);
 	}
 
-	/* The destructive lead — a solid coral so the button itself says "this deletes", not just the copy. */
+	/* The destructive lead - a solid coral so the button itself says "this deletes", not just the copy. */
 	.confirm {
 		border: 1px solid transparent;
 		border-radius: var(--radius-control);

@@ -1,11 +1,11 @@
 <!--
   A small static label. Two shapes, both from the design reference:
 
-    pill  fully rounded — "Gen 12", "20 prey · 2 sharks · 640×400"
-    tag   a squarer micro-label in tracked-out caps — "live evolution"
+    pill  fully rounded - "Gen 12", "20 prey · 2 sharks · 640×400"
+    tag   a squarer micro-label in tracked-out caps - "live evolution"
 
-  `tone="accent"` tints it with the accent. A world tile passes its OWN accent in — the tile's
-  index badge is tinted per world — by setting `--chip-accent` on the element:
+  `tone="accent"` tints it with the accent. A world tile passes its OWN accent in - the tile's
+  index badge is tinted per world - by setting `--chip-accent` on the element:
 
       <Chip tone="accent" style="--chip-accent: {world.cfg.accent}">01</Chip>
 

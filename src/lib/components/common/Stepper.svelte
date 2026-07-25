@@ -25,7 +25,7 @@
 	const id = $props.id();
 	const noun = $derived(label.toLowerCase());
 	// Gate on the BOUND, not on the step: a value that doesn't sit on the step grid (79, with step 2
-	// and max 80) must still be able to reach its bound — nudge() clamps it there.
+	// and max 80) must still be able to reach its bound - nudge() clamps it there.
 	const canDecrement = $derived(value > min);
 	const canIncrement = $derived(value < max);
 

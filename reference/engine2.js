@@ -1,7 +1,7 @@
-// EvoMind Bench — REAL neuroevolution engine (V3 → real-engine stage per spec §14.1)
+// EvoMind Bench - REAL neuroevolution engine (V3 → real-engine stage per spec §14.1)
 // Each fish carries a genome = the weights of a tiny MLP brain. Fitness = survival time.
 // Generations: rank the whole population, breed survivors (elitism + tournament + crossover + mutation).
-// Nobody writes "flee the shark" — fleeing emerges because non-fleers get eaten.
+// Nobody writes "flee the shark" - fleeing emerges because non-fleers get eaten.
 
 export const THEMES = {
   light: {
@@ -31,19 +31,19 @@ export const ACCENTS = ['#64748b', '#4f56d3', '#0e9488', '#d88a2c', '#e8604c', '
 export const DEFAULT_WORLDS = [
   { name: 'Blind drift', accent: '#64748b', prey: 20, preds: 2, bw: 640, bh: 400, predSpeed: 1, vision: 200, mutation: .06,
     senses: { dist: false, dir: false, closing: false, walls: false },
-    caption: 'No predator input reaches these brains at all, so natural selection has nothing to work with. The population is culled to almost nothing — and never really recovers.' },
+    caption: 'No predator input reaches these brains at all, so natural selection has nothing to work with. The population is culled to almost nothing - and never really recovers.' },
   { name: 'Distance', accent: '#4f56d3', prey: 20, preds: 2, bw: 640, bh: 400, predSpeed: 1, vision: 200, mutation: .06,
     senses: { dist: true, dir: false, closing: false, walls: false },
-    caption: 'One input: how close danger is. Fish learn to bolt when threatened — but with no sense of which way, they bolt blindly, so it barely beats sensing nothing at all.' },
+    caption: 'One input: how close danger is. Fish learn to bolt when threatened - but with no sense of which way, they bolt blindly, so it barely beats sensing nothing at all.' },
   { name: 'Direction', accent: '#0e9488', prey: 20, preds: 2, bw: 640, bh: 400, predSpeed: 1, vision: 200, mutation: .06,
     senses: { dist: true, dir: true, closing: false, walls: false },
-    caption: 'Add which-way, and survival leaps. This is the sense that actually pays off — the single biggest jump on the whole bench.' },
+    caption: 'Add which-way, and survival leaps. This is the sense that actually pays off - the single biggest jump on the whole bench.' },
   { name: 'Anticipation', accent: '#d88a2c', prey: 20, preds: 2, bw: 640, bh: 400, predSpeed: 1, vision: 200, mutation: .06,
     senses: { dist: true, dir: true, closing: true, walls: false },
-    caption: 'Now pile closing-speed on top — more information for the brain. But watch: survival does not climb to match. An input the environment never rewards is just noise the search has to fight through.' },
+    caption: 'Now pile closing-speed on top - more information for the brain. But watch: survival does not climb to match. An input the environment never rewards is just noise the search has to fight through.' },
   { name: 'Corner-wise', accent: '#e8604c', prey: 20, preds: 2, bw: 640, bh: 400, predSpeed: 1, vision: 200, mutation: .06,
     senses: { dist: true, dir: true, closing: true, walls: true },
-    caption: 'All four senses switched on. Compare it to Direction: barely different. More sensors are not more intelligence — the world has to make each one earn its keep, and here most do not.' }
+    caption: 'All four senses switched on. Compare it to Direction: barely different. More sensors are not more intelligence - the world has to make each one earn its keep, and here most do not.' }
 ];
 
 // ---- network architecture (fixed slots; disabled senses feed 0 → real ablation) ----
@@ -181,7 +181,7 @@ export function resetWorld(w) {
   spawnGeneration(w);
 }
 
-// user changed prey/pred count etc. — apply to the current generation without wiping learning
+// user changed prey/pred count etc. - apply to the current generation without wiping learning
 export function applyCfg(w) {
   const c = w.cfg;
   while (w.fish.length < c.prey - w.eaten && w.roster.length < c.prey) {
@@ -226,7 +226,7 @@ function evolve(w) {
 }
 
 // training is capped: once w.maxGen is reached, stop evolving and just keep running the
-// trained population (inference) — respawn the same brains, no selection, no mutation
+// trained population (inference) - respawn the same brains, no selection, no mutation
 function reseedTrained(w) {
   const genomes = w.roster.slice().sort((a, b) => b.fitness - a.fitness).map(f => cloneGenome(f.genome));
   spawnGeneration(w, genomes);
@@ -268,7 +268,7 @@ export function stepWorld(w, dt) {
   const catchR = 14 + Math.min(20, Math.max(0, w.sinceKill - 8) * 2.2); // grows during a stalemate
   w.sinceKill += dt;
   // assign each shark a DISTINCT target (greedy nearest-unclaimed) so they spread out and
-  // threaten the whole population — no fish is safe just by not being the single global nearest
+  // threaten the whole population - no fish is safe just by not being the single global nearest
   const claimed = new Set();
   for (const p of w.preds) {
     let best = null, bd = 1e9;
@@ -287,7 +287,7 @@ export function stepWorld(w, dt) {
       if (p.lunge <= 0 && p.aim > 0) { p.aim -= dt; if (p.aim <= 0) { p.lunge = .4; p.cool = 1.3; } }
       else if (p.lunge <= 0 && p.cool <= 0 && bd < 135) { p.aim = .3; }
       let dirx, diry, acc, max;
-      // predictive interception — lead the target's motion; a predictable (fixed-pattern) fish
+      // predictive interception - lead the target's motion; a predictable (fixed-pattern) fish
       // gets cut off, so only prey that jink relative to the shark survive
       const lead = p.lunge > 0 ? 0.34 : 0.18;
       const lx = best.x + best.vx * lead, ly = best.y + best.vy * lead, ld = Math.hypot(lx - p.x, ly - p.y) || 1;
@@ -319,7 +319,7 @@ export function stepWorld(w, dt) {
       }
     }
   }
-  // prey — controlled by their brains
+  // prey - controlled by their brains
   for (const f of w.fish) {
     const { x } = senseInputs(w, f);
     const out = forward(f.genome, x);
@@ -334,7 +334,7 @@ export function stepWorld(w, dt) {
       const dx = f.x - o.x, dy = f.y - o.y, d = Math.hypot(dx, dy);
       if (d < 15 && d > 0) { f.vx += dx / d * (15 - d) * 4 * dt * 60 * 0; f.x += dx / d * (15 - d) * .06; f.y += dy / d * (15 - d) * .06; }
     }
-    // baseline wall-avoidance instinct — keeps fish off the glass so they never pin in corners
+    // baseline wall-avoidance instinct - keeps fish off the glass so they never pin in corners
     const wm = 54;
     if (f.x < wm) f.vx += (1 - f.x / wm) * 460 * dt;
     else if (f.x > c.bw - wm) f.vx -= (1 - (c.bw - f.x) / wm) * 460 * dt;
@@ -362,7 +362,7 @@ export function stepWorld(w, dt) {
   w.bursts = w.bursts.filter(b => b.a < .65);
   // generation boundary
   if (w.genT >= GEN_DURATION || w.fish.length === 0) {
-    if (trained) { w.genT = 0; } // deployed: don't evolve, don't reset — let the population play out
+    if (trained) { w.genT = 0; } // deployed: don't evolve, don't reset - let the population play out
     else evolve(w);
   }
 }
@@ -645,7 +645,7 @@ export function drawCurve(ctx, W, H, curve, accent, theme) {
   ctx.beginPath(); ctx.moveTo(1, H - 1); ctx.lineTo(W - 1, H - 1); ctx.stroke(); ctx.globalAlpha = 1;
   if (!curve || curve.length === 0) return;
   const pts = curve.length > 1 ? curve : [curve[0], curve[0]];
-  const LO = 0.1, HI = 0.9; // survival band — zoom the axis so the real trend is legible
+  const LO = 0.1, HI = 0.9; // survival band - zoom the axis so the real trend is legible
   const map = v => H - 2 - clamp((v - LO) / (HI - LO), 0, 1) * (H - 4);
   ctx.beginPath();
   pts.forEach((v, i) => { const px = i / (pts.length - 1) * (W - 2) + 1, py = map(v); i ? ctx.lineTo(px, py) : ctx.moveTo(px, py); });

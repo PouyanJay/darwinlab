@@ -8,7 +8,7 @@ import type { BehaviorStats } from '../harness/behavior';
 
 /**
  * The microscope's report mapping. A study answers TWO questions with two different graphs, so it must
- * become TWO findings — the learning curve settling Q1, the mechanism settling Q5 — each declaring its
+ * become TWO findings - the learning curve settling Q1, the mechanism settling Q5 - each declaring its
  * own single question, not the source's whole [Q1, Q5] set (which would make the Report draw the wrong
  * graph for one of them). The variants carry the RECIPE key, so each traced cell files its own pair and
  * one cell's "in report" state can never borrow another's. This drives the pure mapping with a
@@ -46,7 +46,7 @@ const study = (): TraceStudy => ({
 });
 
 describe('traceFindings', () => {
-	it('makes exactly two findings — the curve and the mechanism — keyed to their recipe', () => {
+	it('makes exactly two findings - the curve and the mechanism - keyed to their recipe', () => {
 		const findings = traceFindings({
 			study: study(),
 			hash: 'cfg123',
@@ -64,7 +64,7 @@ describe('traceFindings', () => {
 			key: 'k1',
 			label: 'Condition 3'
 		})[0];
-		expect(curve.questions).toEqual(['Q1']); // not the source's [Q1, Q5] — this one is the curve
+		expect(curve.questions).toEqual(['Q1']); // not the source's [Q1, Q5] - this one is the curve
 		expect(curve.evidence).toEqual({ kind: 'curve', curve: [0.1, 0.3, 0.55, 0.62] });
 		expect(curve.title).toContain('62%'); // the final survival fraction, as a percent
 	});
@@ -81,7 +81,7 @@ describe('traceFindings', () => {
 		expect(mechanism.title).toContain('5/8'); // the survivors it reports
 	});
 
-	it('names the traced cell in both findings — the drill is where this study came from', () => {
+	it('names the traced cell in both findings - the drill is where this study came from', () => {
 		const findings = traceFindings({
 			study: study(),
 			hash: 'cfg123',
@@ -103,17 +103,17 @@ describe('traceFindings', () => {
 });
 
 describe('traceKey', () => {
-	it('is the RECIPE’s identity — same config and budget agree, regardless of grid position', () => {
+	it('is the RECIPE’s identity - same config and budget agree, regardless of grid position', () => {
 		const cfg = newWorldConfig('cell', '#123456');
 		expect(traceKey(cfg, 25)).toBe(traceKey(structuredClone(cfg), 25));
 	});
 
-	it('splits on budget — the same config trained longer is a different study', () => {
+	it('splits on budget - the same config trained longer is a different study', () => {
 		const cfg = newWorldConfig('cell', '#123456');
 		expect(traceKey(cfg, 25)).not.toBe(traceKey(cfg, 40));
 	});
 
-	it('splits on config — a re-run sweep re-using condition numbers cannot collide', () => {
+	it('splits on config - a re-run sweep re-using condition numbers cannot collide', () => {
 		const a = newWorldConfig('cell', '#123456');
 		const b = { ...a, preds: a.preds + 1 };
 		expect(traceKey(a, 25)).not.toBe(traceKey(b, 25));
@@ -121,11 +121,11 @@ describe('traceKey', () => {
 });
 
 describe('the microscope store', () => {
-	// A REAL two-generation evolve, not a stub — the store's whole job is delivering a live study to
+	// A REAL two-generation evolve, not a stub - the store's whole job is delivering a live study to
 	// the right recipe and nobody else, and only a run that actually happened can prove the wiring.
 	// No afterEach cleanup on purpose: the store is a singleton with one #done slot each test
 	// overwrites for itself, and the findings it files carry collision-free recipe-hash variants.
-	it('lands the study on ITS recipe key — a different budget or cell can never wear it', async () => {
+	it('lands the study on ITS recipe key - a different budget or cell can never wear it', async () => {
 		const cfg = newWorldConfig('microscope-spec', '#123456');
 		const episodes = 2;
 		await trace.run({ cfg, episodes, label: 'Condition 1' });
@@ -151,7 +151,7 @@ describe('the microscope store', () => {
 
 	it('holds another recipe’s door while a study runs, and a cancel clears it without a result', async () => {
 		const cfg = newWorldConfig('microscope-cancel-spec', '#123456');
-		// 50 generations — long enough that the evolve MUST still be in flight when we look. run()
+		// 50 generations - long enough that the evolve MUST still be in flight when we look. run()
 		// marks busy synchronously (before its first await), so these reads race nothing.
 		const running = trace.run({ cfg, episodes: 50, label: 'Condition 9' });
 		const key = traceKey(cfg, 50);
@@ -169,7 +169,7 @@ describe('the microscope store', () => {
 
 	it('prices a trace as the evolve plus its two frozen bouts, at the calibrated rate', () => {
 		// Seed the same persisted rate loadSimRate reads (the sweep's calibration key), so the
-		// expected number is exact — a regex on the button could never catch a formula regression.
+		// expected number is exact - a regex on the button could never catch a formula regression.
 		localStorage.setItem('darwinlab:sweep-sim-rate', '100');
 		try {
 			expect(trace.estimateSeconds(8, 10)).toBe(1); // (8 gens + 2 bouts) × 10 sim-s ÷ 100 sim-s/s

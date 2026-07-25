@@ -1,5 +1,5 @@
 <!--
-  A glass tooltip anchored to a chart's last pointer position — the shell both canvas charts (the Atlas
+  A glass tooltip anchored to a chart's last pointer position - the shell both canvas charts (the Atlas
   landscape and the Sweep run grid) hang their own content in, so the "float a readout by the cursor"
   box lives in one place. The caller supplies the lines; this owns the position, the glass and the
   offset from the pointer. Decorative (the meaning is always in the chart's aria-label too).

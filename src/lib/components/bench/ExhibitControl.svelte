@@ -4,7 +4,7 @@
   ⚠️ It makes the behaviour LEGIBLE, not better, and the UI must never imply otherwise: twenty copies
   of one policy do the same thing at the same time, so the rule stops being an average of a smear.
   Cloning the best SURVIVOR is not cloning the best FLEER (fitness is seconds survived, and seconds
-  can be bought by keeping distance) — measured, clones score no better on flee error than the crowd.
+  can be bought by keeping distance) - measured, clones score no better on flee error than the crowd.
 
     Off      the population, as it evolved.
     Frozen   the real run is held; a sealed tank of clones swims in its place until you switch it off.
@@ -33,7 +33,7 @@
 	const hasChampion = $derived(entry.stats.gen > 0);
 
 	/**
-	 * One line for every mode, so switching does not change the SHAPE of the panel — only its words.
+	 * One line for every mode, so switching does not change the SHAPE of the panel - only its words.
 	 * (Off used to show nothing, which made it look like a different, broken control.)
 	 */
 	const line = $derived.by(() => {

@@ -1,15 +1,15 @@
 <!--
-  The Sweep's DESIGN PANEL — the console's second sidebar, where the whole experiment is designed.
+  The Sweep's DESIGN PANEL - the console's second sidebar, where the whole experiment is designed.
 
   Top to bottom: FACTORS (every boolean knob as a pin-or-sweep three-state, grouped senses → body →
   predator → shoal), GRADED LEVELS (chips: one = pinned, two or more = swept), the BUDGET (seeds,
-  generations, generation length, and the cap), and a STICKY COMMIT BAR — the plan readout and Run
+  generations, generation length, and the cap), and a STICKY COMMIT BAR - the plan readout and Run
   pinned together at the panel's foot, so a run can never be fired with its cost scrolled out of
   view. Everything reads and writes the sweep store, which owns every clamp and guard; the panel is
   the store's face, not a second brain.
 
   The own-speed sense is the one knob that can be impossible: it needs the 9-input brain, so on an
-  8-wire subject its control is disabled and the row offers the switch instead — an explicit choice,
+  8-wire subject its control is disabled and the row offers the switch instead - an explicit choice,
   never a silent change to the control world (the owner's call).
 -->
 <script lang="ts">
@@ -37,7 +37,7 @@
 
 	const nineWired = $derived(hasNineWires(app.base));
 
-	// The plan, in the commit bar's words. Bool vs graded is decided by KEY, never by level count —
+	// The plan, in the commit bar's words. Bool vs graded is decided by KEY, never by level count -
 	// a two-chip graded knob has two levels exactly like a bool, and folding it into the exponent
 	// once mislabelled the default design "2⁴ × 3 predators".
 	const boolKeys = new Set(sweep.boolKnobs.map((k) => k.key));
@@ -153,7 +153,7 @@
 		<div class="brow">
 			<span class="bl"
 				>Score the champion (“live”)
-				<i>a sealed tank of best-brain clones, scored beside the population — every cell</i></span
+				<i>a sealed tank of best-brain clones, scored beside the population - every cell</i></span
 			>
 			<button
 				class="switch"
@@ -227,7 +227,7 @@
 		</div>
 	</section>
 
-	<!-- The commit bar: the receipt and the trigger pinned together — the design scrolls beneath. -->
+	<!-- The commit bar: the receipt and the trigger pinned together - the design scrolls beneath. -->
 	<div class="commit">
 		<div class="plan" aria-live="polite">
 			<span class="cells" data-testid="sweep-summary">
@@ -246,15 +246,15 @@
 			</span>
 			{#if sweep.willSample}
 				<span class="warn" data-testid="sweep-sampled-warn">
-					⚠ capped: a random {sweep.capN} of {sweep.plannedCells} — every output will say “sampled”.
+					⚠ capped: a random {sweep.capN} of {sweep.plannedCells} - every output will say “sampled”.
 				</span>
 			{:else if sweep.guard === 'confirm'}
 				<span class="warn hard">
-					⛔ large: {estLabel} — over {GUARD_CONFIRM_MINUTES} min. Type the cell count to run.
+					⛔ large: {estLabel} - over {GUARD_CONFIRM_MINUTES} min. Type the cell count to run.
 				</span>
 			{:else if sweep.guard === 'warn'}
 				<span class="warn"
-					>⚠ medium run: {estLabel} of compute — over {GUARD_WARN_MINUTES} min.</span
+					>⚠ medium run: {estLabel} of compute - over {GUARD_WARN_MINUTES} min.</span
 				>
 			{/if}
 		</div>
@@ -287,7 +287,7 @@
 
 <style>
 	/* The panel is the console's second sidebar: its own scroller, chrome-free, with the commit bar
-	   sticky at its foot. A SOLID ground, not a tint — the sticky bar must match it exactly. */
+	   sticky at its foot. A SOLID ground, not a tint - the sticky bar must match it exactly. */
 	.panel {
 		display: flex;
 		flex-direction: column;
@@ -436,7 +436,7 @@
 		color: var(--ink2);
 	}
 
-	/* An on-chip is a full-ink hairline — emphasis by lightness, the platform's way. */
+	/* An on-chip is a full-ink hairline - emphasis by lightness, the platform's way. */
 	.lvl[aria-pressed='true'] {
 		border-color: var(--ink);
 		box-shadow: inset 0 0 0 1px var(--ink);
@@ -501,7 +501,7 @@
 		gap: var(--sp-2);
 	}
 
-	/* the cap's switch — the pill-and-thumb the mock uses */
+	/* the cap's switch - the pill-and-thumb the mock uses */
 	.switch {
 		flex: none;
 		width: 28px;

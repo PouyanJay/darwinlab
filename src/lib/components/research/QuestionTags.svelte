@@ -1,13 +1,13 @@
 <!--
-  The "answers Q…" tags — which of the seven questions an instrument settles, shown as small outline
+  The "answers Q…" tags - which of the seven questions an instrument settles, shown as small outline
   chips under its name in the rail and beside its title in the workspace header. Monochrome on purpose:
   they read through ink and a border, never a colour (teal and coral are reserved for the graphs).
 
   Two aria modes. In the rail each tag sits INSIDE a `role="tab"` button, whose accessible name is
-  computed from its contents — so there the chips are `decorative` (aria-hidden), keeping the tab named
+  computed from its contents - so there the chips are `decorative` (aria-hidden), keeping the tab named
   plainly "The Sweep" for the keyboard nav and the selectors that drive it. In the header they stand on
   their own, so the group carries a spoken label ("answers Q2, Q6") and the chips stay decorative within
-  it — a screen reader hears the summary once, not each token in turn.
+  it - a screen reader hears the summary once, not each token in turn.
 -->
 <script lang="ts">
 	import { QUESTIONS, type QuestionId } from '$lib/lab/questions';
@@ -15,7 +15,7 @@
 	let { questions, decorative = false }: { questions: QuestionId[]; decorative?: boolean } =
 		$props();
 
-	/** The full question behind a tag — its title is the chip's hover tooltip. */
+	/** The full question behind a tag - its title is the chip's hover tooltip. */
 	function question(id: QuestionId) {
 		return QUESTIONS.find((q) => q.id === id);
 	}

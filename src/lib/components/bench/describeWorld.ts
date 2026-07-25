@@ -4,8 +4,8 @@
  *   "20 prey · 2 sharks · 640×400"          the defaults
  *   "20 prey · 2 sharks · 640×400 · 1.4×"   ...and a predator that has been sped up
  *
- * Extracted from the tile because it is real logic with real edge cases — pluralisation, and a
- * predator speed that must read as "1.4×" and "2×", never "1.40×" or "2.0×" — and logic with edge
+ * Extracted from the tile because it is real logic with real edge cases - pluralisation, and a
+ * predator speed that must read as "1.4×" and "2×", never "1.40×" or "2.0×" - and logic with edge
  * cases wants a test, not a template string buried in markup.
  */
 
@@ -28,7 +28,7 @@ export function describeWorld(config: WorldConfigView): string {
 	];
 	// The bench's own predator speed is the baseline it is calibrated against, so it goes unsaid;
 	// any departure from it is a condition of the experiment and has to be on the tile. (That
-	// baseline is 0.7× — a shark slower than the fish, which is what lets any sense pay at all.)
+	// baseline is 0.7× - a shark slower than the fish, which is what lets any sense pay at all.)
 	if (Math.abs(config.predSpeed - SHOWCASE_OCEAN.predSpeed) > SPEED_EPSILON) {
 		parts.push(multiplier(config.predSpeed));
 	}

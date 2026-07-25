@@ -1,9 +1,9 @@
 <!--
-  "Brain inputs this world" — the left rail, and the reason the scenes are in this order.
+  "Brain inputs this world" - the left rail, and the reason the scenes are in this order.
 
   Each scene hands its fish one more sense than the last, and the rail tags the new one. That tag is
   the argument: watch what difference it makes to the creatures in front of you. Sometimes the
-  answer is "everything" (direction), and twice it is "almost nothing" (closing speed, walls) —
+  answer is "everything" (direction), and twice it is "almost nothing" (closing speed, walls) -
   which is the finding the whole product exists to be honest about.
 -->
 <script lang="ts">
@@ -42,8 +42,8 @@
 		flex: none;
 	}
 
-	/* Stacked under the tank on a narrow stage (see StoryMode) — the fixed rail width goes. */
-	@media (max-width: 820px) {
+	/* Stacked under the tank on a narrow stage (see StoryMode) - the fixed rail width goes. */
+	@media (max-width: 900px) {
 		.rail {
 			width: auto;
 		}

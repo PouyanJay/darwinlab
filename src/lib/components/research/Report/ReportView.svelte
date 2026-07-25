@@ -1,12 +1,12 @@
 <!--
-  The Report — the seven-question brief, assembled from the notebook and laid out as a scientific paper
+  The Report - the seven-question brief, assembled from the notebook and laid out as a scientific paper
   that writes itself. A coverage spine on the left makes the honesty rail visible and navigates; the
   brief on the right leads with the strongest REAL finding, an auto-composed abstract (real numbers,
   never invented), then each question as a collapsible section with its numbered figure, the tensions
   the findings are in, the kept negatives, and a reproduce-this method.
 
   Reading modes and the skeptic toggles are the only local state; everything scientific is derived from
-  the report store, whose honesty rail is untouched — a question reads answered ONLY when a finding
+  the report store, whose honesty rail is untouched - a question reads answered ONLY when a finding
   backs it, and the abstract composes from those findings alone.
 -->
 <script lang="ts">
@@ -22,7 +22,7 @@
 	import ReproducePanel from './ReproducePanel.svelte';
 	import ConfirmDialog from '../../common/ConfirmDialog.svelte';
 
-	// The detailed sections are Q1–Q5; Q6 (negatives) and Q7 (method) render as their own panels.
+	// The detailed sections are Q1-Q5; Q6 (negatives) and Q7 (method) render as their own panels.
 	const DETAILED: QuestionId[] = ['Q1', 'Q2', 'Q3', 'Q4', 'Q5'];
 
 	const sections = $derived(report.sections);
@@ -35,7 +35,7 @@
 	const reproduce = $derived(report.reproduce);
 	const negatives = $derived(negativesOf(q6.finding));
 
-	// A figure number for each detailed section that draws a graph, in question order — so the paper's
+	// A figure number for each detailed section that draws a graph, in question order - so the paper's
 	// figures are numbered 1, 2, 3, … and an unanswered question takes no number.
 	const figureNumbers = $derived.by(() => {
 		const map = new SvelteMap<QuestionId, number>();
@@ -65,7 +65,7 @@
 		else openSet.add(id);
 	}
 
-	/** Jump to a question — open it, mark it active, and scroll it into view. Shared by the spine, the
+	/** Jump to a question - open it, mark it active, and scroll it into view. Shared by the spine, the
 	 *  abstract citations, and the tension refs, so every "go to Q…" is one path. */
 	function jump(id: QuestionId): void {
 		openSet.add(id);
@@ -78,12 +78,12 @@
 
 	// ---- un-answering a question: confirm, then drop the finding that backs it ----
 	// The section awaiting confirmation, or null. A finding can answer two questions (the Sweep settles
-	// Q2 AND Q6), so removing it clears both — the confirm names the sibling so that is never a surprise.
+	// Q2 AND Q6), so removing it clears both - the confirm names the sibling so that is never a surprise.
 	let pendingRemoval = $state<ReportSection | null>(null);
 
 	const SHORT = new Map(QUESTIONS.map((q) => [q.id, q.short]));
 
-	/** The questions the pending finding ALSO answers, besides the one clicked — for the warning line. */
+	/** The questions the pending finding ALSO answers, besides the one clicked - for the warning line. */
 	const alsoClears = $derived(
 		(pendingRemoval?.finding?.questions ?? []).filter((id) => id !== pendingRemoval?.question.id)
 	);
@@ -142,7 +142,7 @@
 				/>
 			{:else}
 				<p class="lede">
-					Run the instruments and "add to report", and the seven questions fill in here — each
+					Run the instruments and "add to report", and the seven questions fill in here - each
 					answer traced to the test that produced it, none of them invented.
 				</p>
 			{/if}
@@ -163,22 +163,22 @@
 				<TensionCallout {tension} index={i + 1} onjump={jump} />
 			{/each}
 
-			<!-- Q6 · what did not work — the kept negatives, first-class -->
+			<!-- Q6 · what did not work - the kept negatives, first-class -->
 			<aside class="negatives" id="report-q6" data-testid="report-qQ6">
-				<h3>What did not work — and that's the finding</h3>
+				<h3>What did not work - and that's the finding</h3>
 				{#if negatives.length}
 					<p>
-						<b>{negatives.join(', ')}</b> don't clear zero — the Sweep keeps them as real negatives, not
+						<b>{negatives.join(', ')}</b> don't clear zero - the Sweep keeps them as real negatives, not
 						an embarrassment to hide. More senses is not more survival.
 					</p>
 					<div class="negrow">
 						{#each negatives as neg (neg)}<span class="neg">{neg}</span>{/each}
 					</div>
 				{:else if q6.finding}
-					<p>Every factor the Sweep measured moved survival — no kept negatives this time.</p>
+					<p>Every factor the Sweep measured moved survival - no kept negatives this time.</p>
 				{:else}
 					<p>
-						No negatives recorded yet — run <b>{q6.producer}</b> to find what a knob does NOT buy.
+						No negatives recorded yet - run <b>{q6.producer}</b> to find what a knob does NOT buy.
 					</p>
 				{/if}
 			</aside>
@@ -194,7 +194,7 @@
 				/>
 			{:else}
 				<footer class="method" id="report-q7" data-testid="report-qQ7">
-					<b>Method.</b> No runs recorded yet — the provenance that reproduces a result appears here once
+					<b>Method.</b> No runs recorded yet - the provenance that reproduces a result appears here once
 					a finding is added.
 				</footer>
 			{/if}
@@ -226,7 +226,7 @@
 		align-items: start;
 	}
 
-	/* The spine tracks the page as the brief scrolls — the coverage ring and nav stay in reach. */
+	/* The spine tracks the page as the brief scrolls - the coverage ring and nav stay in reach. */
 	.layout > :global(.spine) {
 		position: sticky;
 		top: var(--sp-4);
@@ -387,7 +387,7 @@
 	}
 
 	/* Below the spine's comfortable width, it drops above the brief as a horizontal strip. */
-	@media (max-width: 720px) {
+	@media (max-width: 768px) {
 		.layout {
 			grid-template-columns: 1fr;
 		}

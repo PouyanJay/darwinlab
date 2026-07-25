@@ -8,7 +8,7 @@ import { bench, shell, SPEEDS } from '$lib/state';
 /**
  * The rail is the collapsed sidebar, and the ONE control it cannot carry in its usual shape is
  * speed: a three-way segmented control does not fit 56px, so it becomes a cycle button. That
- * reshaping is the thing worth pinning — it is the only place in the app where the same choice is
+ * reshaping is the thing worth pinning - it is the only place in the app where the same choice is
  * offered by a different kind of widget, and the only place it could quietly stop offering all of it.
  *
  * `bench` is never init()ed: that would start a live loop with sharks eating in the background (a
@@ -72,7 +72,7 @@ describe('SidebarRail', () => {
 		expect(speedButton().element()).toHaveTextContent('2×');
 	});
 
-	it('goes inert — and drops its controls — while the panel is open', () => {
+	it('goes inert - and drops its controls - while the panel is open', () => {
 		if (!shell.open) shell.toggle(); // expanded: the panel carries these controls itself
 		flushSync();
 		mount();

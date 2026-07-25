@@ -1,18 +1,18 @@
 <!--
-  The expanded world, as a WORKBENCH — the alternative to the tile's one long column.
+  The expanded world, as a WORKBENCH - the alternative to the tile's one long column.
 
   A world you are giving your full attention to is not read top to bottom; it is operated. So it is
   laid out as a bench in three zones:
 
-    STAGE      the caption bar (the world's identity and controls) on top, then the tank — as large
+    STAGE      the caption bar (the world's identity and controls) on top, then the tank - as large
                as the pane allows, filling the remaining height at the water's own aspect.
     METRICS    the champion clones, then every learning curve as its own WIDE chart stacked down the
                column, and the tools you RUN (flee assay, evaluation, ablation) three abreast below.
-    MIND       the champion's brain, docked open — senses, escape map, motor outputs — live.
+    MIND       the champion's brain, docked open - senses, escape map, motor outputs - live.
 
   It is one stacked column on a phone; the mind docks to the side as soon as there is room; and the
   metrics take a column of their own on a wide monitor, where all three zones share one top line and
-  none of them scrolls the page. It composes the same live pieces the tile does — nothing here is a
+  none of them scrolls the page. It composes the same live pieces the tile does - nothing here is a
   second copy of that logic, only a second arrangement of it.
 -->
 <script lang="ts">
@@ -38,7 +38,7 @@
 
 	interface Props {
 		entry: WorldEntry;
-		/** Its place in the bench, for the badge — 1-based, shown as "01". */
+		/** Its place in the bench, for the badge - 1-based, shown as "01". */
 		index: number;
 	}
 
@@ -62,7 +62,7 @@
 	// lives in the deploy readout the tile carries; here it is the value on the Held-out chart).
 	const deployValue = $derived.by(() => {
 		const { deployed, extinctT, halfLife, deployT } = entry.stats;
-		if (!deployed) return '—';
+		if (!deployed) return '-';
 		if (extinctT !== null) return `wiped ${extinctT.toFixed(0)}s`;
 		if (halfLife !== null) return `½ ${halfLife.toFixed(0)}s`;
 		return `${deployT.toFixed(0)}s`;
@@ -92,7 +92,7 @@
 		<!-- ZONE 1 · STAGE: the caption bar on top, then the world, large, to the bottom of the pane. -->
 		<div class="stage-zone">
 			<!-- The caption bar: whose water this is and everything you do TO the world (rename, senses,
-			     reset / duplicate / collapse / remove) — one wrapping row ABOVE the tank: the stage's
+			     reset / duplicate / collapse / remove) - one wrapping row ABOVE the tank: the stage's
 			     header. -->
 			<div class="bar">
 				<Chip class="badge">{badge}</Chip>
@@ -170,7 +170,7 @@
 			</div>
 
 			<!-- The stage: sized by WIDTH in the stacked layouts (the tank at the water's aspect), and by
-			     the column's HEIGHT on a wide bench — a size container, so the tank box can take
+			     the column's HEIGHT on a wide bench - a size container, so the tank box can take
 			     min(full width, full height × aspect) and the water reaches every edge either way. -->
 			<div class="stage" style:--tank-w={config.bw} style:--tank-h={config.bh}>
 				<div class="tank-box">
@@ -208,7 +208,7 @@
 				</div>
 			</section>
 
-			<!-- The metrics: every learning curve as its own WIDE chart, stacked — the quick scalars
+			<!-- The metrics: every learning curve as its own WIDE chart, stacked - the quick scalars
 			     (alive, eaten, best) live on the rail card and in the mind panel, so here the column
 			     spends its whole height on the curves. On a wide bench the stack stretches to fill. -->
 			<div class="metrics-grid">
@@ -241,7 +241,7 @@
 				{#if entry.stats.schooling}
 					<MetricCard
 						title="School tightness"
-						value="{entry.stats.schoolNND ?? '—'}px"
+						value="{entry.stats.schoolNND ?? '-'}px"
 						series={() => entry.world.schoolCurve}
 						draw={drawSchoolCurve}
 						accent={config.accent}
@@ -252,7 +252,7 @@
 		</div>
 
 		<!-- The shelf: the things you RUN, each its own panel. On a wide bench it is a footer spanning
-		     the metrics and mind columns — three roomy cards in a row — so the stage column beside it is
+		     the metrics and mind columns - three roomy cards in a row - so the stage column beside it is
 		     free to run the tank to the very bottom. Stacked, it flows below the charts. -->
 		<div class="shelf">
 			<AssayPanel {entry} />
@@ -261,7 +261,7 @@
 		</div>
 	</div>
 
-	<!-- ZONE 3 · MIND: the champion's brain, docked open — or whichever fish you click in the tank. -->
+	<!-- ZONE 3 · MIND: the champion's brain, docked open - or whichever fish you click in the tank. -->
 	<aside class="inspector-zone" aria-label="the mind">
 		{#if mindSelection}
 			<BrainInspector docked selection={mindSelection} {entry} />
@@ -269,7 +269,7 @@
 			<div class="mind-empty">
 				<span class="dot" aria-hidden="true"></span>
 				<h2>Fish mind</h2>
-				<p>Click any fish in the tank — or press ★ Champion — to read a real evolved brain here.</p>
+				<p>Click any fish in the tank - or press ★ Champion - to read a real evolved brain here.</p>
 			</div>
 		{/if}
 	</aside>
@@ -278,7 +278,7 @@
 <style>
 	/*
 		Mobile-first: ONE stacked column. The mind docks to the side once the pane is wide enough (760),
-		and the metrics break out into a column of their own on a wide monitor (1240) — all measured
+		and the metrics break out into a column of their own on a wide monitor (1240) - all measured
 		against the workbench's own CONTAINER, not the viewport, because the sidebar and the rail eat
 		into the width a viewport query cannot see.
 	*/
@@ -299,7 +299,7 @@
 	/* Stacked inside a BOUNDED pane (the focus view's detail is overflow: hidden), the workbench must
 	   scroll itself or everything below the shelf is simply unreachable. Guarded to viewports above
 	   the focus view's phone breakpoint: on a phone the detail is auto-height and the whole focus
-	   column is the one scroll — a nested scroller there would trap it in a short inner pane. */
+	   column is the one scroll - a nested scroller there would trap it in a short inner pane. */
 	@media (width > 720px) {
 		@container detail (width < 760px) {
 			.workbench {
@@ -331,7 +331,7 @@
 		background: var(--tank, #000);
 	}
 
-	/* The caption bar: one wrapping row — identity on the left, the icon actions pinned right. */
+	/* The caption bar: one wrapping row - identity on the left, the icon actions pinned right. */
 	.bar {
 		display: flex;
 		flex-wrap: wrap;
@@ -389,7 +389,7 @@
 	}
 
 	/* One clean card: the exhibit control (segmented + description) sits directly in it, and the
-	   buttons are a footer under a hairline — not a box floating inside another box. The card's own
+	   buttons are a footer under a hairline - not a box floating inside another box. The card's own
 	   padding gives the buttons room on every side, so nothing crowds the border. */
 	.clones {
 		display: flex;
@@ -415,7 +415,7 @@
 		color: var(--gold-ink);
 	}
 
-	/* The metrics — one column of WIDE charts, each curve its own rectangular card. */
+	/* The metrics - one column of WIDE charts, each curve its own rectangular card. */
 	.metrics-grid {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr);
@@ -449,12 +449,12 @@
 	}
 
 	/*
-		The wide arrangements, AFTER every base rule — these override base declarations (the tank box's
+		The wide arrangements, AFTER every base rule - these override base declarations (the tank box's
 		width, the metrics grid's tracks) at equal specificity, so they must win on source order.
 	*/
 
 	/* Two-pane: the bench (stage over metrics) scrolls as one column; the mind is its own scroll. */
-	@container detail (min-width: 760px) {
+	@container detail (min-width: 768px) {
 		.workbench {
 			grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
 			gap: var(--sp-6);
@@ -478,15 +478,15 @@
 	}
 
 	/* Three columns: the stage takes the lion's share (the tank is the hero), the metrics a column of
-	   their own, and each zone scrolls independently ONLY if it must — at this size the bench is built
+	   their own, and each zone scrolls independently ONLY if it must - at this size the bench is built
 	   to fit the height with no page scroll, every zone starting on the same top line. */
-	@container detail (min-width: 1240px) {
+	@container detail (min-width: 1200px) {
 		/* Two rows: the stage runs the FULL height on the left (tank to the very bottom), while the
-		   metrics and mind share the top row and the tools span a footer beneath them — three roomy
+		   metrics and mind share the top row and the tools span a footer beneath them - three roomy
 		   cards, wider than either column alone, instead of three slivers crammed into one. */
 		.workbench {
 			/* The stage takes a big share so that on a wide monitor the column is wider than the water's
-			   1.6 aspect needs — which makes the tank HEIGHT-bound and it fills the pane top to bottom.
+			   1.6 aspect needs - which makes the tank HEIGHT-bound and it fills the pane top to bottom.
 			   The metrics keep a comfortable minimum; the mind is capped. */
 			grid-template-columns: minmax(0, 3.4fr) minmax(300px, 1fr) minmax(300px, 340px);
 			grid-template-rows: minmax(0, 1fr) auto;
@@ -522,15 +522,15 @@
 
 		.shelf {
 			grid-area: tools;
-			/* three abreast across the full footer width — one even row of comfortably sized panels */
+			/* three abreast across the full footer width - one even row of comfortably sized panels */
 			grid-template-columns: repeat(3, minmax(0, 1fr));
 			align-items: stretch;
 		}
 
-		/* The stage takes the height the caption bar leaves and fills it — a SIZE container so the tank
+		/* The stage takes the height the caption bar leaves and fills it - a SIZE container so the tank
 		   box can read the leftover height (cqh). No max-height cap: the stage runs to the bottom of the
 		   pane, and the tank is centred in it, as large as the water's aspect allows on whichever axis
-		   binds — so a wide column shows a full-height tank flush to the floor. */
+		   binds - so a wide column shows a full-height tank flush to the floor. */
 		.stage {
 			flex: 1 1 auto;
 			min-height: 220px;

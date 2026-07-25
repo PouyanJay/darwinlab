@@ -1,9 +1,9 @@
 <!--
-  The focus view — one world blown up to fill the pane, the whole roster shrunk into a scrolling rail
+  The focus view - one world blown up to fill the pane, the whole roster shrunk into a scrolling rail
   down the left. The alternative to the pannable lineage canvas: reach for it (the header's expand
   control) when a world has your full attention and its neighbours only need to be a glance away.
 
-  The rail lists EVERY world, not just the others — the focused one stays in place, highlighted, so
+  The rail lists EVERY world, not just the others - the focused one stays in place, highlighted, so
   the list never reshuffles as you move between them; the count and the fade edges say there is more
   below; and expanding a world scrolls its card into view. It fills the height and scrolls its
   overflow, so a bench of any size just keeps going rather than being capped at what fits.
@@ -15,7 +15,7 @@
 	import { bench } from '$lib/state';
 
 	interface Props {
-		/** Add a fresh root world — offered at the foot of the rail, as the canvas offers it in a corner. */
+		/** Add a fresh root world - offered at the foot of the rail, as the canvas offers it in a corner. */
 		onaddworld: () => void;
 	}
 
@@ -27,7 +27,7 @@
 
 	let railEl = $state<HTMLElement | null>(null);
 
-	// Keep the focused world's card in view when focus changes — the reason the whole roster stays
+	// Keep the focused world's card in view when focus changes - the reason the whole roster stays
 	// listed rather than dropping the focused one is that the rail must not jump under the pointer.
 	$effect(() => {
 		void bench.focusedId;
@@ -60,7 +60,7 @@
 			</div>
 		</aside>
 
-		<!-- The focused world as a workbench. Keyed on its id so switching worlds remounts cleanly — a
+		<!-- The focused world as a workbench. Keyed on its id so switching worlds remounts cleanly - a
 		     fresh tank painter and a fresh champion selection, not the previous world's re-labelled. -->
 		<div class="detail">
 			{#key focused.id}
@@ -73,14 +73,14 @@
 <style>
 	.focus {
 		display: grid;
-		/* minmax(0, …) on BOTH tracks — without the 0 minimum a track's min size is its content, and the
+		/* minmax(0, …) on BOTH tracks - without the 0 minimum a track's min size is its content, and the
 		   rail's fixed-width cards (or a wide workbench) then force the whole grid past the viewport.
 		   The rail is deliberately slim (the mock's proportion): it is a place to glance and switch,
 		   and every pixel it gives up goes straight to the tank. */
 		grid-template-columns: minmax(0, 212px) minmax(0, 1fr);
 		/* The single row is BOUNDED to the pane, not auto-sized to its tallest child. Without this the
 		   row grew to the full height of a 12-card rail (~2900px) and the rail then had no overflow to
-		   scroll — it just ran off the bottom of the screen. minmax(0,1fr) pins the row to the viewport
+		   scroll - it just ran off the bottom of the screen. minmax(0,1fr) pins the row to the viewport
 		   so the rail scrolls its own overflow instead. */
 		grid-template-rows: minmax(0, 1fr);
 		gap: var(--sp-6);
@@ -184,7 +184,7 @@
 
 	/* The workbench manages its own two-column scroll (a scrolling bench, an independently scrolling
 	   mind), so the detail just gives it the pane's full, bounded height to fill. It is also the query
-	   CONTAINER the workbench sizes itself against — so the workbench stacks when the room the rail and
+	   CONTAINER the workbench sizes itself against - so the workbench stacks when the room the rail and
 	   sidebar leave it is narrow, which a viewport media query cannot see. */
 	.detail {
 		min-width: 0;
@@ -196,12 +196,12 @@
 	}
 
 	/*
-		The phone: no room for a side rail, so the whole focus becomes ONE vertically scrolling column —
+		The phone: no room for a side rail, so the whole focus becomes ONE vertically scrolling column -
 		the roster as a horizontal filmstrip on top, the workbench (itself fully stacked) beneath it.
 		The focus scrolls as a page rather than pinning a bounded rail + a bounded detail against a
 		screen that has no height to spare.
 	*/
-	@media (max-width: 720px) {
+	@media (max-width: 768px) {
 		.focus {
 			grid-template-columns: minmax(0, 1fr);
 			grid-template-rows: auto auto;

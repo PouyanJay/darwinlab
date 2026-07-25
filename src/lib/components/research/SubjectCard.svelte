@@ -1,14 +1,14 @@
 <!--
-  The world the whole console is pointed at, shown in the rail — and since the redesign, EDITED here.
+  The world the whole console is pointed at, shown in the rail - and since the redesign, EDITED here.
 
   The subject is the place and the wiring: population, tank, brain. Everything about how fish and
   shark BEHAVE (senses, body, predator rules) lives in the instrument's design panel, where a knob is
-  pinned or swept — one home per knob, so the card can never contradict the panel. The card edits the
+  pinned or swept - one home per knob, so the card can never contradict the panel. The card edits the
   app store's base directly (`app.base` + the setBase* doors, which own the clamps); every instrument
   builds its runs on the same base through `subjectBase`.
 
   When a Studio world was carried in via "Analyse", the card names it as the analysis subject and
-  offers the way back to a generic world — the subject is never a trap you can see but not leave.
+  offers the way back to a generic world - the subject is never a trap you can see but not leave.
   Presets are the durable form: save the current base under its name, apply one later.
 
   No survival number is shown: that is a MEASUREMENT (the instruments produce it), and the card will
@@ -27,11 +27,11 @@
 
 	// The analysis subject (null on a generic world), and the base every instrument actually runs on.
 	// Both are derived so the card follows an "Analyse" hand-off, an edit, or a preset apply without
-	// a manual repaint — the `{#key}` below reframes the tank when anything it paints changes.
+	// a manual repaint - the `{#key}` below reframes the tank when anything it paints changes.
 	const subject = $derived(app.subject);
 	const base = $derived(app.base);
 
-	// The hidden layers as the text the input shows — "6", or "16, 8" for a deep brain. The store
+	// The hidden layers as the text the input shows - "6", or "16, 8" for a deep brain. The store
 	// clamps on the way back in, and this derived echoes the clamped truth after every commit.
 	const layersText = $derived(
 		Array.isArray(base.brainHidden) ? base.brainHidden.join(', ') : String(base.brainHidden ?? NHID)
@@ -49,7 +49,7 @@
 
 	/**
 	 * A still of the base world: a fresh population stepped a couple of sim-seconds so the fish have
-	 * scattered and the shark is hunting — a preview of the place, not an evolved result. Painted once
+	 * scattered and the shark is hunting - a preview of the place, not an evolved result. Painted once
 	 * per key (the block is keyed on everything it paints), so there is no loop to tear down.
 	 */
 	function paintMini(ctx: CanvasRenderingContext2D, w: number, h: number): void {
@@ -119,7 +119,7 @@
 			     The testid + copy are the cross-link banner's contract (crosslink.e2e reads them). -->
 			<div class="analysing" data-testid="research-subject">
 				<span class="analysing-text"
-					>Analysing <b>{subject.name}</b> — every instrument runs on it.</span
+					>Analysing <b>{subject.name}</b> - every instrument runs on it.</span
 				>
 				<button class="linkbtn" onclick={() => app.clearSubject()}>Use a generic world</button>
 			</div>
@@ -128,7 +128,7 @@
 		<div class="foot">
 			<p>
 				The subject is the <b>place and the wiring</b>. How fish and shark behave is experiment
-				design — it lives with each instrument, pinned or swept.
+				design - it lives with each instrument, pinned or swept.
 			</p>
 			<div class="links">
 				{#if !subject}
@@ -214,7 +214,7 @@
 		color: var(--ink3);
 	}
 
-	/* the one input the card still renders itself — the hidden-layers text field */
+	/* the one input the card still renders itself - the hidden-layers text field */
 	.frow input.wide {
 		width: 76px;
 		padding: 5px 8px;

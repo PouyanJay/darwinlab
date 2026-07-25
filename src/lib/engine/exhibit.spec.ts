@@ -4,7 +4,7 @@ import { championGenome, makeExhibit, exhibitSpent } from './exhibit';
 import type { World } from './types';
 
 /**
- * The exhibit's promise is a NEGATIVE one — "this does not touch the run" — and a negative promise is
+ * The exhibit's promise is a NEGATIVE one - "this does not touch the run" - and a negative promise is
  * the easiest kind to break by accident and the hardest to notice when you do. So most of what is
  * pinned here is what must NOT have happened.
  */
@@ -21,7 +21,7 @@ function evolved(gens: number, seed = 5): World {
 	return w;
 }
 
-/** Everything the simulation IS — who is where, what they know, what they are worth. */
+/** Everything the simulation IS - who is where, what they know, what they are worth. */
 const stateOf = (w: World) =>
 	JSON.stringify({
 		t: w.t,
@@ -34,7 +34,7 @@ const stateOf = (w: World) =>
 	});
 
 describe('championGenome', () => {
-	it('is null at generation zero — nothing has been judged, so nothing is the best', () => {
+	it('is null at generation zero - nothing has been judged, so nothing is the best', () => {
 		const fresh = makeWorld(cfg, undefined, seededRng(1));
 		// Every fitness is 0 and no generation has ended. There is no champion here, and handing back
 		// the first fish of a random population as "the champion" would be the exhibit lying for us.
@@ -60,11 +60,11 @@ describe('makeExhibit', () => {
 		for (const f of exhibit.fish) expect(Array.from(f.genome)).toEqual(first);
 	});
 
-	it("shows the world the CONFIG describes — not makeWorld's double predators", () => {
+	it("shows the world the CONFIG describes - not makeWorld's double predators", () => {
 		/*
 		 * The bug the owner found. makeWorld spawns cfg.preds predators and then spawns them again (a
 		 * reference quirk it documents), and an evolving world's first generation boundary quietly puts
-		 * it right. An exhibit is frozen by construction and never reaches one — so a world configured
+		 * it right. An exhibit is frozen by construction and never reaches one - so a world configured
 		 * for three sharks showed SIX, permanently, and the Conditions slider could not take them away
 		 * because the config had never been wrong.
 		 */
@@ -79,7 +79,7 @@ describe('makeExhibit', () => {
 		const w = evolved(3);
 		const exhibit = makeExhibit(w, championGenome(w)!, seededRng(2));
 
-		// Well past TWO generation boundaries — these worlds run 30 sim-second generations, so a
+		// Well past TWO generation boundaries - these worlds run 30 sim-second generations, so a
 		// shorter run would have proved nothing: no generation would have been due either way.
 		for (let i = 0; i < 70 * 60; i++) stepWorld(exhibit, 1 / 60);
 
@@ -100,10 +100,10 @@ describe('makeExhibit', () => {
 		expect(stateOf(w)).toBe(before); // not a fish, not a weight, not a curve point
 	});
 
-	it("does not steal the run's FUTURE either — it shares no dice with it", () => {
+	it("does not steal the run's FUTURE either - it shares no dice with it", () => {
 		/*
 		 * The sabotage that got through the first version of this file: `stateOf` compares the world's
-		 * visible state, and consuming one of its RNG draws does not change that state — it changes
+		 * visible state, and consuming one of its RNG draws does not change that state - it changes
 		 * every state after it. An exhibit built on the real world's random stream would leave the run
 		 * looking untouched and then evolving differently, which is the worst kind of contamination:
 		 * invisible at the moment it happens, and impossible to attribute later.
@@ -126,7 +126,7 @@ describe('makeExhibit', () => {
 		expect(stateOf(watched)).toBe(stateOf(control)); // looking at it cost the run nothing
 	});
 
-	it('runs itself out rather than respawning — and says so', () => {
+	it('runs itself out rather than respawning - and says so', () => {
 		const w = evolved(3);
 		const exhibit = makeExhibit(w, championGenome(w)!, seededRng(2));
 		expect(exhibitSpent(exhibit)).toBe(false);

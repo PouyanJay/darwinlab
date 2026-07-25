@@ -1,12 +1,12 @@
 /**
- * Schooling metric (Phase 14 spike) — measures whether a population MOVES AS A SCHOOL, not
+ * Schooling metric (Phase 14 spike) - measures whether a population MOVES AS A SCHOOL, not
  * whether it was told to. Two order parameters, both pure functions of the live fish:
  *
- *   polarization φ — the magnitude of the mean unit-velocity vector, 0 (chaos, every fish
+ *   polarization φ - the magnitude of the mean unit-velocity vector, 0 (chaos, every fish
  *     pointing its own way) to 1 (a perfectly aligned school). This is the number that rises
  *     if synchronized swimming evolves.
- *   nearest-neighbour distance (NND) — mean px to each fish's closest neighbour. It FALLS as a
- *     population clumps. φ says "aligned"; NND says "close" — a school is both.
+ *   nearest-neighbour distance (NND) - mean px to each fish's closest neighbour. It FALLS as a
+ *     population clumps. φ says "aligned"; NND says "close" - a school is both.
  *
  * Neither is ever an input to selection: fitness stays seconds survived. These only OBSERVE.
  * The honest experiment (scripts/sweep-schooling.ts) asks whether they climb, and only when
@@ -26,17 +26,17 @@ import type { Fish, Genome, World, WorldConfig } from '../engine';
 const DT = 1 / 60;
 
 export interface SchoolStats {
-	/** Time-averaged polarization φ (0–1) over the bout. */
+	/** Time-averaged polarization φ (0-1) over the bout. */
 	polarization: number;
 	/** Time-averaged nearest-neighbour distance (px), sampled only while ≥2 fish live. */
 	nnd: number;
-	/** Mean seconds survived per fish over the bout — the honest survival signal. */
+	/** Mean seconds survived per fish over the bout - the honest survival signal. */
 	meanLife: number;
 	aliveAtEnd: number;
 }
 
 /**
- * Run one no-evolution bout on a frozen population and score φ, NND and survival — the same
+ * Run one no-evolution bout on a frozen population and score φ, NND and survival - the same
  * "deployed semantics, normalise by hand" contract measureBout uses (makeWorld double-spawns
  * predators; applyCfg fixes it, or every trial runs against twice the sharks it configured).
  */
@@ -47,7 +47,7 @@ export function measureSchool(
 	seconds = 12
 ): SchoolStats {
 	const w = makeWorld(cfg, genomes, seededRng(seed));
-	w.maxGen = 1; // no respawns, no breeding — the evolved brains are held fixed
+	w.maxGen = 1; // no respawns, no breeding - the evolved brains are held fixed
 	w.gen = 1;
 	applyCfg(w);
 

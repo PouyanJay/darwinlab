@@ -1,9 +1,9 @@
 <!--
-  One metric, as its own card — the unit the workbench's metrics grid is built from.
+  One metric, as its own card - the unit the workbench's metrics grid is built from.
 
   Two shapes, one card so the grid stays even: a CHART (a series painted straight from engine data,
-  with a 0–1 axis) when given a `series`, or a plain STAT (a big number) when not. Charts are painted
-  on change, not every frame — a per-generation curve only gains a point at a boundary.
+  with a 0-1 axis) when given a `series`, or a plain STAT (a big number) when not. Charts are painted
+  on change, not every frame - a per-generation curve only gains a point at a boundary.
 -->
 <script lang="ts">
 	import Canvas from '../common/Canvas.svelte';
@@ -21,7 +21,7 @@
 
 	interface Props {
 		title: string;
-		/** The readout shown large (stat) or top-right (chart) — already formatted ("24%", "30.0s"). */
+		/** The readout shown large (stat) or top-right (chart) - already formatted ("24%", "30.0s"). */
 		value: string;
 		accent: string;
 		/** A dimmed suffix on a stat's number, e.g. the "/ 20" after "15". */
@@ -103,7 +103,7 @@
 		flex: 1;
 	}
 
-	/* The 0–1 axis: three ticks so the eye has a scale for the line. */
+	/* The 0-1 axis: three ticks so the eye has a scale for the line. */
 	.axis {
 		display: flex;
 		flex-direction: column;
@@ -117,7 +117,7 @@
 
 	/* The canvas is absolutely positioned OUT of the flow: a canvas's bitmap (client size × DPR) is
 	   also its intrinsic size, and in a stretched flex column that intrinsic height feeds back into
-	   the min-content floor — the plot then outgrows its card every repaint and the axis's 0.0 and
+	   the min-content floor - the plot then outgrows its card every repaint and the axis's 0.0 and
 	   the curve's floor are clipped off the bottom. Absolute, it contributes nothing and simply
 	   fills whatever height the card really has. */
 	.chart {
@@ -132,7 +132,7 @@
 		inset: 0;
 	}
 
-	/* A stat card centres its big number in the space a chart would fill — margin auto, so it stays
+	/* A stat card centres its big number in the space a chart would fill - margin auto, so it stays
 	   centred however tall the grid stretches the card. */
 	.big {
 		margin-block: auto;

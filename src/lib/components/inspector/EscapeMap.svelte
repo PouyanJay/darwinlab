@@ -1,5 +1,5 @@
 <!--
-  The escape map — this fish's evolved RULE, not its wiring.
+  The escape map - this fish's evolved RULE, not its wiring.
 
   The brain canvas next door shows the 68 weights; this shows what they DO. `probePolicy` has already
   asked the brain "shark here: what do you do?" at every bearing and distance, and this paints those
@@ -8,7 +8,7 @@
 
   It paints from the memoised map the store holds (recomputed only when the genome or the conditions
   change) plus the RAW world, for the one live thing on the picture: where the real shark sits right
-  now. Like the tank, it reads the unreactive world directly — there is nothing here for reactivity
+  now. Like the tank, it reads the unreactive world directly - there is nothing here for reactivity
   to drive frame to frame.
 -->
 <script lang="ts">
@@ -24,7 +24,7 @@
 
 	let { entry }: Props = $props();
 
-	// The scenario's own words — "shark", "fish", "Escape map" — so a maze lab reuses this panel
+	// The scenario's own words - "shark", "fish", "Escape map" - so a maze lab reuses this panel
 	// with only scenario.ts changed (the sandbox pattern from Phase 12).
 	const agent = SCENARIO.agent.one;
 	const adversary = SCENARIO.adversary.one;
@@ -75,7 +75,7 @@
 		{register}
 		label="A polar map of this {agent}'s evolved policy. The {agent} is at the centre facing up; each
 		point around it is a possible {adversary} position (angle = bearing, distance from centre =
-		range). The colour is which way the {agent} steers there — cool turns left, warm turns right —
+		range). The colour is which way the {agent} steers there - cool turns left, warm turns right -
 		and the brightness is how hard it accelerates. A red ring marks where the {adversary} actually
 		is now."
 	/>
@@ -113,7 +113,7 @@
 		overflow: hidden;
 	}
 
-	/* A flat disc says nothing on its own — the badge names what the uniform colour means. */
+	/* A flat disc says nothing on its own - the badge names what the uniform colour means. */
 	.ignores {
 		position: absolute;
 		inset: auto 0 12px;
@@ -164,7 +164,7 @@
 		border-radius: 3px;
 	}
 
-	/* The same two hues the disc paints with — cool = left, warm = right (see drawEscapeMap). */
+	/* The same two hues the disc paints with - cool = left, warm = right (see drawEscapeMap). */
 	.left {
 		background: var(--excite);
 	}

@@ -13,13 +13,13 @@ import type { BehaviorStats } from './behavior';
 const cfg = () => newWorldConfig('Trace subject', '#888888');
 
 describe('runTraceStudy', () => {
-	it('is deterministic in its seed — the same study twice gives the same curve and paths', async () => {
+	it('is deterministic in its seed - the same study twice gives the same curve and paths', async () => {
 		const a = await runTraceStudy({ cfg: cfg(), episodes: 8, seed: 3 });
 		const b = await runTraceStudy({ cfg: cfg(), episodes: 8, seed: 3 });
 
 		expect(a).not.toBeNull();
 		expect(a!.curve).toEqual(b!.curve);
-		// The exact lifespans of the traced evolved school match — same brains, same bout, same result.
+		// The exact lifespans of the traced evolved school match - same brains, same bout, same result.
 		expect(a!.evolved.trace.fish.map((f) => f.life)).toEqual(
 			b!.evolved.trace.fish.map((f) => f.life)
 		);
@@ -28,7 +28,7 @@ describe('runTraceStudy', () => {
 		);
 	});
 
-	it('captures a learning curve of survival fractions (0–1), one per generation', async () => {
+	it('captures a learning curve of survival fractions (0-1), one per generation', async () => {
 		const study = await runTraceStudy({ cfg: cfg(), episodes: 8, seed: 1 });
 
 		expect(study!.curve).toHaveLength(8);
@@ -38,13 +38,13 @@ describe('runTraceStudy', () => {
 	it('traces the evolved population against a random-brain control on the same arena', async () => {
 		const study = await runTraceStudy({ cfg: cfg(), episodes: 6, seed: 2 });
 
-		// Only the brains differ — same arena, same population size in both schools.
+		// Only the brains differ - same arena, same population size in both schools.
 		expect(study!.evolved.trace.fish.length).toBe(study!.control.trace.fish.length);
 		expect(study!.evolved.trace.bw).toBe(study!.control.trace.bw);
 		expect(study!.evolved.trace.bh).toBe(study!.control.trace.bh);
 	});
 
-	it('the evolved arm really differs from its control — the genomes are kept, not dropped', async () => {
+	it('the evolved arm really differs from its control - the genomes are kept, not dropped', async () => {
 		// The two arms run the SAME bout seed, so if a regression dropped the evolved arm's genomes (both
 		// arms random-brained) the traces would be byte-identical and the same-arena checks above would
 		// still pass. Q5 IS this contrast, so it must be asserted directly, not assumed.
@@ -54,7 +54,7 @@ describe('runTraceStudy', () => {
 		expect(evolvedLives).not.toEqual(controlLives);
 	});
 
-	it('returns null when cancelled — an aborted study yields no result', async () => {
+	it('returns null when cancelled - an aborted study yields no result', async () => {
 		const controller = new AbortController();
 		controller.abort();
 		const study = await runTraceStudy(

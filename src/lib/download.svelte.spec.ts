@@ -4,7 +4,7 @@ import { downloadText } from './download';
 /**
  * The shared "save this text as a file" primitive, in a real browser (so Blob / URL.createObjectURL /
  * an anchor all exist). It backs BOTH the Report's Markdown export and the Ledger's JSON export, and
- * neither call site had a source-level test — a regression in filename, mime or content would slip
+ * neither call site had a source-level test - a regression in filename, mime or content would slip
  * past. We spy the two side effects it has no business doing for real in a test (minting an object URL,
  * clicking a link) and assert the file it hands the browser.
  */

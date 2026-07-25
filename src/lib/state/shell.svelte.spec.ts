@@ -4,7 +4,7 @@ import { stubViewport } from './testkit';
 
 /**
  * The viewport is stubbed (see testkit): jsdom's matchMedia never matches and never changes, so the
- * store's whole docked-vs-overlay decision would be untestable — and that is the half worth testing.
+ * store's whole docked-vs-overlay decision would be untestable - and that is the half worth testing.
  */
 let viewport: ReturnType<typeof stubViewport>;
 
@@ -25,7 +25,7 @@ describe('the docked sidebar', () => {
 		expect(shell.width).toBe(SIDEBAR_WIDTH);
 	});
 
-	it('remembers a collapse across a reload — from a collapse alone', () => {
+	it('remembers a collapse across a reload - from a collapse alone', () => {
 		shell.toggle();
 
 		viewport.restore();

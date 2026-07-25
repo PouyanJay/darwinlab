@@ -7,7 +7,7 @@
  * This lives in the ENGINE, not in the harness that first computed it and not in the renderer that
  * now paints it, because those two must not be allowed to mean different things by the same word.
  * The number the evaluation panel reports and the colour the lens paints on a fish are the same
- * quantity, measured the same way, under the same conditions — otherwise the tank would be showing
+ * quantity, measured the same way, under the same conditions - otherwise the tank would be showing
  * one story while the card printed another, and a user comparing them would be right to trust
  * neither.
  *
@@ -16,7 +16,7 @@
  *   • the predator must be IN VISION. A fish that cannot see the threat is not fleeing badly; it is
  *     not fleeing at all, and scoring it would be scoring the world's blindness as the fish's error.
  *   • the fish must be MOVING (above `FLEE_MIN_SPEED`). The direction of a near-stationary velocity
- *     vector is numerical noise — atan2 of two tiny numbers — and averaging that noise in would put
+ *     vector is numerical noise - atan2 of two tiny numbers - and averaging that noise in would put
  *     a drifting population's error wherever the noise felt like it.
  *
  * When either fails there is NO READING, which is a different thing from a reading of zero. Hence
@@ -49,7 +49,7 @@ export function nearestPred(f: Fish, preds: Predator[]): Nearest | null {
 
 /**
  * The angle between where this fish is going and dead-away-from-the-predator, in degrees (0..180).
- * `null` when there is nothing to read — see the note above.
+ * `null` when there is nothing to read - see the note above.
  */
 export function fleeError(
 	cfg: Pick<WorldConfig, 'vision'>,
