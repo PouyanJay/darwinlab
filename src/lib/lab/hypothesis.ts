@@ -1,17 +1,17 @@
 /**
- * The Ledger's claims — where a sentence becomes an experiment.
+ * The Ledger's claims - where a sentence becomes an experiment.
  *
  * A CLAIM is a plain statement with two arms (each a config patch) and what "supported" would mean:
  * either arm A reliably beats arm B (`A>B`), or the two are indistinguishable (`A≈B`). That is the
- * whole trick that keeps a verdict honest — one PRE-REGISTERED contrast, decided before the run, so
+ * whole trick that keeps a verdict honest - one PRE-REGISTERED contrast, decided before the run, so
  * "supported / refuted" is a real test and not the end of a fishing trip. The Sweep is where you go
  * looking; the Ledger is where you commit to a question and take the answer either way.
  *
  * Since the composer redesign, claims are built from TEMPLATES: seven families, each a sentence
  * skeleton with SLOTS filled from closed vocabularies (senses, predator speeds, world conditions).
- * The vocabulary is dropdowns, never free text — every fillable claim maps to exactly one contrast
+ * The vocabulary is dropdowns, never free text - every fillable claim maps to exactly one contrast
  * the stats module can evaluate, and its id is deterministic, so "direction beats distance" is the
- * same experiment in every session and its record history survives. Pure — claims are patches over
+ * same experiment in every session and its record history survives. Pure - claims are patches over
  * WorldConfig, so this is node-testable.
  */
 
@@ -25,7 +25,7 @@ export type ClaimExpectation = 'A>B' | 'A≈B';
 
 export type Verdict = 'supported' | 'refuted';
 
-/** One side of a claim — a label and the patch that builds its world from the base. */
+/** One side of a claim - a label and the patch that builds its world from the base. */
 export interface ClaimArm {
 	label: string;
 	apply: (cfg: WorldConfig) => WorldConfig;
@@ -41,7 +41,7 @@ export interface Claim {
 
 /* ======================================= the vocabulary ======================================= */
 
-/** One pick a slot offers — its id is what the store holds and what a claim id is built from. */
+/** One pick a slot offers - its id is what the store holds and what a claim id is built from. */
 export interface SlotOption {
 	id: string;
 	label: string;
@@ -58,13 +58,13 @@ export const SENSE_OPTIONS: SlotOption[] = [
 	{ id: 'speed', label: 'Own speed' }
 ];
 
-/** Predator cruise multipliers the speed templates offer — within WORLD_LIMITS.predSpeed. */
+/** Predator cruise multipliers the speed templates offer - within WORLD_LIMITS.predSpeed. */
 export const SPEED_OPTIONS: SlotOption[] = [0.8, 1.0, 1.2, 1.4, 1.6].map((v) => ({
 	id: v.toFixed(1),
 	label: `${v.toFixed(1)}×`
 }));
 
-/** The world-condition knobs a claim can flip — the Sweep's own predator/shoal catalog entries,
+/** The world-condition knobs a claim can flip - the Sweep's own predator/shoal catalog entries,
  *  reused so a condition means the same patch in both instruments. */
 const CONDITION_KEYS = ['persistence', 'lunge', 'lungeCommit', 'confusion'] as const;
 export const CONDITION_OPTIONS: SlotOption[] = CONDITION_KEYS.map((key) => ({
@@ -79,7 +79,7 @@ export function optionsFor(pool: SlotPool): SlotOption[] {
 }
 
 /** Why a sense pick is impossible on this subject, or null when it is allowed. Own speed reads the
- *  9th input wire, so on an 8-wire brain the option is DISABLED with the reason shown — never
+ *  9th input wire, so on an 8-wire brain the option is DISABLED with the reason shown - never
  *  silently dropped (the same discipline the Sweep panel applies). */
 export function senseDisabledReason(id: string, base: WorldConfig): string | null {
 	return id === 'speed' && !hasNineWires(base) ? 'needs the 9-input brain' : null;
@@ -101,7 +101,7 @@ function blindSenses(cfg: WorldConfig): Senses {
 	return senses;
 }
 
-/** The full suite, relative to the wiring — "all senses" honestly includes own speed only on a
+/** The full suite, relative to the wiring - "all senses" honestly includes own speed only on a
  *  brain that has the wire for it. */
 function allSenses(cfg: WorldConfig): Senses {
 	const senses: Senses = { dist: true, dir: true, closing: true, walls: true };
@@ -148,19 +148,19 @@ const withCondition =
 /** One fillable blank in a template's sentence. */
 export interface TemplateSlot {
 	key: string;
-	/** The dropdown's label in the panel — "sense X", "predator speed". */
+	/** The dropdown's label in the panel - "sense X", "predator speed". */
 	label: string;
 	pool: SlotPool;
 	/** The option id a fresh template opens with. */
 	def: string;
-	/** A sibling slot this one may not repeat — a sense cannot rival itself. */
+	/** A sibling slot this one may not repeat - a sense cannot rival itself. */
 	excl?: string;
 }
 
 /** slot key → picked option id. */
 export type SlotValues = Record<string, string>;
 
-/** One run of the composed sentence — slot-derived words are marked so the panel can show them. */
+/** One run of the composed sentence - slot-derived words are marked so the panel can show them. */
 export interface SentencePart {
 	text: string;
 	isSlot: boolean;
@@ -186,14 +186,14 @@ const slotWord = (text: string): SentencePart => ({ text, isSlot: true });
 
 /**
  * The seven families. Ids are chosen so the three claims the Ledger shipped with keep their exact
- * historical ids (`dir-beats-dist`, `walls-pays-alone`, `cliff-1`) — persisted records and Report
+ * historical ids (`dir-beats-dist`, `walls-pays-alone`, `cliff-1`) - persisted records and Report
  * findings stay attached to the same experiments.
  */
 export const TEMPLATES: ClaimTemplate[] = [
 	{
 		id: 'rivalry',
 		name: 'Rivalry',
-		sub: '“X pays more than Y” — sense against sense',
+		sub: '“X pays more than Y” - sense against sense',
 		slots: [
 			{ key: 'x', label: 'sense X', pool: 'sense', def: 'dir' },
 			{ key: 'y', label: 'sense Y', pool: 'sense', def: 'dist', excl: 'x' }
@@ -214,7 +214,7 @@ export const TEMPLATES: ClaimTemplate[] = [
 	{
 		id: 'solo',
 		name: 'Solo sense',
-		sub: '“X pays on its own” — one sense against blind',
+		sub: '“X pays on its own” - one sense against blind',
 		slots: [{ key: 'x', label: 'sense', pool: 'sense', def: 'dir' }],
 		expect: 'A>B',
 		parts: (v) => [
@@ -231,7 +231,7 @@ export const TEMPLATES: ClaimTemplate[] = [
 	{
 		id: 'stack',
 		name: 'Stacking',
-		sub: '“adding Y to X pays” — does a second sense stack',
+		sub: '“adding Y to X pays” - does a second sense stack',
 		slots: [
 			{ key: 'x', label: 'base sense', pool: 'sense', def: 'dir' },
 			{ key: 'y', label: 'added sense', pool: 'sense', def: 'closing', excl: 'x' }
@@ -256,7 +256,7 @@ export const TEMPLATES: ClaimTemplate[] = [
 	{
 		id: 'knockout',
 		name: 'Knockout',
-		sub: '“the suite survives losing X” — remove one from all',
+		sub: '“the suite survives losing X” - remove one from all',
 		slots: [{ key: 'x', label: 'removed sense', pool: 'sense', def: 'closing' }],
 		expect: 'A≈B',
 		parts: (v) => [
@@ -276,7 +276,7 @@ export const TEMPLATES: ClaimTemplate[] = [
 	{
 		id: 'pressure',
 		name: 'Under pressure',
-		sub: '“X still pays at S× cruise” — the sense, under a faster shark',
+		sub: '“X still pays at S× cruise” - the sense, under a faster shark',
 		slots: [
 			{ key: 'x', label: 'sense', pool: 'sense', def: 'dir' },
 			{ key: 's', label: 'predator speed', pool: 'speed', def: '1.4' }
@@ -300,7 +300,7 @@ export const TEMPLATES: ClaimTemplate[] = [
 	{
 		id: 'cliff',
 		name: 'Speed cliff',
-		sub: '“above S×, no sense pays” — where seeing stops helping',
+		sub: '“above S×, no sense pays” - where seeing stops helping',
 		slots: [{ key: 's', label: 'predator speed', pool: 'speed', def: '1.0' }],
 		expect: 'A≈B',
 		parts: (v) => [
@@ -318,7 +318,7 @@ export const TEMPLATES: ClaimTemplate[] = [
 	{
 		id: 'condition',
 		name: 'World condition',
-		sub: '“C makes survival harder” — one rule of the world, on vs off',
+		sub: '“C makes survival harder” - one rule of the world, on vs off',
 		slots: [{ key: 'c', label: 'condition', pool: 'condition', def: 'persistence' }],
 		expect: 'A>B',
 		parts: (v) => [slotWord(optionLabel('condition', v.c)), word(' makes survival harder.')],
@@ -337,7 +337,7 @@ export function templateById(id: string): ClaimTemplate | null {
 /**
  * Make a partial pick legal for this template on this subject: missing slots take their defaults,
  * a wiring-gated pick falls back, and an exclusive slot that collides with its sibling is handed
- * the first sense still free. The result is always a runnable claim — the composer can never hold
+ * the first sense still free. The result is always a runnable claim - the composer can never hold
  * an impossible sentence.
  */
 export function resolveSlots(
@@ -383,7 +383,7 @@ export interface LibraryItem {
 	values: SlotValues;
 }
 
-/** The claims the Ledger shipped with — the lab's own findings, ready to be re-tested. */
+/** The claims the Ledger shipped with - the lab's own findings, ready to be re-tested. */
 export const LIBRARY: LibraryItem[] = [
 	{ templateId: 'rivalry', values: { x: 'dir', y: 'dist' } },
 	{ templateId: 'solo', values: { x: 'walls' } },
@@ -393,11 +393,11 @@ export const LIBRARY: LibraryItem[] = [
 const libraryClaim = (item: LibraryItem): Claim =>
 	buildClaim(templateById(item.templateId) as ClaimTemplate, item.values);
 
-/** The library as concrete claims — kept for callers that only need the sentences and ids. */
+/** The library as concrete claims - kept for callers that only need the sentences and ids. */
 export const CANDIDATE_CLAIMS: Claim[] = LIBRARY.map(libraryClaim);
 
 /**
- * Why a verdict fell the way it did, in plain words — phrased from the pre-registered expectation
+ * Why a verdict fell the way it did, in plain words - phrased from the pre-registered expectation
  * and the interval, so the drill can explain the reading without re-deriving it.
  */
 export function rationaleFor(
@@ -407,22 +407,22 @@ export function rationaleFor(
 ): string {
 	if (expect === 'A>B') {
 		if (verdict === 'supported')
-			return 'A > B claim: the Δ interval clears zero in A’s favour — supported.';
+			return 'A > B claim: the Δ interval clears zero in A’s favour - supported.';
 		if (ci.hi < 0)
-			return 'A > B claim: the interval sits below zero — arm B outlived arm A. Refuted.';
-		return 'A > B claim: the interval straddles zero — no reliable difference. Refuted.';
+			return 'A > B claim: the interval sits below zero - arm B outlived arm A. Refuted.';
+		return 'A > B claim: the interval straddles zero - no reliable difference. Refuted.';
 	}
 	if (verdict === 'supported')
 		return (
-			'A ≈ B claim: the interval straddles zero — no difference could be shown, ' +
+			'A ≈ B claim: the interval straddles zero - no difference could be shown, ' +
 			'which is what the claim asserts. Supported.'
 		);
-	return 'A ≈ B claim: the interval clears zero — there IS a reliable difference. Refuted.';
+	return 'A ≈ B claim: the interval clears zero - there IS a reliable difference. Refuted.';
 }
 
 /* ================================ the design and the verdict ================================== */
 
-/** The claim as two evaluation requests — arm A and arm B, run at the same size. */
+/** The claim as two evaluation requests - arm A and arm B, run at the same size. */
 export function designFor(
 	claim: Claim,
 	base: WorldConfig,
@@ -437,7 +437,7 @@ export function designFor(
 /**
  * Read the verdict off the pre-registered contrast.
  *
- * For an `A>B` claim, supported means the whole interval clears zero in A's favour — a difference in
+ * For an `A>B` claim, supported means the whole interval clears zero in A's favour - a difference in
  * the other direction OR no reliable difference both refute it. For an `A≈B` claim, supported means
  * the interval STRADDLES zero (no difference could be shown); any interval that clears zero refutes
  * it. A contrast with no data (NaN) refutes either way.
@@ -453,8 +453,8 @@ export function verdictFrom(contrast: Contrast, expect: ClaimExpectation): Verdi
 /* ==================================== the shared background =================================== */
 
 /**
- * The knobs BOTH arms hold in common — the subject's place-and-wiring plus the graded senses the
- * templates never touch — as human chips for the drill card. Built from the base at design time and
+ * The knobs BOTH arms hold in common - the subject's place-and-wiring plus the graded senses the
+ * templates never touch - as human chips for the drill card. Built from the base at design time and
  * stored on the record, so a later subject edit cannot relabel an old verdict.
  */
 export function sharedBackground(base: WorldConfig): string[] {

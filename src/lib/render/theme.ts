@@ -2,7 +2,7 @@
  * Canvas palettes. Ported verbatim from engine2.js `THEMES`.
  *
  * ⚠️ MIRROR: a canvas cannot read CSS custom properties, so these are a SECOND copy of the colour
- * tokens declared in `src/lib/styles/tokens.css` — the DOM reads them from there, the tank reads
+ * tokens declared in `src/lib/styles/tokens.css` - the DOM reads them from there, the tank reads
  * them from here. Change a colour in one file and you must change it in the other, or the tank
  * will paint in a palette the page around it no longer uses (CLAUDE.md conventions).
  *
@@ -17,14 +17,14 @@ export type ThemeName = 'light' | 'dark';
  *
  * A lens is a way of looking, never a way of changing: 'flee' repaints each fish by how wrong its
  * escape is at this instant, and that is the whole of it. No lens writes to a weight, a fitness, a
- * curve or the RNG — the population that swims under a lens is the identical population that swims
+ * curve or the RNG - the population that swims under a lens is the identical population that swims
  * without one, frame for frame.
  */
 export type Lens = 'none' | 'flee';
 
 export interface ThemePalette {
 	tankEdge: string;
-	/** rgb triplet (no alpha) — composed into rgba() at draw time. */
+	/** rgb triplet (no alpha) - composed into rgba() at draw time. */
 	ray: string;
 	dust: string;
 	fish: string;
@@ -40,7 +40,7 @@ export interface ThemePalette {
 	/**
 	 * The brain viz ONLY: excitatory (+) and inhibitory (−) weights.
 	 *
-	 * They cannot just be `accent` and `threat`, because in dark those are the SAME magenta — the
+	 * They cannot just be `accent` and `threat`, because in dark those are the SAME magenta - the
 	 * reference passes the theme accent in and its dark-mode brain draws both signs identically,
 	 * with a legend underneath insisting they differ. In the one panel where the colour IS the
 	 * information, the two signs get colours of their own. Mirrored in tokens.css as --excite /
@@ -54,9 +54,9 @@ export interface ThemePalette {
 	pill: string;
 	shadow: string;
 	/**
-	 * The flee lens — rgb triplets, composed into rgb() at draw time.
+	 * The flee lens - rgb triplets, composed into rgb() at draw time.
 	 *
-	 * The ramp DIVERGES around `lensMid`, and the midpoint is not a design choice — it is the null
+	 * The ramp DIVERGES around `lensMid`, and the midpoint is not a design choice - it is the null
 	 * hypothesis. 90° of flee error is exactly what aimless drift scores: a fish that ignores the
 	 * shark entirely averages a right angle to it. So 90° is "no opinion", below it is fleeing, above
 	 * it is swimming into the mouth, and the colour says which side of chance the fish is on.
@@ -66,7 +66,7 @@ export interface ThemePalette {
 	 * world that did not. The difference was real (blind 85°, bearing 73°) and invisible. Diverging
 	 * around chance is what makes a 12° shift a colour a human can actually see.
 	 *
-	 * `lensIdle` is for a fish with NO READING — nothing in vision, or too slow for its heading to
+	 * `lensIdle` is for a fish with NO READING - nothing in vision, or too slow for its heading to
 	 * mean anything. Deliberately a neutral grey, and deliberately not `lensGood`: an unmeasured fish
 	 * must never be flattered into looking like a correct one.
 	 */
@@ -95,7 +95,7 @@ export const THEMES: Record<ThemeName, ThemePalette> = {
 		inhibit: '#e8604c',
 		gold: '#d8a13a',
 		ink: '#1d2230',
-		inkSoft: 'rgba(29,34,48,.72)', // mirrors --ink2 — deepened with it for the Phase 9 AA gate
+		inkSoft: 'rgba(29,34,48,.72)', // mirrors --ink2 - deepened with it for the Phase 9 AA gate
 		pill: 'rgba(253,253,248,.92)',
 		shadow: 'rgba(30,45,35,.09)',
 		lensGood: '26,148,120',
@@ -104,18 +104,18 @@ export const THEMES: Record<ThemeName, ThemePalette> = {
 		lensIdle: '150,152,162'
 	},
 	dark: {
-		// Monochrome dark: the tank edge is a neutral hairline, not a coloured rim — the line that
+		// Monochrome dark: the tank edge is a neutral hairline, not a coloured rim - the line that
 		// says where the water ends, nothing more. (The old .24 magenta neon lit the page instead of
 		// the experiment; a container is not a light source.)
 		tankEdge: 'rgba(255,255,255,.14)',
 		ray: '235,238,245',
 		dust: 'rgba(255,255,255,.22)',
-		// Blue, like the light theme's fish — brightened for the black water (light's #4f56d3 sinks).
+		// Blue, like the light theme's fish - brightened for the black water (light's #4f56d3 sinks).
 		fish: '#6d7cf0',
 		fishBelly: '#b3bbf7',
 		fishTrail: '109,124,240',
 		// The shark is the one thing that MEANS danger, so it keeps the danger red (mirrors --danger),
-		// same as the light theme — the only strong colour in the tank.
+		// same as the light theme - the only strong colour in the tank.
 		pred: '#ec6a54',
 		predDark: '#b8442f',
 		predBelly: '#e79f8d',
@@ -124,7 +124,7 @@ export const THEMES: Record<ThemeName, ThemePalette> = {
 		sel: '#e7e8ec',
 		selGlow: '231,232,236',
 		threat: '#ec6a54',
-		// The brain viz's two signs — the one place colour IS the information: excite a blue, inhibit
+		// The brain viz's two signs - the one place colour IS the information: excite a blue, inhibit
 		// the danger red. Mirrors --excite / --inhibit.
 		excite: '#5b9df2',
 		inhibit: '#ec6a54',
@@ -134,7 +134,7 @@ export const THEMES: Record<ThemeName, ThemePalette> = {
 		pill: 'rgba(14,15,18,.88)',
 		shadow: 'rgba(0,0,0,.4)',
 		// The flee ramp diverges green → amber → red around chance (mirrors --lens-*). Red for `bad`
-		// is the shark's colour on purpose here — a fish swimming into the mouth earns the mouth's hue.
+		// is the shark's colour on purpose here - a fish swimming into the mouth earns the mouth's hue.
 		lensGood: '52,194,162',
 		lensMid: '224,178,78',
 		lensBad: '236,106,84',
@@ -147,12 +147,12 @@ export interface DrawWorldOpts {
 	theme?: ThemeName;
 	/** 'performance' scales god-rays/particulate down so many tiles stay smooth. */
 	detail?: 'cinematic' | 'performance';
-	/** Big/cinematic mode — the story stage. */
+	/** Big/cinematic mode - the story stage. */
 	big?: boolean;
 	/**
 	 * What the tank is COLOURED by. 'none' paints the fish in the palette's own colour; 'flee' paints
 	 * each one by how wrong its escape is right now (engine/flee.ts). A lens changes what you SEE,
-	 * never what evolved — no lens touches a single weight, a fitness, or a curve.
+	 * never what evolved - no lens touches a single weight, a fitness, or a curve.
 	 */
 	lens?: Lens;
 	/**
@@ -161,7 +161,7 @@ export interface DrawWorldOpts {
 	 */
 	reducedMotion?: boolean;
 	/**
-	 * The world's accent (hex), used to tint the SCHOOL DENSITY FIELD — the soft haze that builds
+	 * The world's accent (hex), used to tint the SCHOOL DENSITY FIELD - the soft haze that builds
 	 * where fish crowd, so a bait-ball reads as a luminous mass at a glance and scattered fish stay
 	 * faint. Only painted on schooling worlds (whose brains carry the shoal senses); elsewhere unused.
 	 */

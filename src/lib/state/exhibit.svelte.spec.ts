@@ -3,7 +3,7 @@ import { bench } from './bench.svelte';
 import { DEFAULT_WORLDS } from '../engine';
 
 /**
- * The exhibit, as the STORE runs it — which is where its promises actually live.
+ * The exhibit, as the STORE runs it - which is where its promises actually live.
  *
  * engine/exhibit.spec.ts proves a sealed tank cannot evolve and cannot touch the run it was cloned
  * from. None of that is worth anything if the store then steps the real world anyway while claiming
@@ -18,7 +18,7 @@ function run(seconds: number) {
 }
 
 /**
- * init on a FIXED SEED, then STOP the real loop — this spec drives time itself, via run().
+ * init on a FIXED SEED, then STOP the real loop - this spec drives time itself, via run().
  *
  * Two separate flakes have failed CI from here, both because the sim was unseeded:
  *
@@ -28,7 +28,7 @@ function run(seconds: number) {
  *     manual tick still steps; only the racing driver is gone.
  *   • even with ONE driver the outcome was still random: these worlds have three sharks and gen-0
  *     brains flee blind, so an unlucky draw could wipe the whole population inside a test's window
- *     — ending a generation early on the `fish.length === 0` path (a "not finished yet" world
+ *     - ending a generation early on the `fish.length === 0` path (a "not finished yet" world
  *     arriving at gen 1), or leaving benchWithChampion's run with no champion to exhibit. The engine
  *     takes every random draw from `w.rng`, so a seed makes the run identical on every machine and
  *     every attempt. That is what turns these from "usually green" into deterministic.
@@ -44,7 +44,7 @@ function initSolo(init: Parameters<typeof bench.init>[0]) {
  *
  * Evolved by DRIVING THE TICK, not by asking for a prewarm: a prewarm is a turbo burst that runs
  * across frames, so a test that asked for one and looked immediately would find generation zero and
- * no champion — and would then be testing the empty case while claiming to test the full one.
+ * no champion - and would then be testing the empty case while claiming to test the full one.
  * A generation in these worlds is 30 sim-seconds.
  */
 function benchWithChampion() {
@@ -58,7 +58,7 @@ function benchWithChampion() {
 afterEach(() => bench.destroy());
 
 describe('the champion exhibit, in the store', () => {
-	it('FROZEN holds the real run still — and switching it off resumes it', () => {
+	it('FROZEN holds the real run still - and switching it off resumes it', () => {
 		const entry = benchWithChampion();
 		const before = { t: entry.world.t, gen: entry.world.gen, eaten: entry.world.eaten };
 
@@ -91,16 +91,16 @@ describe('the champion exhibit, in the store', () => {
 
 	it('an exhibit KEEPS SWIMMING through a training burst', () => {
 		/*
-		 * Turbo fast-forwards the real runs and does not animate them — that is the bargain, and the
+		 * Turbo fast-forwards the real runs and does not animate them - that is the bargain, and the
 		 * pill says so. But an exhibit is not one of the runs being trained; it is a tank the user is
 		 * watching. Left unstepped, it froze into a still image for as long as the burst lasted (gen 1
-		 * to 150 is a long minute), and the app looked hung — but ONLY when the clones were on, which
+		 * to 150 is a long minute), and the app looked hung - but ONLY when the clones were on, which
 		 * is exactly what the owner saw and reported.
 		 */
 		const entry = benchWithChampion();
 		bench.setExhibit(entry.id, 'live');
 
-		// A burst long enough to still be running when we look — the owner's was gen 1 to 150.
+		// A burst long enough to still be running when we look - the owner's was gen 1 to 150.
 		bench.trainTo(entry.world.gen + 60);
 		const exhibit = bench.shown(entry.id);
 		expect(exhibit).not.toBe(entry.world);
@@ -146,19 +146,19 @@ describe('the champion exhibit, in the store', () => {
 	it('THE DEADLOCK: a world that has been running but has not FINISHED a generation still refuses', () => {
 		/*
 		 * The owner's bug, and it was a trap of my own making. Fitness is SECONDS SURVIVED, so one
-		 * second after a reset every fish has some — and a "best fish alive with any fitness" fallback
+		 * second after a reset every fish has some - and a "best fish alive with any fitness" fallback
 		 * therefore crowns an arbitrary, unevolved brain. The exhibit would open on it, and a FROZEN
 		 * exhibit holds the run: the world could then never reach the generation boundary that would
 		 * have crowned it a real champion. Generation 0, forever, with no way out but a reset.
 		 *
-		 * So: run a fresh world for several seconds — long enough for every fish to have real fitness,
-		 * nowhere near long enough to finish a generation (they are 30 sim-seconds) — and demand the
+		 * So: run a fresh world for several seconds - long enough for every fish to have real fitness,
+		 * nowhere near long enough to finish a generation (they are 30 sim-seconds) - and demand the
 		 * exhibit still refuses.
 		 *
 		 * preds: 0 is load-bearing, not a tidy-up. A generation also ends when the population is WIPED
 		 * OUT (world.ts: `genT >= genDuration || fish.length === 0`), and gen-0 brains flee blind. On
 		 * an unlucky unseeded draw the three sharks ate all 20 fish inside these 5 seconds, the
-		 * generation turned on the depopulation path, and the world arrived at gen 1 — the flake that
+		 * generation turned on the depopulation path, and the world arrived at gen 1 - the flake that
 		 * failed CI and blocked a deploy. With no predator nobody dies, so the ONLY thing that can end
 		 * this generation is the 30-second clock, which run(5) comes nowhere near. `eaten === 0` proves
 		 * that is the path under test.
@@ -187,7 +187,7 @@ describe('the champion exhibit, in the store', () => {
 	it('does not leak an exhibit into the NEXT bench', () => {
 		/*
 		 * Ids are handed out from a counter that `destroy()` resets, so the `w1` of the next bench has
-		 * the same id as the `w1` of this one — and an exhibit left behind in a Map keyed by id would
+		 * the same id as the `w1` of this one - and an exhibit left behind in a Map keyed by id would
 		 * attach itself to a completely different world. The tank would show clones of a brain from a
 		 * run that no longer exists, and nothing on screen would say so.
 		 */
@@ -199,7 +199,7 @@ describe('the champion exhibit, in the store', () => {
 		initSolo({ configs: [DEFAULT_WORLDS[2]], prewarmGenerations: 0, maxGenerations: 0 });
 
 		const fresh = bench.worlds[0];
-		expect(fresh.id).toBe(staleId); // the same id — which is exactly why this can go wrong
+		expect(fresh.id).toBe(staleId); // the same id - which is exactly why this can go wrong
 		expect(bench.exhibitMode(fresh.id)).toBe('off');
 		expect(bench.shown(fresh.id)).toBe(fresh.world); // its own water, not the dead run's clones
 	});

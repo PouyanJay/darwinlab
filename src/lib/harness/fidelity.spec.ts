@@ -7,7 +7,7 @@
  * The trick: both engines draw randomness from `Math.random` (our `defaultRng` late-binds to
  * it). If the port consumes draws in the SAME ORDER as the reference, then seeding
  * `Math.random` with the same deterministic stream makes both engines produce *bit-identical*
- * trajectories. That is a far stronger claim than "the averages look similar" — it means every
+ * trajectories. That is a far stronger claim than "the averages look similar" - it means every
  * position, every kill, every bred genome matches exactly. Add or drop a single random draw
  * anywhere and every subsequent draw decorrelates, so this fails loudly.
  *
@@ -33,7 +33,7 @@ type StepWorld = (w: unknown, dt: number) => void;
 
 /**
  * Build + step a world with `Math.random` seeded, so both engines share one draw stream.
- * `setup` runs after construction (before any stepping) — used to enter deployed mode.
+ * `setup` runs after construction (before any stepping) - used to enter deployed mode.
  */
 function runSeeded(
 	makeWorld: MakeWorld,
@@ -54,7 +54,7 @@ function runSeeded(
 	}
 }
 
-/** The observable state that must match exactly — training AND deployment. */
+/** The observable state that must match exactly - training AND deployment. */
 function snapshot(w: World) {
 	return {
 		gen: w.gen,
@@ -67,7 +67,7 @@ function snapshot(w: World) {
 		fish: w.fish.map((f) => [f.x, f.y, f.heading, f.vx, f.vy, f.fitness, f.turn, f.thrust]),
 		preds: w.preds.map((p) => [p.x, p.y, p.heading, p.vx, p.vy, p.lunge, p.aim, p.cool]),
 		champion: w.champion ? [w.champion.fitness, w.champion.gen, [...w.champion.genome]] : null,
-		// deployment lifecycle — the half of stepWorld that only runs once maxGen is reached
+		// deployment lifecycle - the half of stepWorld that only runs once maxGen is reached
 		deployed: w._deployed,
 		deployT: w.deployT,
 		decay: w.decay,
@@ -83,7 +83,7 @@ const mineStep: StepWorld = (w, dt) => mine.stepWorld(w as World, dt);
 
 describe('port fidelity: src/lib/engine ≡ reference/engine2.js', () => {
 	describe('training (evolving)', () => {
-		// 1200 steps ≈ 20 sim-seconds — spans generation boundaries, evolution, kills and breeding
+		// 1200 steps ≈ 20 sim-seconds - spans generation boundaries, evolution, kills and breeding
 		const STEPS = 1200;
 
 		for (let i = 0; i < 5; i++) {
@@ -117,7 +117,7 @@ describe('port fidelity: src/lib/engine ≡ reference/engine2.js', () => {
 	 * The deployed half of the lifecycle. This is the ONLY region where the port made
 	 * structural changes (it omits the reference's never-called `reseedTrained` /
 	 * `trainedGenome` / `edgeSpawn`, and drops the vestigial `respawnQ`), so it is exactly
-	 * where divergence risk lives — and it is unreachable unless maxGen is set.
+	 * where divergence risk lives - and it is unreachable unless maxGen is set.
 	 */
 	describe('deployment (post-training decay)', () => {
 		const setMaxGen = (n: number) => (w: World) => {
@@ -144,7 +144,7 @@ describe('port fidelity: src/lib/engine ≡ reference/engine2.js', () => {
 		}
 
 		it('records identical extinction time and never respawns', () => {
-			const cfg = refWorlds[0]; // Blind drift — dies fastest
+			const cfg = refWorlds[0]; // Blind drift - dies fastest
 			const seed = 7777;
 			const expected = runSeeded(ref.makeWorld, ref.stepWorld, cfg, seed, 12000, setMaxGen(1));
 			const actual = runSeeded(mineMake, mineStep, cfg, seed, 12000, setMaxGen(1));

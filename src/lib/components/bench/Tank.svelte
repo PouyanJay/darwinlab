@@ -1,7 +1,7 @@
 <!--
   One world's tank: the canvas the simulation is drawn into, with creature picking.
 
-  Reads the RAW engine world (not a reactive proxy — see state/bench.svelte.ts) and hands it
+  Reads the RAW engine world (not a reactive proxy - see state/bench.svelte.ts) and hands it
   straight to the renderer each frame, driven by the sim loop. All sim mutation (hover) goes
   through the bench store, never directly into the world.
 -->
@@ -16,15 +16,15 @@
 		entry: WorldEntry;
 		/** 'performance' scales god-rays/particulate down so many tanks stay smooth. */
 		detail?: 'cinematic' | 'performance';
-		/** Big/cinematic rendering — richer light and detail. One tank on screen can afford it. */
+		/** Big/cinematic rendering - richer light and detail. One tank on screen can afford it. */
 		big?: boolean;
 		/**
-		 * What the click landed on — `null` for empty water, which is a real answer: clicking the
+		 * What the click landed on - `null` for empty water, which is a real answer: clicking the
 		 * background is how you put a creature down again.
 		 */
 		onselect?: (picked: Picked | null) => void;
 		/**
-		 * Which paint group this tank belongs to. Bench tanks sleep while a story plays — the film
+		 * Which paint group this tank belongs to. Bench tanks sleep while a story plays - the film
 		 * covers them; the film's own stage registers as 'story' so it is the one that keeps moving.
 		 */
 		group?: 'bench' | 'story';
@@ -35,7 +35,7 @@
 	let cursor = $state('default');
 
 	/**
-	 * The world this tank is SHOWING — the champion exhibit while one is up, the real run otherwise.
+	 * The world this tank is SHOWING - the champion exhibit while one is up, the real run otherwise.
 	 * Asked for on every use rather than captured once: an exhibit can open, close or be re-cloned
 	 * under this component, and a stale reference would paint a tank that no longer exists.
 	 */
@@ -43,7 +43,7 @@
 
 	function paint(ctx: CanvasRenderingContext2D, width: number, height: number) {
 		// A canvas can be asked to repaint by a ResizeObserver in the very frame its world was removed.
-		// The paint path must have a safe answer — see bench.shownOrNull.
+		// The paint path must have a safe answer - see bench.shownOrNull.
 		const world = shown();
 		if (!world) return;
 
@@ -81,7 +81,7 @@
 
 	/**
 	 * The keyboard's click: arrows walk the creatures, Esc puts the current one down. A handled
-	 * key stops here — on the story stage the same arrow would otherwise ALSO skip a scene, and
+	 * key stops here - on the story stage the same arrow would otherwise ALSO skip a scene, and
 	 * an Esc that just closed the inspector must not exit the film in the same press.
 	 */
 	function onkeydown(event: KeyboardEvent) {
@@ -92,7 +92,7 @@
 		} else if (event.key === 'Escape' && bench.selection?.worldId === entry.id) {
 			bench.clearSelection();
 		} else {
-			return; // not ours — Space (play/pause) and the film's Esc keep working from here
+			return; // not ours - Space (play/pause) and the film's Esc keep working from here
 		}
 		event.preventDefault();
 		event.stopPropagation();

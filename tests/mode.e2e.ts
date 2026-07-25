@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { gotoApp, waitForPrewarm } from './helpers';
 
 /**
- * The top-level mode switch — Studio ⇄ Research.
+ * The top-level mode switch - Studio ⇄ Research.
  *
  * What a store unit test cannot reach: that the top-bar toggle really swaps the whole stage (the
  * lineage canvas gives way to the Research stage and back), that the choice survives a reload, and
@@ -44,7 +44,7 @@ test('the top bar swaps Studio ⇄ Research, and the stage swaps with it', async
 	await expect(page.locator('section.tile').first()).toBeVisible();
 });
 
-test('the mode survives a reload — into Research, and back out of it', async ({ page }) => {
+test('the mode survives a reload - into Research, and back out of it', async ({ page }) => {
 	await gotoApp(page);
 	await waitForPrewarm(page);
 
@@ -66,12 +66,12 @@ test('the mode survives a reload — into Research, and back out of it', async (
 test('the top bar links to the source repo, safely, in a new tab', async ({ page }) => {
 	await gotoApp(page);
 
-	// A real <a> to the repo — asserted by its href, so a wrong/broken URL fails loudly — that opens
+	// A real <a> to the repo - asserted by its href, so a wrong/broken URL fails loudly - that opens
 	// in a new tab without handing the opener over (target=_blank needs rel=noopener to be safe).
 	const gh = page.getByRole('link', { name: 'Darwin Lab on GitHub' });
 	await expect(gh).toHaveAttribute('href', 'https://github.com/PouyanJay/darwinlab');
 	await expect(gh).toHaveAttribute('target', '_blank');
 	await expect(gh).toHaveAttribute('rel', /noopener/);
-	// It sits in the header's control cluster, before the theme toggle — a link, not a button.
+	// It sits in the header's control cluster, before the theme toggle - a link, not a button.
 	await expect(page.locator('header a.gh svg')).toBeVisible();
 });

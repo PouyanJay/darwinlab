@@ -1,5 +1,5 @@
 <!--
-  A flagged tension — two findings that both stand but pull against each other, surfaced rather than
+  A flagged tension - two findings that both stand but pull against each other, surfaced rather than
   averaged away. The store's `detectTensions` decides when one exists (only from real evidence); this
   component lays it out, and its "between … and …" line jumps to each finding's question.
 -->

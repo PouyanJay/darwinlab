@@ -1,7 +1,7 @@
 <!--
   The Report's context in the console sidebar: the seven questions as a contents outline, each with a
-  dot that fills once a finding answers it, a count of what the brief is built from, and — once there is
-  something to keep — the actions that take it elsewhere: export it as Markdown, print it (the browser's
+  dot that fills once a finding answers it, a count of what the brief is built from, and - once there is
+  something to keep - the actions that take it elsewhere: export it as Markdown, print it (the browser's
   own "save as PDF"), or reopen its subject in Studio. Reads the report store; the actions are its own
   side effects (a download, a print, a hop to Studio).
 -->
@@ -13,7 +13,7 @@
 
 	const sections = $derived(report.sections);
 	const n = $derived(report.findings.length);
-	/** The whole notebook's size — "clear all" reaches past this subject, so it says how much it forgets. */
+	/** The whole notebook's size - "clear all" reaches past this subject, so it says how much it forgets. */
 	const total = $derived(findings.entries.length);
 
 	function exportMarkdown(): void {
@@ -144,7 +144,7 @@
 		color: var(--ink3);
 	}
 
-	/* The actions sit under the outline, separated by a hairline — take the brief with you, or reopen
+	/* The actions sit under the outline, separated by a hairline - take the brief with you, or reopen
 	   its subject in Studio. A wrapping column so each label stays whole in the narrow sidebar. */
 	.actions {
 		display: flex;
@@ -159,7 +159,7 @@
 		width: 100%;
 	}
 
-	/* The destructive clears sit apart at the foot — ghost-quiet until hovered, then coral, so they read
+	/* The destructive clears sit apart at the foot - ghost-quiet until hovered, then coral, so they read
 	   as the "undo the whole thing" they are and never crowd the export actions above. */
 	.danger {
 		display: flex;

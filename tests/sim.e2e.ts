@@ -9,21 +9,21 @@ import { gotoApp, waitForPrewarm } from './helpers';
  * that isn't visible. We use a self-scheduling setTimeout instead (CLAUDE.md gotcha #1).
  *
  * ⚠️ It must genuinely background the page. An earlier version of this test only overrode
- * `document.hidden` / `visibilityState` via Object.defineProperty — that fakes the JS-visible API
+ * `document.hidden` / `visibilityState` via Object.defineProperty - that fakes the JS-visible API
  * but leaves Chromium's page visible, so rAF keeps firing and the test passed even when the loop
  * WAS rAF-driven. It guarded nothing. We now open a second page and bring it to the front, which
  * really occludes the first one and makes the browser suspend rAF. Verify any change to this test
  * by temporarily swapping loop.ts to rAF: it MUST fail.
  *
  * PROBE: we fingerprint the canvas rather than watch the generation counter. A generation is 10
- * sim-seconds, so the counter cannot move inside a short window — but the fish only move when
+ * sim-seconds, so the counter cannot move inside a short window - but the fish only move when
  * `stepWorld` runs (every animation is driven off `w.t`, the sim's own clock, not wall-clock), so
  * a changed fingerprint proves sim time actually advanced. A paused sim stops repainting and the
- * canvas holds its last frame — which is what makes this a real test of pause, too.
+ * canvas holds its last frame - which is what makes this a real test of pause, too.
  */
 
 /**
- * Sparse hash of the FIRST tank's pixels — changes iff the scene moved. The bench now holds many
+ * Sparse hash of the FIRST tank's pixels - changes iff the scene moved. The bench now holds many
  * canvases (five tanks, plus a curve and a decay sparkline each), so every locator here is scoped
  * to one tile rather than matching them all.
  */
@@ -37,7 +37,7 @@ function fingerprint(page: Page): Promise<number> {
 	});
 }
 
-/** The first world's tank — `role="application"` since Phase 9 (it answers the keyboard);
+/** The first world's tank - `role="application"` since Phase 9 (it answers the keyboard);
  *  the sparklines are still plain `role="img"` canvases. */
 const tank = (page: Page) => page.getByRole('application', { name: /tank/i }).first();
 const generations = (page: Page) => page.getByTestId('generations').innerText().then(Number);
@@ -72,7 +72,7 @@ test('keeps simulating with requestAnimationFrame dead (as a backgrounded tab ma
 	page
 }) => {
 	// What a backgrounded tab actually DOES to a page is stop servicing rAF callbacks. So rather
-	// than trying to convince headless Chromium to truly occlude a tab (it won't — an earlier
+	// than trying to convince headless Chromium to truly occlude a tab (it won't - an earlier
 	// version of this test faked document.hidden and consequently passed even with a rAF-driven
 	// loop, guarding nothing), we reproduce the *consequence* directly and deterministically:
 	// requestAnimationFrame is installed as a black hole before any app code runs. A rAF-driven
@@ -85,7 +85,7 @@ test('keeps simulating with requestAnimationFrame dead (as a backgrounded tab ma
 	await waitForPrewarm(page);
 
 	const before = await fingerprint(page);
-	await expect.poll(() => fingerprint(page), { timeout: 15_000 }).not.toBe(before); // sim time still advances — CLAUDE.md gotcha #1 holds
+	await expect.poll(() => fingerprint(page), { timeout: 15_000 }).not.toBe(before); // sim time still advances - CLAUDE.md gotcha #1 holds
 });
 
 test('pause really stops the simulation, and evolve resumes it', async ({ page }) => {
@@ -101,7 +101,7 @@ test('pause really stops the simulation, and evolve resumes it', async ({ page }
 		})
 		.toBe(true);
 
-	// paused: the loop stops repainting entirely — the canvas holds its last frame
+	// paused: the loop stops repainting entirely - the canvas holds its last frame
 	const paused = await fingerprint(page);
 	await expect.poll(() => fingerprint(page), { timeout: 2000 }).toBe(paused);
 
@@ -111,7 +111,7 @@ test('pause really stops the simulation, and evolve resumes it', async ({ page }
 
 test('the speed control is wired and keeps the sim running', async ({ page }) => {
 	// the exact ½/1/2× sub-step maths is pinned in loop.spec.ts; here we prove the wiring.
-	// The control is a radio group (exactly one speed is always chosen) — see Segmented.svelte.
+	// The control is a radio group (exactly one speed is always chosen) - see Segmented.svelte.
 	await page.getByRole('radio', { name: '2×' }).click();
 	await expect(page.getByRole('radio', { name: '2×' })).toHaveAttribute('aria-checked', 'true');
 
@@ -134,7 +134,7 @@ test('train fast-forwards generations', async ({ page }) => {
 	expect(await generations(page)).toBeGreaterThanOrEqual(before + 25);
 });
 
-test('Space plays/pauses the bench — but never out from under a focused control', async ({
+test('Space plays/pauses the bench - but never out from under a focused control', async ({
 	page
 }) => {
 	// On the bare page, Space is the play/pause shortcut.
@@ -146,9 +146,9 @@ test('Space plays/pauses the bench — but never out from under a focused contro
 	await expect(page.getByRole('button', { name: 'Pause' })).toBeVisible();
 
 	// But Space is ALSO how a focused button is pressed. The shortcut used to preventDefault it
-	// regardless of focus, so Space on the theme toggle paused the sim instead of switching theme —
+	// regardless of focus, so Space on the theme toggle paused the sim instead of switching theme -
 	// a keyboard user could not operate the top bar at all. Verified to fail before the fix.
-	// (Dark is the default, so Space on the toggle flips it to light — the button, not the sim, won.)
+	// (Dark is the default, so Space on the toggle flips it to light - the button, not the sim, won.)
 	await page.getByRole('button', { name: /switch to (dark|light) theme/ }).focus();
 	await page.keyboard.press(' ');
 
@@ -193,7 +193,7 @@ test('the theme is resolved before the first paint (no flash of the wrong theme)
 	await page.getByRole('button', { name: /switch to (dark|light) theme/ }).click();
 	await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
 
-	// On reload, data-theme must already be 'light' on the very first evaluation — the inline head
+	// On reload, data-theme must already be 'light' on the very first evaluation - the inline head
 	// script runs before paint, so a light user never sees the dark palette flash.
 	const fresh = await page.context().newPage();
 	await gotoApp(fresh);

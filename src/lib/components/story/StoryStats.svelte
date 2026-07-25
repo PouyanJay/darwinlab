@@ -1,7 +1,7 @@
 <!--
   The right rail: the count that matters, and the curve that explains it.
 
-  "Still swimming" is the whole scene in one number — how many of this world's evolved brains are
+  "Still swimming" is the whole scene in one number - how many of this world's evolved brains are
   still alive right now. Under it, the generation they were bred to and the learning curve that got
   them there, so the number has a history rather than just a value.
 -->
@@ -16,7 +16,7 @@
 
 	const register = (render: () => void) => bench.painters.add(render, 'story');
 
-	// The curve only gains a point at a generation boundary — don't repaint it 60×/s. Both ends
+	// The curve only gains a point at a generation boundary - don't repaint it 60×/s. Both ends
 	// in the signature: a capped series shift()s as it push()es (see TileStats).
 	const paintCurve = paintOnChange(
 		() =>
@@ -43,7 +43,7 @@
 			<div>
 				<h2 class="eyebrow">Packed to</h2>
 				<p class="count small">
-					<b class="tabular" data-testid="story-school">{entry.stats.schoolNND ?? '—'}</b>
+					<b class="tabular" data-testid="story-school">{entry.stats.schoolNND ?? '-'}</b>
 					<span>px apart · {entry.stats.schoolAlignPct}% aligned</span>
 				</p>
 			</div>
@@ -77,8 +77,8 @@
 		flex: none;
 	}
 
-	/* Stacked under the tank on a narrow stage (see StoryMode) — the fixed rail width goes. */
-	@media (max-width: 820px) {
+	/* Stacked under the tank on a narrow stage (see StoryMode) - the fixed rail width goes. */
+	@media (max-width: 900px) {
 		.rail {
 			width: auto;
 		}

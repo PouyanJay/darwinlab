@@ -1,11 +1,11 @@
 <!--
-  Where this brain sits on a ladder of things minds can do — and, just as importantly, how far up
+  Where this brain sits on a ladder of things minds can do - and, just as importantly, how far up
   that ladder it is NOT.
 
   The rung follows from the senses the world gives it, because a brain cannot integrate information
   it never receives. It climbs no further than "prediction" no matter what you switch on, and the
   caption says so: what evolved here is real, but it is a 2D caricature with fixed generations and
-  an explicit survival goal — unlike the thing it is a caricature of.
+  an explicit survival goal - unlike the thing it is a caricature of.
 -->
 <script lang="ts">
 	import { RUNGS, rungFor } from './ladder';
@@ -57,7 +57,7 @@
 		transition: width var(--dur) var(--ease);
 	}
 
-	/* The rung it reached is wider — the eye should land on it before reading the caption. */
+	/* The rung it reached is wider - the eye should land on it before reading the caption. */
 	.current {
 		width: 26px;
 		background: var(--accent);

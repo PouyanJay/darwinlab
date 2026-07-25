@@ -3,17 +3,17 @@ import { drawWorld, drawBrain, drawCurve, drawDecay, pickCreature, THEMES } from
 import { makeWorld, stepWorld, seededRng, DEFAULT_WORLDS, SHOAL_WORLDS } from '../engine';
 import type { World } from '../engine';
 
-/** A no-op 2D context — enough to prove the painters run end-to-end without touching a DOM. */
+/** A no-op 2D context - enough to prove the painters run end-to-end without touching a DOM. */
 function mockCtx(): CanvasRenderingContext2D {
 	return recordingCtx().ctx;
 }
 
 /**
- * The same context, but it remembers what the painter actually painted — and, crucially, WHAT SHAPE.
+ * The same context, but it remembers what the painter actually painted - and, crucially, WHAT SHAPE.
  *
  * A Proxy that swallows writes is fine for "does this painter run", but it cannot see what the
  * painter DECIDED, and for the brain the colour IS the decision: which edges excite and which
- * inhibit. Recording only the colours is not enough either — the NODES are stroked in those same two
+ * inhibit. Recording only the colours is not enough either - the NODES are stroked in those same two
  * colours (by the sign of their activation), so a drawBrain that ignored the weights' signs
  * completely would still emit some of each colour and sail through. Both of my earlier versions of
  * this test did exactly that.
@@ -108,7 +108,7 @@ describe('drawWorld', () => {
 		expect(() => drawWorld(w, mockCtx(), 640, 400, { theme: 'light' })).not.toThrow();
 	});
 
-	it('freezes the drifting dust under reduced motion — the same pixels at any clock', () => {
+	it('freezes the drifting dust under reduced motion - the same pixels at any clock', () => {
 		/** Records every arc (position, radius, alpha at the time). An empty tank draws arcs for
 		 *  nothing BUT the dust, so the recording is the dust field verbatim. */
 		function arcRecorder(): { ctx: CanvasRenderingContext2D; arcs: string[] } {
@@ -178,9 +178,9 @@ describe('drawBrain', () => {
 		).not.toThrow();
 	});
 
-	it('paints by the SIGN of the weight — a brain of inhibitors does not look like a brain of exciters', () => {
+	it('paints by the SIGN of the weight - a brain of inhibitors does not look like a brain of exciters', () => {
 		/*
-		 * Paint two brains — one whose every weight is positive, one whose every weight is negative —
+		 * Paint two brains - one whose every weight is positive, one whose every weight is negative -
 		 * and check the EDGE colours actually swap. Nothing but reading the sign can do that.
 		 *
 		 * (Asserting that both colours merely appear is not enough, and neither is counting every
@@ -208,7 +208,7 @@ describe('drawBrain', () => {
 
 			expect(positive.excite).toBeGreaterThan(negative.excite);
 			expect(negative.inhibit).toBeGreaterThan(positive.inhibit);
-			// and the two signs must be distinguishable at all — in dark, accent and danger are the
+			// and the two signs must be distinguishable at all - in dark, accent and danger are the
 			// same magenta, which is why the brain has colours of its own
 			expect(THEMES[theme].excite).not.toBe(THEMES[theme].inhibit);
 		}
@@ -271,7 +271,7 @@ describe('THEMES', () => {
 	});
 });
 
-describe('drawWorld — the school density field', () => {
+describe('drawWorld - the school density field', () => {
 	/** A minimal ctx that only needs to survive drawWorld and count fill() calls. */
 	function fillCountingCtx(): { ctx: CanvasRenderingContext2D; fills: () => number } {
 		let fills = 0;

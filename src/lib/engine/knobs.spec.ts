@@ -23,7 +23,7 @@ function peakSpeeds(cfg: WorldConfig, seed: number, seconds = 10) {
 }
 
 describe('agent top speed (maxSpeed)', () => {
-	it('defaults to the reference MAXSPEED when unset — this is what keeps fidelity bit-exact', () => {
+	it('defaults to the reference MAXSPEED when unset - this is what keeps fidelity bit-exact', () => {
 		expect(DIRECTION.maxSpeed).toBeUndefined();
 		const { fish } = peakSpeeds(DIRECTION, 1);
 		// a fish flat-out reaches roughly its cap; it must not exceed the reference 176 by much
@@ -51,19 +51,19 @@ describe('the dart (lunge)', () => {
 		const { shark } = peakSpeeds({ ...DIRECTION, lunge: false } as WorldConfig, 1);
 		const cruise = 200 * DIRECTION.predSpeed;
 		// no strike ever arms, so the peak is the cruise (plus the small overshoot before the speed
-		// clamp catches it) — nowhere near a lunge.
+		// clamp catches it) - nowhere near a lunge.
 		expect(shark).toBeLessThan(cruise * 1.25);
 	});
 
 	// Its own timeout: this test evolves several worlds AND runs long bouts, so under full-suite
-	// contention it drifts past the 5s default — which is a timeout dressed as a failure, not a real
+	// contention it drifts past the 5s default - which is a timeout dressed as a failure, not a real
 	// one (the values are deterministic and hugely separated). See CLAUDE.md on CPU-heavy tests.
-	it('is where most of the killing comes from — off, far more of a good population survives', () => {
+	it('is where most of the killing comes from - off, far more of a good population survives', () => {
 		/*
 		 * The honest finding the UI states, and it corrected my first guess. A cruise-only shark is
 		 * NOT toothless: interception, cornering and imperfect fleeing still catch a good share of an
 		 * evolved generation. But the STRIKE catches nearly all of it. So the true claim is not
-		 * "nothing dies" — it is "the dart is doing most of the killing".
+		 * "nothing dies" - it is "the dart is doing most of the killing".
 		 *
 		 * Measured, 5 seeds: dart-on survival averages ~6%, dart-off ~28%. That is a ~5× gap, so
 		 * two seeds are plenty to pin the RELATIONSHIP without turning the test into a CPU hog.

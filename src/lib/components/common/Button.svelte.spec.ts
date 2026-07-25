@@ -46,7 +46,7 @@ describe('Button', () => {
 			title: 'remove world'
 		});
 
-		// a glyph is not an accessible name — the label is what AT reads out
+		// a glyph is not an accessible name - the label is what AT reads out
 		const button = page.getByRole('button', { name: 'remove world' }).element();
 		expect(button.getAttribute('title')).toBe('remove world');
 	});

@@ -1,16 +1,16 @@
 /**
- * The Atlas — a survival landscape over two parameters.
+ * The Atlas - a survival landscape over two parameters.
  *
  * Pick two knobs (predator speed, mutation, vision…) and the landscape is a GRID: each cell is the
  * world you get at that (x, y), measured across a few seeds, coloured by how long its fish survive.
- * Where the colour falls off a cliff, a parameter has crossed a threshold that changes the game —
+ * Where the colour falls off a cliff, a parameter has crossed a threshold that changes the game -
  * the ~0.88× predator-speed cliff, where the shark starts outrunning every fish, is the one this
  * scenario was built to show. The Sweep asks "which knob matters"; the Atlas asks "and WHERE does it
  * flip", and paints the answer as terrain.
  *
  * Pure: an axis is a config PATCH plus a range, so this module knows nothing of the engine beyond
- * WorldConfig and is node-testable without a worker. It samples a UNIFORM grid — no adaptive
- * refinement — because a plain grid is honest about exactly where it looked and never has to explain
+ * WorldConfig and is node-testable without a worker. It samples a UNIFORM grid - no adaptive
+ * refinement - because a plain grid is honest about exactly where it looked and never has to explain
  * a hole it decided not to fill.
  */
 
@@ -20,7 +20,7 @@ import { BOOL_KNOBS } from './sweep';
 import { csvField } from './csv';
 
 /**
- * Grid resolution and per-cell run size — a landscape has many cells, so each one is cheaper than a
+ * Grid resolution and per-cell run size - a landscape has many cells, so each one is cheaper than a
  * sweep cell. Resolution is a fixed menu (finer costs quadratically, and the panel prices it);
  * training length is editable so a quick look and a careful map are both honest choices.
  */
@@ -48,7 +48,7 @@ export interface LandscapeAxis {
 	format: (value: number) => string;
 }
 
-/** One sampled point on the plane — a config to evaluate, at grid coordinates (ix, iy). */
+/** One sampled point on the plane - a config to evaluate, at grid coordinates (ix, iy). */
 export interface LandscapeCell {
 	index: number;
 	/** Column (X) and row (Y) in the grid. */
@@ -75,18 +75,18 @@ export interface LandscapeField {
 	rows: number;
 	axisX: LandscapeAxis;
 	axisY: LandscapeAxis;
-	/** `values[iy * cols + ix]` — mean seconds survived; NaN where the cell was cancelled or failed. */
+	/** `values[iy * cols + ix]` - mean seconds survived; NaN where the cell was cancelled or failed. */
 	values: number[];
-	/** Min/max over the FINITE values — the ends of the colour scale. */
+	/** Min/max over the FINITE values - the ends of the colour scale. */
 	min: number;
 	max: number;
 }
 
-/** Where survival falls off most steeply along +X — the cliff, found rather than assumed. */
+/** Where survival falls off most steeply along +X - the cliff, found rather than assumed. */
 export interface Falloff {
 	/** The left column of the steepest adjacent pair; the drop is between `ix` and `ix + 1`. */
 	ix: number;
-	/** The X value at the midpoint of that pair — where the annotation is drawn. */
+	/** The X value at the midpoint of that pair - where the annotation is drawn. */
 	x: number;
 	/** How far mean survival falls across that step, in seconds (always positive). */
 	drop: number;
@@ -117,7 +117,7 @@ function numericAxis(
 }
 
 /**
- * The axes the predator-prey scenario offers, most-interesting first — the same knob vocabulary as
+ * The axes the predator-prey scenario offers, most-interesting first - the same knob vocabulary as
  * the Sweep's graded set (the mock's call). Predator speed spans the cliff; mutation is the drift
  * knob; vision, top speed, agility and prey reshape the hunt. Each axis's min/max is BOTH its
  * default range and the hard bound an edited range is clamped to.
@@ -151,8 +151,8 @@ export const CANDIDATE_AXES: LandscapeAxis[] = [
 ];
 
 /**
- * An axis narrowed to an edited range: clamped into the axis's own bounds, ordered, and — when the
- * edit collapses to a point or inverts into nothing — reset to the full default range rather than
+ * An axis narrowed to an edited range: clamped into the axis's own bounds, ordered, and - when the
+ * edit collapses to a point or inverts into nothing - reset to the full default range rather than
  * planning a zero-width map. Returns a normal LandscapeAxis, so everything downstream (the plan,
  * the field, the ticks, the marginal) works on spans without knowing they were edited.
  */
@@ -174,7 +174,7 @@ function linspace(min: number, max: number, n: number): number[] {
 }
 
 /** The plane a landscape is planned over: the world it starts from and the two axes that vary.
- *  One object, not positional args — two adjacent same-typed axes would be a silent transposition
+ *  One object, not positional args - two adjacent same-typed axes would be a silent transposition
  *  risk (the same reasoning numericAxis gives for its {min, max}). */
 export interface LandscapePlane {
 	base: WorldConfig;
@@ -206,7 +206,7 @@ export function expandLandscape(
 	return cells;
 }
 
-/** Plan a square landscape at the given resolution — no cap, because a full grid never explodes
+/** Plan a square landscape at the given resolution - no cap, because a full grid never explodes
  *  the way a factorial does. */
 export function planLandscape(plane: LandscapePlane, resolution: number): LandscapePlan {
 	return {
@@ -218,7 +218,7 @@ export function planLandscape(plane: LandscapePlane, resolution: number): Landsc
 	};
 }
 
-/** One evaluation request per cell — the whole grid becomes one batch. */
+/** One evaluation request per cell - the whole grid becomes one batch. */
 export function landscapeJobs(cells: LandscapeCell[], size: RunSize): EvalRequest[] {
 	return cells.map((cell) => ({ cfg: cell.cfg, ...size }));
 }
@@ -247,11 +247,11 @@ export function valueAt(field: LandscapeField, ix: number, iy: number): number {
 }
 
 /**
- * Where survival falls off most steeply as X increases — the cliff, MEASURED not hardcoded.
+ * Where survival falls off most steeply as X increases - the cliff, MEASURED not hardcoded.
  *
  * Averages each column over its rows, walks the columns, and returns the adjacent pair with the
  * largest DROP. Returns null when survival never falls along X (nothing to annotate) or the grid is
- * too narrow to have a slope — so a flat or rising landscape gets no fake cliff drawn on it.
+ * too narrow to have a slope - so a flat or rising landscape gets no fake cliff drawn on it.
  */
 /** Each column's mean survival, averaged over its FINITE rows (a dead cell must not drag a column to
  *  NaN). Shared by the cliff finder and the Report's X-marginal, so the two can't average differently. */
@@ -271,7 +271,7 @@ function columnMeans(field: LandscapeField): number[] {
 }
 
 /** The steepest positive adjacent DROP along one line of values, or null when the line never
- *  falls — the one walker the whole-field cliff and the row tracer share, so the headline and the
+ *  falls - the one walker the whole-field cliff and the row tracer share, so the headline and the
  *  gold dashes can't disagree about what "falling" means. NaN pairs are skipped, not read as drops. */
 function steepestDrop(values: number[], xs: number[]): Falloff | null {
 	let best: Falloff | null = null;
@@ -290,7 +290,7 @@ export function steepestFalloff(field: LandscapeField): Falloff | null {
 
 /**
  * The field collapsed onto its X axis: each column's mean survival, paired with that column's X value.
- * This is the compact 1-D slice the Report's Q4 strip persists and draws — the whole plane is too much
+ * This is the compact 1-D slice the Report's Q4 strip persists and draws - the whole plane is too much
  * to keep in a finding, but its marginal along the cliff axis is the answer to "where does it break".
  */
 export function xMarginal(field: LandscapeField): { x: number; survival: number }[] {
@@ -309,7 +309,7 @@ export const LANDSCAPE_RUN: RunSize = {
 /* ================================= the cliff, row by row ====================================== */
 
 /**
- * Each ROW's steepest fall-off along +X — the gold dashes the map traces. Null for a row where
+ * Each ROW's steepest fall-off along +X - the gold dashes the map traces. Null for a row where
  * survival never falls (a flat or rising row gets no fake cliff), and NaN cells are skipped rather
  * than poisoning their neighbours. The whole-field `steepestFalloff` stays the headline; this is
  * its geometry, made visible cell by cell.
@@ -324,7 +324,7 @@ export function rowCliffs(field: LandscapeField): (Falloff | null)[] {
 	);
 }
 
-/** One row of the field as a curve over X — the cross-section card reads the bottom and top rows,
+/** One row of the field as a curve over X - the cross-section card reads the bottom and top rows,
  *  so the edge's movement along Y is visible as two lines. NaN where a cell was never measured. */
 export function rowSection(field: LandscapeField, iy: number): { x: number; survival: number }[] {
 	const xs = linspace(field.axisX.min, field.axisX.max, field.cols);
@@ -333,7 +333,7 @@ export function rowSection(field: LandscapeField, iy: number): { x: number; surv
 
 /* ================================== the pinned background ===================================== */
 
-/** The panel's pin sections, in the mock's grouping — each key is a Sweep BOOL_KNOB, reused so a
+/** The panel's pin sections, in the mock's grouping - each key is a Sweep BOOL_KNOB, reused so a
  *  pin means the same patch in both instruments. Own speed is absent on purpose: it follows the
  *  subject's wiring, and a landscape never varies it. */
 export const ATLAS_PIN_GROUPS: { label: string; keys: string[] }[] = [
@@ -342,7 +342,7 @@ export const ATLAS_PIN_GROUPS: { label: string; keys: string[] }[] = [
 	{ label: 'Body · shoal', keys: ['stamina', 'wallInstinct', 'confusion'] }
 ];
 
-/** Apply the two-state pins onto the base — the world every cell starts from before the axes write
+/** Apply the two-state pins onto the base - the world every cell starts from before the axes write
  *  their values. A key with no explicit pin is left as the base already has it. */
 export function pinnedBase(base: WorldConfig, pins: Record<string, boolean>): WorldConfig {
 	let cfg = base;
@@ -356,8 +356,8 @@ export function pinnedBase(base: WorldConfig, pins: Record<string, boolean>): Wo
 
 /**
  * The measured landscape as CSV, one row per cell: grid coordinates, both axis values, and the mean
- * survival. The header carries the design — axes with their (possibly edited) ranges, resolution,
- * seeds and training length — so a file on someone's disk still says how it was measured.
+ * survival. The header carries the design - axes with their (possibly edited) ranges, resolution,
+ * seeds and training length - so a file on someone's disk still says how it was measured.
  */
 export function landscapeCsv(
 	field: LandscapeField,

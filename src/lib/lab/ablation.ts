@@ -1,5 +1,5 @@
 /**
- * The observation-subset matrix — what each channel is worth IN A GIVEN ENVIRONMENT.
+ * The observation-subset matrix - what each channel is worth IN A GIVEN ENVIRONMENT.
  *
  * The subsets live here rather than in the component because the answer belongs to the environment,
  * not to the panel that draws it: a channel is worth exactly what its own environment makes it
@@ -21,7 +21,7 @@ export interface AblationRow {
 	/** Mean seconds survived per agent, over frozen populations. */
 	mean: number;
 	sd: number;
-	/** Percent over the blind policy — the comparison that answers "does knowing pay". */
+	/** Percent over the blind policy - the comparison that answers "does knowing pay". */
 	vsBlind: number;
 }
 

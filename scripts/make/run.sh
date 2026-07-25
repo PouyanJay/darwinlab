@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Boot Darwin Lab — the one service this project has (a Vite server), managed properly: stale
+# Boot Darwin Lab - the one service this project has (a Vite server), managed properly: stale
 # instances stopped first, the port allocated (and MOVED if the preferred one is taken), the
 # process backgrounded with its PID and log under .run-state/, readiness polled before success is
 # claimed, and a summary with the URL at the end. Ctrl-C during boot tears down what was started.
@@ -27,7 +27,7 @@ usage() {
 
 port_busy() { lsof -ti tcp:"$1" >/dev/null 2>&1; }
 
-# find_free_port BASE — the preferred port, or the next free one within +20 (hard fail past that:
+# find_free_port BASE - the preferred port, or the next free one within +20 (hard fail past that:
 # twenty occupied ports in a row means something is wrong, not that we should keep walking).
 find_free_port() {
 	_port=$1
@@ -41,7 +41,7 @@ find_free_port() {
 
 # ---------- process management ----------
 
-# stop_service NAME — kill the PID we recorded, then anything still holding the port we recorded.
+# stop_service NAME - kill the PID we recorded, then anything still holding the port we recorded.
 # The port sweep matters: Vite spawns children the PID alone can miss, and a stale preview on 4173
 # has poisoned test runs before (it served an OLD build to a green-looking suite).
 stop_service() {
@@ -68,7 +68,7 @@ stop_service() {
 	[ "$_stopped" = 1 ] && ui::ok "stopped $_name" || ui::skip "$_name was not running"
 }
 
-# start_service NAME PORT CMD… — nohup the command, record pid+port, poll readiness with a spinner.
+# start_service NAME PORT CMD… - nohup the command, record pid+port, poll readiness with a spinner.
 start_service() {
 	_name=$1
 	_port=$2
@@ -78,18 +78,18 @@ start_service() {
 	printf '%s' "$_pid" >"$STATE_DIR/$_name.pid"
 	printf '%s' "$_port" >"$STATE_DIR/$_name.port"
 
-	trap 'printf "\n"; ui::warn "interrupted — cleaning up"; stop_service '"$_name"'; exit 130' INT TERM
+	trap 'printf "\n"; ui::warn "interrupted - cleaning up"; stop_service '"$_name"'; exit 130' INT TERM
 
 	_waited=0
 	until curl -sf -o /dev/null "http://localhost:$_port/"; do
 		if ! kill -0 "$_pid" 2>/dev/null; then
-			ui::fail "$_name died before it became ready — last log lines:"
+			ui::fail "$_name died before it became ready - last log lines:"
 			tail -20 "$STATE_DIR/$_name.log" | sed 's/^/    /'
 			rm -f "$STATE_DIR/$_name.pid" "$STATE_DIR/$_name.port"
 			exit 1
 		fi
 		[ "$_waited" -ge "$READY_TIMEOUT" ] && {
-			ui::fail "$_name not ready after ${READY_TIMEOUT}s — last log lines:"
+			ui::fail "$_name not ready after ${READY_TIMEOUT}s - last log lines:"
 			tail -20 "$STATE_DIR/$_name.log" | sed 's/^/    /'
 			stop_service "$_name"
 			exit 1
@@ -154,7 +154,7 @@ cmd_dev() {
 	if [ "$PORT" = "$DEV_PORT_BASE" ]; then
 		ui::ok "port $PORT is free"
 	else
-		ui::warn "port $DEV_PORT_BASE is taken — moved to $PORT"
+		ui::warn "port $DEV_PORT_BASE is taken - moved to $PORT"
 	fi
 
 	ui::step 3 3 "Starting the dev server"
@@ -179,7 +179,7 @@ cmd_preview() {
 	if [ "$PORT" = "$PREVIEW_PORT_BASE" ]; then
 		ui::ok "port $PORT is free"
 	else
-		ui::warn "port $PREVIEW_PORT_BASE is taken — moved to $PORT"
+		ui::warn "port $PREVIEW_PORT_BASE is taken - moved to $PORT"
 	fi
 
 	ui::step 4 4 "Serving the build"

@@ -1,7 +1,7 @@
 <!--
   One world: a card containing a living population, its controls, and its evidence.
 
-  Everything on it is live and everything on it is editable. The sense pills are the sharp end —
+  Everything on it is live and everything on it is editable. The sense pills are the sharp end -
   clicking one cuts or grows an input neuron on every brain in the world, and the learning curve
   underneath answers over the next few generations. That is the experiment the product exists to
   let you run, so it is one click deep, on the tile, not buried in a settings panel.
@@ -29,7 +29,7 @@
 
 	interface Props {
 		entry: WorldEntry;
-		/** Its place in the bench, for the badge — 1-based, shown as "01". */
+		/** Its place in the bench, for the badge - 1-based, shown as "01". */
 		index: number;
 	}
 
@@ -44,7 +44,7 @@
 	 * DIFFERENT about it; without this, a bench of five cards all look equally default and a reader
 	 * has to open five dialogs to find the one you changed.
 	 *
-	 * Derived from the REACTIVE config view, never from `entry.world.cfg` — the world is
+	 * Derived from the REACTIVE config view, never from `entry.world.cfg` - the world is
 	 * `$state.raw`, so a diff read off it would never update. (It didn't; the e2e caught it.)
 	 */
 	const baseline = $derived(bench.baselineOf(entry.id));
@@ -64,13 +64,13 @@
 
 <section class="tile" style:--tile-accent={config.accent} aria-label="world {index}: {config.name}">
 	<!-- The header is the node's title bar on the lineage canvas. The grip at its start is the DRAG
-	     HANDLE — grab it (or any empty header space) and the whole world slides; the canvas reads the
+	     HANDLE - grab it (or any empty header space) and the whole world slides; the canvas reads the
 	     data-drag-handle attribute to know a press here means "move the node", not "pan the plane". The
 	     name field and the action buttons keep their own presses. -->
 	<header data-drag-handle>
 		<span class="grip" aria-hidden="true"><Icon name="grip" size={15} /></span>
 
-		<!-- Neutral, whatever the world's accent is: the node chrome stays grey — the accent belongs
+		<!-- Neutral, whatever the world's accent is: the node chrome stays grey - the accent belongs
 		     to the graphs and stats below. -->
 		<Chip class="badge">{badge}</Chip>
 
@@ -81,7 +81,7 @@
 		/>
 
 		<!-- The dot is the card's pulse: still evolving, standing still, or done training for good.
-		     It is DECORATIVE, and deliberately silent — the chip already says "· trained" in words,
+		     It is DECORATIVE, and deliberately silent - the chip already says "· trained" in words,
 		     and whether the sim is running is what the transport button in the sidebar is for. A dot
 		     that also spoke would be the third voice saying the same thing. -->
 		<Chip tabular data-testid="gen">
@@ -169,13 +169,13 @@
 	<ExhibitControl {entry} />
 
 	<!-- The lens's own reading for this tank, only while the lens is on. The colour in the water and
-	     this number are the same quantity — one for the eye, one for the argument. -->
+	     this number are the same quantity - one for the eye, one for the argument. -->
 	{#if bench.lens === 'flee'}
 		<LensStrip {entry} />
 	{/if}
 
 	<!-- The card's actions, on a bar of their own. Champion used to float ON the water, which put a
-	     button over the one thing on this card you are meant to be watching — and over any fish that
+	     button over the one thing on this card you are meant to be watching - and over any fish that
 	     swam beneath it. A control that obscures its own subject is in the wrong place. -->
 	<div class="toolbar">
 		<Button
@@ -247,7 +247,7 @@
 			box-shadow var(--dur) var(--ease);
 	}
 
-	/* The box stays GREY whatever the world's accent is — no header wash, no tint. The accent shows
+	/* The box stays GREY whatever the world's accent is - no header wash, no tint. The accent shows
 	   only in the graphs and stat numbers below (via --tile-accent, set on the section above), so
 	   the environments tell apart by their charts, not by a paint job on the chrome. */
 
@@ -264,13 +264,13 @@
 	}
 
 	/* A generation is running: the dot breathes. It is the only motion on the card's chrome, and it
-	   stops the instant the sim does — which is how you tell a paused bench from a stalled one. */
+	   stops the instant the sim does - which is how you tell a paused bench from a stalled one. */
 	.status.evolving {
 		background: var(--accent);
-		animation: pulse 1.6s var(--ease) infinite; /* the app's one pulse rate — see Drawer, SensorRail */
+		animation: pulse 1.6s var(--ease) infinite; /* the app's one pulse rate - see Drawer, SensorRail */
 	}
 
-	/* Training is over for good. Gold, like the champion — this population is what is left. */
+	/* Training is over for good. Gold, like the champion - this population is what is left. */
 	.status.trained {
 		background: var(--gold);
 		animation: none;
@@ -281,7 +281,7 @@
 		align-items: center;
 		gap: 9px;
 		padding: var(--sp-4) var(--sp-5) 7px;
-		/* The header is the node's drag handle on the canvas — grab it to move the world. The name and
+		/* The header is the node's drag handle on the canvas - grab it to move the world. The name and
 		   the action buttons keep their own cursors, so this only shows on the empty header space. */
 		cursor: grab;
 		touch-action: none;
@@ -320,7 +320,7 @@
 		transition: opacity var(--dur-fast) var(--ease);
 	}
 
-	/* Revealed on hover — but never hidden from the keyboard, which cannot hover. */
+	/* Revealed on hover - but never hidden from the keyboard, which cannot hover. */
 	.tile:hover .actions,
 	.actions:focus-within {
 		opacity: 1;
@@ -356,7 +356,7 @@
 	/*
 	 * The card's action bar, ruled off from the readouts below it.
 	 *
-	 * Champion used to float ON the water — a button laid over the one thing on the card you are
+	 * Champion used to float ON the water - a button laid over the one thing on the card you are
 	 * meant to be watching, and over any fish that swam beneath it. Here it is what a media card's
 	 * actions always are: a strip directly under the media, on the tank's own measure, with the
 	 * inspect action leading and the environment's settings trailing.
@@ -378,7 +378,7 @@
 
 	/*
 	 * The folded evidence. A native <details>, so it holds its own open state and is keyboard- and
-	 * screen-reader-operable for free — the summary is a real disclosure button.
+	 * screen-reader-operable for free - the summary is a real disclosure button.
 	 */
 	.analysis {
 		border-top: 1px solid var(--line);

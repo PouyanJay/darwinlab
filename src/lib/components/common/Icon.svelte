@@ -1,15 +1,15 @@
 <!--
-  The app's icons — one drawn set, one geometry, one weight.
+  The app's icons - one drawn set, one geometry, one weight.
 
   Before this, the UI signed its controls with EMOJI (⚙ ⏩ ★ ↻ ⧉ ✕). An emoji is not an icon: the
-  operating system paints it, in its own colour, at its own weight, in its own house style — a
+  operating system paints it, in its own colour, at its own weight, in its own house style - a
   full-colour gear next to a hairline-drawn interface, refusing the ink colour around it and looking
   like a different app pasted in. Every glyph here is a stroke path on the same 24px grid, drawn in
   `currentColor` at the same weight, so an icon inherits the colour of the control it sits in and a
   disabled button's icon dims with it.
 
   Filled shapes (play, pause, star) are the deliberate exception: a hollow play triangle at 12px
-  reads as noise, and the star is a state — a champion — not an outline.
+  reads as noise, and the star is a state - a champion - not an outline.
 -->
 <script lang="ts">
 	export type IconName =
@@ -46,7 +46,7 @@
 
 	let { name, size = 16 }: Props = $props();
 
-	/** Solid glyphs: outlines of these read as smudges at control sizes. `github` is a brand mark —
+	/** Solid glyphs: outlines of these read as smudges at control sizes. `github` is a brand mark -
 	 *  the one place the set carries an outside logo, so it is drawn as its real filled shape. */
 	const FILLED = new Set<IconName>(['play', 'pause', 'star', 'github']);
 
@@ -78,7 +78,7 @@
 		<path d="M21 5v14" stroke="currentColor" stroke-width="1.9" fill="none" />
 	{:else if name === 'sliders'}
 		<!-- Settings as SLIDERS, not a gear: this panel holds the lab's knobs, and a gear is what
-		     every app on earth uses for "preferences" — a different promise. -->
+		     every app on earth uses for "preferences" - a different promise. -->
 		<path d="M5 7h9M18 7h1M5 12h3M12 12h7M5 17h9M18 17h1" />
 		<circle cx="16" cy="7" r="2" />
 		<circle cx="10" cy="12" r="2" />

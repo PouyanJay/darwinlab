@@ -1,15 +1,15 @@
 <!--
   The raw runs behind the effects, drawn on a CRISP DPR-aware canvas: one COLUMN per condition, one
-  square per seed, coloured by how long that seed's population survived — coral where they died fast,
+  square per seed, coloured by how long that seed's population survived - coral where they died fast,
   teal where they lasted. It is the evidence the effect chart is a summary OF: a condition that did
   badly across every seed reads as a coral column, and you can see the spread the intervals came from.
 
-  The colour is a RELATIVE scale (the run's own min→max), not absolute-from-zero — survival here is a
+  The colour is a RELATIVE scale (the run's own min→max), not absolute-from-zero - survival here is a
   flat band a few seconds wide, so mapping it from zero would wash every cell to the same shade. Canvas,
   not a grid of DOM cells, so a 32×12 run stays sharp and cheap and the cells never reflow.
 
   Cells are drillable: click one (or arrow-move the cursor and press Enter) to open it in the right
-  sidebar — the condition's world, this run's survival against its spread, and the door into Studio.
+  sidebar - the condition's world, this run's survival against its spread, and the door into Studio.
 -->
 <script lang="ts">
 	import Canvas from '../../common/Canvas.svelte';
@@ -22,14 +22,14 @@
 
 	let { cells, results }: { cells: SweepCell[]; results: (Evaluation | null)[] } = $props();
 
-	/** A cell of the run grid — its condition column and seed row (mirrors the Atlas's `CellRef`). */
+	/** A cell of the run grid - its condition column and seed row (mirrors the Atlas's `CellRef`). */
 	interface RunCellRef {
 		condition: number;
 		seed: number;
 	}
 
 	let chart = $state<HTMLDivElement>();
-	/** The cell the cursor is on — set by hover AND by keyboard; drives the outline and the tooltip.
+	/** The cell the cursor is on - set by hover AND by keyboard; drives the outline and the tooltip.
 	 *  Ephemeral view state, kept local (the Atlas's `focus` is the same). The DRILLED cell, by contrast,
 	 *  is store-owned (`sweep.selected`) so a new run clears it as part of the run. */
 	let cursor = $state<RunCellRef | null>(null);
@@ -42,7 +42,7 @@
 	};
 
 	const seeds = $derived(results.find(Boolean)?.returns.length ?? 0);
-	// The measured range this run spans — the ends of the colour scale.
+	// The measured range this run spans - the ends of the colour scale.
 	const values = $derived(results.filter(Boolean).flatMap((r) => (r as Evaluation).returns));
 	const lo = $derived(values.length ? Math.min(...values) : 0);
 	const hi = $derived(values.length ? Math.max(...values) : 1);
@@ -61,7 +61,7 @@
 		for (let c = 0; c < cols; c++) {
 			for (let s = 0; s < seeds; s++) {
 				const value = results[c]?.returns[s];
-				// An unmeasured cell is left as the panel behind — a blank, not a coloured claim.
+				// An unmeasured cell is left as the panel behind - a blank, not a coloured claim.
 				if (value == null) continue;
 				ctx.fillStyle = heatColor((value - lo) / span);
 				ctx.beginPath();
@@ -70,7 +70,7 @@
 			}
 		}
 
-		// Outline a cell — a lightness cue, never a colour (the cell colour is the data). Closes over the
+		// Outline a cell - a lightness cue, never a colour (the cell colour is the data). Closes over the
 		// cell geometry, so it stays a small, few-argument call.
 		const stroke = (ref: RunCellRef, color: string, lineWidth: number) => {
 			ctx.strokeStyle = color;
@@ -86,14 +86,14 @@
 			ctx.stroke();
 		};
 
-		// Cursor (soft) then drilled (strong) — the drilled outline is drawn last so it wins when the
+		// Cursor (soft) then drilled (strong) - the drilled outline is drawn last so it wins when the
 		// cursor sits on it.
 		const palette = THEMES[theme.name];
 		if (cursor) stroke(cursor, palette.inkSoft, 1.5);
 		if (sweep.selected) stroke(sweep.selected, palette.ink, 2);
 	}
 
-	// Research has no per-frame loop — repaint off the reactive deps (a new run, the cursor, the drilled
+	// Research has no per-frame loop - repaint off the reactive deps (a new run, the cursor, the drilled
 	// cell, the theme). Reading each here is what subscribes this effect to it; `void` marks them
 	// read-for-tracking only. `sweep.selected` is cleared by the store on a new run, so no reset here.
 	$effect(() => {
@@ -106,7 +106,7 @@
 	});
 
 	/** Which cell a chart-relative point falls on, or null if outside the grid. `.chart` has no padding,
-	 *  so its client box IS the canvas box `paint` draws in — the two spaces line up, so a hover resolves
+	 *  so its client box IS the canvas box `paint` draws in - the two spaces line up, so a hover resolves
 	 *  to the cell under the pointer. */
 	function cellAt(x: number, y: number): RunCellRef | null {
 		if (!chart || !cells.length || !seeds) return null;
@@ -126,7 +126,7 @@
 		if (cell) sweep.select(cell.condition, cell.seed);
 	}
 
-	/** Arrow keys move the cursor cell; Enter/Space drill it — the keyboard path to the same open. */
+	/** Arrow keys move the cursor cell; Enter/Space drill it - the keyboard path to the same open. */
 	function onkeydown(event: KeyboardEvent): void {
 		if (!cells.length || !seeds) return;
 		if (event.key in ARROW_STEP) {
@@ -136,7 +136,7 @@
 				condition: Math.max(0, Math.min(cells.length - 1, base.condition + dx)),
 				seed: Math.max(0, Math.min(seeds - 1, base.seed + dy))
 			};
-			pointer = null; // keyboard moves have no pointer position, so no tooltip — the outline leads
+			pointer = null; // keyboard moves have no pointer position, so no tooltip - the outline leads
 			event.preventDefault();
 		} else if ((event.key === 'Enter' || event.key === ' ') && cursor) {
 			sweep.select(cursor.condition, cursor.seed);
@@ -149,14 +149,14 @@
 			.map(([key, level]) => `${key} ${level}`)
 			.join(' · ');
 
-	/** The cursor cell's condition, seed and survival — the tooltip's contents. */
+	/** The cursor cell's condition, seed and survival - the tooltip's contents. */
 	const tip = $derived.by(() => {
 		if (!cursor) return null;
 		const value = results[cursor.condition]?.returns[cursor.seed];
 		return {
 			condition: describeCondition(cells[cursor.condition]),
 			seed: cursor.seed + 1,
-			value: value != null ? `${value.toFixed(1)}s` : '—'
+			value: value != null ? `${value.toFixed(1)}s` : '-'
 		};
 	});
 
@@ -241,7 +241,7 @@
 	.chart {
 		position: relative;
 		/* Fills the card's width; the height gives the seed rows room to read as squares-ish across the
-		   run sizes the cap allows (2–32 conditions × 2–12 seeds). NO padding on purpose: the canvas
+		   run sizes the cap allows (2-32 conditions × 2-12 seeds). NO padding on purpose: the canvas
 		   fills this box exactly, so `cellAt` (which measures this box) and `paint` (which draws in the
 		   canvas box) share one coordinate space and a hover resolves to the cell under the pointer. */
 		flex: 1;

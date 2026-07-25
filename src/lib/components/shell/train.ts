@@ -1,5 +1,5 @@
 /**
- * What a "Train" press means — one answer, shared by the sidebar panel and the collapsed rail.
+ * What a "Train" press means - one answer, shared by the sidebar panel and the collapsed rail.
  *
  * Two controls that fast-forward the bench must fast-forward it to the SAME generation. Deriving
  * that twice is how they end up disagreeing the day one of them is edited.

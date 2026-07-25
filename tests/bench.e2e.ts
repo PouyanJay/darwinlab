@@ -4,7 +4,7 @@ import { gotoApp, waitForPrewarm } from './helpers';
 /**
  * The Phase 4 gate: the bench itself, driven the way a user drives it.
  *
- * These are the controls that make the product an instrument rather than a demo — cutting a sense
+ * These are the controls that make the product an instrument rather than a demo - cutting a sense
  * is a live ablation on twenty evolved brains, and the curve underneath answers over the next few
  * generations. So the tests exercise them against the real, running simulation.
  */
@@ -20,11 +20,11 @@ test.beforeEach(async ({ page }) => {
 test('opens with the five-world sense ladder, already evolved', async ({ page }) => {
 	await expect(tiles(page)).toHaveCount(5);
 
-	// left to right, one sense further along — this ordering IS the argument (README §8)
+	// left to right, one sense further along - this ordering IS the argument (README §8)
 	const names = await tiles(page)
 		.locator('input[aria-label="world name"]')
 		.evaluateAll((fields) => fields.map((field) => (field as HTMLInputElement).value));
-	// walls BEFORE closing speed — the order the measurements put them in (see DEFAULT_WORLDS)
+	// walls BEFORE closing speed - the order the measurements put them in (see DEFAULT_WORLDS)
 	expect(names).toEqual(['Blind drift', 'Distance', 'Direction', 'Corner-wise', 'Full senses']);
 
 	expect(await page.getByTestId('generations').innerText()).toBe('15'); // prewarmed
@@ -36,7 +36,7 @@ test('opens with the five-world sense ladder, already evolved', async ({ page })
 test('each world wears its own senses: the ladder is visible, not just claimed', async ({
 	page
 }) => {
-	// innerText comes back SHOUTED — the pills are uppercased in CSS, not in the DOM.
+	// innerText comes back SHOUTED - the pills are uppercased in CSS, not in the DOM.
 	const pressed = async (index: number) =>
 		tile(page, index)
 			.getByRole('button', { pressed: true })
@@ -50,7 +50,7 @@ test('each world wears its own senses: the ladder is visible, not just claimed',
 	expect(await pressed(4)).toEqual(['dist', 'dir', 'close', 'walls']); // Full senses
 });
 
-test('a sense pill is a live ablation — it really cuts the input neuron', async ({ page }) => {
+test('a sense pill is a live ablation - it really cuts the input neuron', async ({ page }) => {
 	const direction = tile(page, 2);
 	const dir = direction.getByRole('button', { name: 'dir', exact: true });
 	await expect(dir).toHaveAttribute('aria-pressed', 'true');
@@ -58,7 +58,7 @@ test('a sense pill is a live ablation — it really cuts the input neuron', asyn
 	await dir.click();
 
 	await expect(dir).toHaveAttribute('aria-pressed', 'false');
-	// and the world keeps evolving from where it is — cutting a sense does not restart it
+	// and the world keeps evolving from where it is - cutting a sense does not restart it
 	expect(await direction.getByTestId('gen').innerText()).toMatch(/^Gen \d+$/);
 });
 
@@ -67,7 +67,7 @@ test('adding, branching and removing worlds', async ({ page }) => {
 	await expect(tiles(page)).toHaveCount(6);
 	await expect(tiles(page).last().locator('input')).toHaveValue('World 6');
 
-	// A branch carries the evolved brains across — it starts where the parent is, not at gen 0 — and
+	// A branch carries the evolved brains across - it starts where the parent is, not at gen 0 - and
 	// appends the wired child at the end of the tree, then opens its Conditions to change one thing.
 	const generation = await tile(page, 2).getByTestId('gen').innerText();
 	await tile(page, 2).getByRole('button', { name: 'Branch' }).click();
@@ -103,10 +103,10 @@ test('a world can be renamed in place', async ({ page }) => {
 
 test('★ Champion selects the best brain alive, and the tank draws it', async ({ page }) => {
 	/*
-	 * "Direction", not "Blind drift" — deliberately. In a world with no senses the selection paints
+	 * "Direction", not "Blind drift" - deliberately. In a world with no senses the selection paints
 	 * only a thin ring, and a sparse pixel hash can genuinely MISS a 2px circle (it did, one run in
 	 * four). Direction has dist+dir wired, so selecting its champion also draws the whole perception
-	 * overlay — vision circle, glow, threat line, distance pill — which no hash can miss.
+	 * overlay - vision circle, glow, threat line, distance pill - which no hash can miss.
 	 */
 	const first = tile(page, 2);
 	const tank = first.getByRole('application', { name: /tank/i });
@@ -120,16 +120,16 @@ test('★ Champion selects the best brain alive, and the tank draws it', async (
 		});
 
 	/*
-	 * PAUSE FIRST. This test compares the tank's pixels before and after the click — and against a
+	 * PAUSE FIRST. This test compares the tank's pixels before and after the click - and against a
 	 * RUNNING sim those pixels change every frame regardless, so the comparison proved nothing. (I
 	 * checked: with the button's handler replaced by a no-op, the test still passed.) Paused, the
 	 * scene is frozen, and the ONLY thing that can repaint it is the selection the click makes:
 	 * the ring, the vision radius and the threat line drawn around the chosen fish.
 	 */
-	// There must BE a best brain alive to select — ★ Champion correctly does nothing when nothing
+	// There must BE a best brain alive to select - ★ Champion correctly does nothing when nothing
 	// is swimming, and even Direction's population can be down at a generation's brutal end. An
 	// empty world only refills at its next generation boundary, a full 10 sim-seconds away, so the
-	// poll must outlast one. And the poll PASSING is not enough either — the sharks keep hunting in
+	// poll must outlast one. And the poll PASSING is not enough either - the sharks keep hunting in
 	// the gap before the pause lands, so confirm the tank is still inhabited once frozen, and run
 	// the sim on and retry if they won that race.
 	const alive = () => first.getByTestId('alive').innerText().then(Number);
@@ -156,7 +156,7 @@ test('★ Champion selects the best brain alive, and the tank draws it', async (
 test('THE INSTRUMENT: a run is identified, and an unseeded one says so', async ({ page }) => {
 	/*
 	 * What separates a lab from a demo: the run can be handed to someone else. The chip carries the
-	 * configuration fingerprint and the seed — and when there is no seed it says "unseeded" rather
+	 * configuration fingerprint and the seed - and when there is no seed it says "unseeded" rather
 	 * than printing a number that would reproduce nothing.
 	 */
 	const manifest = page.getByTestId('run-manifest');
@@ -167,7 +167,7 @@ test('THE INSTRUMENT: a run is identified, and an unseeded one says so', async (
 	const dialog = page.getByRole('dialog', { name: 'Run manifest' });
 	await expect(dialog).toBeVisible();
 
-	// pinning a seed RELAUNCHES the bench — a seeded run is a fresh experiment, not a relabelled one
+	// pinning a seed RELAUNCHES the bench - a seeded run is a fresh experiment, not a relabelled one
 	await dialog.getByRole('textbox', { name: 'seed' }).fill('42');
 	await dialog.getByRole('button', { name: 'Relaunch' }).click();
 

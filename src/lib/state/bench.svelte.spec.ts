@@ -6,7 +6,7 @@ import { BRANCH_DROP } from '../lab/lineage';
 
 /**
  * Runs in the browser project (runes need the Svelte compiler). `bench` is a module-level
- * singleton that owns a live loop, so every test tears it down completely — `destroy()` must
+ * singleton that owns a live loop, so every test tears it down completely - `destroy()` must
  * restore EVERY field, or state leaks between tests through the singleton.
  */
 afterEach(() => bench.destroy());
@@ -19,7 +19,7 @@ const frame = (elapsed = 1 / 60, count = 1) => {
 	for (let i = 0; i < count; i++) bench.tick(elapsed);
 };
 
-describe('bench store — construction', () => {
+describe('bench store - construction', () => {
 	it('builds one world per config with a stats snapshot', () => {
 		init(3);
 		expect(bench.worlds).toHaveLength(3);
@@ -49,7 +49,7 @@ describe('bench store — construction', () => {
 	});
 });
 
-describe('bench store — teardown isolation', () => {
+describe('bench store - teardown isolation', () => {
 	it('destroy() restores every field, so nothing leaks into the next test', () => {
 		init(2, 5);
 		bench.togglePlay();
@@ -76,12 +76,12 @@ describe('bench store — teardown isolation', () => {
 
 		bench.destroy();
 		paint.mockClear();
-		bench.tick(1 / 60); // even a forced tick must do nothing — there is nothing left
+		bench.tick(1 / 60); // even a forced tick must do nothing - there is nothing left
 		expect(paint).not.toHaveBeenCalled();
 	});
 });
 
-describe('bench store — playback', () => {
+describe('bench store - playback', () => {
 	it('toggles play', () => {
 		init(1);
 		expect(bench.running).toBe(true);
@@ -128,7 +128,7 @@ describe('bench store — playback', () => {
 	});
 });
 
-describe('bench store — turbo / prewarm', () => {
+describe('bench store - turbo / prewarm', () => {
 	it('queues a prewarm as a turbo target', () => {
 		init(1, 5);
 		expect(bench.turboTarget).toBe(5);
@@ -144,7 +144,7 @@ describe('bench store — turbo / prewarm', () => {
 	});
 });
 
-describe('bench store — stats projection', () => {
+describe('bench store - stats projection', () => {
 	it('refreshes the reactive snapshot from the raw world each frame', () => {
 		init(1);
 		bench.togglePlay(); // pause: the tick must only PROJECT, not step (a step could eat a fish)
@@ -152,7 +152,7 @@ describe('bench store — stats projection', () => {
 
 		world.eaten = 7;
 		world.gen = 4;
-		// the LIFE curve is what the tiles plot and what this projects — mean seconds survived as a
+		// the LIFE curve is what the tiles plot and what this projects - mean seconds survived as a
 		// share of the generation, which is what selection actually rewards (see World.lifeCurve)
 		world.lifeCurve = [0.42];
 		frame();
@@ -164,7 +164,7 @@ describe('bench store — stats projection', () => {
 		expect(bench.generationsEvolved).toBe(4);
 	});
 
-	it('projects the deployment half too — the tile reads its whole real-world run from here', () => {
+	it('projects the deployment half too - the tile reads its whole real-world run from here', () => {
 		init(1);
 		bench.togglePlay(); // pause: project only, do not step
 		const { world, stats } = bench.worlds[0];
@@ -184,7 +184,7 @@ describe('bench store — stats projection', () => {
 	});
 });
 
-describe('bench store — world CRUD', () => {
+describe('bench store - world CRUD', () => {
 	it('adds a world', () => {
 		init(1);
 		bench.addWorld({ ...DEFAULT_WORLDS[2], name: 'Added' });
@@ -253,7 +253,7 @@ describe('bench store — world CRUD', () => {
 	});
 });
 
-describe('bench store — lineage & branch', () => {
+describe('bench store - lineage & branch', () => {
 	it('lays the launched worlds out as a row of unbranched roots', () => {
 		init(3);
 		const xs = bench.worlds.map((e) => e.lineage.x);
@@ -296,7 +296,7 @@ describe('bench store — lineage & branch', () => {
 		init(1);
 		const parent = bench.worlds[0];
 		// branchWorld opens the child's Conditions; close it between forks just to model the real flow
-		// (the dialog state doesn't affect branching — this is housekeeping, not a precondition).
+		// (the dialog state doesn't affect branching - this is housekeeping, not a precondition).
 		const a = bench.find(bench.branchWorld(parent.id))!;
 		bench.closeConditions();
 		const b = bench.find(bench.branchWorld(parent.id))!;
@@ -311,7 +311,7 @@ describe('bench store — lineage & branch', () => {
 		bench.moveWorld(e.id, 321, 654);
 		expect(e.lineage.x).toBe(321);
 		expect(e.lineage.y).toBe(654);
-		expect(e.world.t).toBe(t); // pure view state — no genome, fitness or clock moved
+		expect(e.world.t).toBe(t); // pure view state - no genome, fitness or clock moved
 	});
 
 	it('removing a world prunes the lineage wires it touched', () => {
@@ -330,7 +330,7 @@ describe('bench store — lineage & branch', () => {
 	});
 });
 
-describe('bench store — the only-seam rule', () => {
+describe('bench store - the only-seam rule', () => {
 	it('toggles a sense as a true live ablation', () => {
 		init(1);
 		const e = bench.worlds[0];
@@ -352,7 +352,7 @@ describe('bench store — the only-seam rule', () => {
 	});
 });
 
-describe('bench store — painters', () => {
+describe('bench store - painters', () => {
 	it('calls every registered painter once per frame', () => {
 		init(1);
 		const a = vi.fn();
@@ -376,7 +376,7 @@ describe('bench store — painters', () => {
 	});
 });
 
-describe('bench store — painting only when something changed', () => {
+describe('bench store - painting only when something changed', () => {
 	/** Pause and drain the repaint owed by init itself, so each test starts from a quiet bench. */
 	const initPaused = (n = 1) => {
 		init(n);
@@ -401,10 +401,10 @@ describe('bench store — painting only when something changed', () => {
 
 		bench.setHover(entry.id, entry.world.fish[0]);
 		frame(1 / 60, 5);
-		expect(paint).toHaveBeenCalledTimes(1); // the hover ring appears — then quiet again
+		expect(paint).toHaveBeenCalledTimes(1); // the hover ring appears - then quiet again
 	});
 
-	it('an unchanged hover does not wake a paused bench — mousemove fires at pointer rate', () => {
+	it('an unchanged hover does not wake a paused bench - mousemove fires at pointer rate', () => {
 		initPaused();
 		const entry = bench.worlds[0];
 		const paint = vi.fn();
@@ -432,19 +432,19 @@ describe('bench store — painting only when something changed', () => {
 		expect(bench.detail).toBe('performance');
 	});
 
-	it('never judges TRAINING frames — turbo is slow by design, not a struggling machine', () => {
+	it('never judges TRAINING frames - turbo is slow by design, not a struggling machine', () => {
 		init(1);
 		bench.trainTo(9999); // far more than this test will ever finish
 		expect(bench.turboTarget).not.toBeNull(); // the state under test actually holds
 
 		// every turbo frame deliberately burns its 15ms slice, and honestly reported that reads
-		// as ~31ms — past the downgrade line; the governor must not be listening
+		// as ~31ms - past the downgrade line; the governor must not be listening
 		for (let i = 0; i < 60 && bench.turboTarget !== null; i++) bench.tick(1 / 60, 0.031);
 		expect(bench.turboTarget).not.toBeNull(); // it did not finish out from under the test
 		expect(bench.detail).toBe('cinematic');
 	});
 
-	it('a paused tick does not advance the sim — pause stops the WORLD, not just the paint', () => {
+	it('a paused tick does not advance the sim - pause stops the WORLD, not just the paint', () => {
 		init(1);
 		bench.togglePlay();
 		const t = bench.worlds[0].world.t;
@@ -486,7 +486,7 @@ describe('bench store — painting only when something changed', () => {
 	});
 });
 
-describe('bench store — keyboard creature cycling', () => {
+describe('bench store - keyboard creature cycling', () => {
 	/** A tiny world with a known census: 3 fish then 1 shark, so the walk order is checkable. */
 	const initCountable = () =>
 		bench.init({ configs: [{ ...structuredClone(DEFAULT_WORLDS[0]), prey: 3, preds: 1 }] });
@@ -517,7 +517,7 @@ describe('bench store — keyboard creature cycling', () => {
 		expect(bench.selection?.type).toBe('pred');
 	});
 
-	it('a pack of sharks is ONE stop — the walk can always get past them', () => {
+	it('a pack of sharks is ONE stop - the walk can always get past them', () => {
 		initCountable();
 		const e = bench.worlds[0];
 		// The engine's documented fidelity quirk: a fresh world opens gen 0 with 2× predators.
@@ -542,7 +542,7 @@ describe('bench store — keyboard creature cycling', () => {
 
 		const expected = at === e.world.fish.length - 1 ? null : e.world.fish[at + 1];
 		if (expected) expect(e.world.selFish).toBe(expected);
-		else expect(bench.selection?.type).toBe('pred'); // the champion was last — next is the shark
+		else expect(bench.selection?.type).toBe('pred'); // the champion was last - next is the shark
 		expect(bench.selection?.followsChampion).toBe(false);
 	});
 
@@ -594,12 +594,12 @@ describe('bench store — keyboard creature cycling', () => {
 	});
 });
 
-describe('bench store — selection', () => {
+describe('bench store - selection', () => {
 	/**
 	 * A world with no predators, so nothing can be eaten.
 	 *
 	 * The generation-turnover tests need the watched fish to survive UP TO the turnover, or they
-	 * quietly exercise the eaten path instead — and the default first world, "Blind drift", is
+	 * quietly exercise the eaten path instead - and the default first world, "Blind drift", is
 	 * exactly the one whose population really does get wiped out. Removing the sharks makes the
 	 * turnover the only thing that can end a fish's life, which is what these tests are about.
 	 * (The wipe-out case gets a test of its own below.)
@@ -631,7 +631,7 @@ describe('bench store — selection', () => {
 
 		expect(bench.selection).toEqual({ worldId: id, type: 'fish', followsChampion: false });
 		expect(world.selFish).toBe(world.fish[3]);
-		// populated NOW, not on the next tick — the sim may well be paused
+		// populated NOW, not on the next tick - the sim may well be paused
 		expect(world.sense).not.toBeNull();
 	});
 
@@ -679,7 +679,7 @@ describe('bench store — selection', () => {
 		runToNextGeneration(id);
 
 		expect(world.eaten).toBe(0); // the turnover, NOT a shark, is what ended the watched fish
-		// a NEW fish — the old one no longer exists — but the inspector is still on the best brain
+		// a NEW fish - the old one no longer exists - but the inspector is still on the best brain
 		expect(bench.selection).toEqual({ worldId: id, type: 'fish', followsChampion: true });
 		expect(world.selFish).not.toBe(watched);
 		expect(world.fish).toContain(world.selFish); // and it is genuinely swimming
@@ -698,14 +698,14 @@ describe('bench store — selection', () => {
 		expect(world.selFish).toBeNull();
 	});
 
-	it('ends a champion selection when the population is wiped out — nothing is alive to be best', () => {
+	it('ends a champion selection when the population is wiped out - nothing is alive to be best', () => {
 		initSafeWorld();
 		bench.togglePlay(); // pause: this test is about the store's reading of the world, not physics
 		const { id, world } = bench.worlds[0];
 		bench.selectChampion(id);
 
 		// The wipe-out, exactly as the engine leaves it: no fish, and no pointer to one. (Waiting for
-		// the sharks to do this for real would spin forever — the engine RESPAWNS the population at
+		// the sharks to do this for real would spin forever - the engine RESPAWNS the population at
 		// every generation boundary, so "nothing alive" is never a state the sim settles into.)
 		world.fish = [];
 		world.selFish = null;
@@ -717,7 +717,7 @@ describe('bench store — selection', () => {
 		expect(world.selFish).toBeNull();
 	});
 
-	it('lets go of a fish the moment a shark eats it — the inspector cannot outlive its subject', () => {
+	it('lets go of a fish the moment a shark eats it - the inspector cannot outlive its subject', () => {
 		// A cramped tank with three sharks: this fish is going to be caught, and when it is, the panel
 		// showing its "live" mind has nothing left to show.
 		bench.init({
@@ -751,14 +751,14 @@ describe('bench store — selection', () => {
 		const { id, world } = bench.worlds[0];
 		bench.selectChampion(id);
 
-		bench.resetWorld(id); // restart from random brains — every fish is replaced
+		bench.resetWorld(id); // restart from random brains - every fish is replaced
 		frame();
 
 		expect(world.selFish === null || world.fish.includes(world.selFish)).toBe(true);
 	});
 });
 
-describe('bench store — surviving a world being removed', () => {
+describe('bench store - surviving a world being removed', () => {
 	it('a hover that lands after its world is gone is ignored, not thrown', () => {
 		init(2);
 		const [first] = bench.worlds;
@@ -772,7 +772,7 @@ describe('bench store — surviving a world being removed', () => {
 	});
 });
 
-describe('bench store — duplicate', () => {
+describe('bench store - duplicate', () => {
 	it('gives each copy a name of its own', () => {
 		init(3);
 		const source = bench.worlds[2]; // "Direction"
@@ -799,7 +799,7 @@ describe('bench store — duplicate', () => {
 	});
 });
 
-describe('bench store — maxGenerations', () => {
+describe('bench store - maxGenerations', () => {
 	it('publishes changes, so what is derived from it actually re-renders', () => {
 		init(1);
 		const seen: number[] = [];
@@ -819,7 +819,7 @@ describe('bench store — maxGenerations', () => {
 	});
 });
 
-describe('bench store — conditions', () => {
+describe('bench store - conditions', () => {
 	it('opens and closes the dialog for one world at a time', () => {
 		init(2);
 		const [first, second] = bench.worlds;
@@ -876,7 +876,7 @@ describe('bench store — conditions', () => {
 		expect([...newcomer.genome]).toEqual([...world.champion!.genome]); // an evolved brain, not noise
 	});
 
-	it('clamps to the range the experiment allows — the engine does not validate', () => {
+	it('clamps to the range the experiment allows - the engine does not validate', () => {
 		init(1);
 		const { id, world } = bench.worlds[0];
 
@@ -937,7 +937,7 @@ describe('bench store — conditions', () => {
 	});
 });
 
-describe('bench store — the selected fish’s mind', () => {
+describe('bench store - the selected fish’s mind', () => {
 	it('publishes what the fish senses the moment it is selected, even paused', () => {
 		init(1);
 		bench.togglePlay(); // paused: no tick will come to fill this in for us
@@ -945,12 +945,12 @@ describe('bench store — the selected fish’s mind', () => {
 
 		bench.select(id, { type: 'fish', obj: world.fish[0] });
 
-		// the panel opens populated — the numbers are the engine's, not zeros waiting for a frame
+		// the panel opens populated - the numbers are the engine's, not zeros waiting for a frame
 		expect(bench.mind.lived).toBe(world.fish[0].fitness);
 		expect(bench.mind.wallAhead).toBe(world.sense!.wallFront);
 	});
 
-	it('is the ENGINE’s numbers, not the UI’s — it never computes a sense of its own', () => {
+	it('is the ENGINE’s numbers, not the UI’s - it never computes a sense of its own', () => {
 		init(1);
 		bench.togglePlay();
 		const { id, world } = bench.worlds[0];
@@ -980,9 +980,9 @@ describe('bench store — the selected fish’s mind', () => {
 	});
 });
 
-describe('bench store — train → deploy', () => {
+describe('bench store - train → deploy', () => {
 	/**
-	 * A small, brutal world so a deployment plays out in a few thousand frames — and SEEDED, because
+	 * A small, brutal world so a deployment plays out in a few thousand frames - and SEEDED, because
 	 * these tests care about when a population dies, and a run that differs every time is a run whose
 	 * failures cannot be reproduced.
 	 */
@@ -1000,7 +1000,7 @@ describe('bench store — train → deploy', () => {
 		expect(steps).toBeLessThan(budget);
 	};
 
-	it('keeps evolving while the limit is 0 — the bench never deploys on its own', () => {
+	it('keeps evolving while the limit is 0 - the bench never deploys on its own', () => {
 		initDeployable(0);
 		const { world, stats } = bench.worlds[0];
 
@@ -1021,7 +1021,7 @@ describe('bench store — train → deploy', () => {
 		expect(world.gen).toBe(2); // it is not
 	});
 
-	it('THE POINT: a deployed population only ever goes DOWN — nothing respawns', () => {
+	it('THE POINT: a deployed population only ever goes DOWN - nothing respawns', () => {
 		initDeployable(1);
 		const { stats } = bench.worlds[0];
 		runUntil(() => stats.deployed);
@@ -1036,7 +1036,7 @@ describe('bench store — train → deploy', () => {
 		expect(stats.alive).toBe(0); // in the end, the real world takes all of them
 	});
 
-	it('LATCHES the half-life — it is a moment, not a running commentary', () => {
+	it('LATCHES the half-life - it is a moment, not a running commentary', () => {
 		initDeployable(1);
 		const { world, stats } = bench.worlds[0];
 		runUntil(() => stats.deployed);
@@ -1049,7 +1049,7 @@ describe('bench store — train → deploy', () => {
 		expect(halfLife!).toBeGreaterThan(0);
 
 		// Keep going. The population stays below half all the way down, so a half-life that did NOT
-		// latch would keep being overwritten and end up equal to the extinction time — and every
+		// latch would keep being overwritten and end up equal to the extinction time - and every
 		// assertion below would still hold. (They did. That is what this test used to be.)
 		runUntil(() => stats.alive === 0);
 		frame();
@@ -1072,7 +1072,7 @@ describe('bench store — train → deploy', () => {
 		expect(stats.deployed).toBe(true);
 	});
 
-	it('raising the limit puts a deployed world back to evolving — a limit is not a one-way door', () => {
+	it('raising the limit puts a deployed world back to evolving - a limit is not a one-way door', () => {
 		initDeployable(1);
 		const { stats } = bench.worlds[0];
 		runUntil(() => stats.deployed);
@@ -1089,7 +1089,7 @@ describe('bench store — train → deploy', () => {
 		runUntil(() => stats.deployed);
 
 		// Let the run actually HAPPEN first. Resetting the instant a world deploys clears a decay
-		// curve that was never drawn and a half-life that was never reached — the assertions below
+		// curve that was never drawn and a half-life that was never reached - the assertions below
 		// would then hold no matter what reset did. (They did. That is what this test used to do.)
 		runUntil(() => stats.halfLife !== null);
 		expect(world.decay.length).toBeGreaterThan(0);
@@ -1103,14 +1103,14 @@ describe('bench store — train → deploy', () => {
 		expect(stats.deployed).toBe(false);
 		expect(stats.gen).toBe(0);
 		expect(stats.alive).toBe(world.cfg.prey); // a full generation is back in the water
-		// and the dead population's run goes with it — otherwise the tile would show "wiped out · 37s"
+		// and the dead population's run goes with it - otherwise the tile would show "wiped out · 37s"
 		// and a red death curve for a world that is now at generation 0, evolving
 		expect(world.decay).toEqual([]);
 		expect(stats.halfLife).toBeNull();
 		expect(stats.extinctT).toBeNull();
 	});
 
-	it('clamps the limit to what the lab offers — and the worlds hear the clamped value', () => {
+	it('clamps the limit to what the lab offers - and the worlds hear the clamped value', () => {
 		initDeployable(10);
 		const { world } = bench.worlds[0];
 

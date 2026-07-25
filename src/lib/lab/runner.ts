@@ -1,16 +1,16 @@
 /**
- * The batch runner — how Research runs many evaluations without freezing the tab.
+ * The batch runner - how Research runs many evaluations without freezing the tab.
  *
  * `runBatch` takes a list of EvalRequests and returns their results in order, reporting aggregate
  * progress and honouring a cancel signal. HOW each job runs is an EXECUTOR:
  *
- *   - WorkerPoolExecutor  runs jobs across a pool of Web Workers (the browser default) — off the
+ *   - WorkerPoolExecutor  runs jobs across a pool of Web Workers (the browser default) - off the
  *                         main thread, one job per free worker, so the live sim keeps painting.
  *   - InThreadExecutor    runs jobs on the calling thread via `evaluate()`'s own time-boxed slices.
  *                         The fallback where Workers are unavailable (server render, unit tests),
  *                         and what the orchestration tests drive so they never depend on a worker.
  *
- * Both produce identical numbers for identical requests — same code, same seeds — which the browser
+ * Both produce identical numbers for identical requests - same code, same seeds - which the browser
  * determinism spec pins bit-for-bit. `runBatch` limits how many jobs are in flight to the executor's
  * own concurrency, so it never over-commits the pool.
  */
@@ -20,9 +20,9 @@ import { evaluate, type EvalRequest, type Evaluation } from './evaluator';
 import type { WorkerRequest, WorkerResponse } from './protocol';
 
 export interface JobExecutor {
-	/** How many jobs may run at once — the pool size, or 1 in-thread. */
+	/** How many jobs may run at once - the pool size, or 1 in-thread. */
 	readonly concurrency: number;
-	/** Run one request; report its 0–1 progress; resolve to its result, or null if cancelled. */
+	/** Run one request; report its 0-1 progress; resolve to its result, or null if cancelled. */
 	submit(
 		req: EvalRequest,
 		onProgress: (fraction: number) => void,
@@ -60,7 +60,7 @@ interface WaitingJob {
 	onAbort: () => void;
 }
 
-/** How the pool spawns a worker — the real Vite module worker in production, a fake in tests. */
+/** How the pool spawns a worker - the real Vite module worker in production, a fake in tests. */
 export type WorkerFactory = () => Worker;
 
 const defaultWorkerFactory: WorkerFactory = () =>
@@ -164,7 +164,7 @@ export class WorkerPoolExecutor implements JobExecutor {
 	}
 
 	/**
-	 * Resolve as soon as a worker is free — immediately if one is idle, else when one frees up. A job
+	 * Resolve as soon as a worker is free - immediately if one is idle, else when one frees up. A job
 	 * that is cancelled while it waits drops out of the queue and rejects, so its cancellation is
 	 * honoured without waiting for an unrelated job to finish.
 	 */
@@ -214,7 +214,7 @@ function defaultExecutor(): JobExecutor {
 }
 
 export interface BatchOptions {
-	/** Aggregate 0–1 progress across the whole batch. */
+	/** Aggregate 0-1 progress across the whole batch. */
 	onProgress?: (fraction: number) => void;
 	/** Cancel: in-flight jobs settle to null, unstarted ones never start. */
 	signal?: AbortSignal;
@@ -222,7 +222,7 @@ export interface BatchOptions {
 
 /**
  * Run every request, at most `executor.concurrency` at once, and return the results in the order the
- * jobs were given. A cancelled or failed job lands as null in its slot — the caller filters.
+ * jobs were given. A cancelled or failed job lands as null in its slot - the caller filters.
  */
 export async function runBatch(
 	jobs: EvalRequest[],

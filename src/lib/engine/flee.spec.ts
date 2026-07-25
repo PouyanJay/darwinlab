@@ -4,7 +4,7 @@ import type { Fish, Predator, WorldConfig } from './types';
 
 /**
  * The reading the lens paints and the evaluation panel averages. Both call THIS function, so what is
- * pinned here is the definition itself — including the two cases where there is deliberately no
+ * pinned here is the definition itself - including the two cases where there is deliberately no
  * reading at all, which is the part a careless "return 0" would quietly destroy.
  */
 
@@ -19,7 +19,7 @@ const pred = (x: number, y: number): Predator => ({ x, y }) as Predator;
 
 describe('fleeError', () => {
 	it('is 0° when the fish swims dead away from the shark', () => {
-		// shark to the left, fish swimming right — a perfect escape
+		// shark to the left, fish swimming right - a perfect escape
 		expect(fleeError(cfg, fish(100, 0), [pred(-50, 0)])).toBeCloseTo(0, 6);
 	});
 
@@ -27,7 +27,7 @@ describe('fleeError', () => {
 		expect(fleeError(cfg, fish(100, 0), [pred(50, 0)])).toBeCloseTo(180, 6);
 	});
 
-	it('is 90° — chance — when the fish swims across the shark', () => {
+	it('is 90° - chance - when the fish swims across the shark', () => {
 		// This is the number the whole lens diverges around: what a fish that IGNORES the shark scores.
 		expect(fleeError(cfg, fish(0, 100), [pred(-50, 0)])).toBeCloseTo(90, 6);
 	});
@@ -45,14 +45,14 @@ describe('fleeError', () => {
 	});
 
 	it('has NO READING when nothing is in vision', () => {
-		// Not zero. A fish that cannot see the shark has not fled correctly — it has not been asked,
+		// Not zero. A fish that cannot see the shark has not fled correctly - it has not been asked,
 		// and scoring it as perfect would flatter every blind population in the lab.
 		expect(fleeError(cfg, fish(100, 0), [pred(-500, 0)])).toBeNull();
 		expect(fleeError(cfg, fish(100, 0), [])).toBeNull();
 	});
 
 	it('has NO READING when the fish is barely moving', () => {
-		// The direction of a near-zero velocity is atan2 of two tiny numbers — noise, not an intention.
+		// The direction of a near-zero velocity is atan2 of two tiny numbers - noise, not an intention.
 		expect(fleeError(cfg, fish(FLEE_MIN_SPEED - 1, 0), [pred(-50, 0)])).toBeNull();
 		expect(fleeError(cfg, fish(FLEE_MIN_SPEED + 1, 0), [pred(-50, 0)])).not.toBeNull();
 	});

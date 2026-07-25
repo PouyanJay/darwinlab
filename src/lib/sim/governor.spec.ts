@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { DetailGovernor, OUTLIER_SECONDS, WARMUP_FRAMES } from './governor';
 
-const SLOW = 0.04; // 25fps — a machine that is clearly not keeping up
+const SLOW = 0.04; // 25fps - a machine that is clearly not keeping up
 const FAST = 1 / 60;
 
 describe('DetailGovernor', () => {

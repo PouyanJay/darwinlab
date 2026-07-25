@@ -77,7 +77,7 @@ describe('SHOAL_WORLDS (the schooling ablation)', () => {
 	it('is Alone vs The Shoal, differing ONLY in the shoal sense (a true ablation)', () => {
 		expect(alone.name).toBe('Alone');
 		expect(shoal.name).toBe('The Shoal');
-		// same 14-input brain in both — the sense is ablated by feeding 0, never by reshaping
+		// same 14-input brain in both - the sense is ablated by feeding 0, never by reshaping
 		expect(alone.brainInputs).toBe(14);
 		expect(shoal.brainInputs).toBe(14);
 		// identical predator senses; the ONLY difference is cohesion + align
@@ -102,7 +102,7 @@ describe('SHOAL_WORLDS (the schooling ablation)', () => {
 	it('carries the MEASURED winning mechanic (lock + catch), not the ones that failed', () => {
 		for (const w of SHOAL_WORLDS) {
 			expect(w.confusion).toBe(true);
-			expect(w.confusionLock).toBe(true); // predator attention — what makes it PAY
+			expect(w.confusionLock).toBe(true); // predator attention - what makes it PAY
 			expect(w.confusionCatch).toBe(true); // the selfish herd
 			expect(w.confusionIsolate).toBe(false); // measured: adds nothing on top
 			expect(w.confusionStrike).toBe(false); // measured: dilutes the effect
@@ -112,7 +112,7 @@ describe('SHOAL_WORLDS (the schooling ablation)', () => {
 
 	it('runs a shark you CANNOT outswim, so grouping is a real strategy not a delay', () => {
 		// unlike the sense ladder (shark slower than the fish), the Shoal ocean's shark cruises
-		// FASTER than the fish's top speed — fleeing alone cannot save you, so the swarm has to.
+		// FASTER than the fish's top speed - fleeing alone cannot save you, so the swarm has to.
 		for (const w of SHOAL_WORLDS) {
 			expect(200 * w.predSpeed).toBeGreaterThan(MAXSPEED);
 			expect(w.caption.length).toBeGreaterThan(0);
@@ -134,7 +134,7 @@ describe('newWorldConfig', () => {
 		expect(world.name).toBe('World 6');
 		expect(world.accent).toBe('#8a5ad8');
 		expect(world.senses).toEqual({ dist: true, dir: true, closing: true, walls: true });
-		// born in the DEFAULT ocean — a hand-added world must be able to reward what it senses
+		// born in the DEFAULT ocean - a hand-added world must be able to reward what it senses
 		expect(world).toMatchObject({
 			prey: 20,
 			bw: 640,

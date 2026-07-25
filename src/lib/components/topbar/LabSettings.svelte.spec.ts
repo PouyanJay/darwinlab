@@ -7,7 +7,7 @@ import { DEFAULT_WORLDS, MAX_GENERATIONS_DEFAULT } from '$lib/engine';
 
 afterEach(() => bench.destroy());
 
-/** Open the popover the way a user does — its contents do not exist in the DOM until it is shown. */
+/** Open the popover the way a user does - its contents do not exist in the DOM until it is shown. */
 const open = async (maxGenerations: number = MAX_GENERATIONS_DEFAULT) => {
 	bench.init({ configs: [structuredClone(DEFAULT_WORLDS[2])], maxGenerations });
 	bench.togglePlay();
@@ -31,7 +31,7 @@ describe('LabSettings', () => {
 	it('says "never" rather than a smaller number when deployment is switched off', async () => {
 		const slider = await open(0);
 
-		// 0 is not "deploy very soon" — it is a different answer, and the panel says so
+		// 0 is not "deploy very soon" - it is a different answer, and the panel says so
 		await expect.element(slider).toHaveAttribute('aria-valuetext', 'never');
 		await expect.element(page.getByText(/keeps evolving forever/)).toBeVisible();
 	});

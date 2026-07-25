@@ -1,5 +1,5 @@
 <!--
-  A centred modal dialog — the shell the Conditions editor (Phase 5) drops into.
+  A centred modal dialog - the shell the Conditions editor (Phase 5) drops into.
 
   It is a NATIVE <dialog> opened with showModal(), which is the whole point: the browser gives us a
   real focus trap, a real Esc, the top layer (no z-index fights with the tanks), and it makes
@@ -8,7 +8,7 @@
 
   Closing is reported, never assumed: Esc, the ✕, and a backdrop click all call `onclose`, and the
   owner of `open` decides what happens. The dialog fills the viewport with a transparent box so a
-  click that lands on it — rather than on the panel inside — is unambiguously a backdrop click.
+  click that lands on it - rather than on the panel inside - is unambiguously a backdrop click.
 -->
 <script lang="ts">
 	import type { Snippet } from 'svelte';
@@ -34,7 +34,7 @@
 	 *
 	 * <dialog>.close() fires the same `close` event Esc does, and the event alone cannot tell them
 	 * apart. Without this, an owner-driven close would bounce back out as an `onclose` the owner
-	 * never asked for — and an owner that toggles rather than clears would reopen the dialog it just
+	 * never asked for - and an owner that toggles rather than clears would reopen the dialog it just
 	 * closed. `onclose` has to mean "the user dismissed this", nothing else.
 	 *
 	 * The flag is cleared by the handler rather than after close(), because the close event is

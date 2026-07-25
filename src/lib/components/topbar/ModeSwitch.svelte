@@ -1,8 +1,8 @@
 <!--
   The lab's top-level mode switch: Studio ⇄ Research.
 
-  It sits in the top bar because a MODE is identity — "which instrument the lab is presenting right
-  now" — not a bench control (those live in the sidebar). It is the one frame that persists across
+  It sits in the top bar because a MODE is identity - "which instrument the lab is presenting right
+  now" - not a bench control (those live in the sidebar). It is the one frame that persists across
   both modes, so it is what tells you that switching is a change of lens, not a change of app.
 
   A segmented radio group, so it inherits the keyboard behaviour and the single-choice semantics the

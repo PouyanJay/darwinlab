@@ -4,7 +4,7 @@ import { gotoApp, waitForPrewarm } from './helpers';
 /**
  * The Phase 6 gate: a real evolved mind, inspected in the real app.
  *
- * The panel's claim is that everything in it belongs to the fish — its senses this frame, its 68
+ * The panel's claim is that everything in it belongs to the fish - its senses this frame, its 68
  * weights, the motor outputs those weights just produced. So the tests drive it the way a user
  * does, and the ablation test checks the thing that makes this a lab rather than a demo: cutting a
  * neuron really does change the brain.
@@ -34,14 +34,14 @@ test('★ Champion opens a live mind, and the bench keeps running behind it', as
 
 	await expect(inspector(page)).toBeVisible();
 	await expect(inspector(page)).toContainText('one real evolved brain in “Full senses”');
-	// It opens on the readable policy — the escape map — by default...
+	// It opens on the readable policy - the escape map - by default...
 	await expect(inspector(page)).toContainText('what it does at every shark position');
 	// ...and this fish's real 68 weights are one toggle away.
 	await inspector(page).getByRole('radio', { name: 'Wiring' }).click();
 	await expect(inspector(page)).toContainText('68 genes');
 
 	// NOT a modal: you inspect a brain while watching it swim, so the bench behind stays live and
-	// clickable — the Conditions button on another tile still works.
+	// clickable - the Conditions button on another tile still works.
 	expect(await inspector(page).evaluate((el) => el.matches(':modal'))).toBe(false);
 	await tile(page, 0).getByRole('button', { name: 'Conditions' }).click();
 	await expect(page.getByRole('dialog', { name: 'Conditions' })).toBeVisible();
@@ -61,7 +61,7 @@ test('the panel is alive: the numbers move because the fish is thinking', async 
 });
 
 test('ABLATION: cutting the closing-speed neuron really changes the brain', async ({ page }) => {
-	await tile(page, 4).getByRole('button', { name: 'Champion' }).click(); // Full senses — the only world with closing speed on
+	await tile(page, 4).getByRole('button', { name: 'Champion' }).click(); // Full senses - the only world with closing speed on
 	await expect(inspector(page)).toContainText('closing speed');
 
 	// The fingerprint reads the WIRING view, so switch to it (the panel opens on the escape map).
@@ -80,7 +80,7 @@ test('ABLATION: cutting the closing-speed neuron really changes the brain', asyn
 
 	await inspector(page).getByRole('button', { name: 'Ablate: cut closing speed' }).click();
 
-	// the input node dims and its edges go dead — the picture must change
+	// the input node dims and its edges go dead - the picture must change
 	await expect.poll(() => brainprint(page), { timeout: 5000 }).not.toBe(wired);
 	// the CLOSING bar now says the neuron is gone, not that the threat is (walls is already off in
 	// this world, so an unscoped "off" would match either bar and prove nothing)
@@ -100,7 +100,7 @@ test('ABLATION: cutting the closing-speed neuron really changes the brain', asyn
 });
 
 test('the ladder reads the senses the world actually gives the brain', async ({ page }) => {
-	// every rung the default bench can reach — a ladder that only ever gets checked at two of its
+	// every rung the default bench can reach - a ladder that only ever gets checked at two of its
 	// rungs is a ladder whose middle can quietly break
 	const rungs = [
 		[0, 'rung 0 · reflex'], // Blind drift: no predator input at all
@@ -122,7 +122,7 @@ test('the ladder reads the senses the world actually gives the brain', async ({ 
 test('clicking the shark says there is no brain, by design', async ({ page }) => {
 	/*
 	 * Find the shark rather than clicking hopefully at the middle of the tank and waiting for one to
-	 * swim under the cursor. Pause, read the canvas back, and click where the red is — it exercises
+	 * swim under the cursor. Pause, read the canvas back, and click where the red is - it exercises
 	 * the same pickCreature path a real click does, without depending on where a moving shark
 	 * happens to be.
 	 */
@@ -147,7 +147,7 @@ test('clicking the shark says there is no brain, by design', async ({ page }) =>
 
 		// Group the red pixels, because the sharks are not the only red things: a fish that was just
 		// eaten leaves a catch-burst, and paused, that burst hangs there forever. Cluster them and try
-		// the biggest blobs first — a shark's body is a lot more red pixels than a burst's thin ring.
+		// the biggest blobs first - a shark's body is a lot more red pixels than a burst's thin ring.
 		const clusters: { x: number; y: number }[][] = [];
 		for (const pixel of red) {
 			const near = clusters.find((c) => Math.hypot(c[0].x - pixel.x, c[0].y - pixel.y) < 40);
@@ -175,7 +175,7 @@ test('clicking the shark says there is no brain, by design', async ({ page }) =>
 
 	expect(
 		candidates.length,
-		'nothing red in the tank at all — where are the sharks?'
+		'nothing red in the tank at all - where are the sharks?'
 	).toBeGreaterThan(0);
 
 	const panel = page.getByRole('dialog', { name: /Shark/ });
@@ -194,7 +194,7 @@ test('the bench outlives a watched fish: it dies, the drawer closes, and the sim
 }) => {
 	/*
 	 * The freeze this pins down: a HAND-PICKED selection is released inside the tick where its
-	 * fish stops existing (eaten, or its generation turns) — and that same tick paints, one
+	 * fish stops existing (eaten, or its generation turns) - and that same tick paints, one
 	 * flush before the inspector unmounts. The brain painter once read the already-undefined
 	 * selection lookup there, threw, and killed the sim loop's timer chain: page alive, every
 	 * tank frozen. So: watch a fish by hand, let nature take it, and demand both silence in the
@@ -208,7 +208,7 @@ test('the bench outlives a watched fish: it dies, the drawer closes, and the sim
 	const frameErrors: string[] = [];
 	page.on('pageerror', (error) => frameErrors.push(String(error)));
 
-	// A keyboard walk is a hand-picked selection — released on death, not swapped for an heir.
+	// A keyboard walk is a hand-picked selection - released on death, not swapped for an heir.
 	const tank = tile(page, 0).getByRole('application');
 	await tank.scrollIntoViewIfNeeded();
 	await tank.click({ position: { x: 8, y: 8 } }); // corner = water: focuses without picking
@@ -217,21 +217,21 @@ test('the bench outlives a watched fish: it dies, the drawer closes, and the sim
 
 	/*
 	 * Hold the selection until the fish stops existing. Sharks hunt from frame one and a training
-	 * generation lasts 10 SIM-seconds, so one of the two release paths — eaten, or generation
-	 * turnover — is guaranteed. Both run through the crash tick, which is the point.
+	 * generation lasts 10 SIM-seconds, so one of the two release paths - eaten, or generation
+	 * turnover - is guaranteed. Both run through the crash tick, which is the point.
 	 *
 	 * The window is generous because it is wall-clock time spent waiting on SIM time, and the two are
 	 * not the same clock: the loop advances the simulation as fast as the machine lets it, so a
 	 * contended CI box (several Playwright workers, software rendering, five live tanks) can take two
-	 * or three wall-seconds to buy one sim-second. At 20s this passed locally in 8–24s and failed on
-	 * CI — a test that was really measuring the runner's spare CPU. 60s bounds the SLOWEST honest run
+	 * or three wall-seconds to buy one sim-second. At 20s this passed locally in 8-24s and failed on
+	 * CI - a test that was really measuring the runner's spare CPU. 60s bounds the SLOWEST honest run
 	 * without ever passing a bench that has genuinely frozen: a frozen bench never releases at all.
 	 */
 	await expect(inspector(page)).toBeHidden({ timeout: 60_000 });
 
 	expect(frameErrors, 'a frame threw when the watched fish stopped existing').toEqual([]);
 
-	// And the water is still moving — the original bug did not throw twice, it froze EVERYTHING:
+	// And the water is still moving - the original bug did not throw twice, it froze EVERYTHING:
 	// the loop died with the throw and no tank ever painted again.
 	const waterprint = () =>
 		tank.evaluate((el: HTMLCanvasElement) => {

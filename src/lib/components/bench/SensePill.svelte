@@ -1,12 +1,12 @@
 <!--
-  One sense, on or off — and clicking it is a real ablation, not a display setting.
+  One sense, on or off - and clicking it is a real ablation, not a display setting.
   Off means that input neuron is fed 0 for the rest of the world's life, so the population has to
   evolve without it. That is why the pill looks the way it does: filled and solid when the sense is
   wired in, hollow and dashed when the input has been cut. NEUTRAL, not accent-tinted: the node's
-  chrome stays grey whatever the world's accent is — the accent belongs to the graphs and stats.
+  chrome stays grey whatever the world's accent is - the accent belongs to the graphs and stats.
 
   It is a toggle button (aria-pressed), so a screen-reader user hears "dist, pressed" and knows the
-  neuron is live — the fill is not the only place that information exists.
+  neuron is live - the fill is not the only place that information exists.
 -->
 <script lang="ts">
 	interface Props {
@@ -51,7 +51,7 @@
 		color: var(--ink);
 	}
 
-	/* Wired in: a solid grey fill against the dashed hollow of a cut sense — state by form, no hue. */
+	/* Wired in: a solid grey fill against the dashed hollow of a cut sense - state by form, no hue. */
 	.on {
 		border-style: solid;
 		border-color: var(--line);
@@ -59,8 +59,8 @@
 		color: var(--ink);
 	}
 
-	/* A dense pill row cannot take a full 44px without its targets overlapping — mis-taps are
-	   worse than small targets — so on touch the pills grow to a comfortable middle instead. */
+	/* A dense pill row cannot take a full 44px without its targets overlapping - mis-taps are
+	   worse than small targets - so on touch the pills grow to a comfortable middle instead. */
 	@media (pointer: coarse) {
 		.pill {
 			padding: 9px var(--sp-4);

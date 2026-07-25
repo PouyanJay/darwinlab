@@ -1,13 +1,13 @@
 <!--
   The drilled cell, opened in the console's right sidebar. The card answers, in order: WHERE on the
-  plane (the cell's axis coordinates loud, the pinned background quiet — all read from the cell's
+  plane (the cell's axis coordinates loud, the pinned background quiet - all read from the cell's
   own frozen config), WHAT was measured (the cell mean), WHAT LIES NEXT DOOR (one grid step along
-  each axis — the map's geometry made local, with a plain-words line saying whether you stand on
-  the plateau or at the edge) — and the doors: Watch this world (the Atlas's signature, the
+  each axis - the map's geometry made local, with a plain-words line saying whether you stand on
+  the plateau or at the edge) - and the doors: Watch this world (the Atlas's signature, the
   Research→Studio round-trip) and the notebook.
 
   NO decorative world preview, on purpose (the owner's standing call for drill cards): every line
-  here is a measurement — watching is what the door is for.
+  here is a measurement - watching is what the door is for.
 -->
 <script lang="ts">
 	import Button from '../../common/Button.svelte';
@@ -20,11 +20,11 @@
 
 	const cell = $derived(landscape.selected);
 	const value = $derived(landscape.selectedValue);
-	// The axes the FIELD was measured on — frozen with the data, so changing the picker before the
+	// The axes the FIELD was measured on - frozen with the data, so changing the picker before the
 	// next run cannot relabel this cell with an axis it was never measured against.
 	const field = $derived(landscape.field);
 
-	/** The pinned background, read from the CELL'S OWN config — the panel may have moved on since
+	/** The pinned background, read from the CELL'S OWN config - the panel may have moved on since
 	 *  the run, and a chip that read live pins would relabel a measured world. */
 	const pinChips = $derived.by(() => {
 		if (!cell) return [];
@@ -53,7 +53,7 @@
 	     second complementary landmark here would nest one inside another. -->
 	<div class="drill" data-testid="atlas-drill">
 		<div class="head">
-			<span class="eyebrow">The drill — this cell</span>
+			<span class="eyebrow">The drill - this cell</span>
 			<button
 				class="close"
 				aria-label="close drilled cell"
@@ -82,7 +82,7 @@
 
 		<div class="row">
 			<span>cell mean · {landscape.receipt?.seeds ?? landscape.seeds} seeds</span>
-			<b class="tabular">{Number.isFinite(value) ? `${value.toFixed(1)}s` : '—'}</b>
+			<b class="tabular">{Number.isFinite(value) ? `${value.toFixed(1)}s` : '-'}</b>
 		</div>
 		<div class="row">
 			<span>one step right · {field.axisX.label.toLowerCase()} ↑</span>
@@ -98,8 +98,8 @@
 		</div>
 		<p class="frozen" data-testid="drill-where">
 			{atEdge
-				? 'standing at the edge — the next step right falls off the cliff.'
-				: 'on the plateau — the neighbours hold roughly the same survival.'}
+				? 'standing at the edge - the next step right falls off the cliff.'
+				: 'on the plateau - the neighbours hold roughly the same survival.'}
 		</p>
 
 		<hr class="sep" />
@@ -112,7 +112,7 @@
 			<ReportButton {inReport} onadd={addLandscapeFinding} />
 		</div>
 		<p class="frozen">
-			Watch drops this exact cell onto the Studio bench as a live tank — the Atlas's signature door.
+			Watch drops this exact cell onto the Studio bench as a live tank - the Atlas's signature door.
 		</p>
 	</div>
 {/if}

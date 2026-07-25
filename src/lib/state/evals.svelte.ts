@@ -1,9 +1,9 @@
 /**
- * Evaluations — the store that owns "what have we actually measured?".
+ * Evaluations - the store that owns "what have we actually measured?".
  *
  * Kept apart from the bench store on purpose: the bench owns the LIVE populations, which are one
- * sample each and wander by several points between seeds. This owns the RESULTS — the n-seed
- * replicated measurements — and those two things must not be confused, because confusing them is
+ * sample each and wander by several points between seeds. This owns the RESULTS - the n-seed
+ * replicated measurements - and those two things must not be confused, because confusing them is
  * exactly what makes a demo look like a benchmark.
  *
  * Only one evaluation runs at a time. Starting another cancels the one in flight rather than
@@ -18,7 +18,7 @@ import type { WorldConfig } from '../engine';
 export interface EvalState {
 	/** Which environment this result belongs to. */
 	id: string;
-	/** The config it was measured at — a result for a config you have since changed is STALE. */
+	/** The config it was measured at - a result for a config you have since changed is STALE. */
 	hash: string;
 	result: Evaluation;
 }
@@ -27,12 +27,12 @@ export interface EvalState {
  * An ablation, and the environment it was run IN.
  *
  * The environment is the whole point: a channel is worth exactly what ITS OWN environment makes it
- * worth. A matrix run against some other card's conditions answers a question nobody asked — which
+ * worth. A matrix run against some other card's conditions answers a question nobody asked - which
  * is what the first version did, and why this is keyed per card.
  */
 export interface AblationState {
 	id: string;
-	/** Hash of the config the subsets were run in — ablation and evaluation stale independently. */
+	/** Hash of the config the subsets were run in - ablation and evaluation stale independently. */
 	hash: string;
 	rows: AblationRow[];
 }
@@ -40,15 +40,15 @@ export interface AblationState {
 class EvalStore {
 	/** Results by environment id. `$state.raw`: replaced wholesale, never mutated in place. */
 	results = $state.raw<Record<string, EvalState>>({});
-	/** Ablation results by environment id — each measured IN that environment's own conditions. */
+	/** Ablation results by environment id - each measured IN that environment's own conditions. */
 	ablations = $state.raw<Record<string, AblationState>>({});
 	/** The environment being evaluated right now, or null. */
 	running = $state<string | null>(null);
 	/** The environment being ablated right now, or null. */
 	ablating = $state<string | null>(null);
-	/** 0–1 for the one in flight, so the UI shows work rather than a hang. */
+	/** 0-1 for the one in flight, so the UI shows work rather than a hang. */
 	progress = $state(0);
-	/** 0–1 for the ablation in flight. Separate: the two can be looked at side by side. */
+	/** 0-1 for the ablation in flight. Separate: the two can be looked at side by side. */
 	ablationProgress = $state(0);
 
 	#controller: AbortController | null = null;
@@ -60,7 +60,7 @@ class EvalStore {
 	 * The panel needs this rather than only the still-valid result: a result whose configuration has
 	 * moved must be SHOWN, struck through and labelled, not silently swapped back to an empty
 	 * "Evaluate" button as if it had never been measured. Hiding it would quietly lose the evidence
-	 * that the number and the config disagree — which is the one thing the reader must see.
+	 * that the number and the config disagree - which is the one thing the reader must see.
 	 */
 	held(id: string): Evaluation | null {
 		return this.results[id]?.result ?? null;
@@ -100,7 +100,7 @@ class EvalStore {
 		);
 
 		// A cancelled evaluation must not publish: it would be a partial answer wearing a whole one's
-		// clothes. And a NEWER run may have started since — this one no longer owns the store.
+		// clothes. And a NEWER run may have started since - this one no longer owns the store.
 		if (!result || controller.signal.aborted || this.#controller !== controller) return;
 
 		this.results = { ...this.results, [id]: { id, hash: configHash([cfg]), result } };
@@ -122,7 +122,7 @@ class EvalStore {
 	/**
 	 * Run the observation-subset matrix IN THIS ENVIRONMENT.
 	 *
-	 * Every row is this card's own conditions — its adversaries, its speeds, its tank — with a
+	 * Every row is this card's own conditions - its adversaries, its speeds, its tank - with a
 	 * different observation space. That is the only version of this measurement that answers the
 	 * question the card is asking, because a channel is worth exactly what its own environment
 	 * makes it worth: the wall sense pays here and is worthless in a world that avoids walls for
@@ -157,7 +157,7 @@ class EvalStore {
 				label: subset.label,
 				mean: result.meanReturn,
 				sd: result.sdReturn,
-				// worth OVER BLINDNESS — the comparison that answers "does knowing pay". Measuring
+				// worth OVER BLINDNESS - the comparison that answers "does knowing pay". Measuring
 				// against random policies only ever answered "does evolution work".
 				vsBlind: blindMean ? (result.meanReturn / blindMean - 1) * 100 : 0
 			});
@@ -179,7 +179,7 @@ class EvalStore {
 	/**
 	 * The hash an ablation is keyed on: the environment WITHOUT its observation space.
 	 *
-	 * The matrix varies the senses itself, so toggling a pill on the card does not invalidate it —
+	 * The matrix varies the senses itself, so toggling a pill on the card does not invalidate it -
 	 * but changing the adversaries, the speeds or the tank does, because those are what the answer
 	 * depends on.
 	 */
@@ -196,7 +196,7 @@ class EvalStore {
 		this.progress = 0;
 	}
 
-	/** Forget an environment's results — it is being removed, or reset to random brains. */
+	/** Forget an environment's results - it is being removed, or reset to random brains. */
 	forget(id: string): void {
 		if (id in this.results) {
 			const next = { ...this.results };

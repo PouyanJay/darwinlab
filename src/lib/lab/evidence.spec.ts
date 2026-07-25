@@ -23,7 +23,7 @@ describe('rankEffectRows', () => {
 		expect(ranked.map((r) => r.label)).toEqual(['real', 'empty']);
 	});
 
-	it('returns a new array — the input order is untouched', () => {
+	it('returns a new array - the input order is untouched', () => {
 		const rows = [row('a', 0.1, 0, 0.2), row('b', 2, 1, 3)];
 		const ranked = rankEffectRows(rows);
 		expect(ranked).not.toBe(rows);
@@ -34,14 +34,14 @@ describe('rankEffectRows', () => {
 describe('strongestEffect', () => {
 	it('picks the largest effect whose interval clears zero', () => {
 		const winner = strongestEffect([
-			row('huge but flat', 5, -1, 11), // straddles zero — not a finding
+			row('huge but flat', 5, -1, 11), // straddles zero - not a finding
 			row('real', -1.4, -2.0, -0.8),
 			row('smaller real', 0.9, 0.2, 1.6)
 		]);
 		expect(winner?.label).toBe('real');
 	});
 
-	it('returns null when nothing clears zero — a flat environment is a real result', () => {
+	it('returns null when nothing clears zero - a flat environment is a real result', () => {
 		expect(strongestEffect([row('flat', 0.6, -0.1, 1.3)])).toBeNull();
 		expect(strongestEffect([])).toBeNull();
 	});

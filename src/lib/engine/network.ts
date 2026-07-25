@@ -1,5 +1,5 @@
 /**
- * The neural network — a tiny fully-connected MLP. Faithful port of engine2.js.
+ * The neural network - a tiny fully-connected MLP. Faithful port of engine2.js.
  *
  * Shape: N inputs → 6 hidden (tanh) → 2 outputs. One bias per hidden and output neuron.
  * Genome laid out as:
@@ -14,7 +14,7 @@
  * WHY THE INPUT COUNT IS DERIVED FROM THE GENOME, not a global constant: the reference
  * engine's brain has exactly 8 inputs and 68 weights, and the fidelity gate asserts our
  * numbers match it bit for bit. A world that gives its fish a sense of their own speed
- * needs a 9th slot — and therefore 74 weights — so the shape has to be a property of the
+ * needs a 9th slot - and therefore 74 weights - so the shape has to be a property of the
  * genome, not of the module. Reference worlds keep 68 weights and stay bit-exact; only a
  * world that asks for the extra slot pays for it.
  */
@@ -27,7 +27,7 @@ import type { Genome, ForwardResult, Senses } from './types';
 export const NIN = 8;
 /** With the proprioceptive slot: the fish can feel its own speed. */
 export const NIN_WITH_SPEED = 9;
-/** With the shoal sense (cohesion slots 9–11 + alignment slots 12–13): the fish can feel its shoal. */
+/** With the shoal sense (cohesion slots 9-11 + alignment slots 12-13): the fish can feel its shoal. */
 export const NIN_WITH_SHOAL = 14;
 export const NHID = 6;
 export const NOUT = 2;
@@ -59,7 +59,7 @@ export const GLEN = genomeLength(NIN);
 
 /**
  * How many inputs this genome was built for. The genome length alone is ambiguous once the hidden
- * shape can vary, so the caller must say what the hidden layers are — which it always knows, from the
+ * shape can vary, so the caller must say what the hidden layers are - which it always knows, from the
  * world's `brainHidden`. Defaults to the reference single layer, so every existing call and the
  * fidelity gate are unchanged.
  */
@@ -112,7 +112,7 @@ export const IN_SENSE: (keyof Senses | null)[] = [
 ];
 export const OUT_LABELS = ['turn', 'thrust'];
 
-/** A fresh random genome — each weight `randn() * 0.8` (gaussian init). */
+/** A fresh random genome - each weight `randn() * 0.8` (gaussian init). */
 export function makeGenome(
 	rng: Rng = defaultRng,
 	nin: number = NIN,
@@ -168,7 +168,7 @@ export function forward(g: Genome, x: number[], hidden: number | number[] = NHID
 }
 
 /**
- * The weight from unit `from` of one layer into unit `to` of the next, for the brain viz — walking
+ * The weight from unit `from` of one layer into unit `to` of the next, for the brain viz - walking
  * the flat genome with the full layer shape. `sizes` is [nin, ...hidden, nout]; `layer` indexes the
  * transition (0 = inputs→first hidden). Neuron-major within a layer, weights then biases, as `forward`
  * lays them out.

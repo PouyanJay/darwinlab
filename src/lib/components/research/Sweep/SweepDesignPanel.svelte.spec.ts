@@ -7,7 +7,7 @@ import { restoreSweepDefaults } from '$lib/state/sweep.testkit';
 
 /**
  * The panel is the store's face, so what is pinned here is the WIRING: a control operated in the
- * panel must land in the sweep store (which owns every clamp and guard) — asserted against the
+ * panel must land in the sweep store (which owns every clamp and guard) - asserted against the
  * store, not the panel's own display. The store's plan/guard maths has its own spec; the run is
  * never actually started here (the real worker pool has no place in a component test).
  */

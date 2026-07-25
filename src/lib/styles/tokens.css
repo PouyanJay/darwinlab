@@ -1,13 +1,13 @@
 /*
- * Design tokens — the single source of truth for the DOM side of the design system (README §6).
+ * Design tokens - the single source of truth for the DOM side of the design system (README §6).
  *
  * Both themes are declared here as CSS custom properties. `:root[data-theme='dark']` is stamped
  * by `state/theme.svelte.ts` (and, before the first paint, by the inline script in `app.html`).
  *
  * ⚠️ MIRROR: the canvas cannot read CSS custom properties, so the tank/curve palettes in
  * `$lib/render/theme.ts` are a SECOND, hand-kept copy of these colours. Change a colour here and
- * you must change it there (CLAUDE.md conventions). Everything else — radii, type, spacing,
- * motion, elevation — is DOM-only and lives here alone.
+ * you must change it there (CLAUDE.md conventions). Everything else - radii, type, spacing,
+ * motion, elevation - is DOM-only and lives here alone.
  *
  * Naming: colours are semantic (`--ink2`, not `--grey-600`) and keep the names the design
  * reference used, so a value can be traced straight back to it.
@@ -24,7 +24,7 @@
 	--fw-semibold: 600;
 	--fw-bold: 700;
 
-	/* The reference's half-pixel sizes are deliberate — they are what the design was drawn at. */
+	/* The reference's half-pixel sizes are deliberate - they are what the design was drawn at. */
 	--fs-eyebrow: 9.5px; /* uppercase stat captions */
 	--fs-label: 10px; /* uppercase field labels, gen pill */
 	--fs-xs: 10.5px; /* chips, footer pill, sense pills */
@@ -74,7 +74,7 @@
 
 	/* ---- layout ----------------------------------------------------------------------------- */
 	/*
-	 * The top bar's real, rendered height — measured and written here by TopBar itself, because it
+	 * The top bar's real, rendered height - measured and written here by TopBar itself, because it
 	 * depends on content and wraps to two rows on narrow screens. Anything that has to sit clear of
 	 * the bar (the drawer, the turbo pill) anchors off this instead of guessing a constant that goes
 	 * stale the moment the bar changes height. The value below is only the pre-measurement fallback.
@@ -84,6 +84,27 @@
 	/* What the sidebar leaves behind when it is shut: wide enough for a 44px touch target and the
 	   1px seam either side of it. */
 	--rail-width: 56px;
+
+	/* ---- breakpoints ------------------------------------------------------------------------- */
+	/*
+	 * The canonical layout breakpoints. CSS cannot read a custom property inside a @media condition,
+	 * so these values CANNOT be referenced directly by the component rules - each @media/@container
+	 * hard-codes the matching px. This block is the map, `styles/breakpoints.ts` is the source JS
+	 * reads, and the rules are the uses; keep the three in sync. Every layout @media in the app snaps
+	 * to one of these six (replacing a dozen ad-hoc thresholds).
+	 *   --bp-xs  480  small phone
+	 *   --bp-sm  640  phone: drop non-essential chrome, stack two-column fields
+	 *   --bp-md  768  large phone / tablet portrait: single-column workspaces
+	 *   --bp-lg  900  below this a docked sidebar has no room - the compact-chrome line
+	 *   --bp-xl  1100 laptop
+	 *   --bp-2xl 1200 desktop: the widest multi-column layouts
+	 */
+	--bp-xs: 480px;
+	--bp-sm: 640px;
+	--bp-md: 768px;
+	--bp-lg: 900px;
+	--bp-xl: 1100px;
+	--bp-2xl: 1200px;
 
 	/* ---- layering --------------------------------------------------------------------------- */
 	/* The sidebar sits UNDER the top bar (it starts below it and never reaches it), and the whole
@@ -97,12 +118,12 @@
 	--z-modal: 70;
 	--z-turbo: 80;
 	--z-footer: 90;
-	/* The welcome screen sits over EVERYTHING — pills, turbo, the lot — until the first interaction. */
+	/* The welcome screen sits over EVERYTHING - pills, turbo, the lot - until the first interaction. */
 	--z-intro: 100;
 
-	/* ---- colour (light — "sunlit") ----------------------------------------------------------- */
+	/* ---- colour (light - "sunlit") ----------------------------------------------------------- */
 	/*
-	 * The light theme used to be one flat beige with white cards on it — evenly lit, no depth, and
+	 * The light theme used to be one flat beige with white cards on it - evenly lit, no depth, and
 	 * nothing to look at. It is a LAB now: a warm paper ground, light falling across it from the top
 	 * (indigo one side, gold the other, the two accents this product already owns), and the surface
 	 * ruled like a lab notebook. The gradient is what stops a 2000px page from being one dead colour;
@@ -117,11 +138,11 @@
 	--grid-size: 26px;
 	--panel: #ffffff;
 	--panel2: #f7f6f1;
-	/* The lineage canvas board — a plain, faintly recessed warm neutral (no ruled dots). */
+	/* The lineage canvas board - a plain, faintly recessed warm neutral (no ruled dots). */
 	--canvas-bg: #e9e6de;
 	--glass: rgba(250, 249, 245, 0.82);
 	--ink: #1d2230;
-	/* The two muted inks are tuned to hold WCAG AA (4.5:1) on --panel AND --panel2 — the Phase 9
+	/* The two muted inks are tuned to hold WCAG AA (4.5:1) on --panel AND --panel2 - the Phase 9
 	   axe gate. Fade them further and the captions drop below what small text is allowed to be. */
 	--ink2: rgba(29, 34, 48, 0.72);
 	--ink3: rgba(29, 34, 48, 0.64);
@@ -131,30 +152,30 @@
 	--danger: #e8604c;
 	--gold: #d8a13a;
 	/* Colour AS TEXT: --danger and --gold are tuned for painting shapes; at 10px on a white panel
-	   they fall to ~3:1. Small text uses these instead — same hue, AA contrast. (World accents,
+	   they fall to ~3:1. Small text uses these instead - same hue, AA contrast. (World accents,
 	   which are runtime values, get the same treatment via color-mix toward --ink at the point of
 	   use.) */
 	/* Deepened from #c9432f when --panel2 warmed up: on the new surface it measured 4.48:1, which is
 	   under AA by two hundredths and was caught by the axe gate, exactly as the note above predicts.
-	   Retuned to 4.92:1 on --panel2 (5.33:1 on --panel) — move either surface again and re-measure. */
+	   Retuned to 4.92:1 on --panel2 (5.33:1 on --panel) - move either surface again and re-measure. */
 	--danger-ink: #c03d2a;
 	--gold-ink: #8a651c;
-	/* DATA — the survival ramp, coral (short) → teal (long). NOT chrome, and NOT theme-scoped: the
+	/* DATA - the survival ramp, coral (short) → teal (long). NOT chrome, and NOT theme-scoped: the
 	   colour IS the data here, so it reads the same in both themes (defined once in :root, never
-	   overridden in the dark block below). ⚠️ MIRROR of CORAL/TEAL in render/drawLandscape.ts — the
+	   overridden in the dark block below). ⚠️ MIRROR of CORAL/TEAL in render/drawLandscape.ts - the
 	   canvas paints the map + heatmap from those rgb triples and the DOM (the verdict, the effect bars,
 	   the legends) reads these tokens, so the two must stay the same two colours. */
 	/* --data-coral coincides with --danger in LIGHT mode only (dark --danger is retuned for contrast);
-	   do NOT consolidate them — the ramp is data and must read the same in both themes. */
+	   do NOT consolidate them - the ramp is data and must read the same in both themes. */
 	--data-coral: rgb(232, 96, 76);
 	--data-teal: rgb(14, 148, 136);
-	/* The flee lens's ramp. ⚠️ MIRROR of THEMES.light.lens* in render/theme.ts — the tank paints the
+	/* The flee lens's ramp. ⚠️ MIRROR of THEMES.light.lens* in render/theme.ts - the tank paints the
 	   fish from there and this legend explains them from here, so they must be the same three
 	   colours or the legend is a lie about the picture next to it. */
 	--lens-good: #1a9478;
 	--lens-mid: #d8a13a;
 	--lens-bad: #c93d2a;
-	/* The brain viz only — see ThemePalette in render/theme.ts for why the two signs need colours
+	/* The brain viz only - see ThemePalette in render/theme.ts for why the two signs need colours
 	   of their own rather than reusing accent/danger. */
 	--excite: #4f56d3;
 	--inhibit: #e8604c;
@@ -170,7 +191,7 @@
 	--shadow:
 		0 1px 2px rgba(40, 44, 90, 0.04), 0 2px 6px -2px rgba(40, 44, 90, 0.06),
 		0 16px 40px -16px rgba(40, 44, 90, 0.18);
-	/* The lift a card takes on hover — the same light, from a little further away. */
+	/* The lift a card takes on hover - the same light, from a little further away. */
 	--shadow-lift: 0 2px 4px rgba(40, 44, 90, 0.05), 0 20px 50px -18px rgba(40, 44, 90, 0.26);
 	--shadow-pill: 0 4px 16px -6px rgba(20, 25, 45, 0.25);
 	/* The lift under the chosen segment of a segmented control. */
@@ -192,15 +213,15 @@
 :root[data-theme='dark'] {
 	/*
 	 * Dark is MONOCHROME: no brand hue at all. Emphasis, selection and primary actions read through
-	 * lightness, weight and border — the accent IS the ink. Colour appears only where it carries
+	 * lightness, weight and border - the accent IS the ink. Colour appears only where it carries
 	 * meaning (danger/the shark, the brain's excite/inhibit signs, the flee-lens ramp). The ground is
-	 * a flat cool near-black lit from the top by a NEUTRAL wash — depth without a coloured glow.
+	 * a flat cool near-black lit from the top by a NEUTRAL wash - depth without a coloured glow.
 	 */
 	/* Plain, no wash: a flat near-black page. */
 	--bgfx: #0e0f12;
-	/* The lineage canvas board — pure black, as dark as the theme goes. */
+	/* The lineage canvas board - pure black, as dark as the theme goes. */
 	--canvas-bg: #000000;
-	/* No ruled surface in dark — transparent, so `body::before` paints nothing. The faint top-fading
+	/* No ruled surface in dark - transparent, so `body::before` paints nothing. The faint top-fading
 	   grid read as dots and a top "highlight" behind the panels; dark is plain now. (Light keeps its
 	   lab-notebook rule.) */
 	--grid-line: transparent;
@@ -208,14 +229,14 @@
 	--panel2: #1e2027;
 	--glass: rgba(22, 24, 28, 0.86);
 	--ink: #e7e8ec;
-	/* AA-held on the dark panels, same as light — see the note on the light pair. */
+	/* AA-held on the dark panels, same as light - see the note on the light pair. */
 	--ink2: rgba(231, 232, 236, 0.66);
 	/* 0.6, not 0.5: at 0.5 the 10px tertiary text (run manifest keys, the seed) measured 4.36:1 on the
-	   raised panel — just under AA, and the axe gate caught it. Move --panel2 and re-measure. */
+	   raised panel - just under AA, and the axe gate caught it. Move --panel2 and re-measure. */
 	--ink3: rgba(231, 232, 236, 0.6);
 	--line: rgba(255, 255, 255, 0.1);
 	--chip: rgba(255, 255, 255, 0.055);
-	/* The accent IS the ink — primary/selection is a near-white fill (dark text), a lightness pop,
+	/* The accent IS the ink - primary/selection is a near-white fill (dark text), a lightness pop,
 	   never a hue. Danger is a real red again, not the old re-skin magenta. */
 	--accent: #e7e8ec;
 	--danger: #ec6a54;
@@ -223,18 +244,18 @@
 	/* Text-on-dark variants, tuned to hold AA on the near-black panels. */
 	--danger-ink: #ef8571;
 	--gold-ink: #e6bd62;
-	/* ⚠️ MIRROR of THEMES.dark.lens* — see the note in the light block. A green→amber→red ramp:
+	/* ⚠️ MIRROR of THEMES.dark.lens* - see the note in the light block. A green→amber→red ramp:
 	   the diverging good→bad reading, no pink. */
 	--lens-good: #34c2a2;
 	--lens-mid: #e0b24e;
 	--lens-bad: #ec6a54;
-	/* The brain viz's two signs: excite a blue, inhibit the danger red — the classic pairing, and
+	/* The brain viz's two signs: excite a blue, inhibit the danger red - the classic pairing, and
 	   the only colour on an otherwise monochrome panel. */
 	--excite: #5b9df2;
 	--inhibit: #ec6a54;
 	--btn: #e7e8ec;
 	--btnink: #111216;
-	/* The ink that sits ON the accent — dark, because the accent is now near-white. */
+	/* The ink that sits ON the accent - dark, because the accent is now near-white. */
 	--accentink: #111216;
 
 	/* Every shadow is re-tuned for dark: a navy-tinted light-theme shadow reads as grey haze on a

@@ -1,10 +1,10 @@
 <!--
-  The Sweep instrument — factors in, effect sizes out.
+  The Sweep instrument - factors in, effect sizes out.
 
   The DESIGN PANEL (the console's second sidebar) runs the grid; the workspace reports the results,
-  layout by argument (the mock is the contract): the HONESTY TILES lead (the experiment's receipts —
+  layout by argument (the mock is the contract): the HONESTY TILES lead (the experiment's receipts -
   cells run vs planned, total runs, the frozen budget, the wall clock, the strongest effect), the
-  ranked MAIN EFFECTS follow, and the raw run grid spans the FULL width beneath — it is the one
+  ranked MAIN EFFECTS follow, and the raw run grid spans the FULL width beneath - it is the one
   clickable chart, so its cells get the room to be real targets. Until a run lands the workspace
   says plainly what to do. Everything reads off the sweep store; nothing measures here.
 -->
@@ -26,11 +26,11 @@
 	import { rankEffectRows, strongestEffect, isFlatEffect } from '$lib/lab/evidence';
 	import { formatSignedSeconds, formatWallClock } from '$lib/format';
 
-	// RANKED by effect size, so the answer reads top-down (the mock's rule) — the shared sorter,
+	// RANKED by effect size, so the answer reads top-down (the mock's rule) - the shared sorter,
 	// so the chart and any other consumer rank identically.
 	const effectRows = $derived(rankEffectRows(toEffectRows(sweep.effects)));
 
-	/** Download the run as CSV — built by the lab's one builder, named for its design. */
+	/** Download the run as CSV - built by the lab's one builder, named for its design. */
 	function exportCsv(): void {
 		// defensive: #commitRun always sets these together, but this fn shouldn't assume its caller
 		if (!sweep.results || !sweep.receipt) return;
@@ -43,11 +43,11 @@
 		URL.revokeObjectURL(link.href);
 	}
 
-	/** Rendered through an expression so the build can never collapse its spaces — as a literal text
+	/** Rendered through an expression so the build can never collapse its spaces - as a literal text
 	 *  node the production build shipped '2/ 2' once (and a string-literal mustache trips lint). */
 	const CELLS_SEPARATOR = ' / ';
 
-	/** The headline tile: the strongest factor whose interval CLEARS ZERO — the same isFlatEffect
+	/** The headline tile: the strongest factor whose interval CLEARS ZERO - the same isFlatEffect
 	 *  test as the muted bars and the sidebar's lead, so the tile can never paint a confident colour
 	 *  over a bar the card beneath it mutes. Null = a flat environment, itself a real result. */
 	const strongest = $derived(strongestEffect(effectRows));
@@ -56,7 +56,7 @@
 	// flatness rules the main effects obey (rankEffectRows / isFlatEffect) apply to the pairs.
 	const interactionRows = $derived(rankEffectRows(toInteractionRows(sweep.interactions)));
 
-	/** The pair the plot draws: the strongest REAL interaction, else the largest overall — picked
+	/** The pair the plot draws: the strongest REAL interaction, else the largest overall - picked
 	 *  by the pair's own KEYS, not its rendered label. */
 	const topPair = $derived.by(() => {
 		const pairs = sweep.interactions;
@@ -128,7 +128,7 @@
 					</span>
 					<span class="ts">strongest effect · {strongest.label.toLowerCase()}</span>
 				{:else}
-					<span class="tv">—</span>
+					<span class="tv">-</span>
 					<span class="ts">strongest effect · none cleared zero</span>
 				{/if}
 			</div>
@@ -145,7 +145,7 @@
 				<EffectBars effects={effectRows} />
 				<p class="read">
 					Ranked by size, so the answer reads top-down. A bar clears zero when a factor reliably
-					moves survival — <b>teal</b> if it helps, <b>coral</b> if it costs. A muted bar is a knob that
+					moves survival - <b>teal</b> if it helps, <b>coral</b> if it costs. A muted bar is a knob that
 					does nothing in this environment, and the sweep won't round it into a finding.
 				</p>
 			</section>
@@ -165,7 +165,7 @@
 								<span class="pname">{row.label}</span>
 								<span class="pval tabular">
 									{Number.isNaN(row.delta)
-										? '—'
+										? '-'
 										: `${formatSignedSeconds(row.delta)}${isFlatEffect(row) ? ' · flat' : ' · matters'}`}
 								</span>
 							</div>
@@ -175,7 +175,7 @@
 						<InteractionPlot {...plot} />
 						<p class="read">
 							Parallel lines = the factors are independent; <b>diverging lines</b> mean one factor's value
-							depends on the other — the flagged pairs are where the interval clears zero.
+							depends on the other - the flagged pairs are where the interval clears zero.
 						</p>
 					{/if}
 				{/if}
@@ -215,12 +215,12 @@
 				/>
 				{#if convergence.underTrained}
 					<p class="read warn" data-testid="sweep-under-trained">
-						⚠ <b>Under-trained:</b> an arm is still climbing at the last generation — the effects above
+						⚠ <b>Under-trained:</b> an arm is still climbing at the last generation - the effects above
 						may grow with a longer budget. Raise generations per run before trusting a null.
 					</p>
 				{:else}
 					<p class="read">
-						Both arms plateau before the budget ends — the training was long enough for the effects
+						Both arms plateau before the budget ends - the training was long enough for the effects
 						above to be trusted at this budget.
 					</p>
 				{/if}
@@ -229,7 +229,7 @@
 		<div class="exports">
 			<button class="xbtn" onclick={exportCsv}>Export CSV</button>
 			<span class="xnote"
-				>the file carries the full design — cells, levels, seeds, budget, champion</span
+				>the file carries the full design - cells, levels, seeds, budget, champion</span
 			>
 		</div>
 	{:else}
@@ -244,7 +244,7 @@
 </div>
 
 <style>
-	/* A CONTAINER, so the tiles reflow on the Sweep's OWN width — it sits in a workspace whose width
+	/* A CONTAINER, so the tiles reflow on the Sweep's OWN width - it sits in a workspace whose width
 	   the rail, the design panel and the sidebar change independently of the viewport. */
 	.sweep {
 		display: flex;
@@ -261,7 +261,7 @@
 		align-items: stretch;
 	}
 
-	@container (max-width: 720px) {
+	@container (max-width: 768px) {
 		.conclusions {
 			grid-template-columns: 1fr;
 		}
@@ -323,7 +323,7 @@
 		gap: var(--sp-3);
 	}
 
-	@container (max-width: 720px) {
+	@container (max-width: 768px) {
 		.tiles {
 			grid-template-columns: repeat(3, minmax(0, 1fr));
 		}

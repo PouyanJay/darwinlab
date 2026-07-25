@@ -1,13 +1,13 @@
 <!--
-  The ablation matrix — what each observation channel is worth IN THIS ENVIRONMENT.
+  The ablation matrix - what each observation channel is worth IN THIS ENVIRONMENT.
 
   It belongs on the card, and that is not a layout preference. A channel is worth exactly what its
   own environment makes it worth: boundary rays pay in a world with no free wall-avoidance and are
   worthless in one that has it; bearing pays when the adversary is slow enough to escape and buys
   nothing when it is not. A single matrix run against some other card's conditions answers a
-  question nobody asked — which is what the first cut of this did, and why it is per-card now.
+  question nobody asked - which is what the first cut of this did, and why it is per-card now.
 
-  Every row is THIS card's conditions — its adversaries, its speeds, its tank — with a different
+  Every row is THIS card's conditions - its adversaries, its speeds, its tank - with a different
   observation space. Only the observation space varies, which is what makes it an ablation.
 
   It stales on the CONDITIONS, not on the pills: the matrix varies the senses itself, so toggling a
@@ -190,7 +190,7 @@
 		color: var(--ink3);
 	}
 
-	/* A channel earns its keep, or it does not. Both are findings; both are said — and both are
+	/* A channel earns its keep, or it does not. Both are findings; both are said - and both are
 	   STATS, so they read in the world's accent like every other number on the card (weight carries
 	   the pays/taxes distinction). --tile-accent cascades from the WorldTile root. */
 	.pays {

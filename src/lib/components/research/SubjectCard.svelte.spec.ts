@@ -7,13 +7,13 @@ import { newWorldConfig } from '$lib/engine';
 
 /**
  * The subject card became a real editor, so what is pinned here is the EDITING contract: a value
- * typed into the card must land in the app store (which owns the clamp) — asserted against the
+ * typed into the card must land in the app store (which owns the clamp) - asserted against the
  * store, not against the card's own display, so a card that renders an edit it never committed
  * fails loudly. The store's clamp maths has its own spec (app.svelte.spec); this one proves the
  * card is wired to it.
  *
  * Commits are `change` events. Svelte 5 DELEGATES those to the app root, so a dispatched event
- * must BUBBLE to be heard — a non-bubbling `new Event('change')` silently reaches nobody (found
+ * must BUBBLE to be heard - a non-bubbling `new Event('change')` silently reaches nobody (found
  * the hard way; the first draft of this spec passed fills and failed every commit).
  */
 const commit = (el: Element) => el.dispatchEvent(new Event('change', { bubbles: true }));
@@ -32,7 +32,7 @@ describe('SubjectCard', () => {
 		expect(app.base.prey).not.toBe(80); // the state we claim to change starts elsewhere
 		await prey.fill('9999');
 		commit(prey.element());
-		expect(app.base.prey).toBe(80); // WORLD_LIMITS.prey.max — the STORE's clamp, reached the store
+		expect(app.base.prey).toBe(80); // WORLD_LIMITS.prey.max - the STORE's clamp, reached the store
 	});
 
 	it('editing the tank size reaches the store', async () => {
@@ -46,7 +46,7 @@ describe('SubjectCard', () => {
 
 	it('committing hidden-layers text reshapes the base brain', async () => {
 		render(SubjectCard);
-		// the Brain group ships folded — open it the way a user does
+		// the Brain group ships folded - open it the way a user does
 		await page.getByText('Brain', { exact: true }).click();
 		expect(app.base.brainHidden).not.toEqual([16, 8]); // the state we claim to change starts elsewhere
 		const layers = page.getByLabelText(/hidden layers/);
@@ -87,7 +87,7 @@ describe('SubjectCard', () => {
 		app.resetBase();
 		expect(app.base.prey).not.toBe(36); // the base really left the preset's shape
 		render(SubjectCard);
-		// exact name — "remove preset Reef" also contains "Reef", and a substring match would
+		// exact name - "remove preset Reef" also contains "Reef", and a substring match would
 		// click whichever the locator resolves first (the first draft deleted the preset instead)
 		await page.getByRole('button', { name: 'Reef', exact: true }).click();
 		expect(app.base.prey).toBe(36);

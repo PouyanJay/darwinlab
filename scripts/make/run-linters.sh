@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Run Darwin Lab's code-quality gates — the formatter+linter pass and the svelte-check typecheck —
+# Run Darwin Lab's code-quality gates - the formatter+linter pass and the svelte-check typecheck -
 # without stopping at the first red: both run, results aggregate, the exit code ORs them together.
 #
 #   --all        prettier + eslint, then svelte-check (default)

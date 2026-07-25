@@ -1,8 +1,8 @@
 <!--
   Two ways to read one evolved mind, in a single slot.
 
-  "Escape map" is the RULE — the policy `probePolicy` swept over every shark position; "Wiring" is
-  the MACHINE — the 68 weights drawn as a graph. Same brain, two questions: what does it do, and how
+  "Escape map" is the RULE - the policy `probePolicy` swept over every shark position; "Wiring" is
+  the MACHINE - the 68 weights drawn as a graph. Same brain, two questions: what does it do, and how
   is it built. A segmented control switches between them; the map leads, because it is the one a
   human can read without knowing what a weight is.
 -->

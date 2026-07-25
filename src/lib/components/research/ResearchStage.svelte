@@ -1,10 +1,10 @@
 <!--
-  The Research stage — the console the lab becomes in Research mode.
+  The Research stage - the console the lab becomes in Research mode.
 
   Three zones, not a tab bar: a left RAIL (the subject, the instrument nav, the compute readout), a
   confined WORKSPACE that holds the active instrument, and a persistent right SIDEBAR of context for
   whatever the workspace shows. The rail drives which instrument is active; the workspace renders it as
-  a tabpanel; the sidebar adapts to it. Monochrome chrome throughout — teal and coral live in the
+  a tabpanel; the sidebar adapts to it. Monochrome chrome throughout - teal and coral live in the
   instruments' own graphs, never in this furniture.
 
   `active` is owned here and passed down, so the rail (the tablist), the workspace (the panel) and the
@@ -34,7 +34,7 @@
 	const answers = $derived(answersOf(active));
 
 	// Which instruments have a DESIGN PANEL (the console's second sidebar). The Sweep led, the
-	// Ledger's composer and the Atlas's landscape panel joined it. The Trace never needed one — it
+	// Ledger's composer and the Atlas's landscape panel joined it. The Trace never needed one - it
 	// retired into the Sweep drill's microscope; only the Report stays three-zone.
 	const hasDesign = $derived(active === 'sweep' || active === 'ledger' || active === 'atlas');
 </script>
@@ -109,7 +109,7 @@
 		animation: fade-up var(--dur-slow) var(--ease) both;
 	}
 
-	/* Each zone is a grid cell that fills its column and lets its instrument scroll inside it — the
+	/* Each zone is a grid cell that fills its column and lets its instrument scroll inside it - the
 	   console never grows the page; the zones do. `display: grid` makes the single child fill the cell. */
 	.zone {
 		display: grid;
@@ -131,7 +131,7 @@
 		color: var(--ink3);
 	}
 
-	/* Title and its "answers Q…" tags on one line — the tags ride the heading's baseline, wrapping
+	/* Title and its "answers Q…" tags on one line - the tags ride the heading's baseline, wrapping
 	   under it only when the workspace is too narrow to hold both. */
 	.ws-title {
 		display: flex;
@@ -174,7 +174,7 @@
 			grid-row: 1 / span 3;
 		}
 
-		/* The design panel becomes a capped strip ABOVE the workspace — controls stay reachable,
+		/* The design panel becomes a capped strip ABOVE the workspace - controls stay reachable,
 		   the results keep the room. */
 		.zone-design {
 			grid-column: 2;
@@ -196,8 +196,8 @@
 		}
 	}
 
-	/* Narrow: one column, everything stacked — rail, then the instrument, then its context. */
-	@media (max-width: 760px) {
+	/* Narrow: one column, everything stacked - rail, then the instrument, then its context. */
+	@media (max-width: 768px) {
 		.console,
 		.console.has-design {
 			grid-template-columns: 1fr;

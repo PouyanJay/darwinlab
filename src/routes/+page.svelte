@@ -1,10 +1,10 @@
 <!--
-  The bench page — the app's only screen.
+  The bench page - the app's only screen.
 
   It opens on the INTRO: the product's claim and method, full-screen, which the first interaction
   fades away to reveal the platform already running underneath. Behind it, a shell in three parts:
   the top bar says what this is, the sidebar is everything you can do to it, and the bench is the
-  experiment itself — the lineage canvas, one node per environment, each a living population with
+  experiment itself - the lineage canvas, one node per environment, each a living population with
   its own controls and its own evidence.
 -->
 <script lang="ts">
@@ -25,7 +25,7 @@
 	import { DEFAULT_WORLDS, newWorldConfig, MAX_GENERATIONS_DEFAULT } from '$lib/engine';
 	import { PREWARM_GENERATIONS } from '$lib/lab/scenario';
 
-	// A paused bench repaints only on demand (see bench.requestPaint) — but the palette and the
+	// A paused bench repaints only on demand (see bench.requestPaint) - but the palette and the
 	// reduced-motion flag change what the pixels look like WITHOUT going through the store, so
 	// their flips owe the canvases one repaint. Reading them is what subscribes this effect;
 	// `void` marks them as read-for-tracking only.
@@ -49,7 +49,7 @@
 		};
 	});
 
-	/** The lowest "World N" nobody is using — so removing a world can't make two share a name. */
+	/** The lowest "World N" nobody is using - so removing a world can't make two share a name. */
 	function nextWorldName(): string {
 		const taken = new Set(bench.worlds.map((entry) => entry.world.cfg.name));
 		let n = bench.worlds.length + 1;
@@ -84,12 +84,12 @@
 	// Likewise the inspector: one selection across the bench, and it goes when its world does.
 	const inspecting = $derived(bench.selection ? bench.find(bench.selection.worldId) : undefined);
 
-	// The focus view takes over the bench when a world is expanded — but only while that world still
+	// The focus view takes over the bench when a world is expanded - but only while that world still
 	// exists. A focusedId left pointing at a removed world falls straight back to the canvas.
 	const focusing = $derived(bench.focusedId ? bench.find(bench.focusedId) : undefined);
 
 	/**
-	 * Space plays/pauses — but ONLY when it isn't already the focused control's key.
+	 * Space plays/pauses - but ONLY when it isn't already the focused control's key.
 	 *
 	 * Space is how a focused button is pressed and how a radio is chosen. Calling preventDefault on
 	 * it while a control has focus cancels that activation, so Space on the theme toggle used to
@@ -100,15 +100,15 @@
 		'button, input, textarea, select, a, [role="radio"], [role="separator"], [contenteditable]';
 
 	function onkeydown(event: KeyboardEvent) {
-		// While the intro is up, every key belongs to it (any key is "let me in") — the page's own
+		// While the intro is up, every key belongs to it (any key is "let me in") - the page's own
 		// shortcuts stand down, or the keypress that enters the lab would also pause the sim.
 		if (!entered) return;
 
 		// Research has no bench transport, so the page's Studio shortcuts (Space, the overlay Esc)
-		// stand down here — exactly as they do behind the film.
+		// stand down here - exactly as they do behind the film.
 		if (app.research) return;
 
-		// Esc shuts the control panel where it is an overlay — the same key that closes every other
+		// Esc shuts the control panel where it is an overlay - the same key that closes every other
 		// thing this app puts over the bench.
 		if (event.key === 'Escape' && shell.narrow && shell.overlayOpen && !story.active) {
 			shell.closeOverlay();
@@ -127,7 +127,7 @@
 <svelte:head><title>Darwin Lab</title></svelte:head>
 <svelte:window {onkeydown} />
 
-<!-- inert while a full-screen takeover is up — the intro or a playing film. A keyboard user must
+<!-- inert while a full-screen takeover is up - the intro or a playing film. A keyboard user must
      not be able to Tab onto controls they cannot see and remove a world mid-presentation. -->
 <div class="app" inert={story.active || !entered} style:--shell-gutter={gutter}>
 	<TopBar />
@@ -143,7 +143,7 @@
 		{/if}
 
 		<!-- The bench IS the canvas: the family tree (or a focused world's workbench) fills the height
-		     under the top bar — unless the lab is in Research, when the Research stage takes its place. -->
+		     under the top bar - unless the lab is in Research, when the Research stage takes its place. -->
 		<div class="bench">
 			<main>
 				{#if app.research}
@@ -195,8 +195,8 @@
 		flex: 1;
 		/* Bound the row to the viewport: without this the flexbox min-height:auto rule lets a tall child
 		   (the focus view's rail, ~2900px with a big bench) push .shell past the screen instead of the
-		   child scrolling inside it. The pannable canvas never exposed this — its content height is
-		   fixed — but the scrolling rail does. */
+		   child scrolling inside it. The pannable canvas never exposed this - its content height is
+		   fixed - but the scrolling rail does. */
 		min-height: 0;
 		display: flex;
 		align-items: stretch;
@@ -208,10 +208,10 @@
 		min-height: 0;
 		display: flex;
 		flex-direction: column;
-		/* No padding: the canvas IS the bench, edge to edge — not a card sitting on a layer. */
+		/* No padding: the canvas IS the bench, edge to edge - not a card sitting on a layer. */
 	}
 
-	/* The canvas host fills the whole bench — the tree gets the room, not a scroll. */
+	/* The canvas host fills the whole bench - the tree gets the room, not a scroll. */
 	main {
 		flex: 1;
 		min-height: 0;

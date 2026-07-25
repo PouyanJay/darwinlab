@@ -1,10 +1,10 @@
 <!--
-  Q7 · reproduce this study — the method as a panel, not a footnote. It states the subject the findings
+  Q7 · reproduce this study - the method as a panel, not a footnote. It states the subject the findings
   are about, the brain that ran, and the fingerprint that reproduces them, then offers to load that
   exact world back into the lab or copy its config. Provenance you can click.
 
   Reads the subject config the report is scoped to; the fingerprint + seeds come from the report's
-  method (any finding carries them). When nothing has been studied, it says so — no invented method.
+  method (any finding carries them). When nothing has been studied, it says so - no invented method.
 -->
 <script lang="ts">
 	import type { WorldConfig } from '$lib/engine';
@@ -22,12 +22,12 @@
 		configHash: string;
 		seeds: number;
 		configJson: string;
-		/** Load the subject back into Studio — the round-trip the report store owns (`report.watch`). */
+		/** Load the subject back into Studio - the round-trip the report store owns (`report.watch`). */
 		onload: () => void;
 	} = $props();
 
 	const inputs = $derived(config.brainInputs ?? 8);
-	// brainHidden persists as a single number or a per-layer array — normalise to a layer list.
+	// brainHidden persists as a single number or a per-layer array - normalise to a layer list.
 	const hidden = $derived(
 		(Array.isArray(config.brainHidden) ? config.brainHidden : [config.brainHidden ?? 6]).join('·')
 	);
@@ -38,10 +38,10 @@
 		try {
 			await navigator.clipboard.writeText(configJson);
 			copied = true;
-			// A brief confirmation, then back — no timers persisted, purely cosmetic.
+			// A brief confirmation, then back - no timers persisted, purely cosmetic.
 			setTimeout(() => (copied = false), 1600);
 		} catch {
-			// Clipboard blocked (insecure context, denied permission) — leave the label unchanged.
+			// Clipboard blocked (insecure context, denied permission) - leave the label unchanged.
 		}
 	}
 </script>
@@ -138,7 +138,7 @@
 		color: var(--ink3);
 	}
 
-	@media (max-width: 620px) {
+	@media (max-width: 640px) {
 		.grid {
 			grid-template-columns: 1fr;
 		}

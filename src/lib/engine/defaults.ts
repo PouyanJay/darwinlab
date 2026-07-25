@@ -1,13 +1,13 @@
 /**
- * The seeded bench — the sense ladder — and the accent palette.
+ * The seeded bench - the sense ladder - and the accent palette.
  *
  * Every world here runs in an ocean where a sense can actually pay for itself (SHOWCASE_OCEAN
  * below says how, and why each setting exists). The ladder then climbs honestly:
  *   blind 3.18s · +distance 3.33s · +direction 4.43s · +walls 4.78s · +closing (all four) 5.46s
- * (mean life per fish, 3 evolution seeds × 12 seeded bouts — scripts/sweep-senses.ts).
+ * (mean life per fish, 3 evolution seeds × 12 seeded bouts - scripts/sweep-senses.ts).
  *
- * It did not always. Under the original settings — a shark that outran every fish, a free
- * wall-avoidance instinct, a strike that re-aimed mid-flight — no sense could buy anything, and a
+ * It did not always. Under the original settings - a shark that outran every fish, a free
+ * wall-avoidance instinct, a strike that re-aimed mid-flight - no sense could buy anything, and a
  * fish with ALL FOUR of them survived ~5% LESS than a blind one, because mutation charges rent on
  * every live input. That was a fact about the world, not about intelligence. Each knob in
  * SHOWCASE_OCEAN exists to take one of those excuses away; the Conditions dialog can put any of
@@ -23,7 +23,7 @@ import type { WorldConfig } from './types';
 export const ACCENTS = ['#64748b', '#4f56d3', '#0e9488', '#d88a2c', '#e8604c', '#8a5ad8'];
 
 /**
- * The ocean the default bench runs in — every one of these settings exists because a sense
+ * The ocean the default bench runs in - every one of these settings exists because a sense
  * could not otherwise earn its keep. They are world properties, never fish behavior: nothing
  * about how a fish swims is programmed, here or anywhere.
  */
@@ -32,14 +32,14 @@ export const SHOWCASE_OCEAN = {
 	 *  allowed to look safe, instead of everyone dying at the same rate regardless. */
 	persistence: false,
 	/** The strike locks its vector at launch and pays a recovery when it misses, so a dodge
-	 *  visibly works and the shark sails past. (Reference: re-aims every frame — undodgeable.) */
+	 *  visibly works and the shark sails past. (Reference: re-aims every frame - undodgeable.) */
 	lungeCommit: true,
 	/** It CHARGES while winding up instead of coiling, so closing speed rises ahead of a strike
-	 *  and can predict it. (Reference: brakes to a crawl — the sense reads "safe" as it lunges.) */
+	 *  and can predict it. (Reference: brakes to a crawl - the sense reads "safe" as it lunges.) */
 	aimCharge: true,
 	lungeFerocity: 1.6,
 	/** No free wall-avoidance force. Corners are a real trap now, and only a fish that can SENSE
-	 *  walls learns to stay out of them — which is what makes that sense worth its noise. */
+	 *  walls learns to stay out of them - which is what makes that sense worth its noise. */
 	wallInstinct: false,
 	/** THE ONE THAT UNLOCKED AWARENESS: cruise 140 px/s, below the fish's own 176 top speed. Above
 	 *  it, a perfectly-informed fish is still run down, so knowing buys a delay and never an escape. */
@@ -50,14 +50,14 @@ export const SHOWCASE_OCEAN = {
 	/** Every decent fish survived the reference's 10s by generation 30, so selection ran out of
 	 *  anything to sort. Thirty seconds keeps the gradient alive for 150 generations. */
 	genDuration: 30,
-	/** The body can express what the brain decided — a sharper chassis, the same evolved policy. */
+	/** The body can express what the brain decided - a sharper chassis, the same evolved policy. */
 	agility: 1.4
 } as const satisfies Partial<WorldConfig>;
 
 const TANK = { prey: 20, bw: 640, bh: 400, vision: 200, mutation: 0.06 };
 
 /**
- * The five default worlds — one more sense each, in the order the MEASUREMENTS say they pay.
+ * The five default worlds - one more sense each, in the order the MEASUREMENTS say they pay.
  *
  * Walls comes before closing speed on purpose: measured in this ocean, walls adds +11% on top of
  * direction while closing-next-to-direction is still a net tax, and only stacks positively once
@@ -112,19 +112,19 @@ export const DEFAULT_WORLDS: WorldConfig[] = [
 ];
 
 /**
- * THE SHOAL OCEAN — where grouping is a survival strategy, not decoration.
+ * THE SHOAL OCEAN - where grouping is a survival strategy, not decoration.
  *
  * Everything about schooling behind these knobs was MEASURED, not assumed (scripts/sweep-schooling.ts,
  * committed evidence). The long version: making a crowded fish merely harder to single out or to grab
- * makes fish CLUSTER, but the shoal sense never paid for itself — the benefit is captured passively,
+ * makes fish CLUSTER, but the shoal sense never paid for itself - the benefit is captured passively,
  * so packing tighter added no fitness (the lab's own thesis). What flips it is PREDATOR ATTENTION
- * (`confusionLock`): the shark holds one target and loses it — then mills, distracted — when that
+ * (`confusionLock`): the shark holds one target and loses it - then mills, distracted - when that
  * fish is inside a dense crowd. Passive proximity can't shake a lock; only an actively-maintained
  * swarm can. Paired with the selfish herd (`confusionCatch`, a packed fish is hard to grab on
  * contact) and a strength that makes both bite, the shoal sense earns its keep: measured, a
  * sense-on population out-survives an equal sense-blind one by a couple of seconds of training life
  * and holds a tighter school (run scripts/sweep-schooling.ts for the current margin). It is a modest,
- * honest effect, not a dramatic bait-ball — this size of brain and predator can produce a grouping
+ * honest effect, not a dramatic bait-ball - this size of brain and predator can produce a grouping
  * that PAYS, but not a coordinated travelling school (measured: drafting/alignment mechanics buy
  * travel only by scattering the group, and deeper brains do worse at this evolutionary budget).
  *
@@ -146,7 +146,7 @@ export const SHOAL_OCEAN = {
 	confusionRadius: 70,
 	socialRadius: 70,
 	// Wall-avoidance is ON here (unlike the sense ladder, which turns it off so the WALLS sense has to
-	// earn its keep). The Shoal is not about the walls sense — it is about the shoal sense — and with
+	// earn its keep). The Shoal is not about the walls sense - it is about the shoal sense - and with
 	// it off a school kept piling into a corner and dying there, which taught nothing and buried the
 	// grouping signal. Measured: turning it on lifts the whole tank ~4s and tightens the school,
 	// without erasing the sense's margin (Shoal still out-survives sense-blind Alone).
@@ -156,10 +156,10 @@ export const SHOAL_OCEAN = {
 /**
  * The parameter bundle the "Schooling" toggle applies to ANY world (see bench.setSchooling), so
  * grouping is a config option rather than a separate exhibit. It carries the reason to group (the
- * confusion effect — the shark loses its lock in a dense swarm, and a packed fish is hard to grab),
+ * confusion effect - the shark loses its lock in a dense swarm, and a packed fish is hard to grab),
  * the 14-slot brain that can hold the shoal senses, and wall-avoidance so a school does not trap
  * itself in a corner and die there. Everything else (predator speed, tank, the other senses) stays
- * the world's own — schooling just pays most against a shark you cannot outswim.
+ * the world's own - schooling just pays most against a shark you cannot outswim.
  */
 export const SCHOOLING_PARAMS = {
 	brainInputs: 14,
@@ -178,10 +178,10 @@ export const SCHOOLING_PARAMS = {
 const SHOAL_SENSES = { dist: true, dir: true, closing: true, walls: true } as const;
 
 /**
- * The Shoal exhibit — one ablation, run live: the SAME dangerous ocean and the SAME 14-input brain,
+ * The Shoal exhibit - one ablation, run live: the SAME dangerous ocean and the SAME 14-input brain,
  * differing only in whether the fish can sense each other. "Alone" fish have the shoal slots fed 0;
  * "The Shoal" fish can feel their neighbours, and evolve to use them. Captions carry the honest
- * finding and must not be softened into "grouping always wins" — it wins HERE, because this ocean
+ * finding and must not be softened into "grouping always wins" - it wins HERE, because this ocean
  * makes it pay.
  */
 export const SHOAL_WORLDS: WorldConfig[] = [
@@ -201,7 +201,7 @@ export const SHOAL_WORLDS: WorldConfig[] = [
 		...SHOAL_OCEAN,
 		senses: { ...SHOAL_SENSES, cohesion: true, align: true },
 		caption:
-			'Give the same fish a sense of their neighbours and a swarm appears on its own — nobody wrote the flocking. Packed together they overwhelm the hunter: it loses its target in the crowd and mills, and the ones buried in the ball are hard to seize. Grouping is not decoration here; it is why they are alive.'
+			'Give the same fish a sense of their neighbours and a swarm appears on its own - nobody wrote the flocking. Packed together they overwhelm the hunter: it loses its target in the crowd and mills, and the ones buried in the ball are hard to seize. Grouping is not decoration here; it is why they are alive.'
 	}
 ];
 
@@ -222,21 +222,21 @@ export function newWorldConfig(name: string, accent: string): WorldConfig {
 }
 
 /**
- * The range each condition may be set to — the bounds of the experiment.
+ * The range each condition may be set to - the bounds of the experiment.
  *
  * These come from the product (the reference's Conditions dialog), not from the tuning constants:
  * they say what a user is allowed to ask for, not what the science is calibrated to. They live here
  * so the sliders that offer a range and the store that clamps to it cannot drift apart.
  *
- * `step` is the increment the UI moves in — ±2 prey at a time (a population of odd size breeds
+ * `step` is the increment the UI moves in - ±2 prey at a time (a population of odd size breeds
  * awkwardly), ±1 predator, and fine enough steps on the continuous knobs to feel analogue.
  *
  * `predSpeed` reaches BELOW 1 on purpose, and that is the most consequential slider on the bench:
  * a fish tops out at 176 px/s and the shark cruises at 200 × this number, so somewhere around 0.88
- * the shark stops being able to run a fish down — and every sense the fish owns suddenly matters.
+ * the shark stops being able to run a fish down - and every sense the fish owns suddenly matters.
  */
 /*
- * WHAT WAS MEASURED WHEN WE TRIED TO "RAISE THE STAKES" — kept, because the finding cost a day and
+ * WHAT WAS MEASURED WHEN WE TRIED TO "RAISE THE STAKES" - kept, because the finding cost a day and
  * the button it produced did not survive review. There is no preset any more: crowding the ocean is
  * just the predator and vision sliders, and a button that only moves two sliders is a button that
  * hides where the change came from. Raise them by hand.
@@ -244,7 +244,7 @@ export function newWorldConfig(name: string, accent: string): WorldConfig {
  * Five candidate oceans, 50 generations × 3 seeds, scored on mean life and on the assay's turn
  * accuracy:
  *
- *   • SLOWING THE SHARK DOWN — so that fleeing "genuinely works" — DESTROYS the ladder. Blind fish
+ *   • SLOWING THE SHARK DOWN - so that fleeing "genuinely works" - DESTROYS the ladder. Blind fish
  *     live 5.55s and bearing fish 5.32s: when everybody survives, selection has nothing left to
  *     sort. Mercy is not pressure, and this was the obvious idea.
  *   • A fiercer strike sharpens survival (+39%) and barely moves the decision (+3 points).
@@ -255,14 +255,14 @@ export function newWorldConfig(name: string, accent: string): WorldConfig {
  *     makes ONE sense decisive and drowns the rest. That is the thesis, one level up.
  *
  * ⚠️ THOSE NUMBERS WERE TAKEN BEFORE THE DOUBLE-PREDATOR BUG WAS FOUND (a frozen bout ran against
- * twice the sharks its config asked for — see behavior.ts). The DIRECTION of every one of them is
+ * twice the sharks its config asked for - see behavior.ts). The DIRECTION of every one of them is
  * safe, because every world was equally over-hunted; the magnitudes are not. Re-measure before
  * quoting them.
  */
 
 export const WORLD_LIMITS = {
 	prey: { min: 2, max: 80, step: 2 },
-	/* Raised from 6: the owner's point, and a good one — "crowd the ocean" is not a feature, it is
+	/* Raised from 6: the owner's point, and a good one - "crowd the ocean" is not a feature, it is
 	   this slider. A bench that wants to know what five or eight hunters does to the ladder should be
 	   able to just ask, without a button standing between the question and the answer. */
 	preds: { min: 0, max: 10, step: 1 },
@@ -274,32 +274,32 @@ export const WORLD_LIMITS = {
 	maxSpeed: { min: 80, max: 300, step: 4 },
 	vision: { min: 120, max: 280, step: 5 },
 	mutation: { min: 0, max: 0.2, step: 0.005 },
-	/** Sim-seconds per generation — how long each episode lasts. Longer episodes give a policy more
+	/** Sim-seconds per generation - how long each episode lasts. Longer episodes give a policy more
 	 *  time to express itself and keep selection sharpening; tunable so a run that needs more training
 	 *  can just ask for it. Live-editable (the next generation uses the new length). Reference 10. */
 	genDuration: { min: 10, max: 60, step: 5 },
-	/** Hidden neurons in the brain — its CAPACITY. More lets it combine inputs in more ways, but adds
+	/** Hidden neurons in the brain - its CAPACITY. More lets it combine inputs in more ways, but adds
 	 *  weights to tune, so a bigger brain needs more generations and is not automatically better.
 	 *  Changing it restarts evolution (the genome shape changes). Reference 6. */
 	brainHidden: { min: 4, max: 32, step: 2 },
 	/** How hard the confusion effect bites, when schooling is on. 0 = grouping buys nothing; higher =
 	 *  a crowd is much safer. Live-editable. Only meaningful on a schooling world. */
 	confusionStrength: { min: 0, max: 6, step: 0.5 },
-	/** Persistence params — only meaningful while the hunger ramp is switched ON. */
+	/** Persistence params - only meaningful while the hunger ramp is switched ON. */
 	persistRamp: { min: 0.01, max: 0.12, step: 0.01 },
 	persistMaxBoost: { min: 0.1, max: 1.5, step: 0.05 },
 	persistMaxJaw: { min: 0, max: 40, step: 2 }
 } as const satisfies Record<string, { min: number; max: number; step: number }>;
 
-/** The numeric conditions a user may edit — the keys of WORLD_LIMITS. */
+/** The numeric conditions a user may edit - the keys of WORLD_LIMITS. */
 export type NumericCondition = keyof typeof WORLD_LIMITS;
 
-/** Clamp a condition into its range — the one clamp every store's edit door uses. */
+/** Clamp a condition into its range - the one clamp every store's edit door uses. */
 export function clampToRange(value: number, { min, max }: { min: number; max: number }): number {
 	return Math.min(max, Math.max(min, value));
 }
 
-/** Most hidden layers a brain may have in the UI — deeper is rarely better and only slows evolution. */
+/** Most hidden layers a brain may have in the UI - deeper is rarely better and only slows evolution. */
 export const BRAIN_MAX_LAYERS = 4;
 
 /**
@@ -339,10 +339,10 @@ export const ACCENT_NAMES: Record<string, string> = {
 };
 
 /**
- * How long training lasts before a world is deployed — the bench-wide "max generations".
+ * How long training lasts before a world is deployed - the bench-wide "max generations".
  *
  * Deployment is the product's second act: evolution stops, and the population you bred has to
- * survive on its own with no more generations to save it. `0` means never deploy — the bench just
+ * survive on its own with no more generations to save it. `0` means never deploy - the bench just
  * keeps evolving, which is the right setting while you are still experimenting.
  */
 export const MAX_GENERATIONS = { min: 0, max: 150, step: 5 } as const satisfies {
@@ -352,5 +352,5 @@ export const MAX_GENERATIONS = { min: 0, max: 150, step: 5 } as const satisfies 
 };
 
 /** What the bench opens with. Separate from the range above so it can be spread into a Slider,
- * whose props are exactly {min, max, step} — a fourth field would ride along unused. */
+ * whose props are exactly {min, max, step} - a fourth field would ride along unused. */
 export const MAX_GENERATIONS_DEFAULT = 150;

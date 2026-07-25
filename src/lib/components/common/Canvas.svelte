@@ -2,18 +2,18 @@
   A DPR-aware canvas host.
 
   Owns the two things every canvas in this app needs and nothing else:
-   1. Backing-store sizing — the bitmap is sized to CSS pixels × devicePixelRatio (capped at 2,
+   1. Backing-store sizing - the bitmap is sized to CSS pixels × devicePixelRatio (capped at 2,
       beyond which the cost outweighs the sharpness), and re-sized via ResizeObserver so the
       tank stays crisp across window resizes and monitor changes. The context is pre-scaled, so
       `paint` always draws in CSS pixels and never has to think about DPR.
-   2. Driving — pass `register` (e.g. `bench.painters.add`) and the sim loop repaints this canvas
+   2. Driving - pass `register` (e.g. `bench.painters.add`) and the sim loop repaints this canvas
       every frame. Omit it and the canvas only repaints on resize, which is what static charts want.
 
   Painting is invoked directly, NOT through reactivity: the world data it reads is deliberately
   unreactive (see state/bench.svelte.ts) because proxying it at frame rate would be ruinous.
 -->
 <script lang="ts">
-	/** Cap DPR at 2 — past this the extra pixels cost more than they show. */
+	/** Cap DPR at 2 - past this the extra pixels cost more than they show. */
 	const MAX_DPR = 2;
 
 	interface Props {
@@ -21,7 +21,7 @@
 		paint: (ctx: CanvasRenderingContext2D, width: number, height: number) => void;
 		/** Opt into external driving (the sim loop). Returns its unregister fn. */
 		register?: (render: () => void) => () => void;
-		/** Pointer position in CSS pixels — the same space `paint` draws in, so picking lines up. */
+		/** Pointer position in CSS pixels - the same space `paint` draws in, so picking lines up. */
 		onpick?: (x: number, y: number) => void;
 		onhover?: (x: number, y: number) => void;
 		onleave?: () => void;
@@ -56,7 +56,7 @@
 		const scale = deviceScale();
 		const bitmapWidth = Math.round(width * scale);
 		const bitmapHeight = Math.round(height * scale);
-		// only assign when it actually changes — writing width/height clears the canvas
+		// only assign when it actually changes - writing width/height clears the canvas
 		if (canvas.width !== bitmapWidth || canvas.height !== bitmapHeight) {
 			canvas.width = bitmapWidth;
 			canvas.height = bitmapHeight;
@@ -67,7 +67,7 @@
 	function host(canvas: HTMLCanvasElement) {
 		const ctx = canvas.getContext('2d');
 		if (!ctx) {
-			console.error(`Canvas: no 2D context available for "${label}" — nothing will render.`);
+			console.error(`Canvas: no 2D context available for "${label}" - nothing will render.`);
 			return;
 		}
 
@@ -85,7 +85,7 @@
 		const unregister = register?.(render);
 
 		// A DPR change (dragging the window between monitors) resizes the BITMAP but not the CSS
-		// box, so the ResizeObserver never fires — and a paused bench no longer repaints per frame
+		// box, so the ResizeObserver never fires - and a paused bench no longer repaints per frame
 		// to self-correct. matchMedia is the one event the platform offers for it; the listener is
 		// re-armed each time because the query string pins a specific ratio.
 		let dprWatch: MediaQueryList | null = null;
@@ -110,7 +110,7 @@
 
 <!--
 	Two kinds of canvas share this host. A chart is a GRAPHIC: role="img", not focusable, its
-	state readable from `aria-label` (meaning is never pixels-only) — its click handler is a
+	state readable from `aria-label` (meaning is never pixels-only) - its click handler is a
 	mouse shortcut to targets the keyboard reaches through real buttons (e.g. "★ Champion").
 	A tank with a keyboard handler is a WIDGET: role="application" (so AT hands the arrow keys
 	through to the creature cycler), focusable, operable without a pointer.
@@ -132,6 +132,6 @@
 		display: block;
 		width: 100%;
 		height: 100%;
-		touch-action: manipulation; /* a tap picks a creature — never wait out a double-tap zoom */
+		touch-action: manipulation; /* a tap picks a creature - never wait out a double-tap zoom */
 	}
 </style>

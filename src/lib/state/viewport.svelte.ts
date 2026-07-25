@@ -1,9 +1,9 @@
 /**
- * A pan/zoom CAMERA over a plane — one `translate(tx, ty) scale(scale)` transform, nothing else.
+ * A pan/zoom CAMERA over a plane - one `translate(tx, ty) scale(scale)` transform, nothing else.
  *
  * This is pure view state: how the camera sits over a scene, never anything about the scene itself.
  * Screen = canvas * scale + (tx, ty); `toCanvas` inverts it. Two surfaces share this exact behaviour
- * — the lineage tree (worlds as draggable nodes) and the Atlas (a survival landscape you pan) — so
+ * - the lineage tree (worlds as draggable nodes) and the Atlas (a survival landscape you pan) - so
  * the transform math lives here once and each surface owns its OWN instance. They must never share a
  * camera: panning the tree must not move the Atlas.
  *
@@ -44,14 +44,14 @@ export class Viewport {
 	}
 
 	/**
-	 * Zoom toward a screen point (the cursor), keeping whatever is under it fixed — the behaviour a
+	 * Zoom toward a screen point (the cursor), keeping whatever is under it fixed - the behaviour a
 	 * scroll-to-zoom canvas is expected to have. `px`/`py` are relative to the canvas container's
 	 * top-left; `factor` multiplies the current scale before clamping.
 	 */
 	zoomAt(px: number, py: number, factor: number): void {
 		const next = this.#clamp(this.scale * factor);
 		const k = next / this.scale;
-		if (k === 1) return; // already at a bound — don't drift the pan for nothing
+		if (k === 1) return; // already at a bound - don't drift the pan for nothing
 		this.tx = px - k * (px - this.tx);
 		this.ty = py - k * (py - this.ty);
 		this.scale = next;
@@ -63,7 +63,7 @@ export class Viewport {
 	}
 
 	/**
-	 * Frame a canvas-space bounding box in a viewport of the given screen size — the "recenter"
+	 * Frame a canvas-space bounding box in a viewport of the given screen size - the "recenter"
 	 * action. Picks the largest scale (within bounds) that fits the box with padding, then centres it.
 	 */
 	fitBox(
@@ -83,7 +83,7 @@ export class Viewport {
 		this.ty = (viewH - bh * s) / 2 - minY * s;
 	}
 
-	/** Back to origin, 1:1 — used when a fresh scene is loaded and there is nothing to frame yet. */
+	/** Back to origin, 1:1 - used when a fresh scene is loaded and there is nothing to frame yet. */
 	reset(): void {
 		this.tx = 0;
 		this.ty = 0;

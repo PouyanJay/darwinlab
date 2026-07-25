@@ -1,11 +1,11 @@
 /**
- * The run manifest — what turns a simulation into an experiment you can cite.
+ * The run manifest - what turns a simulation into an experiment you can cite.
  *
  * A demo runs. An instrument runs SOMETHING SPECIFIC: this seed, this configuration, this many
  * episodes, and it can be handed to someone else who gets the same numbers back. That is the
  * whole difference, and it is three fields and a hash.
  *
- * The hash is over the configuration ONLY — never the live state — so two runs whose worlds have
+ * The hash is over the configuration ONLY - never the live state - so two runs whose worlds have
  * diverged still show the same config hash if they were set up the same way. That is the point:
  * it identifies the EXPERIMENT, not the moment.
  */
@@ -40,7 +40,7 @@ const MEANINGFUL: (keyof WorldConfig)[] = [
  * A short, stable fingerprint of an experiment's configuration.
  *
  * FNV-1a over the canonical JSON: deterministic across machines and reloads, so the same setup
- * always prints the same six characters. Not cryptographic, and it does not need to be — its job
+ * always prints the same six characters. Not cryptographic, and it does not need to be - its job
  * is to let two people say "I ran a3f19c" and mean the same thing.
  */
 export function configHash(configs: WorldConfig[]): string {
@@ -58,7 +58,7 @@ export function configHash(configs: WorldConfig[]): string {
 }
 
 /**
- * What a user can actually change from the UI — and therefore what an "override" can be. A diff
+ * What a user can actually change from the UI - and therefore what an "override" can be. A diff
  * taken over EVERY field would compare things the reactive config view does not carry and report
  * phantom overrides; a diff over what the dialog offers is the diff a reader means.
  */
@@ -98,7 +98,7 @@ const FALLBACKS: Partial<Record<(typeof EDITABLE)[number], unknown>> = {
  * Reads the key DIRECTLY rather than spreading the object first, and that is load-bearing: one side
  * of this diff is a Svelte `$state` class, whose fields compile to accessors on the PROTOTYPE. A
  * spread copies own enumerable properties only, so `{...view}` is empty and every field comes back
- * undefined — which is precisely what shipped for one commit, and what the e2e caught.
+ * undefined - which is precisely what shipped for one commit, and what the e2e caught.
  */
 function read(cfg: EditableFields, key: (typeof EDITABLE)[number]): unknown {
 	const value = cfg[key];
@@ -122,7 +122,7 @@ export function configDiff(cfg: EditableFields, baseline: EditableFields): Recor
 	return diff;
 }
 
-/** The full manifest, as JSON — what "copy config" hands over. */
+/** The full manifest, as JSON - what "copy config" hands over. */
 export function manifest(
 	configs: WorldConfig[],
 	seed: number | null,
@@ -131,7 +131,7 @@ export function manifest(
 	return {
 		lab: 'darwin-lab',
 		config: configHash(configs),
-		// null means "unseeded" — the run is NOT reproducible, and saying so is the honest thing
+		// null means "unseeded" - the run is NOT reproducible, and saying so is the honest thing
 		seed,
 		episodes,
 		environments: configs.map((cfg) => ({

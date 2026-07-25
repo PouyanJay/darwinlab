@@ -1,7 +1,7 @@
 <!--
   What the brain decided to DO with what it sensed: the two numbers its output layer produced.
 
-  Turn is bidirectional, so its bar grows out from the centre — left of the tick means the fish is
+  Turn is bidirectional, so its bar grows out from the centre - left of the tick means the fish is
   turning left, right means right. Thrust only ever goes one way, so it fills from the left.
 -->
 <script lang="ts">
@@ -10,7 +10,7 @@
 
 	const mind = $derived(bench.mind);
 
-	/** Anything smaller than this is a twitch, not a decision — don't claim a direction for it. */
+	/** Anything smaller than this is a twitch, not a decision - don't claim a direction for it. */
 	const DEADZONE = 0.03;
 
 	const turn = $derived(mind.turn);
@@ -22,7 +22,7 @@
 <div class="output">
 	<div class="head">
 		<span id="motor-turn">turn</span>
-		<!-- aria-live off: these change every frame — findable status, never a firehose. -->
+		<!-- aria-live off: these change every frame - findable status, never a firehose. -->
 		<b class="tabular" role="status" aria-live="off" aria-labelledby="motor-turn">{turnLabel}</b>
 	</div>
 	<div class="meter">

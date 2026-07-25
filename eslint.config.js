@@ -11,7 +11,7 @@ const gitignorePath = path.resolve(import.meta.dirname, '.gitignore');
 export default defineConfig(
 	includeIgnoreFile(gitignorePath),
 	{
-		// The vendored reference engine is the untouched original — never lint or reformat it.
+		// The vendored reference engine is the untouched original - never lint or reformat it.
 		ignores: ['reference/**']
 	},
 	js.configs.recommended,

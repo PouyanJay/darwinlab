@@ -4,23 +4,23 @@ import { gotoApp, waitForPrewarm } from './helpers';
 /**
  * The Phase 9 keyboard gate: the whole product is drivable without a pointer.
  *
- * The pointer-only path this phase closed was the tank itself — every fish was click-to-inspect.
+ * The pointer-only path this phase closed was the tank itself - every fish was click-to-inspect.
  * These tests walk it by keys alone: Tab REACHES the tank (page.keyboard, never locator.press,
  * which focuses its target first and proves nothing about reachability), arrows walk the
- * creatures, and the walk KEEPS the focus — an inspector that stole it would end the walk after
+ * creatures, and the walk KEEPS the focus - an inspector that stole it would end the walk after
  * one step.
  */
 
 /**
- * EITHER mind drawer — "Fish mind, live" or "Shark, no brain". The walk's stops are every fish plus
+ * EITHER mind drawer - "Fish mind, live" or "Shark, no brain". The walk's stops are every fish plus
  * the shark, and mid-film scene 1 is Blind drift: on a slow CI runner the whole school can be dead
  * by the time the arrow lands, so the walk selects the shark. These tests are about keyboard and
- * focus semantics, and either drawer serves them — pinning "fish" made the suite hostage to how
+ * focus semantics, and either drawer serves them - pinning "fish" made the suite hostage to how
  * fast the sharks eat (it failed a deploy exactly that way).
  */
 const inspector = (page: Page) => page.getByRole('dialog', { name: /fish mind|shark/i });
 
-/** Tab until focus lands on a tank widget — bounded, so a broken tab order fails loudly. */
+/** Tab until focus lands on a tank widget - bounded, so a broken tab order fails loudly. */
 async function tabToTank(page: Page) {
 	const onTank = () =>
 		page.evaluate(() => document.activeElement?.getAttribute('role') === 'application');
@@ -44,7 +44,7 @@ test('Tab reaches the tank; arrows walk creatures; the walk keeps its focus; Esc
 	await page.keyboard.press('ArrowRight');
 	await expect(inspector(page)).toBeVisible();
 
-	// the walk continues — the inspector did NOT steal the keyboard
+	// the walk continues - the inspector did NOT steal the keyboard
 	expect(await page.evaluate(() => document.activeElement?.getAttribute('role'))).toBe(
 		'application'
 	);
@@ -55,7 +55,7 @@ test('Tab reaches the tank; arrows walk creatures; the walk keeps its focus; Esc
 	await expect(inspector(page)).toBeHidden();
 });
 
-test('the ★ Champion path still moves focus into the drawer — a button click is not a walk', async ({
+test('the ★ Champion path still moves focus into the drawer - a button click is not a walk', async ({
 	page
 }) => {
 	await page.getByRole('button', { name: 'Champion' }).first().click();
@@ -66,7 +66,7 @@ test('the ★ Champion path still moves focus into the drawer — a button click
 	).toBe(true);
 });
 
-test('arrows on a focused tank inside the FILM walk creatures — they must not also skip the scene', async ({
+test('arrows on a focused tank inside the FILM walk creatures - they must not also skip the scene', async ({
 	page
 }) => {
 	await page.getByRole('button', { name: 'Play story' }).click();
@@ -81,7 +81,7 @@ test('arrows on a focused tank inside the FILM walk creatures — they must not 
 	await expect(story.getByText(/scene 1 of 5/i)).toBeVisible(); // …and the film did NOT jump
 });
 
-test('Esc in the inspector mid-film closes the inspector — not the film with it', async ({
+test('Esc in the inspector mid-film closes the inspector - not the film with it', async ({
 	page
 }) => {
 	await page.getByRole('button', { name: 'Play story' }).click();
@@ -92,7 +92,7 @@ test('Esc in the inspector mid-film closes the inspector — not the film with i
 	await page.keyboard.press('ArrowRight');
 	await expect(inspector(page)).toBeVisible();
 
-	// with focus INSIDE the drawer, Esc belongs to the drawer — both it and the film listen on
+	// with focus INSIDE the drawer, Esc belongs to the drawer - both it and the film listen on
 	// window, and one press must not tear down both
 	await inspector(page).getByRole('button', { name: 'close inspector' }).focus();
 	await page.keyboard.press('Escape');

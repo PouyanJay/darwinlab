@@ -2,7 +2,7 @@
   A thin horizontal bar showing how much of something there is.
 
   Two anchors, because the inspector needs both: most quantities fill from the left (a distance, a
-  thrust), but a turn is bidirectional and has to grow out from the CENTRE — left of the tick means
+  thrust), but a turn is bidirectional and has to grow out from the CENTRE - left of the tick means
   the fish is turning left. Without the centre tick, "barely turning left" and "going straight
   ahead" would look the same.
 
@@ -11,11 +11,11 @@
 -->
 <script lang="ts">
 	interface Props {
-		/** 0–1 for a left-anchored meter; −1…1 for a centred one. Clamped either way. */
+		/** 0-1 for a left-anchored meter; −1…1 for a centred one. Clamped either way. */
 		value: number;
 		/**
 		 * Where the fill grows FROM. Not called `anchor`: that is one of Svelte's own mount options,
-		 * and a prop of that name collides with it — the component cannot even be mounted in a test.
+		 * and a prop of that name collides with it - the component cannot even be mounted in a test.
 		 */
 		origin?: 'left' | 'centre';
 		tone?: 'accent' | 'danger';

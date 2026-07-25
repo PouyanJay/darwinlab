@@ -14,7 +14,7 @@ import type { SweepCell } from '../lab/sweep';
  * which keeps the tests order-independent under shuffle.
  */
 
-/** An executor that settles every cell without running the engine — the grid is what we assert, not survival. */
+/** An executor that settles every cell without running the engine - the grid is what we assert, not survival. */
 class NullExecutor implements JobExecutor {
 	readonly concurrency = 1;
 	async submit(): Promise<Evaluation | null> {
@@ -23,7 +23,7 @@ class NullExecutor implements JobExecutor {
 	dispose(): void {}
 }
 
-/** An executor whose FIRST submit takes real wall time — the only way to reach the calibration
+/** An executor whose FIRST submit takes real wall time - the only way to reach the calibration
  *  path, which (by design) refuses sub-second walls as prices. */
 class SlowFirstExecutor implements JobExecutor {
 	readonly concurrency = 1;
@@ -38,7 +38,7 @@ class SlowFirstExecutor implements JobExecutor {
 	dispose(): void {}
 }
 
-/** An executor that RECORDS every request — how a spec proves what the store actually asked for. */
+/** An executor that RECORDS every request - how a spec proves what the store actually asked for. */
 class RecordingExecutor implements JobExecutor {
 	readonly concurrency = 1;
 	requests: EvalRequest[] = [];
@@ -77,7 +77,7 @@ describe('sweep design (pin-or-sweep + budget)', () => {
 		expect(sweep.plannedCells).toBe(48);
 	});
 
-	it('the last chip cannot be deselected — a knob always has a value', () => {
+	it('the last chip cannot be deselected - a knob always has a value', () => {
 		expect(sweep.isLevelSelected('vision', 200)).toBe(true); // the chip we try to remove is there
 		sweep.toggleLevel('vision', 200);
 		expect(sweep.isLevelSelected('vision', 200)).toBe(true);
@@ -93,7 +93,7 @@ describe('sweep design (pin-or-sweep + budget)', () => {
 		expect(sweep.willSample).toBe(false);
 	});
 
-	it('every budget input clamps — a bad value never reaches a job', () => {
+	it('every budget input clamps - a bad value never reaches a job', () => {
 		sweep.setSeeds(999);
 		expect(sweep.seeds).toBe(12);
 		sweep.setSeeds(-4);
@@ -138,7 +138,7 @@ describe('sweep design (pin-or-sweep + budget)', () => {
 		// previous test's publish under shuffle), a refused run must leave the SAME reference.
 		const before = sweep.results;
 		await sweep.run(new NullExecutor());
-		expect(sweep.results).toBe(before); // refused — nothing was published
+		expect(sweep.results).toBe(before); // refused - nothing was published
 
 		await sweep.run(new NullExecutor(), { confirmedCells: sweep.cellsToRun });
 		expect(sweep.cells.length).toBe(48); // the same design, confirmed, runs
@@ -162,9 +162,9 @@ describe('sweep design (pin-or-sweep + budget)', () => {
 		expect(sweep.cells).toHaveLength(1);
 	});
 
-	it('runs on the analysis subject when Studio hands one over — its config reaches every cell', async () => {
+	it('runs on the analysis subject when Studio hands one over - its config reaches every cell', async () => {
 		// bh (tank height) is a field no pinned or swept knob ever touches, so it proves the
-		// SUBJECT's own config — not a knob default — reached every cell.
+		// SUBJECT's own config - not a knob default - reached every cell.
 		app.analyze({ ...newWorldConfig('Watched', '#123456'), bh: 333 });
 		await sweep.run(new NullExecutor());
 		expect(sweep.cells.length).toBeGreaterThan(0); // it really planned and ran a grid
@@ -172,7 +172,7 @@ describe('sweep design (pin-or-sweep + budget)', () => {
 	});
 
 	it('the pinned choices reach every cell of the run', async () => {
-		sweep.setBoolState('walls', 'off'); // pin walls OFF — overriding the generic's on
+		sweep.setBoolState('walls', 'off'); // pin walls OFF - overriding the generic's on
 		await sweep.run(new NullExecutor());
 		expect(sweep.cells.length).toBeGreaterThan(0);
 		expect(sweep.cells.every((cell) => cell.cfg.senses.walls === false)).toBe(true);
@@ -212,11 +212,11 @@ describe('sweep design (pin-or-sweep + budget)', () => {
 
 		// The rate was calibrated on EXACTLY this design, so repricing the same design must land on
 		// the wall it just took. A calibration credited with champion-LESS sim-seconds would predict
-		// (episodes+8)/(episodes+4) ≈ 17% high — well outside this tolerance.
+		// (episodes+8)/(episodes+4) ≈ 17% high - well outside this tolerance.
 		expect(Math.abs(sweep.estimatedSeconds - wall) / wall).toBeLessThan(0.08);
 	}, 15_000);
 
-	it('the receipt freezes the budget at run time — later panel edits cannot relabel the run', async () => {
+	it('the receipt freezes the budget at run time - later panel edits cannot relabel the run', async () => {
 		sweep.setSeeds(4);
 		sweep.setEpisodes(30);
 		await sweep.run(new NullExecutor());

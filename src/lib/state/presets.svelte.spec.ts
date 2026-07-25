@@ -22,7 +22,7 @@ describe('base presets', () => {
 		expect(presets.entries).toHaveLength(1);
 		expect(presets.entries[0].name).toBe('Reef');
 		expect(presets.entries[0].cfg.prey).toBe(36);
-		// and it really reached storage — a fresh load sees it
+		// and it really reached storage - a fresh load sees it
 		expect(loadPresets()[0]?.name).toBe('Reef');
 	});
 
@@ -37,7 +37,7 @@ describe('base presets', () => {
 		expect(presets.entries[0].cfg.prey).toBe(44);
 	});
 
-	it('apply adopts the preset as the base — and drops an analysed subject', () => {
+	it('apply adopts the preset as the base - and drops an analysed subject', () => {
 		app.renameBase('Reef');
 		app.setBaseCondition('prey', 36);
 		presets.saveCurrent();
@@ -65,7 +65,7 @@ describe('base presets', () => {
 		expect(loadPresets()).toHaveLength(0);
 	});
 
-	it('the list caps at twelve — the rail is a shelf of favourites, not an archive', () => {
+	it('the list caps at twelve - the rail is a shelf of favourites, not an archive', () => {
 		for (let i = 0; i < 14; i++) {
 			app.renameBase(`World ${i}`);
 			presets.saveCurrent();

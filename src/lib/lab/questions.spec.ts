@@ -18,7 +18,7 @@ describe('the seven-question model', () => {
 		}
 	});
 
-	// Each source answers a fixed set — the exact map the "add to report" buttons tag findings by.
+	// Each source answers a fixed set - the exact map the "add to report" buttons tag findings by.
 	const EXPECTED: Record<FindingSource, QuestionId[]> = {
 		sweep: ['Q2', 'Q6'],
 		ledger: ['Q3'],

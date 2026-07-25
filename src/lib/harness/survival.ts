@@ -1,12 +1,12 @@
 /**
- * Headless survival harness (golden rule #4). Drives the PURE engine — no DOM, no Svelte —
+ * Headless survival harness (golden rule #4). Drives the PURE engine - no DOM, no Svelte -
  * to measure converged survival per world across seeds, so we can verify the port
  * reproduces the README §8 finding before trusting any UI.
  *
  * A world is stepped at the same fixed dt (1/60) the app uses; convergence happens in the
- * first ~8–10 generations, so a run of ~30 gens is well past steady state. "Survival" is
+ * first ~8-10 generations, so a run of ~30 gens is well past steady state. "Survival" is
  * the mean of the last `tail` smoothed-curve points (the curve is an EMA of the fraction
- * that survived each generation — unbiased at steady state).
+ * that survived each generation - unbiased at steady state).
  */
 
 import { makeWorld, stepWorld, seededRng } from '../engine';
@@ -15,7 +15,7 @@ import type { WorldConfig } from '../engine';
 const DT = 1 / 60;
 
 export interface RunResult {
-	/** Converged survival fraction (0–1) — mean of the last `tail` curve points. */
+	/** Converged survival fraction (0-1) - mean of the last `tail` curve points. */
 	survival: number;
 	finalGen: number;
 	curve: number[];
@@ -24,9 +24,9 @@ export interface RunResult {
 /**
  * Which curve counts as "survival".
  *
- * `alive` — the fraction still swimming when a generation ended. The reference engine's own
+ * `alive` - the fraction still swimming when a generation ended. The reference engine's own
  *   metric, and the one the nightly drift baselines are measured against, so it must stay.
- * `life` — mean seconds survived across the roster, as a share of the generation. What selection
+ * `life` - mean seconds survived across the roster, as a share of the generation. What selection
  *   actually rewards, and the only one that can still see a brain improving in a tank where nearly
  *   everyone dies (to `alive`, a fish eaten at second 2 and one that lasted 18 of 20 are the same
  *   zero). The bench plots this one.
@@ -48,7 +48,7 @@ export function runWorld(
 		stepWorld(w, DT);
 		steps++;
 	}
-	// Never return a silently truncated measurement — the science gate trusts these numbers.
+	// Never return a silently truncated measurement - the science gate trusts these numbers.
 	if (w.gen < generations) {
 		throw new Error(
 			`runWorld("${cfg.name}", seed=${seed}) hit the ${maxSteps}-step safety valve at generation ` +
@@ -63,7 +63,7 @@ export function runWorld(
 
 export interface SweepStat {
 	name: string;
-	/** Mean converged survival across seeds, as a percentage (0–100). */
+	/** Mean converged survival across seeds, as a percentage (0-100). */
 	meanPct: number;
 	/** Standard deviation across seeds, in percentage points. */
 	stdPct: number;
@@ -77,7 +77,7 @@ const mean = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
  * Worlds whose mean wandered more than `tolerancePp` off their recorded baseline.
  *
  * A world with NO baseline throws instead of passing: `meanPct - undefined` is NaN, and
- * `NaN > tolerance` is false — so a renamed or newly added world would otherwise be
+ * `NaN > tolerance` is false - so a renamed or newly added world would otherwise be
  * silently exempt from the very drift watch that exists to catch it.
  */
 export function findDrift(
@@ -88,7 +88,7 @@ export function findDrift(
 	const missing = stats.filter((s) => !(s.name in baselines));
 	if (missing.length) {
 		throw new Error(
-			`No drift baseline for: ${missing.map((s) => s.name).join(', ')} — ` +
+			`No drift baseline for: ${missing.map((s) => s.name).join(', ')} - ` +
 				'a world the watch cannot judge must fail loudly, not pass silently. Measure it and add it.'
 		);
 	}

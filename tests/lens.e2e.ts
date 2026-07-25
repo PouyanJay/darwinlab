@@ -6,16 +6,16 @@ import { gotoApp, waitForPrewarm } from './helpers';
  *
  * What is being guarded is the claim the feature makes about itself: it changes what you SEE (the
  * water is repainted, and the card starts reporting a reading) and it changes NOTHING ELSE (the sim
- * carries on exactly as it was). `render/lens.spec.ts` pins the second half at the engine level —
- * frame for frame, weight for weight — so what is left for the browser is that the switch is really
+ * carries on exactly as it was). `render/lens.spec.ts` pins the second half at the engine level -
+ * frame for frame, weight for weight - so what is left for the browser is that the switch is really
  * wired to the pixels, and that the number and the colours arrive and leave together.
  */
 
 const tile = (page: Page, index: number) => page.locator('section[aria-label^="world"]').nth(index);
 
 /**
- * Scoped to the lens's OWN group. "Off" is not a unique name on this page — every card's champion-
- * clones selector has one too — and a bare name lookup matched six controls and threw. A control is
+ * Scoped to the lens's OWN group. "Off" is not a unique name on this page - every card's champion-
+ * clones selector has one too - and a bare name lookup matched six controls and threw. A control is
  * identified by its group first and its label second.
  */
 const lens = (page: Page, label: 'Off' | 'Flee error') =>
@@ -25,7 +25,7 @@ const lens = (page: Page, label: 'Off' | 'Flee error') =>
  * Hash the tank's pixels.
  *
  * PAUSE FIRST wherever this is compared across an action: against a RUNNING sim the fish have moved
- * by the next frame and the hash differs no matter what the action did — the canvas-fingerprint trap
+ * by the next frame and the hash differs no matter what the action did - the canvas-fingerprint trap
  * this repo has fallen into before (CLAUDE.md).
  */
 const fingerprint = (tank: Locator) =>
@@ -41,7 +41,7 @@ test.beforeEach(async ({ page }) => {
 	await waitForPrewarm(page);
 });
 
-test('the lens repaints the water — and the plain view comes back', async ({ page }) => {
+test('the lens repaints the water - and the plain view comes back', async ({ page }) => {
 	await page.getByRole('button', { name: 'Pause' }).click();
 	const tank = tile(page, 0).getByRole('application', { name: /tank/i });
 
@@ -64,7 +64,7 @@ test('every card reports a reading while the lens is on, and stops when it is of
 
 	await lens(page, 'Flee error').click();
 
-	// One lens, one switch, every tank — that is the whole reason it is not a per-card control.
+	// One lens, one switch, every tank - that is the whole reason it is not a per-card control.
 	await expect(strips).toHaveCount(await page.locator('section[aria-label^="world"]').count());
 
 	// The reading is a MEASUREMENT: it refuses to print a mean until it has the fish-time behind it,

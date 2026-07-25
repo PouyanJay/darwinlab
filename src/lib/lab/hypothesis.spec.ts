@@ -33,7 +33,7 @@ describe('designFor', () => {
 		// arm A is "only direction", arm B is "only distance"
 		expect(a.cfg.senses).toEqual({ dist: false, dir: true, closing: false, walls: false });
 		expect(b.cfg.senses).toEqual({ dist: true, dir: false, closing: false, walls: false });
-		// the whole run size travels through — seeds AND episodes AND bouts, not a subset
+		// the whole run size travels through - seeds AND episodes AND bouts, not a subset
 		expect(a).toMatchObject({ seeds: 5, episodes: 20, bouts: 4 });
 		expect(b).toMatchObject({ seeds: 5, episodes: 20, bouts: 4 });
 	});
@@ -59,13 +59,13 @@ describe('designFor', () => {
 
 describe('the templates', () => {
 	it('keep the shipped claims’ historical ids, so old records stay attached', () => {
-		// These three ids are persisted in users’ ledgers and in Report findings — they must never move.
+		// These three ids are persisted in users’ ledgers and in Report findings - they must never move.
 		expect(buildClaim(tpl('rivalry'), { x: 'dir', y: 'dist' }).id).toBe('dir-beats-dist');
 		expect(buildClaim(tpl('solo'), { x: 'walls' }).id).toBe('walls-pays-alone');
 		expect(buildClaim(tpl('cliff'), { s: '1.0' }).id).toBe('cliff-1');
 	});
 
-	it('compose the sentence the parts render — one source for text and slot marking', () => {
+	it('compose the sentence the parts render - one source for text and slot marking', () => {
 		const template = tpl('pressure');
 		const values = { x: 'dir', s: '1.4' };
 		const built = buildClaim(template, values);
@@ -79,7 +79,7 @@ describe('the templates', () => {
 		).toEqual(['Direction', '1.4×']);
 	});
 
-	it('stacking contrasts X+Y against only-X — the added sense is the only difference', () => {
+	it('stacking contrasts X+Y against only-X - the added sense is the only difference', () => {
 		const built = buildClaim(tpl('stack'), { x: 'dir', y: 'closing' });
 		const { a, b } = designFor(built, base(), { seeds: 2, episodes: 5, bouts: 2 });
 		expect(a.cfg.senses).toEqual({ dist: false, dir: true, closing: true, walls: false });
@@ -95,7 +95,7 @@ describe('the templates', () => {
 		expect(built.expect).toBe('A≈B');
 	});
 
-	it('under-pressure pins the SAME predator speed on both arms — the sense is the only difference', () => {
+	it('under-pressure pins the SAME predator speed on both arms - the sense is the only difference', () => {
 		const built = buildClaim(tpl('pressure'), { x: 'dir', s: '1.4' });
 		const { a, b } = designFor(built, base(), { seeds: 2, episodes: 5, bouts: 2 });
 		expect(a.cfg.predSpeed).toBe(1.4);
@@ -107,7 +107,7 @@ describe('the templates', () => {
 	it('a condition claim flips ONE world rule and pins the full suite on both arms', () => {
 		const built = buildClaim(tpl('condition'), { c: 'persistence' });
 		const { a, b } = designFor(built, base(), { seeds: 2, episodes: 5, bouts: 2 });
-		// arm A is the world WITHOUT the rule — "makes survival harder" means off outlives on
+		// arm A is the world WITHOUT the rule - "makes survival harder" means off outlives on
 		expect(a.cfg.persistence).toBe(false);
 		expect(b.cfg.persistence).toBe(true);
 		expect(a.cfg.senses).toEqual(b.cfg.senses); // the senses must not differ between the arms
@@ -166,7 +166,7 @@ describe('senseDisabledReason', () => {
 	});
 
 	it.each(SENSE_OPTIONS.filter((o) => o.id !== 'speed'))(
-		'never gates $label — only own speed needs a wire',
+		'never gates $label - only own speed needs a wire',
 		(option) => {
 			expect(senseDisabledReason(option.id, base())).toBeNull();
 		}
@@ -200,7 +200,7 @@ describe('verdictFrom', () => {
 
 describe('rationaleFor', () => {
 	it('phrases each verdict from the pre-registered reading, matching verdictFrom’s logic', () => {
-		// The cases mirror verdictFrom exactly — if the two ever disagree, one of them is lying.
+		// The cases mirror verdictFrom exactly - if the two ever disagree, one of them is lying.
 		expect(rationaleFor('A>B', 'supported', { lo: 0.4, hi: 1.2 })).toMatch(
 			/clears zero.*supported/i
 		);

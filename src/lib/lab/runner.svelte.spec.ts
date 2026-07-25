@@ -4,11 +4,11 @@ import { evaluate, type EvalRequest } from './evaluator';
 import { newWorldConfig } from '../engine';
 
 /**
- * The determinism gate — the batch runner's own little fidelity test.
+ * The determinism gate - the batch runner's own little fidelity test.
  *
  * A worker runs the SAME `evaluate()` off the main thread; for an identical request it must return
  * identical numbers, because it is the same code driven off the same seeds. If this ever diverges,
- * the worker path is wrong (a bad import, a lost seed) — never loosen it, fix the worker.
+ * the worker path is wrong (a bad import, a lost seed) - never loosen it, fix the worker.
  *
  * This lives in the browser (`.svelte.spec`) project because that is where a real Worker and Vite's
  * worker bundling exist; the node orchestration spec covers the rest without one.

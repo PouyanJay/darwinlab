@@ -6,7 +6,7 @@ import { gotoApp, waitForPrewarm } from './helpers';
  *
  * The store's spec proves the freeze at the tick level. What is left for the browser is the part a
  * USER could be misled by: that the tank really swaps to the clones, and that the card says so while
- * it does — a tank of identical fish that is NOT the population being scored is the single most
+ * it does - a tank of identical fish that is NOT the population being scored is the single most
  * misreadable thing this product can put on screen, so it must never be silent about it.
  */
 
@@ -22,10 +22,10 @@ test.beforeEach(async ({ page }) => {
 });
 
 test('a frozen exhibit takes over the tank, and the card says what it is', async ({ page }) => {
-	const card = tile(page, 2); // Direction — prewarmed, so it has a brain worth showing
+	const card = tile(page, 2); // Direction - prewarmed, so it has a brain worth showing
 	const line = card.getByTestId('exhibit-line');
 
-	// Every mode carries one line, so switching does not change the panel's shape — only its words.
+	// Every mode carries one line, so switching does not change the panel's shape - only its words.
 	await expect(line).toContainText('as it evolved'); // Off, to start
 
 	await clones(card, 'Frozen').click();

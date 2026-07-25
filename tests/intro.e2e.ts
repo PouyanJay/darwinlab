@@ -1,10 +1,10 @@
 import { expect, test, type Page } from '@playwright/test';
 
 /**
- * The intro — the claim and the method, full-screen, gone on the first interaction.
+ * The intro - the claim and the method, full-screen, gone on the first interaction.
  *
  * These tests deliberately do NOT use gotoApp(): that helper enters the lab and re-frames the
- * camera for the other suites, and what is under test here is exactly what gotoApp skips past —
+ * camera for the other suites, and what is under test here is exactly what gotoApp skips past -
  * that the intro is really there, that entering it reveals the true product default (100% zoom,
  * the worlds centred), and that the keypress which enters does not ALSO drive the bench.
  */
@@ -23,7 +23,7 @@ test('the lab opens on the intro, and the bench behind it is inert', async ({ pa
 	await expect(intro(page).getByRole('heading', { level: 1 })).toContainText(
 		'Behaviour that evolved'
 	);
-	// the platform is genuinely behind it, suppressed — not absent
+	// the platform is genuinely behind it, suppressed - not absent
 	await expect(page.locator('.app')).toHaveAttribute('inert', '');
 });
 
@@ -37,7 +37,7 @@ test('entering reveals the default framing: 100% zoom, the worlds centred on the
 
 	await expect(page.locator('.zoom-readout')).toHaveText('100%');
 
-	// the tree's bounding box is centred in the canvas — the union of every node's box
+	// the tree's bounding box is centred in the canvas - the union of every node's box
 	const nodes = page.locator('section[aria-label^="world"]');
 	const count = await nodes.count();
 	let minX = Infinity;
@@ -53,13 +53,13 @@ test('entering reveals the default framing: 100% zoom, the worlds centred on the
 	expect(Math.abs(treeCentre - canvasCentre)).toBeLessThan(3);
 });
 
-test('any key enters — and the keypress does not leak into the bench underneath', async ({
+test('any key enters - and the keypress does not leak into the bench underneath', async ({
 	page
 }) => {
 	// Space is the bench's play/pause shortcut; while the intro is up it must mean only "enter".
 	await page.keyboard.press(' ');
 	await expect(intro(page)).toBeHidden();
-	// the sim is still RUNNING — the transport offers Pause, so the Space did not reach it
+	// the sim is still RUNNING - the transport offers Pause, so the Space did not reach it
 	await expect(page.getByRole('button', { name: 'Pause' })).toBeVisible();
 });
 

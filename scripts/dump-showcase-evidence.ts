@@ -1,6 +1,6 @@
 /**
  * Evidence for the showcase world: the reference world vs the showcase world, same seeds,
- * evolved vs random — trajectories + the ladder table. Feeds the visual report.
+ * evolved vs random - trajectories + the ladder table. Feeds the visual report.
  * Run: npx vite-node scripts/dump-showcase-evidence.ts > evidence.json
  */
 
@@ -13,7 +13,7 @@ const SIMSEC = 1500;
 const BOUT_SEEDS = Array.from({ length: 12 }, (_, i) => 1000 + i);
 
 /**
- * The showcase environment — the sweep's winner (S070S3).
+ * The showcase environment - the sweep's winner (S070S3).
  *
  * The two changes that unlocked the AWARENESS PREMIUM (Direction ÷ Blind, both evolved):
  *  - predSpeed 0.7 → the shark cruises at 140 px/s, BELOW the fish's 176 top speed. Fleeing
@@ -76,7 +76,7 @@ const direction = DEFAULT_WORLDS[2];
 const refCfg: WorldConfig = structuredClone(direction);
 const showCfg: WorldConfig = { ...structuredClone(direction), ...SHOWCASE };
 
-/** Average over independent evolution seeds — one lineage is a coin toss, not a result. */
+/** Average over independent evolution seeds - one lineage is a coin toss, not a result. */
 const EVO_SEEDS = [1, 2, 3];
 const avgOver = (cfg: WorldConfig, pick: (s: ReturnType<typeof measureBouts>) => number) =>
 	EVO_SEEDS.reduce((a, s) => a + pick(measureBouts(cfg, evolveTo(cfg, s), BOUT_SEEDS)), 0) /

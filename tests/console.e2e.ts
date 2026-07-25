@@ -6,7 +6,7 @@ import { gotoApp, openResearch } from './helpers';
  * adapts to whichever instrument the rail has active, and the rail nav is a real roving tablist over
  * all four instruments.
  *
- * These assert STRUCTURE, not measurements: nothing is run, so every panel is in its empty state —
+ * These assert STRUCTURE, not measurements: nothing is run, so every panel is in its empty state -
  * which is exactly the state whose copy must stay honest ("Not tested yet", "Run the Sweep …").
  */
 
@@ -21,7 +21,7 @@ test('the console has three zones and the sidebar follows the active instrument'
 	const sidebar = page.getByRole('complementary', { name: 'research context' });
 	await expect(sidebar).toBeVisible();
 
-	// The rail leads with the subject world every instrument runs on — its name is an EDITABLE
+	// The rail leads with the subject world every instrument runs on - its name is an EDITABLE
 	// field since the redesign, so the assertion reads the input's value, not text content.
 	await expect(page.getByRole('textbox', { name: 'subject name' })).toHaveValue('Generic world');
 
@@ -30,7 +30,7 @@ test('the console has three zones and the sidebar follows the active instrument'
 	await expect(sidebar).toContainText('This run');
 	await expect(page.locator('#rtab-sweep')).toHaveAttribute('aria-selected', 'true');
 
-	// The Ledger — selection flips on the tab, the composer panel docks as the second sidebar, and
+	// The Ledger - selection flips on the tab, the composer panel docks as the second sidebar, and
 	// with nothing settled yet the context sidebar says how to make a record rather than inventing one.
 	await page.getByRole('tab', { name: 'The Ledger' }).click();
 	await expect(page.locator('#rtab-ledger')).toHaveAttribute('aria-selected', 'true');
@@ -39,14 +39,14 @@ test('the console has three zones and the sidebar follows the active instrument'
 	await expect(page.getByTestId('ledger-design')).toBeVisible();
 	await expect(sidebar).toContainText('Test a claim and its record opens here');
 
-	// The Atlas — the landscape panel docks as the second sidebar; the context sidebar prompts the
+	// The Atlas - the landscape panel docks as the second sidebar; the context sidebar prompts the
 	// drill until a landscape is painted.
 	await page.getByRole('tab', { name: 'The Atlas' }).click();
 	await expect(page.getByTestId('atlas')).toBeVisible();
 	await expect(page.getByTestId('atlas-design')).toBeVisible();
 	await expect(sidebar).toContainText('Paint a landscape and drill any cell');
 
-	// The Report — the last instrument opens the brief, and the sidebar becomes its contents outline.
+	// The Report - the last instrument opens the brief, and the sidebar becomes its contents outline.
 	// (No Trace tab: the behaviour trace lives in the Sweep drill's microscope now.)
 	await page.getByRole('tab', { name: 'The Report' }).click();
 	await expect(page.getByTestId('report')).toBeVisible();
@@ -59,7 +59,7 @@ test('the rail nav is a roving tablist: arrows cycle all four instruments and wr
 	await gotoApp(page);
 	await openResearch(page);
 
-	// Focus the active tab, then walk the choice with the keyboard (page.keyboard, not locator.press —
+	// Focus the active tab, then walk the choice with the keyboard (page.keyboard, not locator.press -
 	// the latter refocuses its target and would defeat the point of testing where focus already is).
 	await page.locator('#rtab-sweep').focus();
 

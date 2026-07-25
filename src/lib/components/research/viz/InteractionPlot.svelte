@@ -1,7 +1,7 @@
 <!--
   The interaction plot: mean survival at each of factor A's levels, one line per extreme of factor
   B. PARALLEL lines are the null; the gap growing (or shrinking) along A is exactly the quantity the
-  interaction contrast put an interval on. Two series, direct-labelled at their right ends — teal for
+  interaction contrast put an interval on. Two series, direct-labelled at their right ends - teal for
   B's top arm, ink for its bottom (identity is never colour-alone: the labels name the arms).
 -->
 <script lang="ts">
@@ -43,7 +43,7 @@
 			.filter(Boolean)
 			.join(' ');
 
-	/** The y at a series' last real point — where its direct label sits. */
+	/** The y at a series' last real point - where its direct label sits. */
 	const labelY = (series: (number | null)[]) => {
 		for (let i = series.length - 1; i >= 0; i--) {
 			const v = series[i];
@@ -54,7 +54,7 @@
 </script>
 
 <Figure
-	label="Interaction: mean survival at each level, one line per {bLabel} extreme — diverging lines mean the factors depend on each other."
+	label="Interaction: mean survival at each level, one line per {bLabel} extreme - diverging lines mean the factors depend on each other."
 >
 	<svg viewBox="0 0 {W} {H}">
 		<!-- recessive grid: the floor and a midline -->
@@ -96,8 +96,8 @@
 			]}
 			rows={x.map((level, i) => ({
 				level,
-				bottom: bottom[i] == null ? '—' : bottom[i]!.toFixed(2),
-				top: top[i] == null ? '—' : top[i]!.toFixed(2)
+				bottom: bottom[i] == null ? '-' : bottom[i]!.toFixed(2),
+				top: top[i] == null ? '-' : top[i]!.toFixed(2)
 			}))}
 		/>
 	{/snippet}

@@ -1,5 +1,5 @@
 <!--
-  The Ledger instrument — compose a claim, get a verdict, keep the record.
+  The Ledger instrument - compose a claim, get a verdict, keep the record.
 
   Since the composer redesign the workspace holds only EVIDENCE: the honesty tiles (how the settled
   record splits, and what one verdict costs), the active claim's verdict card as the centrepiece,
@@ -18,7 +18,7 @@
 </script>
 
 <div class="ledger" data-testid="ledger">
-	<!-- The experiment's receipts, always visible above the conclusions — the record survives
+	<!-- The experiment's receipts, always visible above the conclusions - the record survives
 	     reload, so the tiles describe the whole notebook, not just this session. -->
 	<div class="tiles" data-testid="ledger-tiles">
 		<div class="tile">
@@ -44,7 +44,7 @@
 				</span>
 				<span class="ts">latest verdict · {latest.verdict}</span>
 			{:else}
-				<span class="tv">—</span>
+				<span class="tv">-</span>
 				<span class="ts">latest verdict · none yet</span>
 			{/if}
 		</div>
@@ -55,7 +55,7 @@
 </div>
 
 <style>
-	/* A CONTAINER, so the tiles reflow on the Ledger's OWN width — it sits in a workspace whose
+	/* A CONTAINER, so the tiles reflow on the Ledger's OWN width - it sits in a workspace whose
 	   width the drill sidebar and design panel both squeeze. */
 	.ledger {
 		display: flex;
@@ -106,13 +106,13 @@
 		color: var(--ink3);
 	}
 
-	@container (max-width: 720px) {
+	@container (max-width: 768px) {
 		.tiles {
 			grid-template-columns: repeat(3, minmax(0, 1fr));
 		}
 	}
 
-	@container (max-width: 460px) {
+	@container (max-width: 480px) {
 		.tiles {
 			grid-template-columns: repeat(2, minmax(0, 1fr));
 		}

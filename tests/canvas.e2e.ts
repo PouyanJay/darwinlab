@@ -6,7 +6,7 @@ import { gotoApp, waitForPrewarm } from './helpers';
  * child to its parent with a real edge. This replaced the old sized-and-centred grid.
  *
  * The assertions are about what actually MOVED or got WIRED, not about pixels a running sim happens to
- * paint. A node's position is view state, so its on-screen box is stable frame to frame — which is
+ * paint. A node's position is view state, so its on-screen box is stable frame to frame - which is
  * exactly what lets us prove a drag moved the node it grabbed and left its neighbour alone, and that a
  * branch drew a wire that was not there before.
  */
@@ -25,12 +25,12 @@ test.beforeEach(async ({ page }) => {
 	await waitForPrewarm(page);
 });
 
-test('a fresh bench has no wires — the roots are unbranched', async ({ page }) => {
+test('a fresh bench has no wires - the roots are unbranched', async ({ page }) => {
 	await expect(nodes(page)).toHaveCount(5);
 	await expect(edges(page)).toHaveCount(0);
 });
 
-test('branching wires a child BELOW its parent — an edge that was not there before', async ({
+test('branching wires a child BELOW its parent - an edge that was not there before', async ({
 	page
 }) => {
 	const parent = await box(page, 0); // Blind drift
@@ -53,14 +53,14 @@ test('branching wires a child BELOW its parent — an edge that was not there be
 	expect(childBox.y).toBeGreaterThan(parent.y + parent.height / 2);
 });
 
-test('duplicate makes a free-standing copy — carries the brains, but no wire into the tree', async ({
+test('duplicate makes a free-standing copy - carries the brains, but no wire into the tree', async ({
 	page
 }) => {
 	await expect(edges(page)).toHaveCount(0);
 
 	await node(page, 0).getByRole('button', { name: 'duplicate world' }).click();
 
-	// a sixth node inserted right after the source, with its brains — but the edge count stays 0,
+	// a sixth node inserted right after the source, with its brains - but the edge count stays 0,
 	// which is the whole difference from Branch: a duplicate descends from nothing.
 	await expect(nodes(page)).toHaveCount(6);
 	await expect(edges(page)).toHaveCount(0);
@@ -69,7 +69,7 @@ test('duplicate makes a free-standing copy — carries the brains, but no wire i
 
 test('a node is dragged by its header, and its neighbour stays put', async ({ page }) => {
 	const before = await box(page, 1); // Distance
-	const neighbourBefore = await box(page, 0); // Blind drift — must not move
+	const neighbourBefore = await box(page, 0); // Blind drift - must not move
 
 	// grab the node's drag grip and pull it across the plane
 	const grip = node(page, 1).locator('.grip');
@@ -104,7 +104,7 @@ test('the zoom controls change the camera, and recenter frames the tree again', 
 	await page.getByRole('button', { name: 'zoom in' }).click();
 	expect(await read()).toBeGreaterThan(start); // zooming in really enlarged the camera
 
-	// recenter fits all five roots back into the viewport — a definite, repeatable framing
+	// recenter fits all five roots back into the viewport - a definite, repeatable framing
 	await page.getByRole('button', { name: 'recenter the tree' }).click();
 	const framed = await read();
 	// every root is inside the canvas after a fit

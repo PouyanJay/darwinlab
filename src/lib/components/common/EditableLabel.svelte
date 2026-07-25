@@ -1,12 +1,12 @@
 <!--
-  A name that edits in place — the world title on a tile.
+  A name that edits in place - the world title on a tile.
 
   It reads as a heading (display face, no chrome) until you hover or focus it, at which point it
   admits it is a text field. Renaming is live: every keystroke reports up, because a world's name
   is a label, not a form to submit.
 
   Two keys make it feel like a field rather than a trap:
-    Enter   commit — blur, back to reading
+    Enter   commit - blur, back to reading
     Escape  abandon this edit and put back the name the field had when it was focused
 -->
 <script lang="ts">
@@ -19,7 +19,7 @@
 
 	let { value, onchange, label }: Props = $props();
 
-	/** The value to restore on Escape — captured on focus, so it survives the whole edit. */
+	/** The value to restore on Escape - captured on focus, so it survives the whole edit. */
 	let committed = '';
 
 	function onfocus(event: FocusEvent & { currentTarget: HTMLInputElement }) {
@@ -62,7 +62,7 @@
 		transition: background var(--dur-fast) var(--ease);
 	}
 
-	/* Only on the way in does it look like a field — otherwise it is just the tile's title. */
+	/* Only on the way in does it look like a field - otherwise it is just the tile's title. */
 	.editable:hover,
 	.editable:focus {
 		background: var(--chip);

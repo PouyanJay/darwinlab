@@ -11,7 +11,7 @@ afterEach(() => bench.destroy());
  * Drive the panel from a forged engine snapshot: the outputs shown must be the brain's own.
  *
  * Tears the bench down first, because a test that calls this twice would otherwise leave the first
- * bench's loop running — and that loop would overwrite the forged snapshot with real numbers on its
+ * bench's loop running - and that loop would overwrite the forged snapshot with real numbers on its
  * very next tick. (It did. That is why this helper starts with a destroy.)
  */
 function show(turn: number, thrust: number) {

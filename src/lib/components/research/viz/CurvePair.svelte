@@ -1,5 +1,5 @@
 <!--
-  Two averaged learning curves — one per arm of a factor — over the training generations. The
+  Two averaged learning curves - one per arm of a factor - over the training generations. The
   convergence card's chart: a curve that plateaus proves the budget was enough; one still climbing
   at the right edge is the under-trained warning made visible. Survival fraction on y (the engine's
   lifeCurve), generations on x. Direct labels at the right ends; teal = the factor's top arm.
@@ -34,7 +34,7 @@
 </script>
 
 <Figure
-	label="Learning curves over the training generations: {toLabel} against {fromLabel} — a curve still climbing at the right edge is under-trained."
+	label="Learning curves over the training generations: {toLabel} against {fromLabel} - a curve still climbing at the right edge is under-trained."
 >
 	<svg viewBox="0 0 {W} {H}">
 		<line x1={PAD.left} y1={H - PAD.bottom} x2={W - PAD.right} y2={H - PAD.bottom} class="axis" />
@@ -63,8 +63,8 @@
 			]}
 			rows={Array.from({ length: gens }, (_, i) => ({
 				gen: i + 1,
-				from: from[i] == null ? '—' : `${Math.round(from[i] * 100)}%`,
-				to: to[i] == null ? '—' : `${Math.round(to[i] * 100)}%`
+				from: from[i] == null ? '-' : `${Math.round(from[i] * 100)}%`,
+				to: to[i] == null ? '-' : `${Math.round(to[i] * 100)}%`
 			}))}
 		/>
 	{/snippet}

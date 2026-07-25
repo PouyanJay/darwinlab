@@ -6,7 +6,7 @@ import { gotoApp, waitForPrewarm, openAnalysis } from './helpers';
  *
  * The engine spec pins what the assay MEASURES (and calibrates it: brains that cannot feel the shark
  * score chance, exactly). What is left for the browser is that pressing the button really stages the
- * question — that the tank becomes a trial, that the run underneath is held while it answers, and
+ * question - that the tank becomes a trial, that the run underneath is held while it answers, and
  * that what comes back is a number with an n behind it rather than a vibe.
  */
 
@@ -18,7 +18,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 test('the assay stages the question, holds the run, and answers with an n', async ({ page }) => {
-	const card = tile(page, 2); // Direction — prewarmed, so it has a brain worth questioning
+	const card = tile(page, 2); // Direction - prewarmed, so it has a brain worth questioning
 	await openAnalysis(card);
 	const gen = await card.getByTestId('gen').innerText();
 
@@ -29,7 +29,7 @@ test('the assay stages the question, holds the run, and answers with an n', asyn
 	await expect(progress).toBeVisible();
 	await expect(card.getByText(/The run is held/)).toBeVisible();
 
-	// The verdict is the POPULATION's, and it arrives with the number of decisions behind it — because
+	// The verdict is the POPULATION's, and it arrives with the number of decisions behind it - because
 	// one brain answers ten bearings, and ten coin flips are not a measurement.
 	const accuracy = card.getByTestId('turn-accuracy');
 	await expect(accuracy).toBeVisible({ timeout: 60_000 });
@@ -69,7 +69,7 @@ test('a finished result can be cleared, collapsing the panel back to its button'
 
 	await card.getByRole('button', { name: 'clear the assay result' }).click();
 
-	// gone — the panel is just its button again, so a card does not carry a stale answer forever
+	// gone - the panel is just its button again, so a card does not carry a stale answer forever
 	await expect(verdict).toBeHidden();
 	await expect(card.getByRole('button', { name: 'Run assay' })).toBeVisible();
 });

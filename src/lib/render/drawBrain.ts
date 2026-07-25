@@ -1,9 +1,9 @@
 /**
- * The brain visualization — the REAL weight matrix, not decoration.
+ * The brain visualization - the REAL weight matrix, not decoration.
  * Faithful port of engine2.js `drawBrain`.
  *
  * Renders the selected fish's actual genome as an 8→6→2 node graph:
- *   edge colour = sign (excite = +, inhibit = −) — see ThemePalette for why these are their
+ *   edge colour = sign (excite = +, inhibit = −) - see ThemePalette for why these are their
  *     own colours rather than the theme's accent/danger pair
  *   edge thickness = |weight|
  *   travelling pulse brightness = live signal (|weight × activation|)
@@ -25,7 +25,7 @@ import type { Senses, SenseSnapshot } from '../engine';
 import { THEMES, type ThemeName } from './theme';
 
 export interface DrawBrainOpts {
-	/** Which senses are enabled — an off sense dims its input node and feeds 0. */
+	/** Which senses are enabled - an off sense dims its input node and feeds 0. */
 	senses: Senses;
 	/** Live snapshot of the selected fish's mind; null renders the resting net. */
 	sense: SenseSnapshot | null;
@@ -35,7 +35,7 @@ export interface DrawBrainOpts {
 	reducedMotion?: boolean;
 }
 
-// The resting net's activations — all zero, shared and never written, so painting a fish-less
+// The resting net's activations - all zero, shared and never written, so painting a fish-less
 // brain 60×/s doesn't allocate two arrays a frame.
 const SILENT_INPUTS: readonly number[] = new Array<number>(NIN).fill(0);
 const SILENT_HIDDEN: number[] = new Array<number>(NHID).fill(0);
@@ -63,7 +63,7 @@ export function drawBrain(
 	}
 
 	const x = sense ? sense.x : SILENT_INPUTS;
-	// Hidden activations PER LAYER — a single-hidden-layer brain has one, a deep one has several.
+	// Hidden activations PER LAYER - a single-hidden-layer brain has one, a deep one has several.
 	// The whole network is a column stack: inputs, each hidden layer, outputs; sizes drives it all.
 	const hLayers: number[][] = sense ? sense.h : [SILENT_HIDDEN];
 	const g = sense ? sense.genome : null;

@@ -19,7 +19,7 @@ describe('EffectBars', () => {
 		expect(rows[1].querySelector('.val')?.textContent?.trim()).toBe('-4.2s');
 	});
 
-	it('mutes a factor whose interval straddles zero — it does nothing here', () => {
+	it('mutes a factor whose interval straddles zero - it does nothing here', () => {
 		const { container } = render(EffectBars, { effects });
 		const rows = container.querySelectorAll('.effects .row');
 
@@ -32,7 +32,7 @@ describe('EffectBars', () => {
 		const { container } = render(EffectBars, { effects });
 
 		// The symmetric axis spans ±max, where max is the largest |value| across every delta and whisker
-		// end — here Predator speed's lo of −6. So the ends read a negative and a positive 6.0s, 0 between.
+		// end - here Predator speed's lo of −6. So the ends read a negative and a positive 6.0s, 0 between.
 		expect(container.querySelector('.tick.lo')?.textContent).toContain('6.0s');
 		expect(container.querySelector('.tick.hi')?.textContent?.trim()).toBe('+6.0s');
 		expect(container.querySelector('.tick.mid')?.textContent?.trim()).toBe('0');

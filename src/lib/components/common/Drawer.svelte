@@ -1,5 +1,5 @@
 <!--
-  A panel that slides in from the right — the shell for the Brain Inspector (Phase 6).
+  A panel that slides in from the right - the shell for the Brain Inspector (Phase 6).
 
   Deliberately NOT a modal, and that is a product decision, not a shortcut: you inspect a fish's
   brain *while watching it swim*, so the bench behind the drawer has to stay live and clickable.
@@ -8,7 +8,7 @@
   lose:
 
     • focus moves into the drawer when it opens, and returns to whatever opened it when it closes
-    • Esc closes it — unless a real modal is open on top, whose Esc it must not steal
+    • Esc closes it - unless a real modal is open on top, whose Esc it must not steal
 
   Focus is never trapped: Tab walks out of the drawer and back into the bench, which is right,
   because the bench is still usable.
@@ -24,17 +24,17 @@
 		title: string;
 		children: Snippet;
 		subtitle?: string;
-		/** A pulsing dot next to the title — "this is live, not a snapshot". */
+		/** A pulsing dot next to the title - "this is live, not a snapshot". */
 		live?: boolean;
 		/**
 		 * DOCKED: render in the normal flow (a column of the workbench) instead of floating fixed on
-		 * the right. Same panel, same content, no overlay chrome — no fixed inset, no slide-in, no
+		 * the right. Same panel, same content, no overlay chrome - no fixed inset, no slide-in, no
 		 * focus-takeover (it is always present, so opening it is not an event to move focus for).
 		 */
 		docked?: boolean;
 		/**
 		 * Whether opening moves focus into the panel (and returns it on close). The default; the
-		 * caller passes false when the open is a SIDE EFFECT of something mid-flight — the tank's
+		 * caller passes false when the open is a SIDE EFFECT of something mid-flight - the tank's
 		 * keyboard walk opens the inspector, and stealing focus would end the walk one step in.
 		 * An explicit prop, not an inference from the invoker: the caller knows what opened it.
 		 */
@@ -55,7 +55,7 @@
 	let panel = $state<HTMLElement>();
 
 	$effect(() => {
-		// A docked panel is part of the page, not an overlay that arrives — it never takes focus, and
+		// A docked panel is part of the page, not an overlay that arrives - it never takes focus, and
 		// Esc is not its to close (it has no "closed" state to return to).
 		if (docked) return;
 		if (!open || !panel) return;
@@ -70,14 +70,14 @@
 		panel.focus();
 
 		return () => {
-			// Only hand focus back if the invoker is still on the page — on a full teardown it isn't,
+			// Only hand focus back if the invoker is still on the page - on a full teardown it isn't,
 			// and yanking focus to a detached node would just dump the user at the top of the document.
 			if (invoker?.isConnected) invoker.focus();
 		};
 	});
 
 	function onkeydown(event: KeyboardEvent) {
-		if (docked) return; // a docked panel does not answer Esc — there is nothing to close
+		if (docked) return; // a docked panel does not answer Esc - there is nothing to close
 		if (event.key !== 'Escape' || !open) return;
 		// A modal on top owns Esc; it will close itself and this drawer must survive that keypress.
 		if (document.querySelector('dialog[open]')) return;
@@ -102,7 +102,7 @@
 		class:docked
 	>
 		<!-- a div, not a <header>: an html header outside main/section is a BANNER landmark, and the
-		     page already has one — the top bar. (axe: landmark-no-duplicate-banner) -->
+		     page already has one - the top bar. (axe: landmark-no-duplicate-banner) -->
 		<div class="head">
 			{#if live}
 				<span class="dot" aria-hidden="true"></span>
@@ -127,7 +127,7 @@
 		width: var(--drawer-width, 360px);
 		max-width: calc(100vw - 32px);
 		overflow: auto;
-		/* Scrolls, but the bar stays out of sight — the mind is a tall reading panel and a native
+		/* Scrolls, but the bar stays out of sight - the mind is a tall reading panel and a native
 		   scrollbar down its edge reads as chrome. Scrolling (wheel, trackpad, keys) is untouched. */
 		scrollbar-width: none; /* Firefox */
 		padding: 17px 19px 19px;
@@ -144,7 +144,7 @@
 	}
 
 	/* DOCKED: part of the workbench flow, not an overlay. It fills the column it is given and scrolls
-	   inside it; no fixed inset, no glass/blur, no slide-in — it was always here. */
+	   inside it; no fixed inset, no glass/blur, no slide-in - it was always here. */
 	.drawer.docked {
 		position: static;
 		inset: auto;
@@ -158,16 +158,16 @@
 		animation: none;
 	}
 
-	/* On a phone the inset side panel becomes a full-width overlay rising from the bottom edge —
+	/* On a phone the inset side panel becomes a full-width overlay rising from the bottom edge -
 	   still non-modal, still over a running bench, just no longer pretending there is a "side". */
-	@media (max-width: 560px) {
+	@media (max-width: 640px) {
 		.drawer {
 			left: 0;
 			right: 0;
 			bottom: 0;
 			width: auto;
 			max-width: none;
-			/* the footer disclaimer deliberately outranks every panel (z-footer) — leave its line
+			/* the footer disclaimer deliberately outranks every panel (z-footer) - leave its line
 			   of the viewport to it rather than letting it sit on the drawer's own legend */
 			padding-bottom: 46px;
 			border-left: none;

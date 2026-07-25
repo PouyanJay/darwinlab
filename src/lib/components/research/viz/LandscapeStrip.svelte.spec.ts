@@ -31,7 +31,7 @@ describe('LandscapeStrip', () => {
 		const { container } = render(LandscapeStrip, base);
 		const rows = [...container.querySelectorAll('tbody tr')];
 
-		// The whole band, in order — checking the endpoints too, so a reversed row order can't slip
+		// The whole band, in order - checking the endpoints too, so a reversed row order can't slip
 		// past on the odd-length array's fixed midpoint.
 		expect(rows.map((r) => [...r.querySelectorAll('td')].map((c) => c.textContent))).toEqual(
 			band.map((b) => [px(b.x), `${b.survival.toFixed(1)}s`])

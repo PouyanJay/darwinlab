@@ -7,7 +7,7 @@ import type { EvalRequest } from './evaluator';
  * Orchestration driven through the in-thread executor so it never touches a worker, plus the pool's
  * own cancellation/disposal driven through a FAKE worker so those paths are deterministic. Jobs are
  * shrunk to the bone (four prey, one predator, few seeds/generations/bouts) so this is milliseconds,
- * not a real measurement — the numbers themselves are the evaluator's job, tested elsewhere.
+ * not a real measurement - the numbers themselves are the evaluator's job, tested elsewhere.
  */
 const tiny = (name: string): EvalRequest => ({
 	cfg: { ...newWorldConfig(name, '#888888'), prey: 4, preds: 1 },
@@ -16,7 +16,7 @@ const tiny = (name: string): EvalRequest => ({
 	bouts: 1
 });
 
-/** A worker that never answers on its own — it holds its slot until the pool cancels or disposes it. */
+/** A worker that never answers on its own - it holds its slot until the pool cancels or disposes it. */
 class FakeWorker {
 	onmessage: ((event: MessageEvent) => void) | null = null;
 	postMessage(): void {}
@@ -28,7 +28,7 @@ const fakePool = (size: number) =>
 describe('runBatch orchestration', () => {
 	it("returns each job's result in its own slot, in order", async () => {
 		// The jobs differ in `seeds`, which surfaces on the result as `n`, so a slot holding the wrong
-		// job's result (or the whole array reversed) is caught — a uniform property never would be.
+		// job's result (or the whole array reversed) is caught - a uniform property never would be.
 		const jobs = [
 			{ ...tiny('a'), seeds: 1 },
 			{ ...tiny('b'), seeds: 2 },
@@ -90,7 +90,7 @@ describe('WorkerPoolExecutor cancellation and disposal', () => {
 
 		expect(await queued).toBeNull(); // cancelled from the queue, not after some other job finished
 		pool.dispose();
-		await holding; // settled to null by dispose — awaited so it can't leak past the test
+		await holding; // settled to null by dispose - awaited so it can't leak past the test
 	});
 
 	it('dispose settles an in-flight job to null instead of leaking it', async () => {

@@ -2,8 +2,8 @@
   The console's left rail: what the lab is pointed at, and what you can do to it.
 
   Top to bottom: the mode's name, the SUBJECT (the world every instrument runs on), the INSTRUMENT
-  nav (a tablist — one instrument shows in the workspace at a time), and a compute readout at the
-  foot. The chrome is monochrome on purpose — the active instrument reads through ink and a raised
+  nav (a tablist - one instrument shows in the workspace at a time), and a compute readout at the
+  foot. The chrome is monochrome on purpose - the active instrument reads through ink and a raised
   panel, never a colour; teal and coral belong to the graphs, not the furniture.
 
   The nav is a proper tablist so it keeps the roving-tabindex keyboard model the lab's grouped
@@ -21,15 +21,15 @@
 
 	let { active, onselect }: { active: Instrument; onselect: (key: Instrument) => void } = $props();
 
-	/** How many logical cores the worker pool can spread across — a static fact of the machine. */
+	/** How many logical cores the worker pool can spread across - a static fact of the machine. */
 	const cores = browser ? navigator.hardwareConcurrency || null : null;
 
-	// The notebook, scoped to the world the console is pointed at — the rail names that subject above,
+	// The notebook, scoped to the world the console is pointed at - the rail names that subject above,
 	// so the findings under it are the ones about it. Reactive on both the notebook and the subject.
 	const kept = $derived(findings.forSubject(currentSubjectHash()));
 
 	/**
-	 * Move the selection among the READY instruments and take focus with it — the roving-tabindex
+	 * Move the selection among the READY instruments and take focus with it - the roving-tabindex
 	 * model. Disabled instruments (the Report) are not in `readyInstrumentKeys`, so ←/→ steps over
 	 * them rather than landing on a tab that does nothing.
 	 */
@@ -54,12 +54,12 @@
 		<span class="brand-name">Research</span>
 	</div>
 
-	<section class="sec">
+	<section class="sec sec-subject">
 		<span class="eyebrow">Subject</span>
 		<SubjectCard />
 	</section>
 
-	<section class="sec">
+	<section class="sec sec-instruments">
 		<span class="eyebrow">Instruments</span>
 		<div class="nav" role="tablist" aria-label="research instruments" aria-orientation="vertical">
 			{#each INSTRUMENTS as instrument (instrument.key)}
@@ -228,7 +228,7 @@
 		color: var(--ink3);
 	}
 
-	/* The "answers Q…" chips sit just below the blurb — a hair of space off it, not the 1px the label
+	/* The "answers Q…" chips sit just below the blurb - a hair of space off it, not the 1px the label
 	   column stacks its lines at. */
 	.lbl :global(.qtags) {
 		margin-top: 3px;
@@ -247,7 +247,7 @@
 	}
 
 	/* The notebook sits between the instruments and the foot. The RAIL itself is the scroll region (it
-	   holds the focusable tabs, so a keyboard user reaches its overflow) — the findings section is not a
+	   holds the focusable tabs, so a keyboard user reaches its overflow) - the findings section is not a
 	   separate scroll container, which would be an empty, unfocusable one axe rightly flags. */
 	.finding-list {
 		list-style: none;
@@ -278,7 +278,7 @@
 		background: var(--ink2);
 	}
 
-	/* A kept negative reads as an outline, not a fill — status through shape, monochrome. */
+	/* A kept negative reads as an outline, not a fill - status through shape, monochrome. */
 	.finding.limit .fdot {
 		background: none;
 		box-shadow: inset 0 0 0 1.5px var(--ink3);
@@ -383,5 +383,57 @@
 		flex: none;
 		color: var(--ink3);
 		font-variant-numeric: tabular-nums;
+	}
+
+	/* Phone: the rail stops being a full-height column and collapses to a compact tab bar. The
+	   instrument nav leads as a STICKY, horizontally scrollable pill row so switching instruments is
+	   one tap away instead of below a long scroll; a compact Subject line sits beneath it. The findings
+	   preview and compute foot are dropped here - the findings reach the phone through the Report tab,
+	   and the running state shows on each instrument's own controls. (--bp-md) */
+	@media (max-width: 768px) {
+		.rail {
+			border-right: none;
+			border-bottom: 1px solid var(--line);
+		}
+
+		.brand,
+		[data-testid='findings'],
+		.foot {
+			display: none;
+		}
+
+		.sec {
+			padding: var(--sp-3) var(--sp-4);
+		}
+
+		/* The tab bar leads and stays put as the page scrolls, so the instruments are always reachable. */
+		.sec-instruments {
+			order: -1;
+			position: sticky;
+			top: 0;
+			z-index: 1;
+			background: var(--panel);
+			border-bottom: 1px solid var(--line);
+		}
+
+		.nav {
+			flex-direction: row;
+			overflow-x: auto;
+			gap: var(--sp-2);
+			padding-bottom: 2px;
+		}
+
+		.nav-item {
+			width: auto;
+			flex: 0 0 auto;
+			white-space: nowrap;
+		}
+
+		/* Pills carry the name only - the blurb and the "answers Q…" chips would make each tab too wide
+		   to fit a row. */
+		.nav-item .blurb,
+		.nav-item :global(.qtags) {
+			display: none;
+		}
 	}
 </style>

@@ -1,5 +1,5 @@
 <!--
-  The lab's mark: a fish carrying a three-node network where its eye would be — the product in one
+  The lab's mark: a fish carrying a three-node network where its eye would be - the product in one
   glyph, a creature whose behaviour IS a tiny neural net.
 
   Inlined rather than <img src="…svg">, and painted in TOKENS rather than in the hex values the

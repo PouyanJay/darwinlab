@@ -7,8 +7,8 @@
  *
  * The FIRST resolution happens in `app.html`'s inline head script, before the first paint, so a
  * light-theme user never sees a flash of dark. This store then adopts whatever that script
- * decided — the two must agree on the storage key and the fallback. Dark is the fallback in both,
- * unconditionally (the OS `prefers-color-scheme` does NOT downgrade us to light — a saved choice
+ * decided - the two must agree on the storage key and the fallback. Dark is the fallback in both,
+ * unconditionally (the OS `prefers-color-scheme` does NOT downgrade us to light - a saved choice
  * or the toggle is the only way to light).
  */
 

@@ -48,7 +48,7 @@ describe('the Report', () => {
 		expect(report.method).toBeNull();
 	});
 
-	it('marks a question answered ONLY when a finding declares it — a Sweep fills Q2 and Q6, not Q3', () => {
+	it('marks a question answered ONLY when a finding declares it - a Sweep fills Q2 and Q6, not Q3', () => {
 		findings.add(input({ source: 'sweep' })); // ANSWERS.sweep = [Q2, Q6]
 
 		expect(sectionFor('Q2').finding).not.toBeNull();
@@ -65,7 +65,7 @@ describe('the Report', () => {
 		expect(report.method).toEqual({ configHash: 'a3f19c', seeds: 40 });
 	});
 
-	it('answers a question in its OWN terms — Q7 the method, Q6 the negatives, not the sweep headline', () => {
+	it('answers a question in its OWN terms - Q7 the method, Q6 the negatives, not the sweep headline', () => {
 		findings.add(
 			input({
 				source: 'sweep',
@@ -88,8 +88,8 @@ describe('the Report', () => {
 		expect(sectionFor('Q7').answer).toBe('config a3f19c · 6 seeds'); // the method, not a conclusion
 	});
 
-	it('leads with the strongest real claim — priority beats recency, not the newest finding', () => {
-		// Add the Ledger verdict FIRST, then the Sweep — so the sweep is the NEWEST but lower priority.
+	it('leads with the strongest real claim - priority beats recency, not the newest finding', () => {
+		// Add the Ledger verdict FIRST, then the Sweep - so the sweep is the NEWEST but lower priority.
 		// If lead were merely "the most recent finding", the sweep would win; it must not.
 		findings.add(
 			input({ source: 'ledger', variant: 'dir', title: 'Direction pays', status: 'ok' })
@@ -99,7 +99,7 @@ describe('the Report', () => {
 		expect(report.lead?.title).toBe('Direction pays'); // the Ledger verdict leads, despite being older
 	});
 
-	it('exports the live report as Markdown — the snapshot → formatter wiring, end to end', () => {
+	it('exports the live report as Markdown - the snapshot → formatter wiring, end to end', () => {
 		findings.add(
 			input({
 				source: 'sweep',
@@ -112,18 +112,18 @@ describe('the Report', () => {
 		);
 
 		const md = report.toMarkdown();
-		expect(md).toContain('# Research report —');
+		expect(md).toContain('# Research report -');
 		expect(md).toContain('Direction +2.4s'); // the answered question carries its headline
-		expect(md).toContain('_Not answered yet — run The Ledger._'); // Q3, still an honest prompt
+		expect(md).toContain('_Not answered yet - run The Ledger._'); // Q3, still an honest prompt
 	});
 
-	it('scopes to the current subject — a finding on another world does not fill this report', () => {
+	it('scopes to the current subject - a finding on another world does not fill this report', () => {
 		app.analyze({ ...structuredClone(app.subjectBase('X')), vision: 999 });
 		findings.add(input({ title: 'on the subject' }));
 
 		expect(report.coverage.answered).toBeGreaterThan(0); // it shows for its own subject
 
-		app.clearSubject(); // back to the generic world — the subject's finding must not leak in
+		app.clearSubject(); // back to the generic world - the subject's finding must not leak in
 		expect(report.hasFindings).toBe(false);
 		expect(report.coverage.answered).toBe(0);
 	});

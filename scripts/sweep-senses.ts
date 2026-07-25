@@ -1,5 +1,5 @@
 /**
- * Sense-subset ablation — what is each sense worth ON ITS OWN, and in company?
+ * Sense-subset ablation - what is each sense worth ON ITS OWN, and in company?
  *
  * The bench's five worlds are CUMULATIVE (each adds a sense to the one before), which hides
  * the individual verdicts: "Corner-wise" is dist+dir+closing+walls, so if closing is a tax and
@@ -49,7 +49,7 @@ const ENVS: Record<string, Partial<WorldConfig>> = {
 		vision: 200,
 		agility: 1.4
 	},
-	/** w3 with shorter generations — the life curve reads higher without losing the ladder. */
+	/** w3 with shorter generations - the life curve reads higher without losing the ladder. */
 	w3b: {
 		persistence: false,
 		lungeCommit: true,
@@ -93,9 +93,9 @@ const envName = process.env.ENV ?? 'w3';
 const env = ENVS[envName];
 if (!env) throw new Error(`unknown ENV "${envName}" (have: ${Object.keys(ENVS).join(', ')})`);
 
-const base = DEFAULT_WORLDS[0]; // one tank, one shark setup — only the SENSES vary
+const base = DEFAULT_WORLDS[0]; // one tank, one shark setup - only the SENSES vary
 
-console.log(`\nSense-subset ablation — environment "${envName}"`);
+console.log(`\nSense-subset ablation - environment "${envName}"`);
 console.log(`  ${JSON.stringify(env)}`);
 console.log(`  ${EVO_SEEDS.length} evolution seeds × ${BOUT_SEEDS.length} bouts, equal budgets\n`);
 console.log('  senses               life   vs blind   flee°   dodge   corner-time');
@@ -118,7 +118,7 @@ for (const combo of COMBOS) {
 
 	const life = avg((r) => r.meanLife);
 	if (combo.name === 'blind') blindLife = life;
-	const vsBlind = blindLife ? `${(((life / blindLife) * 100 - 100) | 0).toString()}%` : '—';
+	const vsBlind = blindLife ? `${(((life / blindLife) * 100 - 100) | 0).toString()}%` : '-';
 	console.log(
 		`  ${combo.name.padEnd(20)} ${life.toFixed(2)}s ${vsBlind.padStart(8)}    ` +
 			`${avg((r) => r.fleeAngleErrorDeg)

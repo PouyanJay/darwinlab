@@ -1,15 +1,15 @@
 /**
- * The Ledger store — claims in, a dated record of verdicts out.
+ * The Ledger store - claims in, a dated record of verdicts out.
  *
  * Since the composer redesign the store owns the COMPOSER: the picked template, its slot values,
- * and the seeds-per-arm budget. `active` is always a runnable claim — slot resolution (defaults,
+ * and the seeds-per-arm budget. `active` is always a runnable claim - slot resolution (defaults,
  * wiring gates, no-self-rivalry) happens on read against the current subject, so the panel can
  * never hold an impossible sentence. Running the claim designs its two arms (hypothesis.ts),
  * measures them through the shared `research` lifecycle, reads the verdict off the pre-registered
  * contrast, and writes a RECORD: what was claimed, how it came out, the effect and its interval,
  * the shared background both arms stood on, and the config fingerprint + seed count that reproduce
  * it. The records PERSIST to localStorage, so the ledger is the same the next time you open the
- * lab — a growing, dated notebook of what this world has been shown to do.
+ * lab - a growing, dated notebook of what this world has been shown to do.
  *
  * This is the platform's persistence layer, and it lives here (not in R1) because the Ledger is its
  * first real consumer: a generic store with nothing to keep would have been speculative.
@@ -46,10 +46,10 @@ import { loadSimRate } from './sweep.svelte';
 export const LEDGER_STORAGE_KEY = 'darwinlab:ledger';
 const STORAGE_VERSION = 1;
 /** The record is bounded; over this, the oldest entries are evicted. The composer opened the claim
- *  space wide, so the bound is generous — 50 was right for a three-claim menu, not for this one. */
+ *  space wide, so the bound is generous - 50 was right for a three-claim menu, not for this one. */
 export const MAX_ENTRIES = 200;
 
-/** A ledger run's fixed shape — training and scoring never vary, so every record in the feed stays
+/** A ledger run's fixed shape - training and scoring never vary, so every record in the feed stays
  *  comparable to every other. Seeds per arm is the ONE budget knob, and it lives on the store. */
 export const LEDGER_RUN_SHAPE = { episodes: 30, bouts: 4 } as const;
 export const LEDGER_SEED_LIMITS = { min: 4, max: 16, fallback: 8 } as const;
@@ -57,20 +57,20 @@ export const LEDGER_SEED_LIMITS = { min: 4, max: 16, fallback: 8 } as const;
  *  10-sim-second generation the evaluator runs. */
 const SIM_SECONDS_PER_RUN = (LEDGER_RUN_SHAPE.episodes + LEDGER_RUN_SHAPE.bouts) * 10;
 
-/** One arm's summary — mean seconds survived and its interval, for the A/B plot. */
+/** One arm's summary - mean seconds survived and its interval, for the A/B plot. */
 export interface ArmSummary {
 	label: string;
 	mean: number;
 	ci: Interval;
 }
 
-/** The arms as the compact ArmRow the interval plot and the notebook share — one converter, so the
+/** The arms as the compact ArmRow the interval plot and the notebook share - one converter, so the
  *  Ledger's card and the Report's Q3 can't shape the evidence differently. */
 export function toArmRows(arms: ArmSummary[]): ArmRow[] {
 	return arms.map((a) => ({ label: a.label, mean: a.mean, lo: a.ci.lo, hi: a.ci.hi }));
 }
 
-/** One settled finding — enough to read it AND to reproduce it. */
+/** One settled finding - enough to read it AND to reproduce it. */
 export interface LedgerEntry {
 	id: string;
 	claimId: string;
@@ -82,23 +82,23 @@ export interface LedgerEntry {
 	/** Each arm on its own, so the card can plot the two intervals the verdict came from. */
 	arms: ArmSummary[];
 	seeds: number;
-	/** The two-arm config fingerprint — say "I ran a3f19c" and mean the same experiment. */
+	/** The two-arm config fingerprint - say "I ran a3f19c" and mean the same experiment. */
 	configHash: string;
 	/** ISO timestamp of when it was measured. Metadata, not part of what reproduces the run. */
 	recorded: string;
 	/** The pre-registered reading this verdict was taken by. Absent on records from before the
-	 *  composer — the drill then skips the rationale line rather than guessing. */
+	 *  composer - the drill then skips the rationale line rather than guessing. */
 	expect?: ClaimExpectation;
-	/** The composer pick that rebuilds this claim — "load into composer" needs both. Absent on
+	/** The composer pick that rebuilds this claim - "load into composer" needs both. Absent on
 	 *  pre-composer records, whose claims may no longer be composable. */
 	templateId?: TemplateId;
 	slots?: SlotValues;
-	/** The background both arms shared, frozen at measurement — a later subject edit must not
+	/** The background both arms shared, frozen at measurement - a later subject edit must not
 	 *  relabel an old verdict. */
 	shared?: string[];
 }
 
-/** A runtime shape check on ONE entry — a persisted record can be hand-edited, half-written or from a
+/** A runtime shape check on ONE entry - a persisted record can be hand-edited, half-written or from a
  *  future build, and the UI calls `.toFixed` on `delta` and maps `arms`, so a malformed entry must be
  *  dropped rather than trusted (a bare `as LedgerEntry[]` cast would let it through to crash a render). */
 function isLedgerEntry(value: unknown): value is LedgerEntry {
@@ -117,7 +117,7 @@ function isLedgerEntry(value: unknown): value is LedgerEntry {
 	);
 }
 
-/** Everything one run designed with — handed from `run` to `#toEntry` so the record can carry the
+/** Everything one run designed with - handed from `run` to `#toEntry` so the record can carry the
  *  claim, the composer pick, the frozen base, and the fingerprint of the two arm configs. */
 interface RunDesign {
 	claim: Claim;
@@ -148,7 +148,7 @@ class LedgerStore {
 
 	// The composer: the picked family and its raw slot picks. Picks are RESOLVED on read (defaults,
 	// wiring gates, exclusivity) so `values`/`active` are always legal for the current subject.
-	// The default is Under pressure at 1.4× — a compound template, so a fresh panel demonstrates
+	// The default is Under pressure at 1.4× - a compound template, so a fresh panel demonstrates
 	// slots rather than opening on the simplest sentence.
 	#templateId = $state<TemplateId>('pressure');
 	#slots = $state.raw<SlotValues>({});
@@ -167,12 +167,12 @@ class LedgerStore {
 		return resolveSlots(this.template, this.#slots, app.base);
 	}
 
-	/** The composed claim the panel is holding — always runnable. */
+	/** The composed claim the panel is holding - always runnable. */
 	get active(): Claim {
 		return buildClaim(this.template, this.values);
 	}
 
-	/** Switch families. Slots reset to the template's defaults — picks do not carry across shapes. */
+	/** Switch families. Slots reset to the template's defaults - picks do not carry across shapes. */
 	selectTemplate(id: TemplateId): void {
 		this.#templateId = id;
 		this.#slots = {};
@@ -190,7 +190,7 @@ class LedgerStore {
 		this.#slots = { ...slots };
 	}
 
-	/** How many seeds each arm runs — the one budget knob, shown on the plan and stored per record. */
+	/** How many seeds each arm runs - the one budget knob, shown on the plan and stored per record. */
 	get seeds(): number {
 		return this.#seeds;
 	}
@@ -214,7 +214,7 @@ class LedgerStore {
 		return research.progress;
 	}
 
-	/** The whole record, newest first — the discoveries feed. */
+	/** The whole record, newest first - the discoveries feed. */
 	get entries(): LedgerEntry[] {
 		return this.#entries;
 	}
@@ -224,7 +224,7 @@ class LedgerStore {
 		return this.#entries.find((entry) => entry.claimId === claimId) ?? null;
 	}
 
-	/** The record the drill sidebar shows — the picked row, falling back to the newest record. */
+	/** The record the drill sidebar shows - the picked row, falling back to the newest record. */
 	get selected(): LedgerEntry | null {
 		return this.#entries.find((entry) => entry.id === this.#selectedId) ?? this.#entries[0] ?? null;
 	}
@@ -233,7 +233,7 @@ class LedgerStore {
 		this.#selectedId = entryId;
 	}
 
-	/** The feed's honesty tally — how the settled record splits. */
+	/** The feed's honesty tally - how the settled record splits. */
 	get tally(): { claims: number; supported: number; refuted: number } {
 		return {
 			claims: new Set(this.#entries.map((entry) => entry.claimId)).size,
@@ -276,7 +276,7 @@ class LedgerStore {
 			ci: bootstrapCI(result?.returns ?? [])
 		});
 		return {
-			// A globally-unique id — never a session counter, which would reset on reload and collide
+			// A globally-unique id - never a session counter, which would reset on reload and collide
 			// with an id already in the persisted array (run.svelte.ts's keyed feed needs it unique).
 			id: crypto.randomUUID(),
 			claimId: claim.id,
@@ -303,7 +303,7 @@ class LedgerStore {
 			const payload = JSON.stringify({ version: STORAGE_VERSION, entries: this.#entries });
 			localStorage.setItem(LEDGER_STORAGE_KEY, payload);
 		} catch {
-			// Storage full or unavailable — the in-memory ledger still works for this session.
+			// Storage full or unavailable - the in-memory ledger still works for this session.
 		}
 	}
 
@@ -311,7 +311,7 @@ class LedgerStore {
 		research.cancel();
 	}
 
-	/** The whole ledger as JSON — what "export" hands over. */
+	/** The whole ledger as JSON - what "export" hands over. */
 	toJson(): string {
 		return JSON.stringify({ version: STORAGE_VERSION, entries: this.#entries }, null, 2);
 	}

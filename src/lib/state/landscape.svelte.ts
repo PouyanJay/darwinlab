@@ -1,14 +1,14 @@
 /**
- * The Atlas store — two axes in, a survival landscape out.
+ * The Atlas store - two axes in, a survival landscape out.
  *
  * Since the landscape-panel redesign it owns the whole DESIGN: which two parameters the plane
  * varies and the (per-axis, remembered) range of each, the grid resolution from a fixed menu, the
- * two-state pinned background every cell shares, and the budget — seeds per cell and training
+ * two-state pinned background every cell shares, and the budget - seeds per cell and training
  * length. Running compiles pins onto the subject, writes the axes over it cell by cell, and turns
  * the grid into one batch through the shared `research` lifecycle; nothing here re-implements the
  * measurement or the batch.
  *
- * The map keeps its OWN pan/zoom camera (`Viewport`) inside LandscapeMap — never shared with the
+ * The map keeps its OWN pan/zoom camera (`Viewport`) inside LandscapeMap - never shared with the
  * lineage tree. "Watch this world" is the one place Research reaches back into Studio: it drops the
  * drilled cell's config onto the bench as a fresh world and switches the lab to Studio, so a point
  * on the map becomes a world you can actually watch evolve.
@@ -40,14 +40,14 @@ import { app } from './app.svelte';
 import { loadSimRate } from './sweep.svelte';
 import type { JobExecutor } from '../lab/runner';
 
-/** The two parameters the plane opens on — the predator-speed cliff against evolutionary drift. */
+/** The two parameters the plane opens on - the predator-speed cliff against evolutionary drift. */
 const DEFAULT_X = 'predSpeed';
 const DEFAULT_Y = 'mutation';
 
-/** A neighbour step where survival falls this much is "the edge" — the drill's plain-words line. */
+/** A neighbour step where survival falls this much is "the edge" - the drill's plain-words line. */
 export const EDGE_DROP_SECONDS = 0.8;
 
-/** What the last run measured with — the honesty tiles print this, frozen, not the live panel. */
+/** What the last run measured with - the honesty tiles print this, frozen, not the live panel. */
 export interface LandscapeReceipt {
 	seeds: number;
 	episodes: number;
@@ -59,7 +59,7 @@ class LandscapeStore {
 
 	#xKey = $state<string>(DEFAULT_X);
 	#yKey = $state<string>(DEFAULT_Y);
-	// Edited ranges, remembered PER AXIS — swap axes and back, and your range is still yours.
+	// Edited ranges, remembered PER AXIS - swap axes and back, and your range is still yours.
 	#spans = new SvelteMap<string, { from: number; to: number }>();
 	#resolution = $state<number>(LANDSCAPE_DEFAULTS.resolution);
 	#seeds = $state<number>(LANDSCAPE_DEFAULTS.seeds);
@@ -67,7 +67,7 @@ class LandscapeStore {
 	// The two-state pins. A key never touched follows the subject's own truth (knob.read on read).
 	#pins = new SvelteMap<string, boolean>();
 
-	// The run's outputs, replaced wholesale — never mutated in place (the field is a flat array the
+	// The run's outputs, replaced wholesale - never mutated in place (the field is a flat array the
 	// map reads every repaint). `#plan` is kept so a picked (ix, iy) resolves back to its cell + cfg.
 	#plan = $state.raw<LandscapePlan | null>(null);
 	#field = $state.raw<LandscapeField | null>(null);
@@ -100,14 +100,14 @@ class LandscapeStore {
 		this.#spans.set(key, { from: spanned.min, to: spanned.max });
 	}
 
-	// Falls back to the first axis on an unknown key — deliberately defensive. The picker only ever
+	// Falls back to the first axis on an unknown key - deliberately defensive. The picker only ever
 	// passes a real `axis.key`, so this is unreachable today; it keeps a future renamed key from
 	// throwing rather than silently mislabelling, and the picker's own `selected` state stays honest.
 	#axis(key: string): LandscapeAxis {
 		return this.axes.find((axis) => axis.key === key) ?? this.axes[0];
 	}
 
-	/** An axis narrowed to its remembered range — what the plan and the panel's inputs both read. */
+	/** An axis narrowed to its remembered range - what the plan and the panel's inputs both read. */
 	#spanned(key: string): LandscapeAxis {
 		const axis = this.#axis(key);
 		const span = this.#spans.get(key);
@@ -118,7 +118,7 @@ class LandscapeStore {
 		return this.#resolution;
 	}
 
-	/** Pick a resolution from the fixed menu — an off-menu value snaps to the nearest option. */
+	/** Pick a resolution from the fixed menu - an off-menu value snaps to the nearest option. */
 	setResolution(value: number): void {
 		this.#resolution = [...LANDSCAPE_DEFAULTS.resolutions].reduce((best, option) =>
 			Math.abs(option - value) < Math.abs(best - value) ? option : best
@@ -149,7 +149,7 @@ class LandscapeStore {
 		return Math.max(min, Math.min(max, Math.round(value) || min));
 	}
 
-	/** One pin's position — an untouched key reads the subject's own truth, so a fresh panel
+	/** One pin's position - an untouched key reads the subject's own truth, so a fresh panel
 	 *  describes the world as it IS (the Sweep panel's principle). */
 	pin(key: string): boolean {
 		const touched = this.#pins.get(key);
@@ -162,18 +162,18 @@ class LandscapeStore {
 		this.#pins.set(key, on);
 	}
 
-	/** Forget every explicit pin — back to describing the subject as it is. The testkit's walk-back
+	/** Forget every explicit pin - back to describing the subject as it is. The testkit's walk-back
 	 *  (the singleton-spec precedent sweep.resetCalibration set); no panel control needs it yet. */
 	clearPins(): void {
 		this.#pins.clear();
 	}
 
-	/** Every pin the run would compile, explicit AND inherited — what `run` hands to pinnedBase. */
+	/** Every pin the run would compile, explicit AND inherited - what `run` hands to pinnedBase. */
 	get pins(): Record<string, boolean> {
 		return Object.fromEntries(BOOL_KNOBS.map((knob) => [knob.key, this.pin(knob.key)]));
 	}
 
-	/** How many cells the current resolution will measure — shown before a run. */
+	/** How many cells the current resolution will measure - shown before a run. */
 	get plannedCells(): number {
 		return this.#resolution * this.#resolution;
 	}
@@ -197,22 +197,22 @@ class LandscapeStore {
 		return this.#field;
 	}
 
-	/** The last run's budget + wall clock, frozen — what the honesty tiles print. */
+	/** The last run's budget + wall clock, frozen - what the honesty tiles print. */
 	get receipt(): LandscapeReceipt | null {
 		return this.#receipt;
 	}
 
-	/** The steepest fall-off along X in the current field — the cliff headline, or null if none. */
+	/** The steepest fall-off along X in the current field - the cliff headline, or null if none. */
 	get falloff(): Falloff | null {
 		return this.#field ? steepestFalloff(this.#field) : null;
 	}
 
-	/** Each row's own steepest fall-off — the gold dashes the map traces (null rows stay untraced). */
+	/** Each row's own steepest fall-off - the gold dashes the map traces (null rows stay untraced). */
 	get cliffRows(): (Falloff | null)[] {
 		return this.#field ? rowCliffs(this.#field) : [];
 	}
 
-	/** The bottom and top rows as curves — the cross-section card's two lines, with their Y values. */
+	/** The bottom and top rows as curves - the cross-section card's two lines, with their Y values. */
 	get sections(): { y: number; points: { x: number; survival: number }[] }[] {
 		const field = this.#field;
 		if (!field || field.rows < 2) return [];
@@ -227,13 +227,13 @@ class LandscapeStore {
 		return this.#selected;
 	}
 
-	/** Mean survival at the drilled cell (NaN if none / unmeasured) — the number the drill card shows. */
+	/** Mean survival at the drilled cell (NaN if none / unmeasured) - the number the drill card shows. */
 	get selectedValue(): number {
 		if (!this.#field || !this.#selected) return NaN;
 		return valueAt(this.#field, this.#selected.ix, this.#selected.iy);
 	}
 
-	/** Survival change one grid step away from the drilled cell, or null at the map's edge — the
+	/** Survival change one grid step away from the drilled cell, or null at the map's edge - the
 	 *  drill's neighbour readout, the map's geometry made local. */
 	neighborDelta(dx: number, dy: number): number | null {
 		if (!this.#field || !this.#selected) return null;
@@ -246,7 +246,7 @@ class LandscapeStore {
 		return there - here;
 	}
 
-	/** Drill into a grid coordinate — opens the cell's world for a closer look. */
+	/** Drill into a grid coordinate - opens the cell's world for a closer look. */
 	select(ix: number, iy: number): void {
 		if (!this.#plan) return;
 		this.#selected = this.#plan.cells.find((cell) => cell.ix === ix && cell.iy === iy) ?? null;
@@ -258,7 +258,7 @@ class LandscapeStore {
 
 	/**
 	 * Run the landscape: compile the pins onto the subject, plan the grid over the spanned axes,
-	 * measure every cell through the batch runner, and keep the field — unless a newer run
+	 * measure every cell through the batch runner, and keep the field - unless a newer run
 	 * superseded this one, in which case `research.run` returns null and this publishes nothing.
 	 * Clears any prior drill-in, since the old cell is not in the new grid.
 	 */
@@ -291,7 +291,7 @@ class LandscapeStore {
 
 	/**
 	 * Watch a point on the map evolve: drop its config onto the bench as a fresh, named world and
-	 * switch to Studio. The name encodes where on the plane it came from — read from the FIELD's
+	 * switch to Studio. The name encodes where on the plane it came from - read from the FIELD's
 	 * frozen axes, so a panel edit after the run cannot mislabel the world it hands over.
 	 */
 	watch(cell: LandscapeCell): void {

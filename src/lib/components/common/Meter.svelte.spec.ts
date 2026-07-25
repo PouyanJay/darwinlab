@@ -27,7 +27,7 @@ describe('Meter', () => {
 		expect(left.style.width).toBe('50%');
 	});
 
-	it('a centred meter at rest shows nothing at all — straight ahead is not a turn', () => {
+	it('a centred meter at rest shows nothing at all - straight ahead is not a turn', () => {
 		const straight = fill(render(Meter, { value: 0, origin: 'centre' }).container);
 
 		expect(straight.style.width).toBe('0%');

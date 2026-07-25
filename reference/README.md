@@ -8,7 +8,7 @@ ESLint on purpose. It exists solely so `src/lib/harness/fidelity.spec.ts` can ru
 engines head-to-head and prove the port did not change the science.
 
 If you ever need to touch the port's behavior, the fidelity test must be re-run and must
-still pass — or the change must be an explicit, measured, documented deviation.
+still pass - or the change must be an explicit, measured, documented deviation.
 
 ## A note on the README §8 numbers
 
@@ -26,6 +26,6 @@ Measured headlessly over 50 runs × 50 generations, *this reference file itself*
 
 The real spread is far flatter than documented: Distance provides no measurable benefit over
 Blind, Direction is the only sense that pays (and only by ~5pp), and the extras do not stack.
-The qualitative lesson the product teaches — *more senses ≠ more intelligence* — holds, and is
+The qualitative lesson the product teaches - *more senses ≠ more intelligence* - holds, and is
 in fact harsher than the README claims. The numbers were corrected rather than the engine
 tuned to flatter them (CLAUDE.md golden rules #1 and #2).

@@ -1,11 +1,11 @@
 /**
  * The genetic algorithm's pure operators. Faithful port of engine2.js.
  *
- * Nobody writes "flee the shark" — fleeing emerges because non-fleers get eaten and the
+ * Nobody writes "flee the shark" - fleeing emerges because non-fleers get eaten and the
  * survivors breed. `breed` builds the next generation's genomes (champion + elites copied
  * verbatim, the rest tournament-selected crossover + mutation). The world-state side of a
  * generation boundary (curve, champion, gen, respawn) lives in world.ts `evolve`, which
- * calls `breed` — keeping this module free of any World dependency.
+ * calls `breed` - keeping this module free of any World dependency.
  *
  * RNG draw order is preserved exactly from the original so seeded runs are reproducible.
  */
@@ -61,7 +61,7 @@ export function mutate(g: Genome, rate: number, rng: Rng = defaultRng): Genome {
  * remainder bred by tournament-selected (biased toward the top half) crossover + mutation.
  *
  * Expects `ranked` to be the FULL generation roster (length = cfg.prey), matching the
- * original — tournament indexing assumes at least that many entries.
+ * original - tournament indexing assumes at least that many entries.
  */
 export function breed(
 	ranked: readonly { genome: Genome }[],
@@ -78,7 +78,7 @@ export function breed(
 	// The reference floors the tournament window at 2, which would index past the end of a
 	// 1-entry roster (`ranked[1]` → undefined → TypeError). Clamp to the roster length: for
 	// any valid population (prey ≥ 2, per the spec) this is identical to the reference, so
-	// the bit-exact fidelity gate is unaffected — it only makes the degenerate case survive.
+	// the bit-exact fidelity gate is unaffected - it only makes the degenerate case survive.
 	const half = Math.min(ranked.length, Math.max(2, Math.floor(ranked.length / 2)));
 	const pick = () => ranked[Math.floor(Math.pow(rng(), TOURNAMENT_BIAS) * half)];
 	while (next.length < cfg.prey) {

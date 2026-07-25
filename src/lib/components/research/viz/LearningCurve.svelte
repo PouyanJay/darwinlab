@@ -1,8 +1,8 @@
 <!--
-  Q1 — did evolution actually work? Per-generation survival, plotted over the generations it evolved
+  Q1 - did evolution actually work? Per-generation survival, plotted over the generations it evolved
   for: a curve that climbs then holds is a population that learned and converged; a flat line on the
-  floor is a trainer that never left it. The data is `Evaluation.curve` (survival FRACTIONS, 0–1). The
-  axes are monochrome; the line and its fill are the survival teal — the one place colour is the data.
+  floor is a trainer that never left it. The data is `Evaluation.curve` (survival FRACTIONS, 0-1). The
+  axes are monochrome; the line and its fill are the survival teal - the one place colour is the data.
 -->
 <script lang="ts">
 	import Figure from './Figure.svelte';
@@ -11,7 +11,7 @@
 
 	let {
 		curve,
-		/** What one point means, for the reader — e.g. "fraction of each generation still alive at its end". */
+		/** What one point means, for the reader - e.g. "fraction of each generation still alive at its end". */
 		legend = 'fraction of each generation still alive when it ended',
 		open
 	}: { curve: number[]; legend?: string; open?: boolean } = $props();
@@ -50,7 +50,7 @@
 
 <Figure {label} {open}>
 	<svg viewBox="0 0 {W} {H}" aria-hidden="true">
-		<!-- gridlines at 50% and the 0% baseline — monochrome, so the curve reads over them -->
+		<!-- gridlines at 50% and the 0% baseline - monochrome, so the curve reads over them -->
 		<line class="grid" x1={PAD.l} x2={W - PAD.r} y1={y(0.5)} y2={y(0.5)} />
 		<line class="axis" x1={PAD.l} x2={W - PAD.r} y1={baseline} y2={baseline} />
 		{#if n > 0}

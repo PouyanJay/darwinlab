@@ -1,5 +1,5 @@
 <!--
-  Q3 — is the winner real, or noise? Two arms plotted as intervals on a shared seconds axis, so you can
+  Q3 - is the winner real, or noise? Two arms plotted as intervals on a shared seconds axis, so you can
   SEE whether they separate: non-overlapping intervals are a supported "A beats B", overlapping ones the
   honest "no difference". The longer-surviving arm is drawn in the survival teal (it tracks the measured
   means, not the claim's hoped-for direction); the other stays grey. The Ledger and the Report share it.

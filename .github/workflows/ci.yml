@@ -1,11 +1,11 @@
 # The pipeline. Two things it does, deliberately DECOUPLED:
 #
-#   1. Health — every PR runs verify; every push to main runs verify AND the full e2e suite
+#   1. Health - every PR runs verify; every push to main runs verify AND the full e2e suite
 #      against a GitHub Pages-shaped build (BASE_PATH=/darwinlab), in parallel. Merging proves
 #      main is shippable. It does NOT publish anything.
 #
-#   2. Deploy — publishing to Pages happens ONLY on a manual run (workflow_dispatch), i.e. when
-#      someone runs `make deploy`. That run re-does the whole bar fresh — verify + e2e — and
+#   2. Deploy - publishing to Pages happens ONLY on a manual run (workflow_dispatch), i.e. when
+#      someone runs `make deploy`. That run re-does the whole bar fresh - verify + e2e - and
 #      ships the exact bytes the e2e job just exercised, so what goes live is what was tested at
 #      that SHA, not a stale green from an earlier merge.
 #
@@ -38,7 +38,7 @@ jobs:
       - run: npm ci
       # The vitest "client" project runs component specs in real Chromium, so browsers are
       # needed for the UNIT suite too, not just Playwright e2e. The download is cached on the
-      # lockfile hash — any dependency change (incl. Playwright itself) refreshes it.
+      # lockfile hash - any dependency change (incl. Playwright itself) refreshes it.
       - uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
@@ -49,7 +49,7 @@ jobs:
       - run: npm run test:unit -- --run
       - run: npm run build
 
-  # e2e runs against the build exactly as Pages will serve it — under /darwinlab — so a
+  # e2e runs against the build exactly as Pages will serve it - under /darwinlab - so a
   # base-path regression (an absolute URL escaping the base) fails here, not in production.
   # The suite deliberately does NOT gate PRs (they get check/lint/unit/build); it runs on every
   # push to main (the health signal) and on a deploy dispatch (the gate). No `needs: verify`:
@@ -79,13 +79,13 @@ jobs:
           path: test-results/
           retention-days: 7
       # Only carry the artifact forward when this run will actually publish it (a deploy
-      # dispatch) — a plain push-to-main runs e2e for the health signal and stops there.
+      # dispatch) - a plain push-to-main runs e2e for the health signal and stops there.
       - uses: actions/upload-pages-artifact@v3
         if: github.event_name == 'workflow_dispatch'
         with:
           path: build/
 
-  # Ships the artifact the e2e job uploaded — no rebuild, so what deploys is what was tested.
+  # Ships the artifact the e2e job uploaded - no rebuild, so what deploys is what was tested.
   # Gated on BOTH parallel jobs AND on being a manual dispatch: a merge to main never reaches
   # Pages; only `make deploy` (workflow_dispatch on main) does.
   deploy:

@@ -1,11 +1,11 @@
 <!--
-  The tile's readouts: how the population is doing now, how it has done across generations, and —
-  once training ends — how fast the real world kills it.
+  The tile's readouts: how the population is doing now, how it has done across generations, and -
+  once training ends - how fast the real world kills it.
 
   Two sparklines, both painted straight from engine data every frame:
-    • the learning curve — how long a fish lives, per generation, in the world's accent. This is the graph
+    • the learning curve - how long a fish lives, per generation, in the world's accent. This is the graph
       the whole product is an argument about, so it is on every tile, not hidden in a detail view.
-    • the decay curve — the deployed population draining away. Red, because that is what it is.
+    • the decay curve - the deployed population draining away. Red, because that is what it is.
 -->
 <script lang="ts">
 	import Canvas from '../common/Canvas.svelte';
@@ -23,7 +23,7 @@
 	const accent = $derived(entry.config.accent);
 
 	/**
-	 * What the real-world run has come to. Before training ends there is nothing to report — the
+	 * What the real-world run has come to. Before training ends there is nothing to report - the
 	 * population is still being reset every generation, so no decay has happened yet.
 	 */
 	const deployment = $derived.by(() => {
@@ -35,8 +35,8 @@
 	});
 
 	/**
-	 * What AT hears about the real-world run. The visible readout ticks every second — announcing
-	 * that firehose would be noise — so the live region speaks only when the run TURNS: deployed,
+	 * What AT hears about the real-world run. The visible readout ticks every second - announcing
+	 * that firehose would be noise - so the live region speaks only when the run TURNS: deployed,
 	 * half-life latched, wiped out. Each phrase is stable once said, so each is said once.
 	 */
 	const announcement = $derived.by(() => {
@@ -52,9 +52,9 @@
 	// Stable identity: a new function each render would churn the Canvas attachment every frame.
 	const register = (render: () => void) => bench.painters.add(render);
 
-	// Both series only gain a point at a generation / sampling boundary — don't repaint 60×/s.
+	// Both series only gain a point at a generation / sampling boundary - don't repaint 60×/s.
 	// BOTH ends in the signature: once a series hits its cap it shift()s as it push()es, so the
-	// length holds still and a repeated last value would hide a window that scrolled — the moving
+	// length holds still and a repeated last value would hide a window that scrolled - the moving
 	// head end is what still betrays the shift.
 	const paintCurve = paintOnChange(
 		() =>
@@ -68,7 +68,7 @@
 		(ctx, width, height) => drawDecay(ctx, width, height, entry.world.decay, accent, theme.name)
 	);
 
-	// The emergence curve — the school's spacing tightening across generations, drawn so it RISES
+	// The emergence curve - the school's spacing tightening across generations, drawn so it RISES
 	// as the ball forms. Only a schooling world has a schoolCurve; it gains a point per generation.
 	const paintSchool = paintOnChange(
 		() =>
@@ -109,7 +109,7 @@
 
 {#if entry.stats.schooling}
 	<!-- Only on a schooling world: how the population is grouping RIGHT NOW. In an Alone-vs-Shoal
-	     pair these two numbers are the whole argument — same ocean, and one tank packs into a tight
+	     pair these two numbers are the whole argument - same ocean, and one tank packs into a tight
 	     aligned ball while the other stays spread. Painted from the raw world (WorldStats), so it is
 	     the sim, not an illustration of it. -->
 	<div class="row school">
@@ -117,7 +117,7 @@
 			<span class="eyebrow">school</span>
 			<span class="figures">
 				<b class="tabular" data-testid="school-nnd">
-					{entry.stats.schoolNND ?? '—'}<span class="unit">px apart</span>
+					{entry.stats.schoolNND ?? '-'}<span class="unit">px apart</span>
 				</b>
 				<b class="tabular align" data-testid="school-align">
 					{entry.stats.schoolAlignPct}<span class="unit">% aligned</span>
@@ -133,7 +133,7 @@
 					paint={paintSchool}
 					{register}
 					label="{entry.config.name}: how tightly the school packs across {entry.stats
-						.gen} generations — the line rises as the spacing closes"
+						.gen} generations - the line rises as the spacing closes"
 				/>
 			</div>
 		</div>
@@ -219,7 +219,7 @@
 
 	.eaten {
 		font-size: var(--fs-sm);
-		/* The world's accent, run toward the ink for AA — the accent owns the card's stat colour.
+		/* The world's accent, run toward the ink for AA - the accent owns the card's stat colour.
 		   (--tile-accent cascades from the WorldTile root.) */
 		color: color-mix(in srgb, var(--tile-accent) 60%, var(--ink));
 	}

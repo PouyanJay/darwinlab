@@ -7,7 +7,7 @@ import type { ReportSection } from '../state/report.svelte';
 
 /**
  * The Markdown export. Two things must hold: it is BYTE-STABLE (the same snapshot always renders the
- * same document — no dates, ids or ordering drift, so a report is a diffable artifact), and it carries
+ * same document - no dates, ids or ordering drift, so a report is a diffable artifact), and it carries
  * the honesty rail through untouched (an unanswered question exports as a "run the test" prompt, never
  * a fabricated answer). The formatter is pure, so these drive it with hand-built snapshots.
  */
@@ -94,7 +94,7 @@ function studiedSnapshot(): ReportSnapshot {
 			section('Q3', ledger, 'Direction pays', 'The Ledger'),
 			section('Q4', atlas, 'Cliff at 1.20×', 'The Atlas'),
 			section('Q5', null, null, 'a behaviour trace'),
-			section('Q6', sweep, 'Distance — no gain', 'The Sweep'),
+			section('Q6', sweep, 'Distance - no gain', 'The Sweep'),
 			section('Q7', sweep, 'config a3f19c · 40 seeds', 'any test')
 		]
 	};
@@ -103,29 +103,29 @@ function studiedSnapshot(): ReportSnapshot {
 describe('reportToMarkdown', () => {
 	it('renders a studied subject as a stable, whole brief', () => {
 		expect(reportToMarkdown(studiedSnapshot())).toMatchInlineSnapshot(`
-			"# Research report — a generic world
+			"# Research report - a generic world
 
-			**Direction pays** — 5 of 7 questions a rigorous study must answer are settled for this subject; the rest are waiting on a test.
+			**Direction pays** - 5 of 7 questions a rigorous study must answer are settled for this subject; the rest are waiting on a test.
 
 			## Answers at a glance
 
 			| # | Question | Answer | Source |
 			| --- | --- | --- | --- |
-			| Q1 | did it learn | Not tested | — |
+			| Q1 | did it learn | Not tested | - |
 			| Q2 | what matters | Direction +2.4s | The Sweep |
 			| Q3 | is it real | Direction pays | The Ledger |
 			| Q4 | where it holds | Cliff at 1.20× | The Atlas |
-			| Q5 | the mechanism | Not tested | — |
-			| Q6 | the limits | Distance — no gain | The Sweep |
+			| Q5 | the mechanism | Not tested | - |
+			| Q6 | the limits | Distance - no gain | The Sweep |
 			| Q7 | reproducible | config a3f19c · 40 seeds | The Sweep |
 
 			## Q1 · Did evolution actually work?
 
-			_Not answered yet — run a behaviour trace._
+			_Not answered yet - run a behaviour trace._
 
 			## Q2 · What actually moves survival?
 
-			**Direction +2.4s** — the strongest factor
+			**Direction +2.4s** - the strongest factor
 
 			_Source: The Sweep._
 
@@ -136,7 +136,7 @@ describe('reportToMarkdown', () => {
 
 			## Q3 · Is the winner real, or noise?
 
-			**Direction pays** — supported · +2.2s · d 2.1
+			**Direction pays** - supported · +2.2s · d 2.1
 
 			_Source: The Ledger._
 
@@ -145,9 +145,9 @@ describe('reportToMarkdown', () => {
 			| With direction | 5.2s | 4.1s … 6.3s |
 			| Blind | 3.0s | 2.2s … 3.8s |
 
-			## Q4 · Where does it hold — and break?
+			## Q4 · Where does it hold - and break?
 
-			**Cliff at 1.20×** — survival drops 2.7s across the step
+			**Cliff at 1.20×** - survival drops 2.7s across the step
 
 			_Source: The Atlas._
 
@@ -161,11 +161,11 @@ describe('reportToMarkdown', () => {
 
 			## Q5 · How do they do it?
 
-			_Not answered yet — run a behaviour trace._
+			_Not answered yet - run a behaviour trace._
 
 			## Q6 · What did NOT work?
 
-			**Distance** don't clear zero — kept as real negatives, not hidden. More knobs is not more survival.
+			**Distance** don't clear zero - kept as real negatives, not hidden. More knobs is not more survival.
 
 			## Q7 · Can anyone re-run it?
 
@@ -174,11 +174,11 @@ describe('reportToMarkdown', () => {
 		`);
 	});
 
-	it('is byte-stable — pure, and free of the dates or ids that would make a report undiffable', () => {
+	it('is byte-stable - pure, and free of the dates or ids that would make a report undiffable', () => {
 		const md = reportToMarkdown(studiedSnapshot());
 		expect(reportToMarkdown(studiedSnapshot())).toBe(md); // idempotent: same snapshot, same bytes
 		// And directly: nothing non-deterministic leaked in. Two same-millisecond calls would match even
-		// if a timestamp were stamped, so this guards the date-freedom the docstring claims — the fixture
+		// if a timestamp were stamped, so this guards the date-freedom the docstring claims - the fixture
 		// carries a `recorded` ISO date the formatter must never surface.
 		expect(md).not.toMatch(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/); // no ISO timestamp
 		expect(md).not.toContain('2020-01-01'); // nor the fixture's recorded date in any form
@@ -187,9 +187,9 @@ describe('reportToMarkdown', () => {
 	it('exports an unanswered question as a prompt, never a fabricated answer (the honesty rail)', () => {
 		const md = reportToMarkdown(studiedSnapshot());
 		expect(md).toContain('## Q1 · Did evolution actually work?');
-		expect(md).toContain('_Not answered yet — run a behaviour trace._');
+		expect(md).toContain('_Not answered yet - run a behaviour trace._');
 		// The glance row for the unanswered question reads "Not tested", with no source.
-		expect(md).toMatch(/\| Q1 \| did it learn \| Not tested \| — \|/);
+		expect(md).toMatch(/\| Q1 \| did it learn \| Not tested \| - \|/);
 	});
 
 	it('traces every answered question to the test that produced it', () => {
@@ -209,7 +209,7 @@ describe('reportToMarkdown', () => {
 		expect(md).toContain('Survival across **Predator speed**'); // landscape (Q4)
 	});
 
-	it('keeps the Sweep negatives under Q6 — the factor that could not clear zero', () => {
+	it('keeps the Sweep negatives under Q6 - the factor that could not clear zero', () => {
 		const md = reportToMarkdown(studiedSnapshot());
 		expect(md).toContain('## Q6 · What did NOT work?');
 		expect(md).toContain("**Distance** don't clear zero");
@@ -260,7 +260,7 @@ describe('reportToMarkdown', () => {
 	});
 
 	it('summarises a learning curve when a trace has answered Q1', () => {
-		// The curve is survival FRACTIONS (0–1) — rendered as a percent, matching the on-screen graph.
+		// The curve is survival FRACTIONS (0-1) - rendered as a percent, matching the on-screen graph.
 		const curve: Evidence = { kind: 'curve', curve: [0.12, 0.3, 0.62, 0.58] };
 		const snap: ReportSnapshot = {
 			subjectName: 'a generic world',
@@ -283,7 +283,7 @@ describe('reportToMarkdown', () => {
 		);
 	});
 
-	it('says plainly that a subject has not been studied — no invented answers, no method', () => {
+	it('says plainly that a subject has not been studied - no invented answers, no method', () => {
 		const snap: ReportSnapshot = {
 			subjectName: 'a generic world',
 			coverage: { answered: 0, total: 7 },

@@ -4,7 +4,7 @@ import { gotoApp } from './helpers';
 /**
  * The Studio→Research round-trip end to end: "Analyse" on a Studio world carries that world into
  * Research as the subject (a banner names it and every instrument runs on it), and "use a generic
- * world" drops it. The mirror direction — Research→Studio's "Watch this world" — is covered by
+ * world" drops it. The mirror direction - Research→Studio's "Watch this world" - is covered by
  * atlas.e2e; together they are the seam-dissolving pair.
  */
 
@@ -27,7 +27,7 @@ test('"Analyse" carries a Studio world into Research, and "use a generic world" 
 	await expect(banner).toContainText('Analysing');
 	await expect(banner).toContainText(name);
 
-	// Drop the subject — the banner goes, and we are still in Research (clearing the subject is not
+	// Drop the subject - the banner goes, and we are still in Research (clearing the subject is not
 	// leaving the mode), now exploring a generic world.
 	await page.getByRole('button', { name: 'Use a generic world' }).click();
 	await expect(page.getByTestId('research-subject')).toHaveCount(0);
@@ -36,7 +36,7 @@ test('"Analyse" carries a Studio world into Research, and "use a generic world" 
 	).toBeChecked();
 });
 
-test('the analysis subject does NOT survive a reload — a hand-off, not a stored setting', async ({
+test('the analysis subject does NOT survive a reload - a hand-off, not a stored setting', async ({
 	page
 }) => {
 	await gotoApp(page);

@@ -30,12 +30,12 @@ describe('paintOnChange', () => {
 		expect(paint).toHaveBeenCalledTimes(2);
 	});
 
-	it('repaints when the canvas bitmap changes — resizing a canvas erases it', () => {
+	it('repaints when the canvas bitmap changes - resizing a canvas erases it', () => {
 		const paint = vi.fn();
 		const wrapped = paintOnChange(() => 'same', paint);
 
 		wrapped(fakeCtx(200, 60), 100, 30);
-		// same CSS size, sharper bitmap (a DPR change) — the old pixels are gone either way
+		// same CSS size, sharper bitmap (a DPR change) - the old pixels are gone either way
 		wrapped(fakeCtx(400, 120), 100, 30);
 		expect(paint).toHaveBeenCalledTimes(2);
 	});

@@ -8,7 +8,7 @@ import { makeWorld, DEFAULT_WORLDS } from '$lib/engine';
 /**
  * Built by hand rather than through the bench store: the store owns a running loop that would
  * re-sync these numbers out from under the test on the very next frame. What is under test here is
- * the reading — how a deployment is described — not how the store fills it in.
+ * the reading - how a deployment is described - not how the store fills it in.
  */
 function entryWith(stats: Partial<WorldStats>): WorldEntry {
 	const world = makeWorld(structuredClone(DEFAULT_WORLDS[2]));
@@ -25,7 +25,7 @@ function entryWith(stats: Partial<WorldStats>): WorldEntry {
 
 const deployment = () => page.getByTestId('deployment').element().textContent;
 
-describe('TileStats — the real-world run', () => {
+describe('TileStats - the real-world run', () => {
 	it('has nothing to report while the world is still evolving', () => {
 		render(TileStats, { entry: entryWith({ deployed: false, alive: 14 }) });
 
@@ -39,7 +39,7 @@ describe('TileStats — the real-world run', () => {
 		expect(deployment()).toBe('9s · 17 left');
 	});
 
-	it('leads with the half-life once the population has halved — that is the comparable number', () => {
+	it('leads with the half-life once the population has halved - that is the comparable number', () => {
 		render(TileStats, {
 			entry: entryWith({ deployed: true, deployT: 30, halfLife: 12.4, alive: 6 })
 		});
@@ -64,10 +64,10 @@ describe('TileStats — the real-world run', () => {
 	});
 });
 
-describe('TileStats — what a screen reader hears about the run', () => {
+describe('TileStats - what a screen reader hears about the run', () => {
 	/**
 	 * The visible readout ticks every second; the LIVE REGION must not. It speaks only at the
-	 * moments the run turns, in phrases that are stable once said — so each is announced once.
+	 * moments the run turns, in phrases that are stable once said - so each is announced once.
 	 */
 	const spoken = () => page.getByRole('status').element().textContent;
 
@@ -76,7 +76,7 @@ describe('TileStats — what a screen reader hears about the run', () => {
 		expect(spoken()).toBe('');
 	});
 
-	it('announces the start of the run — without the ticking seconds', () => {
+	it('announces the start of the run - without the ticking seconds', () => {
 		render(TileStats, { entry: entryWith({ deployed: true, deployT: 8.6, alive: 17 }) });
 		expect(spoken()).toBe('Direction: deployed. The real-world run has started');
 	});

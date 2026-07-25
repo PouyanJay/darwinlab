@@ -3,7 +3,7 @@ import { gotoApp, openResearch, runMinimalSweep } from './helpers';
 
 /**
  * The Findings notebook end to end (RC1): running an instrument and pressing "add to report" records
- * a finding that shows in the rail — and, the whole point of persistence, SURVIVES A RELOAD.
+ * a finding that shows in the rail - and, the whole point of persistence, SURVIVES A RELOAD.
  *
  * The finding's TITLE is a live measurement (which factor led, or none) and is not asserted; what is
  * asserted is that a finding was kept, the button flipped to "in report", and the notebook reloaded.
@@ -28,7 +28,7 @@ test('a swept finding is added to the notebook, shows in the rail, and survives 
 	await expect(rail).toContainText('1 kept'); // and the finding is in the rail
 
 	// Reload and re-enter. The mode persists (Research); the notebook is on disk, so the finding is
-	// still in the rail — the reload is the assertion, not a fresh empty state that would pass anyway.
+	// still in the rail - the reload is the assertion, not a fresh empty state that would pass anyway.
 	await page.reload();
 	await expect(page.getByTestId('intro')).toBeVisible();
 	await page.keyboard.press('Enter');

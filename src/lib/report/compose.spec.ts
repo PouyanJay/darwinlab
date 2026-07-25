@@ -6,7 +6,7 @@ import type { Evidence } from '../lab/evidence';
 import { QUESTIONS, type QuestionId } from '../lab/questions';
 
 /**
- * The abstract and the tensions check are where the Report starts writing SENTENCES — so the honesty
+ * The abstract and the tensions check are where the Report starts writing SENTENCES - so the honesty
  * rail is most at risk here, and these tests guard it: a clause appears ONLY for a question a finding
  * answers, every number is read from the evidence, and a tension is flagged ONLY when the data really
  * conflicts. Pure functions over hand-built sections; no store, no live notebook.
@@ -67,14 +67,14 @@ const LANDSCAPE_CLIFF: Evidence = {
 const LANDSCAPE_FLAT: Evidence = { ...LANDSCAPE_CLIFF, cliffX: undefined };
 
 describe('composeAbstract', () => {
-	it('is empty before anything is studied — no sentences without findings', () => {
+	it('is empty before anything is studied - no sentences without findings', () => {
 		expect(composeAbstract(sectionsWith({}))).toEqual([]);
 	});
 
 	it('reads the dominant mover from the Q2 effects with its SIGN, and cites Q2', () => {
 		const clauses = composeAbstract(sectionsWith({ Q2: EFFECTS }));
 		const q2 = clauses.find((c) => c.questionId === 'Q2');
-		// The whole sentence, so a sign-loss bug (reporting a −2.8s COST as a +2.8s gain — exactly the
+		// The whole sentence, so a sign-loss bug (reporting a −2.8s COST as a +2.8s gain - exactly the
 		// dishonesty the rail guards) fails here; predator speed is the strongest |effect|, not Direction.
 		expect(q2?.text).toBe('predator speed moved survival most (-2.8s)');
 	});
@@ -93,7 +93,7 @@ describe('composeAbstract', () => {
 		expect(q1?.text).toContain('climbed to'); // this curve genuinely rose 10% → 62%
 	});
 
-	it('says "reached", not "climbed", when the curve did NOT rise — no unverified trend claim', () => {
+	it('says "reached", not "climbed", when the curve did NOT rise - no unverified trend claim', () => {
 		// A curve that ends below where it started: the number is real, the direction is not "up".
 		const falling: Evidence = { kind: 'curve', curve: [0.6, 0.5, 0.3, 0.25] };
 		const clauses = composeAbstract(sectionsWith({ Q2: EFFECTS, Q1: falling }));
@@ -102,13 +102,13 @@ describe('composeAbstract', () => {
 		expect(q1?.text).not.toContain('climbed');
 	});
 
-	it('closes on the FIRST unanswered content question — the honest gap, cited to nothing', () => {
+	it('closes on the FIRST unanswered content question - the honest gap, cited to nothing', () => {
 		// Q1, Q2 answered; Q3 is the first gap.
 		const clauses = composeAbstract(sectionsWith({ Q1: CURVE, Q2: EFFECTS }));
 		const gap = clauses.find((c) => c.gap);
 		expect(gap).toBeTruthy();
 		expect(gap?.questionId).toBeNull(); // a gap cites no finding
-		expect(gap?.text).toContain('is it real'); // Q3's short — the first unanswered content question
+		expect(gap?.text).toContain('is it real'); // Q3's short - the first unanswered content question
 	});
 
 	it('emits NO gap clause when every content question is settled', () => {
@@ -123,7 +123,7 @@ describe('composeAbstract', () => {
 		expect(composeAbstract(full).some((c) => c.gap)).toBe(false);
 	});
 
-	it('NEVER references an unanswered question — a Q4 clause needs a Q4 finding', () => {
+	it('NEVER references an unanswered question - a Q4 clause needs a Q4 finding', () => {
 		// Only Q2 answered: the abstract must not speak about the landscape (Q4) it does not have.
 		const clauses = composeAbstract(sectionsWith({ Q2: EFFECTS }));
 		expect(clauses.some((c) => c.questionId === 'Q4')).toBe(false);
@@ -138,11 +138,11 @@ describe('detectTensions', () => {
 		expect(tensions[0].title).toContain('Predator speed'); // the dominant mover, named
 	});
 
-	it('flags NOTHING when the landscape has no cliff — no cliff, no conflict', () => {
+	it('flags NOTHING when the landscape has no cliff - no cliff, no conflict', () => {
 		expect(detectTensions(sectionsWith({ Q2: EFFECTS, Q4: LANDSCAPE_FLAT }))).toEqual([]);
 	});
 
-	it('flags NOTHING when only one side exists — a tension needs both findings', () => {
+	it('flags NOTHING when only one side exists - a tension needs both findings', () => {
 		expect(detectTensions(sectionsWith({ Q2: EFFECTS }))).toEqual([]);
 		expect(detectTensions(sectionsWith({ Q4: LANDSCAPE_CLIFF }))).toEqual([]);
 	});

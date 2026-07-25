@@ -23,7 +23,7 @@ import type { Evaluation } from './evaluator';
 
 const base = () => newWorldConfig('Base', '#888888');
 
-/** Factor fixtures COMPILED from the real catalog — the same door the store uses. */
+/** Factor fixtures COMPILED from the real catalog - the same door the store uses. */
 const boolFactor = (key: string) => sweptFactors({ bools: { [key]: 'sweep' }, graded: {} })[0];
 const senseFactor = (key: string) => boolFactor(key);
 const predSpeedFactor = sweptFactors({ bools: {}, graded: { predSpeed: [0.6, 0.8, 1.0] } })[0];
@@ -162,12 +162,12 @@ describe('the pin-or-sweep knob model', () => {
 
 	it('pinBase applies pinned booleans and single-chip graded values to every cell’s base', () => {
 		const cfg = pinBase(base(), pinnedExcept({ graded: { vision: [240] } }));
-		expect(cfg.senses.walls).toBe(false); // pinned off — overriding the generic’s on
+		expect(cfg.senses.walls).toBe(false); // pinned off - overriding the generic’s on
 		expect(cfg.stamina).toBe(false);
 		expect(cfg.vision).toBe(240); // the single chip IS the pin
 	});
 
-	it('pinBase leaves swept knobs alone — the factorial owns them', () => {
+	it('pinBase leaves swept knobs alone - the factorial owns them', () => {
 		const cfg = pinBase(base(), pinnedExcept({ bools: { dir: 'sweep' } }));
 		expect(cfg.senses.dir).toBe(base().senses.dir); // untouched, not pinned
 	});
@@ -202,7 +202,7 @@ describe('sweepInteractions (P4)', () => {
 	const dirFactor = () => boolFactor('dir');
 	const wallsFactor = () => boolFactor('walls');
 
-	/** A 2×2 grid whose returns follow a chosen rule per cell — the interaction is constructed. */
+	/** A 2×2 grid whose returns follow a chosen rule per cell - the interaction is constructed. */
 	const gridWith = (value: (dir: string, walls: string) => number[]) => {
 		const factors = [dirFactor(), wallsFactor()];
 		const cells = expandSweep(base(), factors);
@@ -210,7 +210,7 @@ describe('sweepInteractions (P4)', () => {
 		return { factors, cells, results };
 	};
 
-	it('finds a constructed interaction — A pays only when B is on', () => {
+	it('finds a constructed interaction - A pays only when B is on', () => {
 		// dir is worth +4 with walls on, worth 0 with walls off → interaction = +4.
 		const { factors, cells, results } = gridWith((dir, walls) =>
 			dir === 'on' && walls === 'on' ? [8, 8, 8] : [4, 4, 4]
@@ -218,11 +218,11 @@ describe('sweepInteractions (P4)', () => {
 		const [pair] = sweepInteractions(factors, cells, results);
 		expect(pair.label).toBe('Direction × Walls');
 		expect(pair.effect.delta).toBeCloseTo(4, 6);
-		expect(pair.effect.ci.lo).toBeGreaterThan(0); // the interval clears zero — a real interaction
+		expect(pair.effect.ci.lo).toBeGreaterThan(0); // the interval clears zero - a real interaction
 	});
 
 	it('reports parallel lines as no interaction', () => {
-		// dir is worth +2 regardless of walls — additive, no interaction.
+		// dir is worth +2 regardless of walls - additive, no interaction.
 		const { factors, cells, results } = gridWith((dir) => (dir === 'on' ? [6, 6, 6] : [4, 4, 4]));
 		const [pair] = sweepInteractions(factors, cells, results);
 		expect(pair.effect.delta).toBeCloseTo(0, 6);
@@ -286,13 +286,13 @@ describe('isUnderTrained (P4)', () => {
 	});
 
 	it('pins the still-climbing threshold at a tenth of the total rise per quarter', () => {
-		// quarter = 2; rise = 1; the tail gains 0.12 vs 0.08 — straddling the 0.1 line.
+		// quarter = 2; rise = 1; the tail gains 0.12 vs 0.08 - straddling the 0.1 line.
 		expect(isUnderTrained([0, 0.2, 0.4, 0.6, 0.88, 0.88, 1, 1])).toBe(true); // gain 0.12
 		expect(isUnderTrained([0, 0.2, 0.4, 0.6, 0.92, 0.92, 1, 1])).toBe(false); // gain 0.08
 	});
 
 	it('never cries wolf on a flat or short curve', () => {
-		expect(isUnderTrained(Array(24).fill(0.4))).toBe(false); // flat — nothing was learned
+		expect(isUnderTrained(Array(24).fill(0.4))).toBe(false); // flat - nothing was learned
 		expect(isUnderTrained([0.2, 0.3, 0.4])).toBe(false); // too short to judge
 	});
 });
@@ -324,7 +324,7 @@ describe('levelCurves (P4)', () => {
 });
 
 describe('toInteractionRows', () => {
-	it('is the ONE shape the rank/flatness rules read — label, delta, and the interval', () => {
+	it('is the ONE shape the rank/flatness rules read - label, delta, and the interval', () => {
 		const rows = toInteractionRows([
 			{
 				keyA: 'dir',
@@ -423,7 +423,7 @@ describe('sweepCsv (P6)', () => {
 	});
 
 	it('quotes a field containing a comma so the column count survives', () => {
-		// both reviews sabotaged the escaping and NOTHING failed — this fixture is that guard armed
+		// both reviews sabotaged the escaping and NOTHING failed - this fixture is that guard armed
 		const weird = { ...boolFactor('dir'), label: 'Direction, "sensed"' };
 		const csv = sweepCsv([weird], expandSweep(base(), [weird]), [null, null], receipt);
 		expect(csv.split('\n')[1]).toContain('"Direction, ""sensed"""');

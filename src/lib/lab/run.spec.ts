@@ -8,7 +8,7 @@ const world = (overrides: Partial<WorldConfig> = {}): WorldConfig => ({
 	...overrides
 });
 
-describe('configHash — the fingerprint that lets two people mean the same experiment', () => {
+describe('configHash - the fingerprint that lets two people mean the same experiment', () => {
 	it('is stable for the same configuration', () => {
 		expect(configHash([world()])).toBe(configHash([world()]));
 	});
@@ -29,12 +29,12 @@ describe('configHash — the fingerprint that lets two people mean the same expe
 		).not.toBe(base);
 	});
 
-	it('is six hex characters — short enough to say out loud', () => {
+	it('is six hex characters - short enough to say out loud', () => {
 		expect(configHash([world()])).toMatch(/^[0-9a-f]{6}$/);
 	});
 });
 
-describe('configDiff — what a reader actually needs: how this differs from the baseline', () => {
+describe('configDiff - what a reader actually needs: how this differs from the baseline', () => {
 	it('is empty when nothing was changed', () => {
 		expect(configDiff(world(), DEFAULT_WORLDS[2])).toEqual({});
 	});
@@ -44,7 +44,7 @@ describe('configDiff — what a reader actually needs: how this differs from the
 		expect(diff).toEqual({ preds: 6, predSpeed: 1.4 });
 	});
 
-	it('reads a $state class through its accessors — a spread of one copies NOTHING', () => {
+	it('reads a $state class through its accessors - a spread of one copies NOTHING', () => {
 		// The card diffs a Svelte $state class (WorldConfigView), whose fields compile to prototype
 		// accessors. configDiff must read keys directly: spreading such an object yields {} and every
 		// field reads undefined, which shipped for exactly one commit and made every card claim eight

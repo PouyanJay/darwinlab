@@ -1,6 +1,6 @@
 <!--
   The standing disclaimer: what you are watching is real evolution, and it is still a caricature. It
-  stays visible on purpose — the honesty is part of the product, not a footnote to be scrolled past.
+  stays visible on purpose - the honesty is part of the product, not a footnote to be scrolled past.
 
   This is its FLOATING form, and it only appears when the control column is shut. Open, the column
   carries the same line at its foot (Sidebar.svelte), where it is chrome sitting with the rest of the
@@ -11,10 +11,10 @@
 	import { DISCLAIMER } from './disclaimer';
 </script>
 
-<!-- Hidden under a story, which carries the same line in its own header — the film is a takeover,
+<!-- Hidden under a story, which carries the same line in its own header - the film is a takeover,
      and the pill would otherwise sit on top of the scene's progress bar. -->
 <!-- an <aside>, so the one line of content that floats outside header/main still lives in a
-     landmark (the axe `region` rule — content a screen reader can't situate is content lost) -->
+     landmark (the axe `region` rule - content a screen reader can't situate is content lost) -->
 {#if !story.active && !shell.open}
 	<aside aria-label="disclaimer">
 		<p class="pill">{DISCLAIMER}</p>
@@ -27,7 +27,7 @@
 		/* A passive line of text: it must never intercept a press meant for the canvas beneath it (on a
 		   phone it floats over the lineage plane, and a tap on a node's button was landing on the pill). */
 		pointer-events: none;
-		/* Clear of the rail, whatever it is holding — see --shell-gutter on the page. The fallback is
+		/* Clear of the rail, whatever it is holding - see --shell-gutter on the page. The fallback is
 		   for anywhere this pill is rendered without the shell around it. */
 		left: calc(var(--shell-gutter, 0px) + var(--sp-6));
 		bottom: 14px;

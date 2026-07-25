@@ -3,7 +3,7 @@
  * perception overlay for the selected fish, the shark, the fish, and catch bursts.
  *
  * Pure painter: reads engine state, writes pixels. Owns no physics and mutates no simulation
- * state — except `w.transform`, the fit-scale mapping it computes so pointer picking
+ * state - except `w.transform`, the fit-scale mapping it computes so pointer picking
  * (see pick.ts) can invert it.
  */
 
@@ -31,11 +31,11 @@ function roundRect(
 /**
  * The static scene gradients, cached per canvas. Creating a CanvasGradient allocates and is
  * measurably slow, and five of the six only change when the theme, the tank dimensions or the
- * canvas itself do — not per frame. Keyed by everything they are built from; any change in the
+ * canvas itself do - not per frame. Keyed by everything they are built from; any change in the
  * key rebuilds the whole set. (The god-rays stay per-frame: their positions are animated.)
  */
 interface SceneGradients {
-	// the values the set was built from — compared field-wise so a cache hit allocates nothing
+	// the values the set was built from - compared field-wise so a cache hit allocates nothing
 	theme: ThemeName;
 	bw: number;
 	bh: number;
@@ -45,7 +45,7 @@ interface SceneGradients {
 	water: CanvasGradient;
 	sheen: CanvasGradient;
 	innerVignette: CanvasGradient;
-	/** The magenta centre glow — dark theme only. */
+	/** The magenta centre glow - dark theme only. */
 	darkGlow: CanvasGradient | null;
 	/** The soft radial backdrop behind a big (story) tank. */
 	bigBackdrop: CanvasGradient | null;
@@ -95,7 +95,7 @@ function sceneGradients(
 		sheen.addColorStop(0, 'rgba(255,255,252,.75)');
 		sheen.addColorStop(1, 'rgba(255,255,252,0)');
 	} else {
-		// A neutral surface sheen — a faint top light on the water, no colour (monochrome dark).
+		// A neutral surface sheen - a faint top light on the water, no colour (monochrome dark).
 		sheen.addColorStop(0, 'rgba(255,255,255,.05)');
 		sheen.addColorStop(1, 'rgba(255,255,255,0)');
 	}
@@ -110,13 +110,13 @@ function sceneGradients(
 	);
 	if (theme === 'light') {
 		innerVignette.addColorStop(0, 'rgba(30,50,40,0)');
-		innerVignette.addColorStop(1, 'rgba(30,50,40,.1)'); // corners fall away — the water has depth
+		innerVignette.addColorStop(1, 'rgba(30,50,40,.1)'); // corners fall away - the water has depth
 	} else {
 		innerVignette.addColorStop(0, 'rgba(0,0,0,0)');
 		innerVignette.addColorStop(1, 'rgba(0,0,0,.4)');
 	}
 
-	// The dark theme once had a magenta centre bloom here — pure vibe, gone with the monochrome re-skin.
+	// The dark theme once had a magenta centre bloom here - pure vibe, gone with the monochrome re-skin.
 	const darkGlow: CanvasGradient | null = null;
 
 	let bigBackdrop: CanvasGradient | null = null;
@@ -126,7 +126,7 @@ function sceneGradients(
 			bigBackdrop.addColorStop(0, 'rgba(244,250,246,.16)');
 			bigBackdrop.addColorStop(1, 'rgba(244,250,246,0)');
 		} else {
-			// A neutral halo behind the cinematic stage — depth, not a coloured glow.
+			// A neutral halo behind the cinematic stage - depth, not a coloured glow.
 			bigBackdrop.addColorStop(0, 'rgba(235,238,245,.05)');
 			bigBackdrop.addColorStop(1, 'rgba(235,238,245,0)');
 		}
@@ -163,15 +163,15 @@ function hexToRgb(hex: string): [number, number, number] {
 }
 
 /**
- * THE SCHOOL DENSITY FIELD — the bait-ball, made legible.
+ * THE SCHOOL DENSITY FIELD - the bait-ball, made legible.
  *
  * A live schooling population reads weakly frame-to-frame: twenty small fish are twenty small fish
  * whether they are packed or spread. So under them we lay a soft accent-tinted blob per fish; where
  * they crowd, the blobs overlap and the haze builds into a luminous mass, and where they scatter it
- * stays faint. It is a rendering of DENSITY and nothing else — no physics, no sim state touched — so
+ * stays faint. It is a rendering of DENSITY and nothing else - no physics, no sim state touched - so
  * a tight Shoal glows and a loose Alone does not, which is exactly the comparison the exhibit is for.
  *
- * Painted only on worlds whose brains carry the shoal senses (declared, on or off — "Alone" is
+ * Painted only on worlds whose brains carry the shoal senses (declared, on or off - "Alone" is
  * declared-off and still shows a faint field, which is the point of the pairing).
  */
 function drawSchoolField(
@@ -197,7 +197,7 @@ function drawSchoolField(
 	}
 }
 
-/** Per-frame render state for one creature — bundled so the painters don't take flag arguments. */
+/** Per-frame render state for one creature - bundled so the painters don't take flag arguments. */
 interface CreatureState {
 	/** World clock, drives the tail-flick / sway animation. */
 	t: number;
@@ -215,11 +215,11 @@ export const FLEE_CHANCE_DEG = 90;
 const triplet = (rgb: string) => rgb.split(',').map(Number);
 
 /**
- * The flee lens, as a colour — DIVERGING around chance (see ThemePalette.lensGood).
+ * The flee lens, as a colour - DIVERGING around chance (see ThemePalette.lensGood).
  *
  * 90° is the colour of a coin toss. Below it the fish is fleeing (toward `lensGood`), above it the
- * fish is swimming into the shark (toward `lensBad`), and `null` — no predator in vision, or too
- * slow to have a heading worth reading — is grey, because "not asked" is not the same as "correct".
+ * fish is swimming into the shark (toward `lensBad`), and `null` - no predator in vision, or too
+ * slow to have a heading worth reading - is grey, because "not asked" is not the same as "correct".
  */
 function fleeTint(th: ThemePalette, error: number | null): string {
 	if (error === null) return `rgb(${th.lensIdle})`;
@@ -450,7 +450,7 @@ function drawShark(
 }
 
 /**
- * The perception overlay — the product's most distinctive teaching device: it draws the
+ * The perception overlay - the product's most distinctive teaching device: it draws the
  * invisible subject of the tool (what the selected fish senses) directly into the water.
  * Each element is gated by its sense, so switching a sense off removes it here too.
  */
@@ -608,7 +608,7 @@ export function drawWorld(
 	ctx.fillStyle = grads.sheen;
 	ctx.fillRect(0, 0, c.bw, 30);
 
-	// god-rays (light, cinematic only) — dialled back from the reference's .38 for the same reason as
+	// god-rays (light, cinematic only) - dialled back from the reference's .38 for the same reason as
 	// the dust: light in the water is set dressing, and it was reading as loudly as the creatures.
 	if (theme === 'light' && rich && !rm) {
 		ctx.globalAlpha = 0.28;
@@ -634,7 +634,7 @@ export function drawWorld(
 		ctx.fillRect(0, 0, c.bw, c.bh);
 	}
 
-	// drifting particulate — frozen in place under reduced motion, like every other cosmetic
+	// drifting particulate - frozen in place under reduced motion, like every other cosmetic
 	if (rich) {
 		ctx.fillStyle = th.dust;
 		for (const d of w.dust) {
@@ -651,7 +651,7 @@ export function drawWorld(
 		ctx.globalAlpha = 1;
 	}
 
-	// the school density field sits under everything alive — the water's mood, not a creature
+	// the school density field sits under everything alive - the water's mood, not a creature
 	drawSchoolField(w, ctx, opts.accent);
 
 	if (w.selFish) drawPerception(w, ctx, th, rm);
@@ -671,7 +671,7 @@ export function drawWorld(
 			hovered: f === w.hover,
 			champion: f === w.championFish,
 			reducedMotion: rm,
-			// The lens asks the ENGINE for the reading (engine/flee.ts) — the same function the
+			// The lens asks the ENGINE for the reading (engine/flee.ts) - the same function the
 			// evaluation panel's "flee error" is averaged from. One definition, two presentations.
 			tint: lens === 'flee' ? fleeTint(th, fleeError(c, f, w.preds)) : null
 		});

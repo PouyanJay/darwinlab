@@ -1,13 +1,13 @@
 <!--
-  A world as a rail card — the shrunk form it takes in the focus view while another world is blown
+  A world as a rail card - the shrunk form it takes in the focus view while another world is blown
   up to fill the pane.
 
   It carries exactly what you COMPARE across worlds and nothing you operate: a live tank preview, the
   name and generation, and the one graph the whole product argues about (mean return per episode)
-  next to how many are still alive. The buttons — Champion, Branch, Conditions — live on the focused
+  next to how many are still alive. The buttons - Champion, Branch, Conditions - live on the focused
   card only; acting on a world you are not looking at is rare, and a rail of tiny toolbars is noise.
   Click the card to bring this world into focus. The tank preview is PASSIVE: no picking, no arrow
-  keys — the whole card is one target, "look at this one".
+  keys - the whole card is one target, "look at this one".
 -->
 <script lang="ts">
 	import Canvas from '../common/Canvas.svelte';
@@ -19,7 +19,7 @@
 
 	interface Props {
 		entry: WorldEntry;
-		/** Its place in the bench, for the badge — 1-based, shown as "01". */
+		/** Its place in the bench, for the badge - 1-based, shown as "01". */
 		index: number;
 		/** True when this is the world currently blown up in the detail pane. */
 		active: boolean;
@@ -32,7 +32,7 @@
 	const accent = $derived(config.accent);
 	const badge = $derived(String(index).padStart(2, '0'));
 
-	// A PASSIVE preview of the same water the tile paints — the exhibit while one is up, the real run
+	// A PASSIVE preview of the same water the tile paints - the exhibit while one is up, the real run
 	// otherwise. No picking and no keyboard: the card is the widget, the tank is just its picture.
 	function paintTank(ctx: CanvasRenderingContext2D, width: number, height: number) {
 		const world = bench.shownOrNull(entry.id);
@@ -47,10 +47,10 @@
 		});
 	}
 
-	// Stable identity, like every other painter host — a new fn each render would churn the attach.
+	// Stable identity, like every other painter host - a new fn each render would churn the attach.
 	const register = (render: () => void) => bench.painters.add(render);
 
-	// The learning curve, painted straight from engine data — repainted only when a point lands, not
+	// The learning curve, painted straight from engine data - repainted only when a point lands, not
 	// 60×/s (see TileStats for the both-ends signature that catches a scrolled window).
 	const paintCurve = paintOnChange(
 		() =>
@@ -112,7 +112,7 @@
 		border-color: var(--ink3);
 	}
 
-	/* The one in focus: a full-ink hairline, the way the tile marks the champion — no colour, this
+	/* The one in focus: a full-ink hairline, the way the tile marks the champion - no colour, this
 	   theme's emphasis is lightness and weight. */
 	.card.active {
 		border-color: var(--ink);
@@ -193,7 +193,7 @@
 		flex: none;
 		font-size: var(--fs-body);
 		font-weight: var(--fw-semibold);
-		/* the accent, run toward the ink so it holds AA at this size — the card's one coloured number */
+		/* the accent, run toward the ink so it holds AA at this size - the card's one coloured number */
 		color: color-mix(in srgb, var(--tile-accent) 60%, var(--ink));
 	}
 </style>

@@ -4,7 +4,7 @@ import { measureBout } from '../harness/behavior';
 import { DEFAULT_WORLDS } from '../engine';
 
 // A pass-through spy on measureBout: every call still runs the REAL measurement, but the seed of
-// each bout is recorded — the only way to assert the champion's arena IS the population's arena
+// each bout is recorded - the only way to assert the champion's arena IS the population's arena
 // (two different seeds can coincidentally produce similar returns on tiny fixtures).
 vi.mock('../harness/behavior', async (importOriginal) => {
 	const actual = await importOriginal<typeof import('../harness/behavior')>();
@@ -14,7 +14,7 @@ vi.mock('../harness/behavior', async (importOriginal) => {
 /** Tiny budgets: this spec is about the CONTRACT, not about converged science. */
 const tiny = { seeds: 2, episodes: 2, bouts: 2 };
 
-describe('evaluate — a result, not a lucky run', () => {
+describe('evaluate - a result, not a lucky run', () => {
 	it('reports the n it was measured over, and an error bar with it', async () => {
 		const result = await evaluate({ cfg: DEFAULT_WORLDS[2], ...tiny });
 
@@ -35,7 +35,7 @@ describe('evaluate — a result, not a lucky run', () => {
 		expect(a!.returns).toEqual(b!.returns);
 	}, 90_000);
 
-	it('leaves the caller’s config alone — an evaluation must not mutate what it measures', async () => {
+	it('leaves the caller’s config alone - an evaluation must not mutate what it measures', async () => {
 		const cfg = structuredClone(DEFAULT_WORLDS[2]);
 		const before = JSON.stringify(cfg);
 
@@ -62,9 +62,9 @@ describe('evaluate — a result, not a lucky run', () => {
 
 		const withCurve = await evaluate({ cfg: DEFAULT_WORLDS[2], ...tiny, curve: true });
 		expect(withCurve!.curve).toBeDefined();
-		// One point per evolved generation — the per-gen survival fraction the UI plots.
+		// One point per evolved generation - the per-gen survival fraction the UI plots.
 		expect(withCurve!.curve).toHaveLength(tiny.episodes);
-		// a smoothed survival FRACTION per point, never seconds — so it stays inside [0, 1]
+		// a smoothed survival FRACTION per point, never seconds - so it stays inside [0, 1]
 		expect(withCurve!.curve!.every((point) => point >= 0 && point <= 1)).toBe(true);
 	}, 60_000);
 
@@ -75,12 +75,12 @@ describe('evaluate — a result, not a lucky run', () => {
 		const live = await evaluate({ cfg: DEFAULT_WORLDS[2], ...tiny, champion: true });
 		expect(live!.championReturns).toHaveLength(2); // one per seed
 		expect(live!.championReturns!.every((value) => value > 0)).toBe(true);
-		// the POPULATION numbers are identical with and without the champion pass — scoring the
+		// the POPULATION numbers are identical with and without the champion pass - scoring the
 		// clones must not perturb the evolved population's own measurement
 		expect(live!.returns).toEqual(plain!.returns);
 	}, 90_000);
 
-	it('the champion is scored in the SAME arenas as its population — the pairing itself', async () => {
+	it('the champion is scored in the SAME arenas as its population - the pairing itself', async () => {
 		const spy = vi.mocked(measureBout);
 		spy.mockClear();
 		await evaluate({ cfg: DEFAULT_WORLDS[2], ...tiny, champion: true });
@@ -93,7 +93,7 @@ describe('evaluate — a result, not a lucky run', () => {
 		expect([...counts.values()].every((count) => count === 2)).toBe(true);
 	}, 90_000);
 
-	it('the captured curve is deterministic — the same run gives the same curve', async () => {
+	it('the captured curve is deterministic - the same run gives the same curve', async () => {
 		const a = await evaluate({ cfg: DEFAULT_WORLDS[2], ...tiny, curve: true });
 		const b = await evaluate({ cfg: DEFAULT_WORLDS[2], ...tiny, curve: true });
 		expect(a!.curve).toEqual(b!.curve);

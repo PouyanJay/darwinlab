@@ -3,7 +3,7 @@ import { Viewport } from './viewport.svelte';
 
 /**
  * The camera math the lineage tree and the Atlas both ride on. Runes-backed, so this runs in the
- * client project; the assertions are pure geometry — pan adds, zoom keeps the cursor point fixed and
+ * client project; the assertions are pure geometry - pan adds, zoom keeps the cursor point fixed and
  * clamps, and fit centres.
  */
 
@@ -30,7 +30,7 @@ describe('Viewport', () => {
 		const before = view.toCanvas(100, 100);
 		view.zoomAt(100, 100, 2);
 		expect(view.scale).toBeCloseTo(2);
-		// the canvas point under (100,100) is unchanged — the whole point of zoom-toward-cursor
+		// the canvas point under (100,100) is unchanged - the whole point of zoom-toward-cursor
 		expect(view.toCanvas(100, 100).x).toBeCloseTo(before.x);
 		expect(view.toCanvas(100, 100).y).toBeCloseTo(before.y);
 	});
@@ -40,7 +40,7 @@ describe('Viewport', () => {
 		view.zoomAt(100, 100, 10); // asks for 10×, clamps to 2×
 		expect(view.scale).toBe(2);
 		const { tx, ty } = view;
-		view.zoomAt(100, 100, 10); // already at the max — must not move the pan for nothing
+		view.zoomAt(100, 100, 10); // already at the max - must not move the pan for nothing
 		expect(view.tx).toBe(tx);
 		expect(view.ty).toBe(ty);
 	});

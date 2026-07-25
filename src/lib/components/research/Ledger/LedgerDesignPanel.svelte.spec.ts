@@ -6,11 +6,11 @@ import { app, ledger, LEDGER_SEED_LIMITS } from '$lib/state';
 
 /**
  * The composer panel's EDITING contract: a pick made in the panel must land in the ledger store
- * (which owns resolution and clamping) — asserted against the store, not the panel's own display,
+ * (which owns resolution and clamping) - asserted against the store, not the panel's own display,
  * so a panel that renders a pick it never committed fails loudly. Slot resolution maths has its own
  * spec (hypothesis.spec); this one proves the panel is wired to it.
  *
- * Selects commit on `change`, which Svelte 5 DELEGATES to the app root — a dispatched event must
+ * Selects commit on `change`, which Svelte 5 DELEGATES to the app root - a dispatched event must
  * BUBBLE to be heard (the SubjectCard spec found that the hard way).
  */
 const pick = (el: Element, value: string) => {
@@ -54,7 +54,7 @@ describe('LedgerDesignPanel', () => {
 			.toHaveTextContent('Direction pays more than walls.');
 	});
 
-	it('a sense slot never offers its sibling’s pick — a sense cannot rival itself', async () => {
+	it('a sense slot never offers its sibling’s pick - a sense cannot rival itself', async () => {
 		render(LedgerDesignPanel);
 		const options = [...page.getByLabelText('sense Y').element().querySelectorAll('option')];
 		expect(options.map((o) => o.value)).not.toContain(ledger.values.x);

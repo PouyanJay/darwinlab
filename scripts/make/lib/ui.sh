@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Shared UI library for the make scripts — colours, icons, steps, spinner, command runner, summary.
+# Shared UI library for the make scripts - colours, icons, steps, spinner, command runner, summary.
 #
 # Targets bash 3.2 (macOS system bash): no associative arrays, no ${var^^}, no [[ =~ ]].
 # Colour and spinner degrade automatically: NO_COLOR, TERM=dumb, or piped output disables ANSI;
@@ -38,13 +38,13 @@ esac
 
 # ---------- banner and steps ----------
 
-# ui::banner "context string" — project name, context, timestamp; once at script start.
+# ui::banner "context string" - project name, context, timestamp; once at script start.
 ui::banner() {
 	printf '\n%sDarwin Lab%s %s· %s · %s%s\n\n' \
 		"$UI_BOLD" "$UI_RESET" "$UI_DIM" "$1" "$(date '+%H:%M:%S')" "$UI_RESET"
 }
 
-# ui::step N TOTAL "description" — numbered progress header.
+# ui::step N TOTAL "description" - numbered progress header.
 ui::step() {
 	printf '%s%s %s/%s%s %s%s%s\n' "$UI_PRIMARY" "$UI_I_STEP" "$1" "$2" "$UI_RESET" "$UI_BOLD" "$3" "$UI_RESET"
 }
@@ -55,7 +55,7 @@ ui::warn() { printf '  %s%s %s%s\n' "$UI_YELLOW" "$UI_I_WARN" "$1" "$UI_RESET"; 
 ui::skip() { printf '  %s%s %s%s\n' "$UI_DIM" "$UI_I_SKIP" "$1" "$UI_RESET"; }
 ui::info() { printf '  %s%s%s %s\n' "$UI_PRIMARY" "$UI_I_INFO" "$UI_RESET" "$1"; }
 
-# ui::die "message" "remediation command" — hard failure with the exact fix, then exit 1.
+# ui::die "message" "remediation command" - hard failure with the exact fix, then exit 1.
 ui::die() {
 	ui::fail "$1"
 	[ -n "${2:-}" ] && printf '    %sFix:%s %s\n' "$UI_BOLD" "$UI_RESET" "$2"
@@ -64,9 +64,9 @@ ui::die() {
 
 # ---------- command runner with spinner ----------
 
-# ui::run "description" cmd [args…] — run quietly with a spinner; ✔ on success, on failure dump
+# ui::run "description" cmd [args…] - run quietly with a spinner; ✔ on success, on failure dump
 # the captured output and return the command's exit code. For long LIVE output (test suites),
-# don't use this — stream directly under a ui::step instead.
+# don't use this - stream directly under a ui::step instead.
 ui::run() {
 	_ui_desc=$1
 	shift
@@ -100,7 +100,7 @@ ui::run() {
 
 # ---------- summary dashboard ----------
 
-# ui::summary_row "label" "value" ok|warn|fail|skip — one aligned row of the closing dashboard.
+# ui::summary_row "label" "value" ok|warn|fail|skip - one aligned row of the closing dashboard.
 ui::summary_row() {
 	case "$3" in
 		ok) _ui_icon="$UI_GREEN$UI_I_OK$UI_RESET" ;;

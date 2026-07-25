@@ -1,8 +1,8 @@
 <!--
-  Q3 — is the result real, or noise? One dot per seed, laid along a survival axis in seconds: a tight
+  Q3 - is the result real, or noise? One dot per seed, laid along a survival axis in seconds: a tight
   clump is a finding that reproduces; a smear from floor to ceiling is a result the random seed
   decided, not the sense. `returns` are the per-seed mean lifespans; when a `mean` and its bootstrap
-  `ci` are supplied we mark them in teal — the one place colour is the data — over the monochrome
+  `ci` are supplied we mark them in teal - the one place colour is the data - over the monochrome
   dots and axis.
 -->
 <script lang="ts">
@@ -26,7 +26,7 @@
 
 	const n = $derived(returns.length);
 	// The axis spans the data's own range, padded ~5% so the extreme dots aren't jammed on the edge.
-	// A flat run — every seed identical — has no range, so fall back to a small span to divide by.
+	// A flat run - every seed identical - has no range, so fall back to a small span to divide by.
 	const lo = $derived(n ? Math.min(...returns) : 0);
 	const hi = $derived(n ? Math.max(...returns) : 0);
 	const pad = $derived((hi - lo) * 0.05 || 0.5);
@@ -52,7 +52,7 @@
 		if (n === 0) return 'Per-seed survival: no seeds yet.';
 		const parts = [`${n} seeds`];
 		if (mean !== undefined) parts.push(`mean ${secs(mean)}`);
-		if (ci) parts.push(`95% interval ${ci.lo.toFixed(1)}–${ci.hi.toFixed(1)}s`);
+		if (ci) parts.push(`95% interval ${ci.lo.toFixed(1)}-${ci.hi.toFixed(1)}s`);
 		return `Per-seed survival: ${parts.join(', ')}.`;
 	});
 </script>
@@ -60,7 +60,7 @@
 <Figure {label}>
 	<svg viewBox="0 0 {W} {H}" aria-hidden="true">
 		{#if n > 0}
-			<!-- the interval, faint, behind the dots — the range the mean could plausibly sit in -->
+			<!-- the interval, faint, behind the dots - the range the mean could plausibly sit in -->
 			{#if ciBand}
 				<rect class="ci" x={ciBand.x} y={BAND_TOP} width={ciBand.w} height={BAND_H} />
 			{/if}

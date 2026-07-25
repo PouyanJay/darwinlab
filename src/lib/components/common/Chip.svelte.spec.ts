@@ -28,8 +28,8 @@ describe('Chip', () => {
 
 	it('takes a per-world accent, so each tile can tint its own badge', () => {
 		// Since Phase 9 the text is NOT the raw accent: it is color-mixed toward --ink so a 10px
-		// badge holds AA contrast. What this test owns is the PLUMBING — the per-world accent must
-		// reach the chip — so it renders two accents and demands they produce different text. If
+		// badge holds AA contrast. What this test owns is the PLUMBING - the per-world accent must
+		// reach the chip - so it renders two accents and demands they produce different text. If
 		// --chip-accent stopped flowing, both would collapse to the same fallback and this fails.
 		const tinted = (accent: string) => {
 			const { container } = render(Chip, {
@@ -46,7 +46,7 @@ describe('Chip', () => {
 
 		// And the RATIO is pinned, loosely: 60% accent / 40% ink is the AA-contrast tuning, and a
 		// typo'd 6% (or swapped operands) would still pass a mere "they differ" check. Chromium
-		// serializes the mixed value as `color(srgb r g b)` in 0–1 floats — normalize to 0–255.
+		// serializes the mixed value as `color(srgb r g b)` in 0-1 floats - normalize to 0-255.
 		const channels = (color: string) => {
 			const values = color.match(/[\d.]+/g)!.map(Number);
 			return color.startsWith('color(srgb') ? values.map((v) => v * 255) : values;

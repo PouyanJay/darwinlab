@@ -1,9 +1,9 @@
 /**
- * The Sweep — the factorial the ablation matrix always wanted to be.
+ * The Sweep - the factorial the ablation matrix always wanted to be.
  *
  * A FACTOR is one knob with a few LEVELS (a sense off vs on; three predator speeds). Choose some
  * factors and the sweep is their full cross-product: every combination, each run across N seeds. The
- * conclusion is the MAIN EFFECT of each factor — how much moving it from its bottom level to its top
+ * conclusion is the MAIN EFFECT of each factor - how much moving it from its bottom level to its top
  * level changes survival, marginalised over every other factor, with a bootstrap interval. A bar that
  * clears zero is a factor that matters; one that straddles zero is a knob that does nothing here.
  *
@@ -17,7 +17,7 @@ import { contrast, interactionContrast, type Contrast, type DifferenceContrast }
 import type { EffectRow } from './evidence';
 import { csvField } from './csv';
 
-/** Sensible defaults for a sweep — smaller than a single Evaluate, because there are many cells. */
+/** Sensible defaults for a sweep - smaller than a single Evaluate, because there are many cells. */
 export const SWEEP_DEFAULTS = { seeds: 6, episodes: 20, bouts: 4, maxCells: 32 } as const;
 
 /** One setting of a factor, expressed as a patch onto a base config. */
@@ -33,7 +33,7 @@ export interface Factor {
 	levels: FactorLevel[];
 }
 
-/** One combination of levels — a single environment the sweep measures. */
+/** One combination of levels - a single environment the sweep measures. */
 export interface SweepCell {
 	index: number;
 	/** factor key → the label of the level this cell took, for reading the heatmap and pooling arms. */
@@ -44,7 +44,7 @@ export interface SweepCell {
 /** A sweep sized to run: the cells to measure, the full factorial size, and whether we sampled it. */
 export interface SweepPlan {
 	cells: SweepCell[];
-	/** The full cross-product size — what we WOULD run without the cap. */
+	/** The full cross-product size - what we WOULD run without the cap. */
 	total: number;
 	/** True when the factorial exceeded the cap and we measured a random subset instead. */
 	sampled: boolean;
@@ -59,7 +59,7 @@ export interface FactorEffect {
 	effect: Contrast;
 }
 
-/** The effects as the compact EffectRow the graph and the notebook share — one converter, so the
+/** The effects as the compact EffectRow the graph and the notebook share - one converter, so the
  *  Sweep's summary and the Report's Q2 can't shape the evidence differently. */
 export function toEffectRows(effects: FactorEffect[]): EffectRow[] {
 	return effects.map((e) => ({
@@ -74,14 +74,14 @@ export function toEffectRows(effects: FactorEffect[]): EffectRow[] {
  *
  * Since the redesign, every knob has ONE home: the design panel, where it is either PINNED (it
  * holds that value in every cell) or SWEPT (it becomes a factor). Booleans are three-state
- * off·on·sweep; graded knobs are multi-select level chips — one chip pins, two or more sweep.
+ * off·on·sweep; graded knobs are multi-select level chips - one chip pins, two or more sweep.
  * The model COMPILES to the Factor machinery above (`sweptFactors`) and to a pinned base config
  * (`pinBase`), so the proven factorial/effects code runs unchanged underneath.
  */
 
 export type KnobState = 'off' | 'on' | 'sweep';
 
-/** How a knob key becomes a human word — one place, shared by the watch-name and the drill card. */
+/** How a knob key becomes a human word - one place, shared by the watch-name and the drill card. */
 export function knobLabel(key: string): string {
 	return (
 		BOOL_KNOBS.find((k) => k.key === key)?.label ??
@@ -90,12 +90,12 @@ export function knobLabel(key: string): string {
 	);
 }
 
-/** The own-speed sense's wiring requirement — the one predicate every check shares. */
+/** The own-speed sense's wiring requirement - the one predicate every check shares. */
 export function hasNineWires(cfg: WorldConfig): boolean {
 	return (cfg.brainInputs ?? 8) === 9;
 }
 
-/** Prey % of the base count, floored at a real population — the apply AND the panel's preview use
+/** Prey % of the base count, floored at a real population - the apply AND the panel's preview use
  *  THIS, so what the note promises is what a run measures. */
 export function scalePreyPct(basePrey: number, pct: number): number {
 	return Math.max(2, Math.round((basePrey * pct) / 100));
@@ -111,13 +111,13 @@ export interface BoolKnob {
 	/** The one-line explainer under the name in the panel. */
 	detail: string;
 	group: KnobGroupKey;
-	/** The panel's starting position — the generic ocean's own value, or 'sweep' for the defaults
+	/** The panel's starting position - the generic ocean's own value, or 'sweep' for the defaults
 	 *  the instrument opens with (direction/distance/persistence: the questions worth asking first). */
 	defaultState: KnobState;
 	/** Own-speed only: needs the 9-input brain, so the panel disables it and offers the switch. */
 	needsNineInputs?: boolean;
 	apply: (cfg: WorldConfig, on: boolean) => WorldConfig;
-	/** The knob's CURRENT truth in a config — the drill card's pinned chips read the cell's own
+	/** The knob's CURRENT truth in a config - the drill card's pinned chips read the cell's own
 	 *  cfg, never the panel (which may have moved on since the run). Defaults per the reference. */
 	read: (cfg: WorldConfig) => boolean;
 }
@@ -126,15 +126,15 @@ export interface BoolKnob {
 export interface GradedKnob {
 	key: string;
 	label: string;
-	/** The chip values offered — real, measured engine values, not round numbers. */
+	/** The chip values offered - real, measured engine values, not round numbers. */
 	values: number[];
 	/** One chip = pinned at that value; two or more = swept as a factor. */
 	defaultSelected: number[];
-	/** The plan line's plural — "3 pred speeds", "2 prey sizes". */
+	/** The plan line's plural - "3 pred speeds", "2 prey sizes". */
 	short: string;
 	format: (value: number) => string;
 	apply: (cfg: WorldConfig, value: number) => WorldConfig;
-	/** The pinned chip's text, read from the cell's own cfg (prey shows its real COUNT — a percent
+	/** The pinned chip's text, read from the cell's own cfg (prey shows its real COUNT - a percent
 	 *  of a base the panel may since have edited would be a lie). */
 	readChip: (cfg: WorldConfig) => string;
 }
@@ -167,7 +167,7 @@ export const BOOL_KNOBS: BoolKnob[] = [
 	senseKnob('dist', 'Distance', 'how far it is', 'sweep'),
 	senseKnob('walls', 'Walls', 'nearness of the glass', 'on'),
 	senseKnob('closing', 'Closing speed', 'is it gaining', 'on'),
-	senseKnob('speed', 'Own speed', 'the fish’s own pace — needs the 9-input brain', 'off', true),
+	senseKnob('speed', 'Own speed', 'the fish’s own pace - needs the 9-input brain', 'off', true),
 	{
 		key: 'stamina',
 		label: 'Stamina',
@@ -226,7 +226,7 @@ export const BOOL_KNOBS: BoolKnob[] = [
 
 /**
  * Every graded knob, in panel order. Values are the ENGINE's honest numbers (mutation lives in
- * 0..0.2 with 0.06 the reference — not a 0..1 slider), and prey is a PERCENT of the subject's base
+ * 0..0.2 with 0.06 the reference - not a 0..1 slider), and prey is a PERCENT of the subject's base
  * count, so the same design scales with the world it runs on.
  */
 export const GRADED_KNOBS: GradedKnob[] = [
@@ -294,7 +294,7 @@ export const GRADED_KNOBS: GradedKnob[] = [
 	}
 ];
 
-/** The panel's resolved choices — what the store holds, what the plan is built from. */
+/** The panel's resolved choices - what the store holds, what the plan is built from. */
 export interface KnobChoices {
 	/** knob key → its three-state position. */
 	bools: Record<string, KnobState>;
@@ -311,7 +311,7 @@ export function defaultChoices(): KnobChoices {
 }
 
 /**
- * Pin every unswept knob onto the base — the world every cell starts from. Pinned booleans apply
+ * Pin every unswept knob onto the base - the world every cell starts from. Pinned booleans apply
  * their off/on; a single-chip graded knob applies its one value; swept knobs are left for the
  * factorial. Order (bools, then graded) matters only to preyPct, which scales the PINNED base.
  */
@@ -329,7 +329,7 @@ export function pinBase(base: WorldConfig, choices: KnobChoices): WorldConfig {
 }
 
 /**
- * Compile the SWEPT knobs into the factorial's Factor shape — the proven expandSweep/planSweep/
+ * Compile the SWEPT knobs into the factorial's Factor shape - the proven expandSweep/planSweep/
  * sweepEffects machinery runs the redesign unchanged. Graded levels sort ascending, so a main
  * effect always reads bottom-level → top-level.
  */
@@ -380,7 +380,7 @@ export function expandSweep(base: WorldConfig, factors: Factor[]): SweepCell[] {
 
 /**
  * Size the sweep to a cell budget. Under the cap it is the full factorial; over it, a SEEDED random
- * subset — and the plan says so (`sampled`, `total`), because silent truncation reads as "covered
+ * subset - and the plan says so (`sampled`, `total`), because silent truncation reads as "covered
  * everything" when it did not.
  */
 export function planSweep(
@@ -391,7 +391,7 @@ export function planSweep(
 	const all = expandSweep(base, factors);
 	if (all.length <= maxCells) return { cells: all, total: all.length, sampled: false };
 
-	// Fisher–Yates over a copy, take the first maxCells — a uniform subset, reproducible from the rng.
+	// Fisher-Yates over a copy, take the first maxCells - a uniform subset, reproducible from the rng.
 	const shuffled = [...all];
 	for (let i = shuffled.length - 1; i > 0; i--) {
 		const j = Math.floor(rng() * (i + 1));
@@ -401,7 +401,7 @@ export function planSweep(
 	return { cells, total: all.length, sampled: true };
 }
 
-/** One evaluation request per cell — the whole plan becomes one batch. The sweep always captures
+/** One evaluation request per cell - the whole plan becomes one batch. The sweep always captures
  *  curves (the convergence card and the drill need them); champion scoring is the panel's opt-in. */
 export function sweepJobs(
 	cells: SweepCell[],
@@ -441,11 +441,11 @@ export function sweepEffects(
 /* ==================================== interactions (P4) ====================================== */
 
 /** One factor pair's interaction: does A's value depend on B? (A 2×2 on each factor's bottom/top
- *  levels, marginalising over everything else — the same pooling rule as the main effects.) */
+ *  levels, marginalising over everything else - the same pooling rule as the main effects.) */
 export interface InteractionEffect {
 	keyA: string;
 	keyB: string;
-	/** "Direction × Predator speed ×" reads badly — the pair label drops trailing unit marks. */
+	/** "Direction × Predator speed ×" reads badly - the pair label drops trailing unit marks. */
 	label: string;
 	effect: DifferenceContrast;
 }
@@ -465,7 +465,7 @@ function poolReturns(
 	return out;
 }
 
-/** A factor label without its trailing unit glyph — "Predator speed ×" reads badly mid-sentence. */
+/** A factor label without its trailing unit glyph - "Predator speed ×" reads badly mid-sentence. */
 export function plainLabel(label: string): string {
 	return label.replace(/ ×$/, '');
 }
@@ -517,7 +517,7 @@ export function sweepInteractions(
 	return out;
 }
 
-/** The interactions as the compact EffectRow the rank/flatness rules read — ONE converter, the
+/** The interactions as the compact EffectRow the rank/flatness rules read - ONE converter, the
  *  same discipline as toEffectRows, so no component shapes the evidence by hand. */
 export function toInteractionRows(interactions: InteractionEffect[]): EffectRow[] {
 	return interactions.map((pair) => ({
@@ -528,7 +528,7 @@ export function toInteractionRows(interactions: InteractionEffect[]): EffectRow[
 	}));
 }
 
-/** The top interaction pair's plot: mean survival at each of A's levels, one series per B extreme —
+/** The top interaction pair's plot: mean survival at each of A's levels, one series per B extreme -
  *  diverging lines are the interaction the contrast quantified. Null where a pool is empty. */
 export function interactionPlotData(
 	a: Factor,
@@ -564,7 +564,7 @@ export function interactionPlotData(
  * Is a learning curve still CLIMBING at its end? The tail's gain (mean of the last quarter minus
  * the quarter before it) is compared against the curve's total rise: still gaining more than a
  * tenth of everything it ever gained, per quarter, means the budget cut training short. A short or
- * flat curve is NOT flagged — there is nothing to cry wolf about.
+ * flat curve is NOT flagged - there is nothing to cry wolf about.
  */
 export function isUnderTrained(curve: number[]): boolean {
 	if (curve.length < 8) return false;
@@ -577,7 +577,7 @@ export function isUnderTrained(curve: number[]): boolean {
 	return tail - previous > 0.1 * rise;
 }
 
-/** A factor's two arms' averaged learning curves — the convergence card's two lines. Empty when
+/** A factor's two arms' averaged learning curves - the convergence card's two lines. Empty when
  *  the run captured no curves. */
 export function levelCurves(
 	factor: Factor,
@@ -606,7 +606,7 @@ export interface RecipeChip {
 }
 
 /**
- * The full recipe of one cell — swept levels LOUD (they define the cell), every pinned knob quiet,
+ * The full recipe of one cell - swept levels LOUD (they define the cell), every pinned knob quiet,
  * all read from the cell's OWN config: the panel may have moved on since the run, and a chip that
  * read live state would relabel a measured world (the Atlas once shipped that bug).
  */
@@ -635,7 +635,7 @@ export function cellRecipe(cell: SweepCell): RecipeChip[] {
 /**
  * The whole run as CSV, one row per cell: the design (every factor's level), the numbers (per-seed
  * returns, mean, sd) and the champion's when Live scoring ran. The header carries the receipt so a
- * file on someone's disk still says how it was measured — an export that loses its design is an
+ * file on someone's disk still says how it was measured - an export that loses its design is an
  * anecdote.
  */
 export function sweepCsv(

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import LearningCurve from './LearningCurve.svelte';
 
-/** A fixed rising curve — survival FRACTIONS (0–1), one per generation. */
+/** A fixed rising curve - survival FRACTIONS (0-1), one per generation. */
 const CURVE = [0.1, 0.3, 0.55, 0.6];
 
 describe('LearningCurve', () => {
@@ -15,7 +15,7 @@ describe('LearningCurve', () => {
 		expect(container.querySelector('.endlabel')?.textContent).toBe('60%');
 	});
 
-	it('offers the raw numbers as a table — one row per generation', () => {
+	it('offers the raw numbers as a table - one row per generation', () => {
 		const { container } = render(LearningCurve, { curve: CURVE });
 
 		const rows = container.querySelectorAll('tbody tr');

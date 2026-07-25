@@ -9,7 +9,7 @@ import type { SenseSnapshot } from '$lib/engine';
 afterEach(() => bench.destroy());
 
 /**
- * Drives the bars through the store, from a FORGED engine snapshot — which is the point: the panel
+ * Drives the bars through the store, from a FORGED engine snapshot - which is the point: the panel
  * must be reading the engine's numbers, not computing its own. Paused, so the sharks cannot move
  * the numbers out from under the assertions.
  */
@@ -29,7 +29,7 @@ function show(sense: Partial<SenseSnapshot>, senses = DEFAULT_WORLDS[4].senses) 
 /** What a given bar is reading out. Found by its accessible name, not by walking the DOM. */
 const reads = (label: string) => page.getByRole('status', { name: label }).element().textContent;
 
-describe('SenseBars — the three different ways a sense can be quiet', () => {
+describe('SenseBars - the three different ways a sense can be quiet', () => {
 	it('reads the raw quantity when the predator is in range', () => {
 		show({ inVis: true, d: 163.7, dirDeg: -42.4, closing: 33.2, wallFront: 88.9 });
 
@@ -42,10 +42,10 @@ describe('SenseBars — the three different ways a sense can be quiet', () => {
 	it('says "nothing in range" when the sense works but there is no predator to sense', () => {
 		show({ inVis: false, d: Infinity });
 
-		// NOT "0 px" — the fish is not being told the predator is on top of it
+		// NOT "0 px" - the fish is not being told the predator is on top of it
 		expect(reads('predator distance')).toBe('nothing in range');
-		expect(reads('direction to threat')).toBe('—');
-		expect(reads('closing speed')).toBe('—');
+		expect(reads('direction to threat')).toBe('-');
+		expect(reads('closing speed')).toBe('-');
 	});
 
 	it('says "receding" when the predator is there but moving away', () => {
@@ -63,7 +63,7 @@ describe('SenseBars — the three different ways a sense can be quiet', () => {
 
 		expect(reads('closing speed')).toBe('off');
 		expect(reads('wall ahead')).toBe('off');
-		// and the sense that IS wired still reads its number — "off" is about the neuron, not the world
+		// and the sense that IS wired still reads its number - "off" is about the neuron, not the world
 		expect(reads('predator distance')).toBe('100 px');
 	});
 
@@ -73,7 +73,7 @@ describe('SenseBars — the three different ways a sense can be quiet', () => {
 			{ dist: true, dir: true, closing: false, walls: false }
 		);
 
-		// The world is full of closing threat (nc = 0.9) — but this brain has no neuron to receive it,
+		// The world is full of closing threat (nc = 0.9) - but this brain has no neuron to receive it,
 		// so the bar it feeds must be empty, not merely dimmed.
 		const bars = page.getByRole('status', { name: 'closing speed' }).element().closest('.bar')!;
 		const fill = bars.querySelector('.fill') as HTMLElement;

@@ -1,6 +1,6 @@
 /**
  * Small pure math helpers, ported verbatim from engine2.js.
- * No randomness lives here (see rng.ts) — these are deterministic given their inputs.
+ * No randomness lives here (see rng.ts) - these are deterministic given their inputs.
  */
 
 /** Full turn in radians (2π). */

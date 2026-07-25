@@ -1,8 +1,8 @@
 <!--
-  Q4 — where does it hold, and where does it break? A compact 1-D survival gradient along one axis:
+  Q4 - where does it hold, and where does it break? A compact 1-D survival gradient along one axis:
   each measured point is a segment, coloured on the survival ramp (coral = dies fast, teal = lasts),
-  so a run of teal that drops to coral IS the cliff. Colour is normalised WITHIN the band — the worst
-  point is coral, the best teal — so the strip reads as a relative landscape, not an absolute one. The
+  so a run of teal that drops to coral IS the cliff. Colour is normalised WITHIN the band - the worst
+  point is coral, the best teal - so the strip reads as a relative landscape, not an absolute one. The
   chrome (ticks, cliff line, frame) is monochrome; the ramp is the only colour, because it's the data.
 -->
 <script lang="ts">
@@ -15,7 +15,7 @@
 		band,
 		axisLabel,
 		format,
-		/** Optional x where survival falls off hardest — drawn as a threshold marker on the strip. */
+		/** Optional x where survival falls off hardest - drawn as a threshold marker on the strip. */
 		cliffX,
 		open
 	}: {

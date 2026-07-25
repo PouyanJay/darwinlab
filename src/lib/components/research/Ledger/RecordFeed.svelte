@@ -1,8 +1,8 @@
 <!--
-  The record — every verdict this lab has settled, newest first, kept across reloads. Each row is a
+  The record - every verdict this lab has settled, newest first, kept across reloads. Each row is a
   dated, reproducible finding: what was claimed, how it came out, the effect, and the config
   fingerprint that reruns it. Rows are buttons: clicking one opens its provenance in the drill
-  sidebar. REFUTED STAYS FOREVER — with the composer's wide claim space, the feed is the
+  sidebar. REFUTED STAYS FOREVER - with the composer's wide claim space, the feed is the
   anti-fishing device: reruns are all here, dated, either verdict.
 -->
 <script lang="ts">
@@ -40,25 +40,25 @@
 					aria-selected={ledger.selected?.id === entry.id}
 					onclick={() => ledger.select(entry.id)}
 				>
-					<time class="tabular">{entry.recorded ? entry.recorded.slice(0, 10) : '—'}</time>
+					<time class="tabular">{entry.recorded ? entry.recorded.slice(0, 10) : '-'}</time>
 					<span class="verdict verdict-{entry.verdict}">
 						<span class="vdot" aria-hidden="true"></span>
 						{entry.verdict}
 					</span>
 					<span class="text">{entry.text}</span>
 					<span class="delta tabular">Δ{formatSignedSeconds(entry.delta)}</span>
-					<span class="hash tabular" title="config fingerprint — reruns this experiment"
+					<span class="hash tabular" title="config fingerprint - reruns this experiment"
 						>{entry.configHash}</span
 					>
 				</button>
 			{/each}
 		</div>
 		<p class="read">
-			<b>Refuted stays forever.</b> The record keeps every run, either verdict — you cannot quietly rerun
+			<b>Refuted stays forever.</b> The record keeps every run, either verdict - you cannot quietly rerun
 			until something turns green, because the reruns are all here, dated and fingerprinted.
 		</p>
 	{:else}
-		<p class="read">No verdicts yet — compose a claim in the design panel and test it.</p>
+		<p class="read">No verdicts yet - compose a claim in the design panel and test it.</p>
 	{/if}
 </section>
 
@@ -71,6 +71,9 @@
 		border-radius: var(--radius-card);
 		background: var(--panel);
 		padding: var(--sp-5) var(--sp-6);
+		/* Own container, so the row can restack when the CARD is narrow (a phone, or the Ledger docked
+		   into a thin research column) rather than only when the whole viewport is. */
+		container-type: inline-size;
 	}
 
 	.head {
@@ -134,7 +137,7 @@
 		outline-offset: var(--focus-offset);
 	}
 
-	/* The drilled row — the same full-ink hairline the run grid's selected cell wears. */
+	/* The drilled row - the same full-ink hairline the run grid's selected cell wears. */
 	.row.sel {
 		background: var(--panel2);
 		border-color: var(--line);
@@ -205,5 +208,39 @@
 
 	.read b {
 		color: var(--ink2);
+	}
+
+	/* On a narrow card the five-column row (date · verdict · claim · Δ · hash) squeezes the claim to an
+	   ellipsis. Restack: the claim takes its own full-width top line and wraps, with the metadata on a
+	   second line beneath it. (--bp-xs) */
+	@container (max-width: 480px) {
+		.row {
+			grid-template-columns: auto auto auto minmax(0, 1fr);
+			grid-template-areas:
+				'text text text text'
+				'time verdict delta hash';
+			row-gap: 5px;
+		}
+
+		time {
+			grid-area: time;
+		}
+
+		.verdict {
+			grid-area: verdict;
+		}
+
+		.text {
+			grid-area: text;
+			white-space: normal;
+		}
+
+		.delta {
+			grid-area: delta;
+		}
+
+		.hash {
+			grid-area: hash;
+		}
 	}
 </style>

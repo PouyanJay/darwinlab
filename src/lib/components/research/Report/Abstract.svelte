@@ -1,10 +1,10 @@
 <!--
-  The auto-composed abstract — a few sentences read from the settled findings, each closing with a
+  The auto-composed abstract - a few sentences read from the settled findings, each closing with a
   citation that jumps to the question it came from, and an honest gold clause naming the first gap.
 
   It renders `report.abstract` verbatim: the composition (and its honesty) lives in the store's pure
   `composeAbstract`, so this component only lays the clauses out and wires the citations. Nothing here
-  is authored — an empty abstract simply renders nothing, and the Report shows its "not studied yet"
+  is authored - an empty abstract simply renders nothing, and the Report shows its "not studied yet"
   lede instead.
 -->
 <script lang="ts">
@@ -34,7 +34,7 @@
 <div class="abstract" data-testid="report-abstract">
 	<div class="lab">
 		<span class="eyebrow">Abstract</span>
-		<span class="auto">assembled from findings — never authored</span>
+		<span class="auto">assembled from findings - never authored</span>
 	</div>
 	<p>
 		{#each clauses as clause, i (i)}<span class:gap={clause.gap}
@@ -84,7 +84,7 @@
 		padding: 1px 6px;
 	}
 
-	/* A serif reading face sets the abstract apart as the paper's spoken summary — the one place the
+	/* A serif reading face sets the abstract apart as the paper's spoken summary - the one place the
 	   Report leans literary. The UI everywhere else stays in the sans display/ui faces. */
 	p {
 		margin: 0;
@@ -94,7 +94,7 @@
 		color: var(--ink);
 	}
 
-	/* The gap clause is the honest closer — gold, so it reads as "and this is missing", not a finding. */
+	/* The gap clause is the honest closer - gold, so it reads as "and this is missing", not a finding. */
 	.gap {
 		color: var(--gold-ink);
 	}

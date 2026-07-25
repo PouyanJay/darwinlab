@@ -1,14 +1,14 @@
 <!--
-  "What it senses right now" — the four inputs, live, exactly as the network receives them.
+  "What it senses right now" - the four inputs, live, exactly as the network receives them.
 
-  The bars fill to the NORMALISED value the brain was actually fed (0–1), while the label reads the
+  The bars fill to the NORMALISED value the brain was actually fed (0-1), while the label reads the
   raw quantity a person can think in ("164 px", "-37°"). Both come from the engine's own snapshot;
   neither is recomputed here.
 
   The labels are honest about the three different ways a sense can be quiet, because they mean
   completely different things and the panel would be lying if it showed 0 for all of them:
 
-    "off"               the input neuron is cut — this brain evolved without it
+    "off"               the input neuron is cut - this brain evolved without it
     "nothing in range"  the sense works; there is simply no predator within vision
     "receding"          the predator is there and moving AWAY, which the network reads as no threat
 
@@ -48,10 +48,10 @@
 			key: 'dir',
 			label: 'direction to threat',
 			on: senses.dir,
-			// Direction has no magnitude — you either know which way it is or you do not.
+			// Direction has no magnitude - you either know which way it is or you do not.
 			fill: senses.dir && mind.inVision ? 1 : 0,
 			tone: 'accent',
-			value: !senses.dir ? 'off' : mind.inVision ? `${round(mind.directionDeg)}°` : '—'
+			value: !senses.dir ? 'off' : mind.inVision ? `${round(mind.directionDeg)}°` : '-'
 		},
 		{
 			key: 'closing',
@@ -62,7 +62,7 @@
 			value: !senses.closing
 				? 'off'
 				: !mind.inVision
-					? '—'
+					? '-'
 					: mind.closing > 0
 						? `+${round(mind.closing)}`
 						: 'receding'
@@ -84,7 +84,7 @@
 			<div class="head">
 				<span id="sense-{bar.key}">{bar.label}</span>
 				<!-- The reading is labelled by its row, so it can be found by name rather than by walking
-				     the DOM — and so a screen reader hears "predator distance: 164 px". aria-live is
+				     the DOM - and so a screen reader hears "predator distance: 164 px". aria-live is
 				     OFF: this number changes every frame, and a status you can ask for must not be a
 				     firehose that interrupts. -->
 				<b class="tabular" role="status" aria-live="off" aria-labelledby="sense-{bar.key}"
@@ -109,10 +109,10 @@
 	 * Dimmed, not hidden: a cut sense is the experiment, so it stays on screen saying "off".
 	 *
 	 * But the dimming is on the BAR, never on the words. It used to be `opacity: .35` on the whole
-	 * row, which put the label at 1.7:1 against the panel — text no one with less than perfect sight
+	 * row, which put the label at 1.7:1 against the panel - text no one with less than perfect sight
 	 * could read, and a serious axe failure the moment the surface behind it lightened. Faded text is
 	 * not a state; it is just text you cannot read. The row says "off" in a colour that holds AA, and
-	 * the meter — which carries no words — is what goes quiet.
+	 * the meter - which carries no words - is what goes quiet.
 	 */
 	.cut .meter {
 		opacity: 0.3;

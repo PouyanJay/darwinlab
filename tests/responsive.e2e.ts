@@ -5,7 +5,7 @@ import { gotoApp, waitForPrewarm } from './helpers';
  * The Phase 9 responsive gate: usable and coherent at 375px, with a coarse pointer.
  *
  * `isMobile` + `hasTouch` is what makes `(pointer: coarse)` match, so the touch-target rules
- * under test here are actually active — a plain narrow viewport would test the layout while
+ * under test here are actually active - a plain narrow viewport would test the layout while
  * silently skipping the ergonomics.
  */
 
@@ -16,7 +16,7 @@ const overflow = (page: Page) =>
 
 /**
  * The node that is actually ON SCREEN. The canvas opens with the tree centred, and on a 375px phone
- * that puts the MIDDLE world in view — the outer ones are a pan away, and a tap aimed at node 0's
+ * that puts the MIDDLE world in view - the outer ones are a pan away, and a tap aimed at node 0's
  * buttons lands outside the viewport (it did; both overlay tests hung on it).
  */
 const visibleNode = (page: Page) => page.locator('section[aria-label^="world"]').nth(2);
@@ -32,7 +32,7 @@ test('the bench fits a phone: one column, the run controls on the rail, no sidew
 	expect(await overflow(page)).toBe(0);
 
 	/*
-	 * A phone has no room to dock the control panel, so it lives behind the rail — but the RUN
+	 * A phone has no room to dock the control panel, so it lives behind the rail - but the RUN
 	 * controls are the ones you reach for mid-experiment, and the rail is what keeps them one tap
 	 * away instead of behind a panel. They are here, and they are finger-sized.
 	 */
@@ -97,6 +97,6 @@ test('the film stacks: tank first, rails beneath, nothing sideways', async ({ pa
 	).toBe('column');
 	expect(await overflow(page)).toBe(0);
 
-	// the honesty line wrapped rather than disappearing — a presentation is when it matters
+	// the honesty line wrapped rather than disappearing - a presentation is when it matters
 	await expect(story.getByText('a teaching caricature')).toBeVisible();
 });

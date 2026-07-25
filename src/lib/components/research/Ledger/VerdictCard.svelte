@@ -1,7 +1,7 @@
 <!--
-  The verdict — the workspace's centrepiece: the composed claim's sentence with its badge, the two
+  The verdict - the workspace's centrepiece: the composed claim's sentence with its badge, the two
   arms plotted as intervals (the actual evidence the verdict was read from), and the numbers spelled
-  out — Δ with its interval, effect size, seeds, fingerprint. The trigger is NOT here: composing and
+  out - Δ with its interval, effect size, seeds, fingerprint. The trigger is NOT here: composing and
   firing live in the design panel; this card reports what the last run of this claim settled.
 -->
 <script lang="ts">
@@ -17,7 +17,7 @@
 
 <section class="verdict" data-testid="verdict-card">
 	<header class="card-head">
-		<span class="eyebrow">The verdict — latest run of the composed claim</span>
+		<span class="eyebrow">The verdict - latest run of the composed claim</span>
 		{#if entry}
 			<span class="meta tabular">{entry.seeds} seeds/arm · 95% CI · {entry.configHash}</span>
 		{/if}
@@ -51,14 +51,14 @@
 			The two arms are plotted as the evidence the verdict was read from: for an <b
 				>A&nbsp;&gt;&nbsp;B</b
 			>
-			claim, supported means the whole Δ interval clears zero in A's favour — a shortfall <b>or</b>
+			claim, supported means the whole Δ interval clears zero in A's favour - a shortfall <b>or</b>
 			a straddle both refute it. For an <b>A&nbsp;≈&nbsp;B</b> claim the logic flips: a straddle supports,
 			clearing zero refutes. The verdict is read off the pre-registered contrast, never argued after the
 			fact.
 		</p>
 	{:else}
 		<p class="untested">
-			This claim has not been tested yet. Test it from the design panel — both arms run across
+			This claim has not been tested yet. Test it from the design panel - both arms run across
 			{ledger.seeds} seeds and the verdict, supported or refuted, enters the record below.
 		</p>
 	{/if}
@@ -114,7 +114,7 @@
 		text-wrap: balance;
 	}
 
-	/* The verdict word beside the sentence — supported wears the survival teal, refuted the danger
+	/* The verdict word beside the sentence - supported wears the survival teal, refuted the danger
 	   hue. The tints are a touch stronger than a chip's so they read at the badge's size. */
 	.badge {
 		flex: none;

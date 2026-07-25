@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Run Darwin Lab's test suites — any of them, or all of them — and NEVER stop at the first red:
+# Run Darwin Lab's test suites - any of them, or all of them - and NEVER stop at the first red:
 # every selected suite runs, the results are aggregated, and the exit code is the OR of them all,
 # so a developer sees every failure in one pass and CI still fails properly.
 #
@@ -57,7 +57,7 @@ fi
 if [ "$RUN_E2E" = 1 ]; then
 	STEP=$((STEP + 1))
 	ui::step $STEP $TOTAL "End-to-end tests (Playwright)"
-	# A stale preview on 4173 serves an OLD build to a green-looking suite — it has happened here.
+	# A stale preview on 4173 serves an OLD build to a green-looking suite - it has happened here.
 	# Kill anything holding the port before Playwright boots its own fresh server.
 	if lsof -ti tcp:4173 >/dev/null 2>&1; then
 		ui::warn "killing a stale server on :4173 (it would serve an old build to the suite)"

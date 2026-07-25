@@ -2,7 +2,7 @@
  * Shared test fixtures for the engine specs.
  *
  * Test-only: nothing in `src/` imports this outside a `*.spec.ts`, so it is tree-shaken out of
- * the app bundle. It exists so the WorldConfig / Fish / Predator builders live in ONE place —
+ * the app bundle. It exists so the WorldConfig / Fish / Predator builders live in ONE place -
  * previously each spec carried its own copy, which would silently drift the moment WorldConfig
  * gained a field.
  */

@@ -9,7 +9,7 @@ import { stubViewport } from '$lib/state/testkit';
 const HINT_STORAGE_KEY = 'darwinlab:hint-dismissed';
 
 /**
- * The bench singleton is never init()ed here — that would start a live loop with sharks eating
+ * The bench singleton is never init()ed here - that would start a live loop with sharks eating
  * in the background. The hint only reads `bench.selection`, which is a public $state field, so
  * the tests write it directly and put it back.
  */
@@ -28,7 +28,7 @@ describe('FirstRunHint', () => {
 		await expect.element(hint()).toBeVisible();
 	});
 
-	it('the ✕ dismisses it — for good, not for the session', async () => {
+	it('the ✕ dismisses it - for good, not for the session', async () => {
 		render(FirstRunHint);
 		await page.getByRole('button', { name: 'dismiss hint' }).click();
 
@@ -45,7 +45,7 @@ describe('FirstRunHint', () => {
 	it('stands down while the phone control panel covers the bench', async () => {
 		/*
 		 * The hint points at fish. On a phone the control panel is an OVERLAY, so while it is open
-		 * there are no fish on screen to point at — and the hint, pinned above everything, would print
+		 * there are no fish on screen to point at - and the hint, pinned above everything, would print
 		 * itself straight across the open panel.
 		 *
 		 * Driven through the REAL store (a stubbed viewport, then a real toggle), because the flag it
@@ -76,6 +76,6 @@ describe('FirstRunHint', () => {
 		flushSync();
 
 		await expect.element(hint()).not.toBeInTheDocument();
-		expect(localStorage.getItem(HINT_STORAGE_KEY)).not.toBeNull(); // the lesson landed — persist it
+		expect(localStorage.getItem(HINT_STORAGE_KEY)).not.toBeNull(); // the lesson landed - persist it
 	});
 });

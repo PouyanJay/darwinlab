@@ -1,5 +1,5 @@
 <!--
-  The brain — inputs → hidden layer(s) → 2, drawn from this fish's actual evolved weights. The shape
+  The brain - inputs → hidden layer(s) → 2, drawn from this fish's actual evolved weights. The shape
   is a per-world condition (8→6→2 and 68 weights for the reference brain, more for a deeper one).
 
   Not a diagram of a neural network: THIS network. Edge colour is the weight's sign, thickness is
@@ -7,7 +7,7 @@
   frame. A sense that has been cut dims its input node and sends nothing, which is what makes the
   ablation visible rather than merely asserted.
 
-  It paints from the RAW world, like the tank does — the genome is a flat array of floats and the
+  It paints from the RAW world, like the tank does - the genome is a flat array of floats and the
   signal changes every frame; there is nothing here for reactivity to do.
 -->
 <script lang="ts">
@@ -23,7 +23,7 @@
 
 	let { entry }: Props = $props();
 
-	// The actual gene count and shape of THIS world's brain — not the reference 8→6→2/68, since the
+	// The actual gene count and shape of THIS world's brain - not the reference 8→6→2/68, since the
 	// brain's inputs and hidden layers are a per-world condition now.
 	const genes = $derived(genomeLength(entry.config.brainInputs, entry.config.brainHidden));
 	const shape = $derived([entry.config.brainInputs, ...entry.config.brainHidden, 2].join(' → '));
@@ -33,19 +33,19 @@
 
 	function paint(ctx: CanvasRenderingContext2D, width: number, height: number) {
 		// The tick that ends a selection (the fish is eaten, or its generation turns) paints in
-		// that SAME frame, before the effect flush unmounts this canvas — and `entry` chains to
+		// that SAME frame, before the effect flush unmounts this canvas - and `entry` chains to
 		// the page's derived selection lookup, which is already undefined by then. Skip the one
 		// orphaned frame; the unmount is a microtask away. (This froze the whole bench once: the
 		// throw killed the sim loop's timer chain.)
 		if (!entry) return;
 
 		/*
-		 * The world the fish is actually SWIMMING IN — which, while an exhibit is up, is the exhibit
+		 * The world the fish is actually SWIMMING IN - which, while an exhibit is up, is the exhibit
 		 * and not the run beneath it.
 		 *
 		 * This read `entry.world` and drew a brain with no edges at all: the selected fish lives in the
 		 * exhibit, so the real world's `sense` snapshot is null, and a null snapshot draws the empty
-		 * scaffold — eight input nodes, six hidden, two out, and not one weight between them. The
+		 * scaffold - eight input nodes, six hidden, two out, and not one weight between them. The
 		 * sense bars beside it were full of numbers the whole time, because they read the store's
 		 * published mind (which does use the shown world). One panel was looking at the clone and the
 		 * other at the population; only one of them said so.
@@ -126,7 +126,7 @@
 		border-radius: 2px;
 	}
 
-	/* The same two colours the canvas paints with — see ThemePalette for why they are their own. */
+	/* The same two colours the canvas paints with - see ThemePalette for why they are their own. */
 	.excite {
 		background: var(--excite);
 	}

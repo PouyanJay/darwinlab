@@ -2,7 +2,7 @@
   What the flee lens is saying about THIS tank, in words and in numbers.
 
   The colours in the water are for the eye; this strip is for the argument. Both are the same
-  quantity (engine/flee.ts), so a reader can check one against the other — and the number is what
+  quantity (engine/flee.ts), so a reader can check one against the other - and the number is what
   survives a screenshot, a comparison, and a sceptic.
 
   The scale it explains is diverging around 90°, because 90° is not a design choice: it is what a
@@ -16,7 +16,7 @@
 
 	/** The card refuses to print a mean until it has this much fish-time behind it. */
 	const MIN_SAMPLES = WorldStats.LENS_MIN_SAMPLES;
-	/** What a fish that ignores the shark scores — the null this reading is measured against. */
+	/** What a fish that ignores the shark scores - the null this reading is measured against. */
 	const CHANCE_DEG = FLEE_CHANCE_DEG;
 
 	interface Props {
@@ -25,7 +25,7 @@
 
 	let { entry }: Props = $props();
 
-	// The RUNNING mean (see WorldStats.syncLens) — an instantaneous one flips its own verdict between
+	// The RUNNING mean (see WorldStats.syncLens) - an instantaneous one flips its own verdict between
 	// frames. `readable` is how many fish can be read right now, which is what makes the number
 	// trustworthy or not: a mean over two fish is not a mean.
 	const mean = $derived(entry.stats.fleeNow);
@@ -38,7 +38,7 @@
 	/**
 	 * How far this population is from CHANCE, in degrees.
 	 *
-	 * Not a word. The first version printed a verdict — "fleeing" under 84°, "chance" above it — and a
+	 * Not a word. The first version printed a verdict - "fleeing" under 84°, "chance" above it - and a
 	 * blind tank measuring 83° was labelled as FLEEING, which is a lie told by a threshold: 83° is
 	 * chance with a rounding error. A distance from the null is the honest form, it needs no cutoff to
 	 * argue about, and it makes the comparison arithmetic instead of rhetorical: blind comes out 7°
@@ -93,7 +93,7 @@
 		min-width: 0;
 	}
 
-	/* The ramp itself — the same three colours the tank paints with (render/theme.ts). */
+	/* The ramp itself - the same three colours the tank paints with (render/theme.ts). */
 	.bar {
 		position: relative;
 		height: 7px;

@@ -1,5 +1,5 @@
 /**
- * State — Svelte 5 runes stores. The ONLY seam through which the UI touches the sim.
+ * State - Svelte 5 runes stores. The ONLY seam through which the UI touches the sim.
  * See `bench.svelte.ts` for the architecture and the reactivity/performance rationale.
  */
 export * from './app.svelte';

@@ -1,5 +1,5 @@
 <!--
-  The "as a table" fallback every graph offers — the raw numbers behind the picture, for a screen
+  The "as a table" fallback every graph offers - the raw numbers behind the picture, for a screen
   reader, for a copy-paste, and for anyone who trusts a column over a shape. Pure presentation: it
   takes columns + rows and renders a plain table, tabular-nums on the numeric columns. A graph keeps
   one of these in a <details> beside it, so the numbers are never pixels-only.
@@ -8,7 +8,7 @@
 	interface Column {
 		key: string;
 		label: string;
-		/** Right-aligned + tabular figures — the default, since most graph data is numeric. */
+		/** Right-aligned + tabular figures - the default, since most graph data is numeric. */
 		numeric?: boolean;
 	}
 

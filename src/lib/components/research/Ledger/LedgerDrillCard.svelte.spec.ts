@@ -6,7 +6,7 @@ import { app, ledger } from '$lib/state';
 import type { JobExecutor } from '$lib/lab/runner';
 import type { Evaluation } from '$lib/lab/evaluator';
 
-/** Hands back pre-baked evaluations in submit order — arm A first, then arm B. */
+/** Hands back pre-baked evaluations in submit order - arm A first, then arm B. */
 class CannedExecutor implements JobExecutor {
 	readonly concurrency = 1;
 	#queue: (Evaluation | null)[];

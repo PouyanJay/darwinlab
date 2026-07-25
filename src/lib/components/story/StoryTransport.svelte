@@ -1,7 +1,7 @@
 <!--
   The transport: the controls of a film, not of a simulation.
 
-  The progress bar is one segment per scene, and it is the film's table of contents — it fills as
+  The progress bar is one segment per scene, and it is the film's table of contents - it fills as
   the current scene plays, shows which scenes have been, and every segment is clickable, so a
   presenter can jump straight to the one they came to show.
 -->
@@ -171,7 +171,7 @@
 			height: 44px;
 		}
 
-		/* The bar still DRAWS 5px tall — background-clip keeps the track inside the content box —
+		/* The bar still DRAWS 5px tall - background-clip keeps the track inside the content box -
 		   but the button around it grows into something a thumb can actually land on. */
 		.segment {
 			height: 21px;

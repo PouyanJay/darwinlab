@@ -1,5 +1,5 @@
 <!--
-  One collapsible group of subject knobs — the disclosure shell the subject card's sections share
+  One collapsible group of subject knobs - the disclosure shell the subject card's sections share
   (Population, Tank, Brain), extracted so the summary/chevron wiring exists once. Uncontrolled on
   purpose: `open` only seeds the initial state, the user's toggling is the browser's business.
 -->

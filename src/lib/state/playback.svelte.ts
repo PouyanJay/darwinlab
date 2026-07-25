@@ -1,5 +1,5 @@
 /**
- * Playback — "how time advances". Owns the sim loop, play/pause, speed, and the turbo trainer,
+ * Playback - "how time advances". Owns the sim loop, play/pause, speed, and the turbo trainer,
  * and nothing about which worlds exist. `BenchStore` composes it.
  */
 
@@ -64,7 +64,7 @@ export class Playback {
 		this.turboTarget = null;
 	}
 
-	/** Back to construction defaults — stops the loop too, so nothing survives a teardown. */
+	/** Back to construction defaults - stops the loop too, so nothing survives a teardown. */
 	reset(): void {
 		this.stop();
 		this.running = true;

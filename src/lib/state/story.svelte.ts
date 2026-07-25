@@ -1,16 +1,16 @@
 /**
- * Story mode — the bench, told as a film.
+ * Story mode - the bench, told as a film.
  *
  * One scene per world, in the order they were made, which is the order the argument is made in:
  * blind drift, then distance, then direction (where survival leaps), then the two senses that do
  * not pay. Each scene gets a FRESH full generation seeded from that world's evolved brains
  * (`makeStoryWorld`), so a scene opens with twenty competent fish rather than the handful that
- * happened to be alive on the bench when you hit play. It is the same evolved population — just not
+ * happened to be alive on the bench when you hit play. It is the same evolved population - just not
  * mid-slaughter.
  *
  * The story world is a world like any other: it steps through `stepWorld` and projects through the
  * same `WorldStats` / `WorldConfigView`, so the tank, the curve and the Brain Inspector all work on
- * it without knowing they are in a film. While a story runs, the BENCH worlds do not step — there is
+ * it without knowing they are in a film. While a story runs, the BENCH worlds do not step - there is
  * one thing on screen, and it is the one that should be moving.
  */
 
@@ -26,7 +26,7 @@ export interface SceneSense {
 	name: string;
 	on: boolean;
 	/**
-	 * On in THIS scene and off in the one before — the thing the scene is actually about. The rail
+	 * On in THIS scene and off in the one before - the thing the scene is actually about. The rail
 	 * tags it, because "what changed" is the whole reason the scenes are in this order.
 	 */
 	isNew: boolean;
@@ -38,7 +38,7 @@ class StoryStore {
 	index = $state(0);
 	/** How long this scene has been playing, in sim-seconds. */
 	elapsed = $state(0);
-	/** The scene's world — a fresh generation of the source world's evolved brains. */
+	/** The scene's world - a fresh generation of the source world's evolved brains. */
 	entry = $state.raw<WorldEntry | null>(null);
 
 	/** The bench worlds the film is made from. Snapshotted on start: adding a world mid-film is not
@@ -53,7 +53,7 @@ class StoryStore {
 		return this.#sources[this.index] ?? null;
 	}
 
-	/** How far through the current scene, 0–1 — what the progress bar fills to. */
+	/** How far through the current scene, 0-1 - what the progress bar fills to. */
 	get progress(): number {
 		return Math.min(1, this.elapsed / SCENE_SECONDS);
 	}
@@ -73,7 +73,7 @@ class StoryStore {
 		if (!current) return [];
 		const previous = this.#sources[this.index - 1]?.config.senses;
 
-		// Only the senses THIS world declares — the four predator senses always, plus the shoal senses
+		// Only the senses THIS world declares - the four predator senses always, plus the shoal senses
 		// on a schooling world. A sense a world's brains do not carry has no row (the sense ladder must
 		// not sprout two dead shoal pills, nor the Shoal scene claim a closing-speed input it lacks).
 		return SENSE_ORDER.filter(({ key }) => key in current).map(({ key, name }) => ({
@@ -103,7 +103,7 @@ class StoryStore {
 	}
 
 	/**
-	 * Jump to a scene. Out-of-range indices are clamped — a film has a first and a last frame —
+	 * Jump to a scene. Out-of-range indices are clamped - a film has a first and a last frame -
 	 * and a jump to the scene already on screen is NOT a jump: re-cutting it would swap a fresh
 	 * world in under a held film without the stage ever repainting (the paint gate only paints
 	 * what moved, and the scene remount is keyed on the index, which would not change).
@@ -124,7 +124,7 @@ class StoryStore {
 
 	/**
 	 * Advance the scene clock. Returns true when the scene has run its length and the film should
-	 * move on — the caller decides what that means, because on the LAST scene it means stopping,
+	 * move on - the caller decides what that means, because on the LAST scene it means stopping,
 	 * and a store that paused the playback itself would be reaching into something it doesn't own.
 	 */
 	advance(seconds: number): boolean {
@@ -146,7 +146,7 @@ class StoryStore {
 export const STORY_WORLD_ID = 'story';
 
 /**
- * The senses, in the order the bench introduces them — which is the order the story tells them.
+ * The senses, in the order the bench introduces them - which is the order the story tells them.
  * Walls before closing speed, because that is the order the MEASUREMENTS put them in: walls pays
  * on top of direction, and closing only stacks once everything else is in place (see
  * DEFAULT_WORLDS and scripts/sweep-senses.ts).
@@ -156,7 +156,7 @@ const SENSE_ORDER: { key: keyof Senses; name: string }[] = [
 	{ key: 'dir', name: 'Direction' },
 	{ key: 'walls', name: 'Walls' },
 	{ key: 'closing', name: 'Closing speed' },
-	// The shoal senses — present only in the Shoal exhibit's scenes, where the second scene turns them
+	// The shoal senses - present only in the Shoal exhibit's scenes, where the second scene turns them
 	// on and the rail tags them NEW: the "what changed" that makes a swarm appear where none was.
 	{ key: 'cohesion', name: 'Shoal' },
 	{ key: 'align', name: 'Alignment' }

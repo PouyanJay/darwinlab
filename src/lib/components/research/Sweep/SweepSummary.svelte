@@ -14,11 +14,11 @@
 
 	const effectRows = $derived(toEffectRows(sweep.effects));
 
-	/** The strongest factor whose 95% interval clears zero — the SHARED selector, so this lead and
+	/** The strongest factor whose 95% interval clears zero - the SHARED selector, so this lead and
 	 *  the workspace's headline tile can never disagree. Null = a flat environment, a real result. */
 	const lead = $derived.by<EffectRow | null>(() => strongestEffect(effectRows));
 
-	// Whether this subject already has a Sweep finding in the notebook — so the button reads "in
+	// Whether this subject already has a Sweep finding in the notebook - so the button reads "in
 	// report" rather than inviting a duplicate. Reactive on both the notebook and the subject.
 	const inReport = $derived(findings.has('sweep'));
 
@@ -29,9 +29,9 @@
 			title: lead ? `${lead.label} ${formatSignedSeconds(lead.delta)}` : 'No factor cleared zero',
 			detail: lead
 				? 'the strongest factor whose interval clears zero'
-				: 'a flat environment — a real negative the Sweep keeps',
+				: 'a flat environment - a real negative the Sweep keeps',
 			status: lead ? 'ok' : 'limit',
-			// the RECEIPT's seeds — the run that happened, not wherever the panel's input sits now
+			// the RECEIPT's seeds - the run that happened, not wherever the panel's input sits now
 			seeds: sweep.receipt?.seeds ?? sweep.seeds,
 			configHash: configHash([app.subjectBase('Sweep')]),
 			evidence: { kind: 'effects', effects: effectRows }
@@ -45,7 +45,7 @@
 		title={lead ? `${lead.label} ${formatSignedSeconds(lead.delta)}` : 'No factor cleared zero'}
 		detail={lead
 			? 'the strongest factor whose interval clears zero'
-			: 'a flat environment — a real negative the Sweep keeps'}
+			: 'a flat environment - a real negative the Sweep keeps'}
 		stats={[
 			{ label: 'Conditions', value: String(sweep.cells.length) },
 			{ label: 'Seeds', value: String(sweep.receipt?.seeds ?? sweep.seeds) }
@@ -53,7 +53,7 @@
 	>
 		{#if sweep.sampled}
 			<p class="note">
-				Sampled {sweep.cells.length} of {sweep.total} — the full factorial overflowed the cap.
+				Sampled {sweep.cells.length} of {sweep.total} - the full factorial overflowed the cap.
 			</p>
 		{/if}
 		<ReportButton {inReport} onadd={addToReport} />
