@@ -107,7 +107,7 @@
 	<aside
 		class="sidebar"
 		class:overlay={shell.narrow}
-		style:width="{shell.width}px"
+		style:width={shell.narrow ? null : `${shell.width}px`}
 		aria-label="lab controls"
 	>
 		<div class="panel">
@@ -515,5 +515,31 @@
 		font-size: var(--fs-sm);
 		line-height: var(--leading-body);
 		color: var(--ink3);
+	}
+
+	/*
+	 * Phone: the full controls arrive as a BOTTOM SHEET, not a left drawer - the transport now lives in
+	 * a floating bottom pill (SidebarRail), and the sheet rises from the same edge the "more" button
+	 * sits on. Full width, rounded top, capped height with the panel scrolling inside it.
+	 */
+	@media (max-width: 900px) {
+		.overlay {
+			top: auto;
+			left: 0;
+			right: 0;
+			bottom: 0;
+			width: 100%;
+			max-width: 100%;
+			height: auto;
+			max-height: 88vh;
+			border-right: none;
+			border-top: 1px solid var(--line);
+			border-radius: var(--radius-modal) var(--radius-modal) 0 0;
+			animation: slide-in-up var(--dur-enter) var(--ease) both;
+		}
+
+		.overlay .panel {
+			padding-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--sp-6));
+		}
 	}
 </style>

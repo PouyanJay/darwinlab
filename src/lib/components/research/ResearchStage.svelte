@@ -206,8 +206,11 @@
 	@media (max-width: 768px) {
 		.console,
 		.console.has-design {
-			display: flex;
-			flex-direction: column;
+			/* A plain block, NOT a flex column: flex children shrink by default, so once the stacked
+			   zones are taller than the viewport (a real phone) the rail box shrank below the subject
+			   card and its fixed-height canvas overflowed into - or was clipped by - the next zone. As a
+			   block each zone simply takes its natural height and the console scrolls past them. */
+			display: block;
 			overflow-y: auto;
 			-webkit-overflow-scrolling: touch;
 		}

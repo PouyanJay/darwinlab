@@ -73,7 +73,12 @@
 	 * this they anchor under the sidebar and read as centred on a page they are not centred on. An
 	 * overlay panel is not counted: it is on top of the bench, not beside it.
 	 */
-	const gutter = $derived(shell.open && !shell.narrow ? `${shell.width}px` : 'var(--rail-width)');
+	// Bench-centred floats (the first-run hint) offset by whatever the sidebar leaves on the LEFT. On a
+	// phone the sidebar is a floating bottom pill, not a left rail, so it leaves nothing on the left -
+	// the gutter is 0 there, and the offset only applies to the docked/rail desktop layouts.
+	const gutter = $derived(
+		shell.narrow ? '0px' : shell.open ? `${shell.width}px` : 'var(--rail-width)'
+	);
 
 	// One dialog, for whichever world asked for it. It resolves to `undefined` the instant that world
 	// is removed, so the dialog cannot outlive the thing it edits.

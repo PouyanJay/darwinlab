@@ -45,7 +45,10 @@
 		title="expand the controls"
 		onclick={() => shell.toggle()}
 	>
-		<Icon name="chevron-right" />
+		<!-- Desktop: a chevron that opens the panel docked to the right. Phone: the pill is horizontal
+		     and the full controls arrive as a bottom sheet, so a "sliders" glyph reads as "more" better
+		     than a sideways chevron would. -->
+		<Icon name={shell.narrow ? 'sliders' : 'chevron-right'} />
 	</Button>
 
 	{#if !shell.open}
@@ -136,5 +139,59 @@
 
 	.rail :global(.story) {
 		color: var(--accent);
+	}
+
+	/*
+	 * Phone (the narrow layout, matching the shell's overlay switch): the left rail becomes a FLOATING
+	 * BOTTOM PILL. No docked strip eating the width and no per-button boxes - one glass pill of bare
+	 * icons, thumb-reachable at the bottom. The "more" button (the expand control) moves to the end and
+	 * opens the full controls as a bottom sheet. It keeps the shell's z-index, so its own scrim covers
+	 * it when the sheet is up.
+	 */
+	@media (max-width: 900px) {
+		.rail {
+			position: fixed;
+			top: auto;
+			left: 50%;
+			bottom: calc(env(safe-area-inset-bottom, 0px) + var(--sp-4));
+			transform: translateX(-50%);
+			flex-direction: row;
+			align-items: center;
+			width: auto;
+			max-width: calc(100vw - 2 * var(--sp-4));
+			height: auto;
+			padding: var(--sp-1) var(--sp-2);
+			gap: 2px;
+			border: 1px solid var(--line);
+			border-radius: var(--radius-pill);
+			background: var(--glass);
+			backdrop-filter: blur(var(--blur-glass));
+			box-shadow: var(--shadow-pill);
+		}
+
+		/* The rail's group dividers are a vertical-stack affordance; the compact pill spaces its icons
+		   evenly instead, with the "more" button set off at the end. */
+		.rail .divider {
+			display: none;
+		}
+
+		/* Bare icons in the pill - the glass IS the container, so the buttons drop their own boxes. */
+		.rail :global(.btn) {
+			border-color: transparent;
+			background: none;
+			box-shadow: none;
+		}
+
+		.rail :global(.btn:not(:disabled):hover) {
+			background: var(--chip);
+		}
+
+		/* "More" (the expand button, the first child) to the end of the pill, with a hairline before it. */
+		.rail :global(.btn:first-child) {
+			order: 1;
+			margin-left: var(--sp-1);
+			border-left: 1px solid var(--line);
+			border-radius: 0 var(--radius-pill) var(--radius-pill) 0;
+		}
 	}
 </style>
