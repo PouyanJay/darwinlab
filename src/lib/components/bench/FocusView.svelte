@@ -67,6 +67,11 @@
 				<Workbench entry={focused} index={focusedIndex + 1} />
 			{/key}
 		</div>
+
+		<!-- Phone only: a real spacer so the workbench's last controls can scroll clear of the floating
+		     transport pill. A child with height counts in the scroll extent where a scroll container's own
+		     padding-bottom (through a grid + container-query subtree) does not. -->
+		<div class="pill-clearance" aria-hidden="true"></div>
 	</div>
 {/if}
 
@@ -195,6 +200,11 @@
 		container-name: detail;
 	}
 
+	/* Only a phone needs the pill clearance (desktop docks the controls in the sidebar). */
+	.pill-clearance {
+		display: none;
+	}
+
 	/*
 		The phone: no room for a side rail, so the whole focus becomes ONE vertically scrolling column -
 		the roster as a horizontal filmstrip on top, the workbench (itself fully stacked) beneath it.
@@ -202,15 +212,27 @@
 		screen that has no height to spare.
 	*/
 	@media (max-width: 768px) {
+		/* Block, not grid: the focus becomes a single scrolling column (filmstrip, workbench, then the
+		   pill clearance). A grid scroll container did not count a trailing spacer row in its scroll
+		   extent, so the last controls stayed pinned under the floating pill; block layout does. */
 		.focus {
-			grid-template-columns: minmax(0, 1fr);
-			grid-template-rows: auto auto;
+			display: block;
 			height: auto;
 			min-height: 100%;
 			overflow-y: auto;
 			overflow-x: hidden;
 			padding: var(--sp-4);
-			gap: var(--sp-4);
+		}
+
+		.rail-wrap {
+			margin-bottom: var(--sp-4);
+		}
+
+		/* The clearance that lets the last workbench controls scroll clear of the floating transport
+		   pill. It is a real grid row (an element with height), reliably counted in the scroll extent. */
+		.pill-clearance {
+			display: block;
+			height: calc(env(safe-area-inset-bottom, 0px) + 84px);
 		}
 
 		.rail {
