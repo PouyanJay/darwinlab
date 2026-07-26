@@ -42,4 +42,13 @@
 		font-weight: var(--fw-medium);
 		color: var(--ink3);
 	}
+
+	/* Phone: the floating transport pill owns the bottom edge, and this line would collide with it. The
+	   disclaimer is still carried by the intro and by the controls sheet's foot, so the floating copy
+	   stands down on the narrow layout. */
+	@media (max-width: 900px) {
+		.pill {
+			display: none;
+		}
+	}
 </style>

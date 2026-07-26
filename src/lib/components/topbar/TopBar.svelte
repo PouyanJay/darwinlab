@@ -210,6 +210,15 @@
 	}
 
 	@media (max-width: 640px) {
+		header {
+			flex-wrap: nowrap;
+			gap: var(--sp-3);
+			padding: var(--sp-3) var(--sp-4);
+		}
+
+		/* Logo only: the mark is identity enough on a phone, so the wordmark, tag and scenario drop out
+		   and the mode switch + app icons get a single, uncrowded row instead of wrapping to two. */
+		.wordmark,
 		.lab,
 		.divider {
 			display: none;
@@ -217,6 +226,26 @@
 
 		header :global(.live-tag) {
 			display: none;
+		}
+
+		/* The GitHub source link is the one control that is not a phone action - it drops out here, both
+		   to declutter and because a third 44px touch target tipped the single row over the viewport
+		   width (a fixed row that overflows widens the mobile layout viewport). Theme + settings stay. */
+		.gh {
+			display: none;
+		}
+
+		/* Bare icons, no boxes - on a phone the app controls read cleaner as plain glyphs than a row of
+		   bordered chips. The 44px coarse-pointer tap target (Button) is untouched. */
+		header :global(.btn) {
+			border-color: transparent;
+			background: none;
+			box-shadow: none;
+		}
+
+		.gh:hover,
+		header :global(.btn:not(:disabled):hover) {
+			background: var(--chip);
 		}
 	}
 </style>

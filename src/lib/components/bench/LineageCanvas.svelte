@@ -422,4 +422,17 @@
 	.add:hover {
 		border-color: var(--accent);
 	}
+
+	/* Phone: the floating transport pill (SidebarRail) owns the bottom-centre and already carries an
+	   "add environment" button, so the canvas's own Add pill stands down and the zoom cluster lifts
+	   clear of the transport pill instead of sharing the bottom edge with it. */
+	@media (max-width: 900px) {
+		.add {
+			display: none;
+		}
+
+		.controls {
+			bottom: calc(env(safe-area-inset-bottom, 0px) + 76px);
+		}
+	}
 </style>

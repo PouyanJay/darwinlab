@@ -81,10 +81,20 @@
 		color: var(--ink);
 	}
 
-	/* On a phone the footer disclaimer owns the bottom edge - stack the hint above it. */
-	@media (max-width: 640px) {
+	/* On a phone the floating transport pill (SidebarRail) owns the bottom-centre - lift the hint clear
+	   of it so the two never stack on top of each other. */
+	@media (max-width: 900px) {
 		.hint {
-			bottom: 54px;
+			bottom: calc(env(safe-area-inset-bottom, 0px) + 132px);
+			/* Centre on the viewport with auto margins, NOT translateX(-50%): the fade-up animation ends
+			   on `transform: none`, which nukes the translate and left the pill pinned by its left edge -
+			   overflowing the right side and widening the mobile layout viewport (which then threw off
+			   every 100vw sheet on the page). Margin-centring survives the animation and can't overflow. */
+			left: 0;
+			right: 0;
+			width: max-content;
+			max-width: calc(100vw - 2 * var(--sp-4));
+			margin-inline: auto;
 		}
 	}
 

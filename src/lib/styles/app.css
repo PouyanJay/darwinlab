@@ -173,6 +173,16 @@ textarea,
 	}
 }
 
+/* The control panel arriving as a bottom sheet on a phone - up from the bottom edge it now docks to. */
+@keyframes slide-in-up {
+	from {
+		transform: translateY(100%);
+	}
+	to {
+		transform: none;
+	}
+}
+
 /* A scene arriving: it settles into place rather than sliding, so a cut reads as a cut. */
 @keyframes scene-in {
 	from {
