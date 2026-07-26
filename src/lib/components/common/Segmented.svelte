@@ -110,9 +110,13 @@
 		color: var(--ink);
 	}
 
-	/* The chosen segment lifts off the track: it takes the panel colour and a small shadow. */
+	/* The chosen segment lifts OFF the track. The track is `--chip` (panel tinted TOWARD the ink - a
+	   little lighter in dark, a little darker in light), so a plain `--panel` fill lifts in light but
+	   SINKS in dark, where it comes out darker than the track (the selected segment read as a recessed
+	   hole with a leaking shadow). Mixing a touch of white in makes the thumb sit ABOVE the track in
+	   both themes - unchanged white in light, a genuinely lighter grey in dark. */
 	.checked {
-		background: var(--panel);
+		background: color-mix(in srgb, var(--panel), #fff 15%);
 		color: var(--ink);
 		box-shadow: var(--shadow-segment);
 	}
