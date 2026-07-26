@@ -16,7 +16,7 @@
 	import Button from '../common/Button.svelte';
 	import Icon from '../common/Icon.svelte';
 	import type { WorldEntry } from '$lib/state';
-	import { bench, canvas, prefersReducedMotion } from '$lib/state';
+	import { bench, canvas, prefersReducedMotion, shell } from '$lib/state';
 	import { NODE_W, ESTIMATED_NODE_H, edgePath } from '$lib/lab/lineage';
 
 	interface Props {
@@ -190,6 +190,15 @@
 		return { minX, minY, maxX, maxY };
 	}
 
+	/**
+	 * On a phone the transport pill floats over the bottom of the canvas; reserve its band so a framed
+	 * tree sits ABOVE it rather than with its lowest node tucked underneath. Desktop reserves nothing.
+	 */
+	const PILL_BAND = 120;
+	function bottomReserve() {
+		return shell.narrow ? PILL_BAND : 0;
+	}
+
 	/** Frame the whole tree in the viewport - the "recenter" action. */
 	function recenterTree() {
 		const rect = container.getBoundingClientRect();
@@ -198,7 +207,7 @@
 			return;
 		}
 		const { minX, minY, maxX, maxY } = treeBounds(bench.worlds);
-		canvas.fitBox(minX, minY, maxX, maxY, rect.width, rect.height);
+		canvas.fitBox(minX, minY, maxX, maxY, rect.width, rect.height - bottomReserve());
 	}
 
 	// Wheel must be a NON-PASSIVE listener or preventDefault is ignored and the page scrolls instead
@@ -229,7 +238,8 @@
 		const s = Math.min(1, (rect.width - 2 * MARGIN) / NODE_W); // 1 on anything but a narrow phone
 		canvas.scale = s;
 		canvas.tx = (rect.width - (maxX - minX) * s) / 2 - minX * s;
-		canvas.ty = (rect.height - (maxY - minY) * s) / 2 - minY * s;
+		// Centre in the height ABOVE the phone's floating pill, so the opening frame clears it too.
+		canvas.ty = (rect.height - bottomReserve() - (maxY - minY) * s) / 2 - minY * s;
 	}
 
 	onMount(() => {
