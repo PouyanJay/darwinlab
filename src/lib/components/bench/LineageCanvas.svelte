@@ -191,12 +191,15 @@
 	}
 
 	/**
-	 * On a phone the transport pill floats over the bottom of the canvas; reserve its band so a framed
-	 * tree sits ABOVE it rather than with its lowest node tucked underneath. Desktop reserves nothing.
+	 * The vertical room a framed world gets. On a phone the transport pill floats over the bottom of the
+	 * canvas, so we frame into the space from the top of the canvas to the TOP OF THE PILL - measured
+	 * live, so the world ends up centred with EQUAL margins top and bottom whatever the device's
+	 * safe-area does to the pill's height. Off the phone (no floating pill) it is the whole canvas.
 	 */
-	const PILL_BAND = 120;
-	function bottomReserve() {
-		return shell.narrow ? PILL_BAND : 0;
+	function availableHeight(rect: DOMRect): number {
+		if (!shell.narrow) return rect.height;
+		const pill = document.querySelector('aside.rail')?.getBoundingClientRect();
+		return pill && pill.top > rect.top ? pill.top - rect.top : rect.height;
 	}
 
 	/** Frame the whole tree in the viewport - the "recenter" action. */
@@ -207,7 +210,7 @@
 			return;
 		}
 		const { minX, minY, maxX, maxY } = treeBounds(bench.worlds);
-		canvas.fitBox(minX, minY, maxX, maxY, rect.width, rect.height - bottomReserve());
+		canvas.fitBox(minX, minY, maxX, maxY, rect.width, availableHeight(rect));
 	}
 
 	// Wheel must be a NON-PASSIVE listener or preventDefault is ignored and the page scrolls instead
@@ -243,9 +246,10 @@
 			: treeBounds(bench.worlds);
 		const s = Math.min(1, (rect.width - 2 * MARGIN) / NODE_W); // 1 on anything but a narrow phone
 		canvas.scale = s;
+		// Equal margins: centre horizontally in the canvas, and vertically in the space above the pill -
+		// so the world sits dead-centre of what you can actually see, not tucked up or under the pill.
 		canvas.tx = (rect.width - (maxX - minX) * s) / 2 - minX * s;
-		// Centre in the height ABOVE the phone's floating pill, so the opening frame clears it too.
-		canvas.ty = (rect.height - bottomReserve() - (maxY - minY) * s) / 2 - minY * s;
+		canvas.ty = (availableHeight(rect) - (maxY - minY) * s) / 2 - minY * s;
 	}
 
 	onMount(() => {
