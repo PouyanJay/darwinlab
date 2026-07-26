@@ -40,9 +40,11 @@
 	interface Props {
 		onaddworld: () => void;
 		onplaystory: () => void;
+		/** Passed through to the rail's phone pill: "fit the tree" when the lineage canvas is showing. */
+		onrecenter?: () => void;
 	}
 
-	let { onaddworld, onplaystory }: Props = $props();
+	let { onaddworld, onplaystory, onrecenter }: Props = $props();
 
 	const target = $derived(trainTarget(bench.generationsEvolved, bench.maxGenerations));
 	const label = $derived(trainLabel(bench.maxGenerations));
@@ -87,7 +89,7 @@
   every time the panel opened.
 -->
 {#if !shell.open || shell.narrow}
-	<SidebarRail {onaddworld} {onplaystory} />
+	<SidebarRail {onaddworld} {onplaystory} {onrecenter} />
 {/if}
 
 {#if shell.open}
