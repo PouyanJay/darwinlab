@@ -110,15 +110,15 @@
 		color: var(--ink);
 	}
 
-	/* The chosen segment lifts OFF the track. The track is `--chip` (panel tinted TOWARD the ink - a
-	   little lighter in dark, a little darker in light), so a plain `--panel` fill lifts in light but
-	   SINKS in dark, where it comes out darker than the track (the selected segment read as a recessed
-	   hole with a leaking shadow). Mixing a touch of white in makes the thumb sit ABOVE the track in
-	   both themes - unchanged white in light, a genuinely lighter grey in dark. */
+	/* The chosen segment reads through a clean, FLAT fill that is a step lighter than the track. The
+	   track is `--chip` (panel tinted toward the ink - lighter in dark, darker in light), so a plain
+	   `--panel` fill lifts in light but SINKS in dark (the selected segment came out darker than the
+	   track, a recessed hole). Mixing a touch of white in makes the thumb sit clearly ABOVE the track in
+	   both themes. NO shadow: on the near-black dark track its blur leaked past the rounded corners and
+	   read as a crooked/offset box - the lightness step alone is the signal. */
 	.checked {
-		background: color-mix(in srgb, var(--panel), #fff 15%);
+		background: color-mix(in srgb, var(--panel), #fff 18%);
 		color: var(--ink);
-		box-shadow: var(--shadow-segment);
 	}
 
 	/* The panel's compact rows: eyebrow-sized type, tight padding - same roles, less chrome. */
