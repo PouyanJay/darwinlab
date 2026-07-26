@@ -22,9 +22,19 @@
 	interface Props {
 		/** Add a fresh root world - the canvas offers it in its own corner, not only the sidebar. */
 		onaddworld: () => void;
+		/**
+		 * Handed the canvas's "fit the tree" action on mount (the same `register` pattern Canvas uses).
+		 * On a phone the canvas hides its own zoom cluster - pinch handles zoom - so the recenter rides
+		 * in the transport pill instead, which calls back through this. The parent only offers it to the
+		 * pill while this canvas is the live view, so a handle to a torn-down canvas is never reached.
+		 */
+		onrecenterready?: (recenter: () => void) => void;
 	}
 
-	let { onaddworld }: Props = $props();
+	let { onaddworld, onrecenterready }: Props = $props();
+
+	// Hand our recenter up to the parent once mounted (recenterTree is a hoisted declaration below).
+	onMount(() => onrecenterready?.(recenterTree));
 
 	let container: HTMLDivElement;
 	/** Each node's rendered height, measured live - the edges need it to leave from a parent's foot. */
@@ -181,7 +191,7 @@
 	}
 
 	/** Frame the whole tree in the viewport - the "recenter" action. */
-	function recenter() {
+	function recenterTree() {
 		const rect = container.getBoundingClientRect();
 		if (!bench.worlds.length) {
 			canvas.reset();
@@ -295,7 +305,7 @@
 		<Button variant="icon" size="sm" aria-label="zoom in" onclick={() => zoomFromCentre(1.2)}>
 			<Icon name="plus" size={15} />
 		</Button>
-		<Button variant="icon" size="sm" aria-label="recenter the tree" onclick={recenter}>
+		<Button variant="icon" size="sm" aria-label="recenter the tree" onclick={recenterTree}>
 			<Icon name="crosshair" size={15} />
 		</Button>
 	</div>
@@ -423,16 +433,13 @@
 		border-color: var(--accent);
 	}
 
-	/* Phone: the floating transport pill (SidebarRail) owns the bottom-centre and already carries an
-	   "add environment" button, so the canvas's own Add pill stands down and the zoom cluster lifts
-	   clear of the transport pill instead of sharing the bottom edge with it. */
+	/* Phone: the floating canvas controls stand down. The transport pill (SidebarRail) already carries
+	   an "add environment" button and now a recenter button, and pinch handles zoom in/out - so both the
+	   Add pill and the whole zoom cluster (which the owner found ate too much space) are hidden here. */
 	@media (max-width: 900px) {
-		.add {
-			display: none;
-		}
-
+		.add,
 		.controls {
-			bottom: calc(env(safe-area-inset-bottom, 0px) + 76px);
+			display: none;
 		}
 	}
 </style>

@@ -22,9 +22,12 @@
 	interface Props {
 		onaddworld: () => void;
 		onplaystory: () => void;
+		/** "Fit the tree", when the lineage canvas is showing. On a phone its own zoom cluster is hidden,
+		    so this rides in the pill; absent (the focus view, or desktop) the button is not offered. */
+		onrecenter?: () => void;
 	}
 
-	let { onaddworld, onplaystory }: Props = $props();
+	let { onaddworld, onplaystory, onrecenter }: Props = $props();
 
 	const speed = $derived(SPEEDS.find((option) => option.value === bench.speed) ?? SPEEDS[1]);
 	const train = $derived(trainLabel(bench.maxGenerations));
@@ -104,6 +107,14 @@
 		>
 			<TransportIcon playing={false} size={9} />
 		</Button>
+
+		<!-- Phone only: the lineage canvas hides its own zoom cluster there, so "fit the tree" rides in
+		     the pill. Absent on the focus view (no tree to fit) and on desktop (the canvas keeps its own). -->
+		{#if shell.narrow && onrecenter}
+			<Button variant="icon" aria-label="recenter the tree" title="recenter" onclick={onrecenter}>
+				<Icon name="crosshair" />
+			</Button>
+		{/if}
 	{/if}
 </aside>
 

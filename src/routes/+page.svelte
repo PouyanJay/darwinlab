@@ -93,6 +93,10 @@
 	// exists. A focusedId left pointing at a removed world falls straight back to the canvas.
 	const focusing = $derived(bench.focusedId ? bench.find(bench.focusedId) : undefined);
 
+	// The lineage canvas binds its "fit the tree" action here so the phone transport pill can offer it.
+	// It is only live while the canvas is mounted (not the focus view), so the pill hides the button then.
+	let recenterTree = $state<(() => void) | undefined>();
+
 	/**
 	 * Space plays/pauses - but ONLY when it isn't already the focused control's key.
 	 *
@@ -144,7 +148,11 @@
 		<!-- The studio sidebar and its transport do not apply in Research; the instruments carry their
 		     own controls (built in later phases). -->
 		{#if !app.research}
-			<Sidebar onaddworld={addWorld} onplaystory={() => bench.playStory()} />
+			<Sidebar
+				onaddworld={addWorld}
+				onplaystory={() => bench.playStory()}
+				onrecenter={focusing ? undefined : recenterTree}
+			/>
 		{/if}
 
 		<!-- The bench IS the canvas: the family tree (or a focused world's workbench) fills the height
@@ -156,7 +164,7 @@
 				{:else if focusing}
 					<FocusView onaddworld={addWorld} />
 				{:else}
-					<LineageCanvas onaddworld={addWorld} />
+					<LineageCanvas onaddworld={addWorld} onrecenterready={(fn) => (recenterTree = fn)} />
 				{/if}
 			</main>
 		</div>
