@@ -234,7 +234,13 @@
 			canvas.reset();
 			return;
 		}
-		const { minX, minY, maxX, maxY } = treeBounds(bench.worlds);
+		// On a phone, OPEN framed on a single world - readable, centred, and clear of the pill - which
+		// reads as a clean default; the rest of the tree is a pan away. (Centring the whole tree only
+		// lands on a clean node by luck - it breaks the moment the tree is a different shape or size.)
+		// Desktop keeps the whole-tree overview.
+		const { minX, minY, maxX, maxY } = shell.narrow
+			? treeBounds([bench.worlds[0]])
+			: treeBounds(bench.worlds);
 		const s = Math.min(1, (rect.width - 2 * MARGIN) / NODE_W); // 1 on anything but a narrow phone
 		canvas.scale = s;
 		canvas.tx = (rect.width - (maxX - minX) * s) / 2 - minX * s;
