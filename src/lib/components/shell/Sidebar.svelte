@@ -123,7 +123,9 @@
 					title={dismiss}
 					onclick={() => shell.toggle()}
 				>
-					<Icon name="chevron-left" size={15} />
+					<!-- A phone gets a clear close (X): the sheet dismisses, it does not "collapse left" the
+					     way the docked panel's chevron implies. -->
+					<Icon name={shell.narrow ? 'close' : 'chevron-left'} size={shell.narrow ? 18 : 15} />
 				</Button>
 			</header>
 
@@ -533,15 +535,35 @@
 			width: 100%;
 			max-width: 100%;
 			height: auto;
-			max-height: 88vh;
+			/* dvh, NOT vh, and capped to leave the top bar clear: with `vh` (the LARGE viewport, behind
+			   Safari's toolbars) the sheet grew taller than the screen and its top - with the "Controls"
+			   header and the close button - slid up behind the top bar, so there was no visible way out. */
+			max-height: calc(100dvh - var(--topbar-height) - var(--sp-8));
 			border-right: none;
 			border-top: 1px solid var(--line);
 			border-radius: var(--radius-modal) var(--radius-modal) 0 0;
 			animation: slide-in-up var(--dur-enter) var(--ease) both;
 		}
 
+		/* The header (title + close) stays pinned to the top of the sheet while its body scrolls, so the
+		   way out is always on screen. */
+		.overlay .panel > header {
+			position: sticky;
+			top: 0;
+			z-index: 1;
+			margin: 0;
+			padding-bottom: var(--sp-3);
+			background: var(--panel);
+		}
+
 		.overlay .panel {
 			padding-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--sp-6));
+		}
+
+		/* A heavier scrim on a phone: the sheet is a full modal here, so the bench behind it reads as
+		   clearly dimmed-away rather than a second UI showing through. */
+		.scrim {
+			background: rgba(8, 10, 18, 0.72);
 		}
 	}
 </style>
